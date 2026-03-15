@@ -1,0 +1,165 @@
+.tasks-tab {
+  height: calc(100vh - 64px - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Filters */
+.gtd-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.gtd-filter-group {
+  display: flex;
+  gap: 2px;
+  background: rgba(74,124,142,0.08);
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.gtd-filter-btn {
+  background: none;
+  border: none;
+  padding: 5px 13px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #5a7080;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+.gtd-filter-btn:hover:not(.active) { color: #3a5060; }
+.gtd-filter-btn.active {
+  background: #fff;
+  color: #1c2b38;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(42,61,77,0.1);
+}
+
+.gtd-filter-sep {
+  width: 1px;
+  background: rgba(74,124,142,0.15);
+  align-self: stretch;
+  margin: 2px 0;
+}
+
+.gtd-summary {
+  font-size: 12px;
+  color: #7a9aaa;
+  margin-left: auto;
+}
+
+/* Table */
+.gtd-scroll {
+  flex: 1;
+  overflow: auto;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(42,61,77,0.08), 0 0 0 1px rgba(74,124,142,0.08);
+}
+
+.gtd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.gtd-table thead tr {
+  background: #eef4f7;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.gtd-table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #5a7080;
+  border-bottom: 1px solid rgba(74,124,142,0.12);
+  white-space: nowrap;
+}
+
+.gtd-row {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.gtd-row:hover td { background: rgba(74,124,142,0.05); }
+
+.gtd-row td {
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(74,124,142,0.07);
+  color: #1c2b38;
+  white-space: nowrap;
+}
+
+.gtd-row-done td { opacity: 0.55; }
+
+.gtd-empty {
+  text-align: center;
+  color: #8ca4b4;
+  padding: 32px !important;
+  font-size: 13px;
+}
+
+/* Checkbox */
+.gtd-check {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid #b0ccd8;
+  background: #fff;
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  transition: border-color 0.1s, background 0.1s;
+}
+.gtd-check:hover { border-color: #4a7c8e; }
+.gtd-checked { background: #4a7c8e; border-color: #4a7c8e; }
+
+/* Cells */
+.gtd-task-title {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+.gtd-done-text { text-decoration: line-through; color: #8ca4b4; }
+
+.gtd-addr {
+  color: #3a5060;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gtd-assignee { color: #5a7080; }
+
+.gtd-due { color: #5a7080; }
+.gtd-overdue { color: #7a4c1a; font-weight: 600; }
+.gtd-today   { color: #7a5a20; font-weight: 600; }
+.gtd-soon    { color: #8a6228; }
+
+/* Status badge */
+.gtd-status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+.gtd-status-open { background: rgba(74,124,142,0.1); color: #3a6474; }
+.gtd-status-done { background: rgba(100,160,120,0.1); color: #3a6450; }

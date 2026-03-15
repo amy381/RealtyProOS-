@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { BUYER_DATE_FIELDS, SELLER_DATE_FIELDS, TC_OPTIONS } from '../lib/columnFields'
+import TaskSection from './TaskSection'
 import './TransactionPanel.css'
 
 function formatDate(dateStr) {
@@ -140,7 +141,7 @@ function Field({ label, value }) {
 }
 
 // ── Panel ──────────────────────────────────────────────────────────────────
-export default function TransactionPanel({ transaction, columns, commissions, onClose, onFieldSave, onCommissionChange, onDelete }) {
+export default function TransactionPanel({ transaction, columns, commissions, tasks = [], onClose, onFieldSave, onCommissionChange, onDelete, onAddTask, onUpdateTask, onDeleteTask }) {
   const column     = columns.find(c => c.id === transaction.status)
   const commission = commissions?.[transaction.id] || {}
   const gci        = gciFor(transaction, commission)
@@ -241,6 +242,17 @@ export default function TransactionPanel({ transaction, columns, commissions, on
               onSave={save('notes')}
               placeholder="Click to add notes…"
               fullWidth
+            />
+          </div>
+
+          {/* Tasks */}
+          <div className="panel-section">
+            <TaskSection
+              tasks={tasks}
+              transactionId={transaction.id}
+              onAdd={onAddTask}
+              onUpdate={onUpdateTask}
+              onDelete={onDeleteTask}
             />
           </div>
 

@@ -1,0 +1,173 @@
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.settings-modal {
+  background: #f8fafb;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(42,61,77,0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(74,124,142,0.12);
+}
+
+.settings-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1c2b38;
+}
+
+.settings-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #7a9aaa;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.settings-close:hover {
+  background: rgba(74,124,142,0.1);
+  color: #3a5060;
+}
+
+.settings-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.settings-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7a9aaa;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(74,124,142,0.15);
+}
+
+.settings-hint {
+  font-size: 13px;
+  color: #5a7080;
+  line-height: 1.5;
+}
+
+.settings-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-field-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-tc-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a5060;
+  min-width: 130px;
+}
+
+.settings-email-input {
+  flex: 1;
+  border: 1.5px solid rgba(74,124,142,0.2);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #1c2b38;
+  background: #fff;
+  outline: none;
+}
+
+.settings-email-input:focus {
+  border-color: #4a7c8e;
+  box-shadow: 0 0 0 2px rgba(74,124,142,0.12);
+}
+
+.settings-email-note {
+  font-size: 12px;
+  color: #7a9aaa;
+  background: rgba(74,124,142,0.05);
+  border: 1px solid rgba(74,124,142,0.12);
+  border-radius: 8px;
+  padding: 12px 14px;
+  line-height: 1.6;
+}
+
+.settings-email-note a {
+  color: #4a7c8e;
+}
+
+.settings-env-block {
+  display: block;
+  font-family: monospace;
+  font-size: 11px;
+  background: rgba(42,61,77,0.06);
+  border-radius: 5px;
+  padding: 6px 8px;
+  margin: 6px 0;
+  color: #3a5060;
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(74,124,142,0.1);
+}
+
+.settings-cancel {
+  background: rgba(74,124,142,0.08);
+  color: #3a5060;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.settings-cancel:hover {
+  background: rgba(74,124,142,0.14);
+}
+
+.settings-save {
+  background: #4a7c8e;
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.settings-save:hover {
+  background: #3a6474;
+}

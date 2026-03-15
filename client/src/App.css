@@ -107,6 +107,22 @@
   background: #3a6474;
 }
 
+.btn-settings {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #7a9aaa;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 0.12s, color 0.12s;
+  line-height: 1;
+}
+.btn-settings:hover {
+  background: rgba(74,124,142,0.1);
+  color: #4a7c8e;
+}
+
 .app-tabs {
   display: flex;
   gap: 4px;

@@ -97,3 +97,51 @@ create trigger trg_transactions_updated_at
 create trigger trg_commissions_updated_at
   before update on public.commissions
   for each row execute function public.set_updated_at();
+
+-- ─── Tasks ───────────────────────────────────────────────────────────────────
+create table public.tasks (
+  id             uuid default gen_random_uuid() primary key,
+  transaction_id uuid not null references public.transactions(id) on delete cascade,
+  title          text not null default '',
+  due_date       date,
+  assigned_to    text default 'Me',
+  status         text default 'open' check (status in ('open', 'complete')),
+  notes          text default '',
+  sort_order     integer default 0,
+  template_key   text,
+  notified_mentions text[] default '{}',
+
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index tasks_transaction_id_idx on public.tasks(transaction_id);
+
+alter table public.tasks enable row level security;
+
+create policy "anon full access" on public.tasks
+  for all to anon using (true) with check (true);
+
+create trigger trg_tasks_updated_at
+  before update on public.tasks
+  for each row execute function public.set_updated_at();
+
+-- ─── TC Settings (email addresses for team members) ──────────────────────────
+create table public.tc_settings (
+  id         uuid default gen_random_uuid() primary key,
+  name       text unique not null,
+  email      text default '',
+  updated_at timestamptz default now()
+);
+
+alter table public.tc_settings enable row level security;
+
+create policy "anon full access" on public.tc_settings
+  for all to anon using (true) with check (true);
+
+-- Seed default team members (safe to re-run)
+insert into public.tc_settings (name, email) values
+  ('Me', ''),
+  ('Justina Morris', ''),
+  ('Victoria Lareau', '')
+on conflict (name) do nothing;

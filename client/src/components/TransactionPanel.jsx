@@ -160,13 +160,21 @@ export default function TransactionPanel({ transaction, columns, commissions, ta
     }
   }
 
+  const fullAddress = [
+    transaction.property_address,
+    transaction.city,
+    (transaction.state || transaction.zip)
+      ? [transaction.state, transaction.zip].filter(Boolean).join(' ')
+      : null,
+  ].filter(Boolean).join(', ')
+
   return (
     <div className="panel-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="side-panel">
 
         <div className="panel-header">
           <div className="panel-header-info">
-            <div className="panel-address">{transaction.property_address || '(No address)'}</div>
+            <div className="panel-address">{fullAddress || '(No address)'}</div>
             {column && (
               <div className="panel-status-badge">
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: column.color, display: 'inline-block', flexShrink: 0 }} />
@@ -182,7 +190,12 @@ export default function TransactionPanel({ transaction, columns, commissions, ta
           {/* Property Info */}
           <div className="panel-section">
             <div className="panel-section-title">Property Info</div>
-            <EditableField label="Address"    value={transaction.property_address || ''} type="text"   onSave={save('property_address')} />
+            <EditableField label="Street"  value={transaction.property_address || ''} type="text" onSave={save('property_address')} />
+            <EditableField label="City"    value={transaction.city  || ''} type="text" onSave={save('city')} />
+            <div className="panel-field-row">
+              <EditableField label="State" value={transaction.state || ''} type="text" onSave={save('state')} />
+              <EditableField label="ZIP"   value={transaction.zip   || ''} type="text" onSave={save('zip')} />
+            </div>
             {column?.priceLabel && (
               <EditableField
                 label={column.priceLabel}
@@ -193,24 +206,65 @@ export default function TransactionPanel({ transaction, columns, commissions, ta
               />
             )}
             <EditableField label="Rep" value={transaction.rep_type || ''} type="select" options={['', 'Buyer', 'Seller']} onSave={save('rep_type')} />
+            <div className="panel-field-row">
+              <div
+                className="panel-field panel-field-editable"
+                onClick={() => save('has_septic')(!transaction.has_septic)}
+                title="Click to toggle"
+              >
+                <span className="panel-label">Septic</span>
+                <span className="panel-value">{transaction.has_septic ? '✓' : '—'}</span>
+              </div>
+              <div
+                className="panel-field panel-field-editable"
+                onClick={() => save('has_solar')(!transaction.has_solar)}
+                title="Click to toggle"
+              >
+                <span className="panel-label">Solar</span>
+                <span className="panel-value">{transaction.has_solar ? '✓' : '—'}</span>
+              </div>
+              <div
+                className="panel-field panel-field-editable"
+                onClick={() => save('has_well')(!transaction.has_well)}
+                title="Click to toggle"
+              >
+                <span className="panel-label">Well</span>
+                <span className="panel-value">{transaction.has_well ? '✓' : '—'}</span>
+              </div>
+            </div>
           </div>
 
           {/* Key Dates */}
-          {dateFields.length > 0 && (
-            <div className="panel-section">
-              <div className="panel-section-title">Key Dates</div>
-              {dateFields.map(({ key, label }) => (
-                <EditableField
-                  key={key}
-                  label={label}
-                  value={transaction[key] || ''}
-                  displayValue={formatDate(transaction[key])}
-                  type="date"
-                  onSave={save(key)}
-                />
-              ))}
+          <div className="panel-section">
+            <div className="panel-section-title">Key Dates</div>
+            {dateFields.map(({ key, label }) => (
+              <EditableField
+                key={key}
+                label={label}
+                value={transaction[key] || ''}
+                displayValue={formatDate(transaction[key])}
+                type="date"
+                onSave={save(key)}
+              />
+            ))}
+            <div
+              className="panel-field panel-field-editable"
+              onClick={() => save('has_contingency')(!transaction.has_contingency)}
+              title="Click to toggle"
+            >
+              <span className="panel-label">Contingency</span>
+              <span className="panel-value">{transaction.has_contingency ? '✓ Yes' : 'No'}</span>
             </div>
-          )}
+            {transaction.has_contingency && (
+              <EditableField
+                label="Contingency Fulfilled"
+                value={transaction.contingency_fulfilled_date || ''}
+                displayValue={formatDate(transaction.contingency_fulfilled_date)}
+                type="date"
+                onSave={save('contingency_fulfilled_date')}
+              />
+            )}
+          </div>
 
           {/* People */}
           <div className="panel-section">

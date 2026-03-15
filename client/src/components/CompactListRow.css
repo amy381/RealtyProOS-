@@ -1,0 +1,55 @@
+.list-row {
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
+  gap: 5px;
+  min-height: 32px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(122,122,80,0.1);
+  background: #fff;
+  transition: background 0.1s;
+  user-select: none;
+}
+
+.list-row:last-child {
+  border-bottom: none;
+}
+
+.list-row:hover {
+  background: rgba(212,196,168,0.25);
+}
+
+.list-row-addr {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: #2C3B2D;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* TC avatar — Coffee */
+.list-row-tc {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #9B7D52;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.list-row-date {
+  font-size: 11px;
+  color: #6B6B45;
+  white-space: nowrap;
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}

@@ -42,10 +42,10 @@ function getCardFields(transaction) {
   else                             dateFields = COLUMN_FIELDS[status] || []
 
   // Only show date fields that have a value (keeps cards compact).
-  // Target Live is suppressed on Pending cards (still visible in side panel).
+  // Target Live is suppressed on Pending and Active Listing cards (still visible in side panel).
   const visibleDateFields = dateFields.filter(f =>
     f.type === 'date' && transaction[f.key] &&
-    !(status === 'pending' && f.key === 'target_live_date')
+    !(f.key === 'target_live_date' && (status === 'pending' || status === 'active-listing'))
   )
 
   // Always include text fields from COLUMN_FIELDS that have values (e.g. Lender, Title Co.)
@@ -55,7 +55,7 @@ function getCardFields(transaction) {
   return [...visibleDateFields, ...textFields]
 }
 
-export default function TransactionCard({ transaction, onEdit, onDelete, isDragging, priceLabel, onCardClick }) {
+export default function TransactionCard({ transaction, onEdit, onDelete, isDragging, priceLabel, onCardClick, viewMode }) {
   const hasDragged = useRef(false)
   const pointerStart = useRef({ x: 0, y: 0 })
 
@@ -89,7 +89,7 @@ export default function TransactionCard({ transaction, onEdit, onDelete, isDragg
     <div
       ref={setNodeRef}
       style={isDragging ? undefined : style}
-      className={`transaction-card ${isDragging || isActiveDragging ? 'is-overlay' : ''}`}
+      className={`transaction-card card--${viewMode || 'wide'} ${isDragging || isActiveDragging ? 'is-overlay' : ''}`}
       {...attributes}
       {...restListeners}
       onPointerDown={(e) => {

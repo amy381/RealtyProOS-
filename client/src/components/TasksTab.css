@@ -5,7 +5,6 @@
   gap: 10px;
 }
 
-/* Filters */
 .gtd-filters {
   display: flex;
   align-items: center;
@@ -17,7 +16,7 @@
 .gtd-filter-group {
   display: flex;
   gap: 2px;
-  background: rgba(74,124,142,0.08);
+  background: rgba(45,74,45,0.08);
   padding: 3px;
   border-radius: 8px;
 }
@@ -29,40 +28,39 @@
   border-radius: 5px;
   font-size: 13px;
   font-weight: 500;
-  color: #5a7080;
+  color: #6B6B45;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.12s;
   white-space: nowrap;
 }
-.gtd-filter-btn:hover:not(.active) { color: #3a5060; }
+.gtd-filter-btn:hover:not(.active) { color: #6B6B45; }
 .gtd-filter-btn.active {
-  background: #fff;
-  color: #1c2b38;
+  background: #B5501A;
+  color: #fff;
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(42,61,77,0.1);
+  box-shadow: 0 1px 3px rgba(181,80,26,0.25);
 }
 
 .gtd-filter-sep {
   width: 1px;
-  background: rgba(74,124,142,0.15);
+  background: rgba(122,122,80,0.18);
   align-self: stretch;
   margin: 2px 0;
 }
 
 .gtd-summary {
   font-size: 12px;
-  color: #7a9aaa;
+  color: #6B6B45;
   margin-left: auto;
 }
 
-/* Table */
 .gtd-scroll {
   flex: 1;
   overflow: auto;
   border-radius: 12px;
   background: #fff;
-  box-shadow: 0 1px 4px rgba(42,61,77,0.08), 0 0 0 1px rgba(74,124,142,0.08);
+  box-shadow: 0 1px 4px rgba(42,53,32,0.08), 0 0 0 1px rgba(122,122,80,0.1);
 }
 
 .gtd-table {
@@ -72,7 +70,7 @@
 }
 
 .gtd-table thead tr {
-  background: #eef4f7;
+  background: #EDE6D4;
   position: sticky;
   top: 0;
   z-index: 1;
@@ -85,8 +83,8 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #5a7080;
-  border-bottom: 1px solid rgba(74,124,142,0.12);
+  color: #6B6B45;
+  border-bottom: 1px solid rgba(122,122,80,0.15);
   white-space: nowrap;
 }
 
@@ -94,12 +92,12 @@
   cursor: pointer;
   transition: background 0.1s;
 }
-.gtd-row:hover td { background: rgba(74,124,142,0.05); }
+.gtd-row:hover td { background: rgba(212,196,168,0.2); }
 
 .gtd-row td {
   padding: 9px 12px;
-  border-bottom: 1px solid rgba(74,124,142,0.07);
-  color: #1c2b38;
+  border-bottom: 1px solid rgba(122,122,80,0.08);
+  color: #2C3B2D;
   white-space: nowrap;
 }
 
@@ -107,17 +105,16 @@
 
 .gtd-empty {
   text-align: center;
-  color: #8ca4b4;
+  color: #6B6B45;
   padding: 32px !important;
   font-size: 13px;
 }
 
-/* Checkbox */
 .gtd-check {
   width: 16px;
   height: 16px;
   border-radius: 4px;
-  border: 1.5px solid #b0ccd8;
+  border: 1.5px solid #C4B99A;
   background: #fff;
   cursor: pointer;
   font-size: 10px;
@@ -128,38 +125,36 @@
   font-weight: 700;
   transition: border-color 0.1s, background 0.1s;
 }
-.gtd-check:hover { border-color: #4a7c8e; }
-.gtd-checked { background: #4a7c8e; border-color: #4a7c8e; }
+.gtd-check:hover { border-color: #B5501A; }
+.gtd-checked     { background: #B5501A; border-color: #B5501A; }
 
-/* Cells */
 .gtd-task-title {
   max-width: 320px;
   overflow: hidden;
   text-overflow: ellipsis;
   font-weight: 500;
 }
-.gtd-done-text { text-decoration: line-through; color: #8ca4b4; }
+.gtd-done-text { text-decoration: line-through; color: #C4B99A; }
 
 .gtd-addr {
-  color: #3a5060;
+  color: #6B6B45;
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.gtd-assignee { color: #5a7080; }
+.gtd-assignee { color: #6B6B45; }
 
-.gtd-due { color: #5a7080; }
-.gtd-overdue { color: #7a4c1a; font-weight: 600; }
-.gtd-today   { color: #7a5a20; font-weight: 600; }
-.gtd-soon    { color: #8a6228; }
+.gtd-due      { color: #6B6B45; }
+.gtd-overdue  { color: #B5501A; font-weight: 600; }
+.gtd-today    { color: #B5501A; font-weight: 600; }
+.gtd-soon     { color: #9A5A28; }
 
-/* Status badge */
 .gtd-status-badge {
   font-size: 11px;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 99px;
 }
-.gtd-status-open { background: rgba(74,124,142,0.1); color: #3a6474; }
-.gtd-status-done { background: rgba(100,160,120,0.1); color: #3a6450; }
+.gtd-status-open { background: rgba(181,80,26,0.1);  color: #B5501A; }
+.gtd-status-done { background: rgba(155,125,82,0.15); color: #9B7D52; }

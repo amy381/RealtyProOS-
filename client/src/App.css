@@ -10,19 +10,20 @@
   justify-content: center;
   height: 100vh;
   font-size: 15px;
-  color: #9ca3af;
-  background: #f0f3f6;
+  color: #9B7D52;
+  background: #D4C5A9;
 }
 
+/* ── Navigation bar — deep Moss ────────────────────────── */
 .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
   height: 64px;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  background: #2C3B2D;
+  border-bottom: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.22);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -40,7 +41,7 @@
   gap: 8px;
   font-size: 20px;
   font-weight: 700;
-  color: #1c2b38;
+  color: #D4C5A9;
 }
 
 .logo-icon {
@@ -48,21 +49,22 @@
 }
 
 .logo-os {
-  color: #4a7c8e;
+  color: #B5501A;
 }
 
 .header-subtitle {
   font-size: 13px;
-  color: #9ca3af;
-  border-left: 1px solid #e5e7eb;
+  color: #9B7D52;
+  border-left: 1px solid rgba(155,125,82,0.35);
   padding-left: 16px;
 }
 
+/* ── Board main area ────────────────────────────────────── */
 .app-main {
   flex: 1;
   padding: 24px;
   overflow: hidden;
-  background: #f0f3f6;
+  background: #E8DFCB;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -70,12 +72,14 @@
 
 .board-toolbar {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   flex-shrink: 0;
 }
 
+/* ── Buttons — Autumn primary ───────────────────────────── */
 .btn-new-transaction {
-  background: #4a7c8e;
+  background: #B5501A;
   color: #ffffff;
   border: none;
   padding: 10px 22px;
@@ -85,15 +89,15 @@
   cursor: pointer;
   transition: background 0.15s;
   font-family: inherit;
-  box-shadow: 0 2px 8px rgba(74,124,142,0.25);
+  box-shadow: 0 2px 8px rgba(181,80,26,0.35);
 }
 
 .btn-new-transaction:hover {
-  background: #3a6474;
+  background: #8B3A10;
 }
 
 .btn-primary {
-  background: #4a7c8e;
+  background: #B5501A;
   color: #ffffff;
   border: none;
   padding: 9px 18px;
@@ -104,14 +108,15 @@
 }
 
 .btn-primary:hover {
-  background: #3a6474;
+  background: #8B3A10;
 }
 
+/* ── Settings icon (on dark header) ────────────────────── */
 .btn-settings {
   background: none;
   border: none;
   font-size: 18px;
-  color: #7a9aaa;
+  color: #9B7D52;
   cursor: pointer;
   padding: 6px 8px;
   border-radius: 8px;
@@ -119,14 +124,15 @@
   line-height: 1;
 }
 .btn-settings:hover {
-  background: rgba(74,124,142,0.1);
-  color: #4a7c8e;
+  background: rgba(255,255,255,0.1);
+  color: #D4C5A9;
 }
 
+/* ── Tabs (centered, on dark header) ───────────────────── */
 .app-tabs {
   display: flex;
   gap: 4px;
-  background: rgba(0,0,0,0.05);
+  background: rgba(255,255,255,0.08);
   padding: 4px;
   border-radius: 8px;
   position: absolute;
@@ -141,18 +147,19 @@
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
-  color: #6a8494;
+  color: rgba(212,197,169,0.65);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .tab-btn.active {
-  background: #ffffff;
-  color: #1c2b38;
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  background: #B5501A;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(181,80,26,0.4);
 }
 
 .tab-btn:hover:not(.active) {
-  color: #3a6474;
+  color: #D4C5A9;
+  background: rgba(255,255,255,0.06);
 }

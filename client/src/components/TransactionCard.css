@@ -1,36 +1,48 @@
 .transaction-card {
   background: #ffffff;
-  border-radius: 10px;
-  padding: 14px;
-  box-shadow: 0 1px 4px rgba(42,61,77,0.08), 0 0 0 1px rgba(74,124,142,0.07);
+  border-radius: 8px;
+  padding: 10px 11px;
+  box-shadow: 0 1px 3px rgba(42,53,32,0.08), 0 0 0 1px rgba(122,122,80,0.1);
   cursor: grab;
   transition: box-shadow 0.15s, transform 0.15s;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
 }
 
 .transaction-card:hover {
-  box-shadow: 0 4px 14px rgba(42,61,77,0.12), 0 0 0 1px rgba(74,124,142,0.12);
+  box-shadow: 0 3px 12px rgba(42,53,32,0.12), 0 0 0 1px rgba(122,122,80,0.15);
 }
 
 .transaction-card.is-overlay {
-  box-shadow: 0 8px 28px rgba(42,61,77,0.18);
+  box-shadow: 0 8px 28px rgba(42,53,32,0.2);
   cursor: grabbing;
   transform: rotate(2deg);
+}
+
+/* Wide (Pending) — slightly more room */
+.transaction-card.card--wide {
+  padding: 11px 12px;
+  gap: 6px;
+}
+
+/* Narrow (Closed) — compact */
+.transaction-card.card--narrow {
+  padding: 9px 10px;
+  gap: 5px;
 }
 
 .card-address {
   font-size: 14px;
   font-weight: 600;
-  color: #1c2b38;
+  color: #2C3B2D;
   line-height: 1.4;
 }
 
 .card-price {
   font-size: 13px;
   font-weight: 600;
-  color: #3a6474;
+  color: #B5501A;
 }
 
 .card-row {
@@ -38,7 +50,7 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #5a7080;
+  color: #6B6B45;
 }
 
 .card-icon {
@@ -48,7 +60,7 @@
 
 .card-client {
   font-size: 13px;
-  color: #3a5060;
+  color: #6B6B45;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -63,13 +75,13 @@
 }
 
 .card-field-label {
-  color: #8aa4b4;
+  color: #6B6B45;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .card-field-value {
-  color: #3a5060;
+  color: #2C3B2D;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -80,7 +92,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .card-footer-right {
@@ -95,11 +107,12 @@
   margin-left: auto;
 }
 
-.card-rep-badge.buyer  { color: #4a7ba8; }
-.card-rep-badge.seller { color: #4a7d5e; }
+.card-rep-badge.buyer  { color: #2C3B2D; }
+.card-rep-badge.seller { color: #9B7D52; }
 
-.urgent-text { color: #7a6030; }
-.overdue-text { color: #7a5020; }
+/* Urgency — Autumn palette */
+.urgent-text  { color: #B5501A; }
+.overdue-text { color: #B5501A; }
 
 .badge {
   font-size: 10px;
@@ -108,16 +121,17 @@
   border-radius: 99px;
 }
 
-.urgent-badge  { background: #fdf0d8; color: #8a6228; }
-.overdue-badge { background: #fde8c8; color: #7a4c1a; }
+.urgent-badge  { background: rgba(181,80,26,0.1); color: #B5501A; }
+.overdue-badge { background: rgba(181,80,26,0.15); color: #B5501A; }
 
+/* TC avatar — Coffee */
 .tc-avatar {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: #4a7c8e;
+  background: #9B7D52;
   color: #ffffff;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -145,5 +159,5 @@
 }
 
 .card-btn:hover {
-  background: rgba(74,124,142,0.1);
+  background: rgba(122,122,80,0.12);
 }

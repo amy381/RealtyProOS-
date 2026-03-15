@@ -1,75 +1,149 @@
 .kanban-column {
   display: flex;
   flex-direction: column;
-  min-width: 280px;
-  max-width: 280px;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 2px solid transparent;
   transition: border-color 0.15s, filter 0.15s;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
+/* List columns: width controlled by .stacked-list-panel */
+.kanban-column--list { min-width: 0; }
+
+/* Active Listing and Pending: equal, generous (25% narrower than before: 1.4 → 1.05) */
+.kanban-column--medium { flex: 1.05; min-width: 220px; }
+.kanban-column--wide   { flex: 1.05; min-width: 220px; }
+
+/* Closed: 30% wider than the old narrow (0.8 → 1.04) */
+.kanban-column--narrow { flex: 1.04; min-width: 200px; }
+
 .kanban-column.is-over {
-  border-color: #4a7c8e;
+  border-color: #B5501A;
   filter: brightness(0.97);
 }
 
+/* ── Header — dark Moss ────────────────────────────────── */
 .column-header {
-  padding: 14px 16px 12px;
-  border-top: 4px solid #ccc;
+  padding: 10px 12px 9px;
+  border-top: 3px solid #ccc; /* overridden inline per column */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  border-bottom: 1px solid rgba(0,0,0,0.18);
+  flex-shrink: 0;
+  background: #2C3B2D;
+}
+
+.kanban-column--list .column-header {
+  padding: 8px 10px 7px;
 }
 
 .column-title-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
 }
 
 .column-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
+/* 30% larger: 12px → 16px */
 .column-title {
   font-size: 16px;
   font-weight: 800;
-  color: #2a3d4d;
+  color: #ffffff;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
+.kanban-column--list .column-title {
+  font-size: 14px;
+}
+
 .column-count {
-  background: rgba(0,0,0,0.1);
-  color: #5a7080;
-  font-size: 12px;
+  background: rgba(255,255,255,0.14);
+  color: #D4C5A9;
+  font-size: 11px;
   font-weight: 600;
-  padding: 2px 8px;
+  padding: 1px 7px;
   border-radius: 99px;
-  min-width: 24px;
+  min-width: 20px;
   text-align: center;
 }
 
+/* ── Card columns ────────────────────────────────────── */
 .column-cards {
   flex: 1;
-  padding: 12px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
   overflow-y: auto;
-  min-height: 80px;
+  min-height: 60px;
 }
 
 .column-empty {
   text-align: center;
-  color: #8ca4b4;
-  font-size: 13px;
-  padding: 24px 0;
-  border: 2px dashed rgba(74,124,142,0.2);
-  border-radius: 8px;
+  color: #9B7D52;
+  font-size: 12px;
+  padding: 20px 0;
+  border: 1.5px dashed rgba(122,122,80,0.2);
+  border-radius: 7px;
+}
+
+/* ── List columns ────────────────────────────────────── */
+.column-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+
+.list-col-header {
+  display: flex;
+  align-items: center;
+  padding: 4px 10px;
+  gap: 5px;
+  background: rgba(44,59,45,0.07);
+  border-bottom: 1px solid rgba(155,125,82,0.18);
+  flex-shrink: 0;
+}
+
+.lch-addr {
+  flex: 1;
+  font-size: 10px;
+  font-weight: 700;
+  color: #6B6B45;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lch-tc {
+  width: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #6B6B45;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.lch-d1,
+.lch-d2 {
+  width: 36px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #6B6B45;
+  text-transform: uppercase;
+  text-align: right;
+}
+
+.list-rows {
+  flex: 1;
+  overflow-y: auto;
 }

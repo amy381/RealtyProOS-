@@ -28,12 +28,12 @@ function sanitizeForDB(obj) {
 }
 
 const COLUMNS = [
-  { id: 'buyer-broker',      label: 'Buyer-Broker',        color: '#9ab8d0', bgColor: '#e8eef5', priceLabel: 'Purchase Price' },
-  { id: 'pre-listing',       label: 'Pre-Listing',          color: '#8eb8a0', bgColor: '#e6eeea', priceLabel: 'List Price' },
-  { id: 'active-listing',    label: 'Active Listing',       color: '#7ab0be', bgColor: '#e4ecee', priceLabel: 'List Price' },
-  { id: 'pending',           label: 'Pending',              color: '#8e9ec0', bgColor: '#eaecf5', priceLabel: 'Purchase Price' },
-  { id: 'closed',            label: 'Closed',               color: '#8ea87a', bgColor: '#eaecdf', priceLabel: 'Purchase Price' },
-  { id: 'cancelled-expired', label: 'Cancelled / Expired',  color: '#a0a4a8', bgColor: '#eceaeb', priceLabel: null },
+  { id: 'pre-listing',       label: 'Pre-Listing',          color: '#6B6B45', bgColor: '#D8D0BC', priceLabel: 'List Price',     viewMode: 'list'   },
+  { id: 'buyer-broker',      label: 'Buyer-Broker',         color: '#9B7D52', bgColor: '#D4CCBA', priceLabel: 'Purchase Price', viewMode: 'list'   },
+  { id: 'active-listing',    label: 'Active Listing',       color: '#9B7D52', bgColor: '#D8CEB8', priceLabel: 'List Price',     viewMode: 'medium' },
+  { id: 'pending',           label: 'Pending',              color: '#B5501A', bgColor: '#D4C8B0', priceLabel: 'Purchase Price', viewMode: 'wide'   },
+  { id: 'closed',            label: 'Closed',               color: '#6B6B45', bgColor: '#D6CEB8', priceLabel: 'Purchase Price', viewMode: 'narrow' },
+  { id: 'cancelled-expired', label: 'Cancelled / Expired',  color: '#C4B99A', bgColor: '#D0C8B4', priceLabel: null,             viewMode: 'medium' },
 ]
 
 export default function App() {
@@ -159,6 +159,25 @@ export default function App() {
       })
 
       await insertTemplateTasks(newTx.id, newTx.status, newTx.rep_type, newTx)
+
+      // Property detail tasks from intake checkboxes
+      const propertyTasks = []
+      if (data.has_septic) propertyTasks.push('Order Septic Inspection')
+      if (data.has_solar)  propertyTasks.push('Order Solar Documents')
+      if (data.has_well && newTx.rep_type === 'Buyer') propertyTasks.push('Order Well Inspection')
+      if (propertyTasks.length > 0) {
+        const toInsert = propertyTasks.map((title, i) => ({
+          transaction_id:    newTx.id,
+          title,
+          status:            'open',
+          assigned_to:       'Me',
+          notes:             '',
+          sort_order:        i,
+          notified_mentions: [],
+        }))
+        const { data: ptInserted, error: ptErr } = await supabase.from('tasks').insert(toInsert).select()
+        if (!ptErr && ptInserted) setTasks(prev => [...prev, ...ptInserted])
+      }
 
       setIntakeOpen(false)
       toast.success('Transaction created!')

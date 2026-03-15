@@ -48,6 +48,7 @@ const TEMPLATES = {
     { title: 'Confirm Home Inspection with Listing Agent' },
     { title: 'Add Home Inspection Date to Calendar' },
     { title: 'Check for missing Addendums: HOA, LBP, DWWA' },
+    { title: 'Buyer Contingency Addendum' },
     { title: 'Send SPDS to Buyer',                                      getDueDate: tx => addDays(tx.contract_acceptance_date, 3)  },
     { title: 'Send IHR to Buyer',                                       getDueDate: tx => addDays(tx.contract_acceptance_date, 5)  },
     { title: 'Has Earnest Deposit been received?',                      getDueDate: tx => addDays(tx.contract_acceptance_date, 5)  },

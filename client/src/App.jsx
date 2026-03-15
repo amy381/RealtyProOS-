@@ -46,48 +46,65 @@ export default function App() {
   // ── Load all data ───────────────────────────────────────────────────────────
   useEffect(() => {
     async function load() {
+      // Core tables — fatal if these fail
       const [
-        { data: txData,   error: txErr  },
-        { data: cmData,   error: cmErr  },
-        { data: tkData,   error: tkErr  },
-        { data: tcData,   error: tcErr  },
+        { data: txData, error: txErr },
+        { data: cmData, error: cmErr },
       ] = await Promise.all([
         supabase.from('transactions').select('*').order('created_at', { ascending: false }),
         supabase.from('commissions').select('*'),
-        supabase.from('tasks').select('*').order('sort_order', { ascending: true }),
-        supabase.from('tc_settings').select('*'),
       ])
 
-      if (txErr || cmErr || tkErr) {
+      if (txErr || cmErr) {
         toast.error('Failed to load data — check your Supabase credentials')
-        console.error(txErr || cmErr || tkErr)
+        console.error(txErr || cmErr)
         setLoading(false)
         return
       }
 
       setTransactions(txData || [])
-      setTasks(tkData || [])
 
       const cmMap = {}
       for (const cm of (cmData || [])) cmMap[cm.transaction_id] = cm
       setCommissions(cmMap)
       commissionsRef.current = cmMap
 
-      // Seed tc_settings if empty (first run before SQL seed ran)
-      const tcs = tcData || []
-      if (tcs.length === 0) {
-        const defaults = [
+      // Task tables — optional, gracefully degrade if not created yet
+      const [
+        { data: tkData, error: tkErr },
+        { data: tcData, error: tcErr },
+      ] = await Promise.all([
+        supabase.from('tasks').select('*').order('sort_order', { ascending: true }),
+        supabase.from('tc_settings').select('*'),
+      ])
+
+      if (tkErr) {
+        console.warn('tasks table not found — run the new SQL in Supabase to enable tasks:', tkErr.message)
+      } else {
+        setTasks(tkData || [])
+      }
+
+      if (tcErr) {
+        console.warn('tc_settings table not found — run the new SQL in Supabase to enable settings:', tcErr.message)
+        setTcSettings([
           { name: 'Me', email: '' },
           { name: 'Justina Morris', email: '' },
           { name: 'Victoria Lareau', email: '' },
-        ]
-        const { data: seeded } = await supabase.from('tc_settings').insert(defaults).select()
-        setTcSettings(seeded || defaults)
+        ])
       } else {
-        setTcSettings(tcs)
+        const tcs = tcData || []
+        if (tcs.length === 0) {
+          const defaults = [
+            { name: 'Me', email: '' },
+            { name: 'Justina Morris', email: '' },
+            { name: 'Victoria Lareau', email: '' },
+          ]
+          const { data: seeded } = await supabase.from('tc_settings').insert(defaults).select()
+          setTcSettings(seeded || defaults)
+        } else {
+          setTcSettings(tcs)
+        }
       }
-
-      if (tcErr) console.warn('tc_settings load error (table may not exist yet):', tcErr)
 
       setLoading(false)
     }
@@ -192,7 +209,12 @@ export default function App() {
 
     const toInsert = tplTasks.map(t => ({ ...t, transaction_id: transactionId }))
     const { data: inserted, error } = await supabase.from('tasks').insert(toInsert).select()
-    if (!error && inserted) {
+    if (error) {
+      // Table may not exist yet — fail silently so transaction creation still succeeds
+      console.warn('Could not insert template tasks (run the tasks SQL in Supabase):', error.message)
+      return
+    }
+    if (inserted) {
       setTasks(prev => [...prev, ...inserted])
       toast.success(`${inserted.length} tasks added`, { duration: 2000 })
     }

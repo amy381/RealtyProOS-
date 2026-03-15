@@ -284,7 +284,7 @@ export default function App() {
   const handleAddTask = useCallback(async (taskData) => {
     try {
       const { data: newTask, error } = await supabase.from('tasks').insert({
-        ...taskData,
+        ...sanitizeForDB(taskData),
         notified_mentions: [],
       }).select().single()
       if (error) throw error

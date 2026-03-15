@@ -9,7 +9,7 @@
   align-items: center;
   gap: 8px;
   padding-bottom: 6px;
-  border-bottom: 1px solid rgba(122,122,80,0.15);
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .ts-title {
@@ -17,29 +17,29 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #6B6B45;
+  color: #666666;
   flex: 1;
 }
 
 .ts-counts { display: flex; gap: 6px; }
-.ts-count-open { font-size: 11px; color: #2C3B2D; font-weight: 600; }
-.ts-count-done { font-size: 11px; color: #C4B99A; font-weight: 600; }
+.ts-count-open { font-size: 11px; color: #1a1a1a; font-weight: 600; }
+.ts-count-done { font-size: 11px; color: #999999; font-weight: 600; }
 
 .ts-add-btn {
   font-size: 12px;
   font-weight: 600;
-  color: #B5501A;
+  color: #1a1a1a;
   background: none;
   border: none;
   cursor: pointer;
   padding: 2px 8px;
   border-radius: 4px;
 }
-.ts-add-btn:hover { background: rgba(181,80,26,0.08); }
+.ts-add-btn:hover { background: rgba(0,0,0,0.06); }
 
 .ts-add-form {
-  background: rgba(122,122,80,0.05);
-  border: 1px solid rgba(122,122,80,0.18);
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
   padding: 10px;
   display: flex;
@@ -50,16 +50,16 @@
 .ts-input {
   font-size: 13px;
   font-family: inherit;
-  border: 1px solid rgba(122,122,80,0.25);
+  border: 1px solid #e0e0e0;
   border-radius: 5px;
   padding: 6px 8px;
   outline: none;
   background: #fff;
-  color: #2C3B2D;
+  color: #1a1a1a;
   width: 100%;
   box-sizing: border-box;
 }
-.ts-input:focus { border-color: #B5501A; }
+.ts-input:focus { border-color: #000000; }
 
 .ts-date, .ts-select { flex: 1; width: auto; }
 .ts-notes-input { resize: none; }
@@ -73,7 +73,7 @@
 .ts-btn-save {
   font-size: 12px;
   font-weight: 600;
-  background: #B5501A;
+  background: #000000;
   color: #fff;
   border: none;
   border-radius: 5px;
@@ -82,31 +82,31 @@
   font-family: inherit;
   white-space: nowrap;
 }
-.ts-btn-save:hover { background: #8B3A10; }
+.ts-btn-save:hover { background: #333333; }
 
 .ts-btn-cancel {
   font-size: 13px;
   background: none;
   border: none;
-  color: #6B6B45;
+  color: #666666;
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 4px;
 }
-.ts-btn-cancel:hover { background: rgba(122,122,80,0.1); }
+.ts-btn-cancel:hover { background: rgba(0,0,0,0.06); }
 
 .ts-list { display: flex; flex-direction: column; gap: 1px; }
 
 .ts-empty {
   font-size: 12px;
-  color: #C4B99A;
+  color: #999999;
   padding: 10px 0;
   text-align: center;
 }
 
 .ts-divider {
   height: 1px;
-  background: rgba(122,122,80,0.1);
+  background: #e0e0e0;
   margin: 4px 0;
 }
 
@@ -114,7 +114,7 @@
   border-radius: 6px;
   transition: background 0.1s;
 }
-.ts-row:hover { background: rgba(122,122,80,0.05); }
+.ts-row:hover { background: rgba(0,0,0,0.03); }
 
 .ts-row-main {
   display: flex;
@@ -128,7 +128,7 @@
   height: 16px;
   min-width: 16px;
   border-radius: 4px;
-  border: 1.5px solid #C4B99A;
+  border: 1.5px solid #cccccc;
   background: #fff;
   cursor: pointer;
   font-size: 10px;
@@ -140,8 +140,8 @@
   margin-top: 2px;
   transition: border-color 0.1s, background 0.1s;
 }
-.ts-check:hover  { border-color: #B5501A; }
-.ts-checked      { background: #B5501A; border-color: #B5501A; }
+.ts-check:hover  { border-color: #000000; }
+.ts-checked      { background: #000000; border-color: #000000; }
 
 .ts-row-body {
   flex: 1;
@@ -153,18 +153,18 @@
 
 .ts-row-title {
   font-size: 13px;
-  color: #2C3B2D;
+  color: #1a1a1a;
   cursor: pointer;
   line-height: 1.4;
   word-break: break-word;
 }
-.ts-row-title:hover    { color: #2C3B2D; }
-.ts-title-done         { text-decoration: line-through; color: #C4B99A; cursor: default; }
+.ts-row-title:hover    { color: #1a1a1a; }
+.ts-title-done         { text-decoration: line-through; color: #999999; cursor: default; }
 
 .ts-title-input {
   font-size: 13px;
   font-family: inherit;
-  border: 1px solid #B5501A;
+  border: 1px solid #000000;
   border-radius: 4px;
   padding: 2px 6px;
   outline: none;
@@ -184,17 +184,17 @@
   padding: 1px 5px;
   border-radius: 3px;
 }
-.ts-due-ok      { color: #6B6B45; }
-.ts-due-soon    { color: #B5501A; background: #FDECD4; }
-.ts-due-today   { color: #7A4010; background: #FDDFB8; font-weight: 700; }
-.ts-due-overdue { color: #B5501A; background: #FDD8B8; font-weight: 700; }
-.ts-due-none    { color: #C4B99A; font-size: 11px; }
-.ts-due-none:hover { color: #2C3B2D; }
+.ts-due-ok      { color: #666666; }
+.ts-due-soon    { color: #1a1a1a; background: #f0f0f0; }
+.ts-due-today   { color: #000000; background: #e8e8e8; font-weight: 700; }
+.ts-due-overdue { color: #000000; background: #e0e0e0; font-weight: 700; }
+.ts-due-none    { color: #999999; font-size: 11px; }
+.ts-due-none:hover { color: #1a1a1a; }
 
 .ts-meta-input {
   font-size: 11px;
   font-family: inherit;
-  border: 1px solid #B5501A;
+  border: 1px solid #000000;
   border-radius: 3px;
   padding: 1px 5px;
   outline: none;
@@ -203,15 +203,15 @@
 
 .ts-assignee {
   font-size: 11px;
-  color: #6B6B45;
+  color: #666666;
   cursor: pointer;
   padding: 1px 6px;
   border-radius: 10px;
-  border: 1px solid rgba(122,122,80,0.22);
-  background: rgba(122,122,80,0.07);
+  border: 1px solid #e0e0e0;
+  background: #f5f5f5;
   white-space: nowrap;
 }
-.ts-assignee:hover { background: rgba(122,122,80,0.14); color: #6B6B45; }
+.ts-assignee:hover { background: #ebebeb; color: #1a1a1a; }
 
 .ts-row-actions {
   display: flex;
@@ -224,32 +224,32 @@
 
 .ts-notes-toggle {
   font-size: 9px;
-  color: #C4B99A;
+  color: #999999;
   background: none;
   border: none;
   cursor: pointer;
   padding: 3px 5px;
   border-radius: 3px;
 }
-.ts-notes-toggle.has-notes { color: #B5501A; }
-.ts-notes-toggle:hover { background: rgba(122,122,80,0.1); }
+.ts-notes-toggle.has-notes { color: #1a1a1a; }
+.ts-notes-toggle:hover { background: rgba(0,0,0,0.06); }
 
 .ts-del {
   font-size: 10px;
-  color: #C4B99A;
+  color: #999999;
   background: none;
   border: none;
   cursor: pointer;
   padding: 3px 5px;
   border-radius: 3px;
 }
-.ts-del:hover { background: rgba(181,84,26,0.08); color: #B5501A; }
+.ts-del:hover { background: rgba(0,0,0,0.06); color: #1a1a1a; }
 
 .ts-notes-wrap { padding: 0 4px 6px 28px; }
 
 .ts-notes-text {
   font-size: 12px;
-  color: #6B6B45;
+  color: #666666;
   line-height: 1.5;
   white-space: pre-wrap;
   cursor: pointer;
@@ -257,20 +257,20 @@
   border-radius: 4px;
   min-height: 22px;
 }
-.ts-notes-text:hover { background: rgba(122,122,80,0.06); }
+.ts-notes-text:hover { background: rgba(0,0,0,0.03); }
 
-.ts-notes-ph { color: #C4B99A; font-style: italic; }
+.ts-notes-ph { color: #999999; font-style: italic; }
 
 .ts-notes-area {
   font-size: 12px;
   font-family: inherit;
-  border: 1px solid #B5501A;
+  border: 1px solid #000000;
   border-radius: 4px;
   padding: 4px 6px;
   outline: none;
   width: 100%;
   box-sizing: border-box;
-  color: #2C3B2D;
+  color: #1a1a1a;
   resize: vertical;
   line-height: 1.5;
 }

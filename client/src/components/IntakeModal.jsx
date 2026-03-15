@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { TC_OPTIONS } from '../lib/columnFields'
 import './IntakeModal.css'
 
@@ -11,56 +11,172 @@ const COLUMN_OPTIONS = [
   { value: 'cancelled-expired', label: 'Cancelled / Expired' },
 ]
 
-const EMPTY_CLIENT = { first_name: '', last_name: '', phone: '', email: '' }
+const EMPTY_CLIENT = { first_name: '', last_name: '', phone: '', email: '', fub_id: null }
 
-function ClientBlock({ prefix, label, data, onChange, errors }) {
+// ── FUB search ─────────────────────────────────────────────
+async function fetchFubContacts(query) {
+  const resp = await fetch(`/api/fub/search?q=${encodeURIComponent(query)}`)
+  if (!resp.ok) return []
+  const data = await resp.json()
+  return data.people || []
+}
+
+// Returns { client1, related } or null
+async function fetchFubPerson(personId) {
+  const resp = await fetch(`/api/fub/person/${personId}`)
+  if (!resp.ok) return null
+  return await resp.json()
+}
+
+const DROPDOWN_STYLE = {
+  position: 'absolute',
+  top: 'calc(100% + 4px)',
+  left: 0,
+  right: 0,
+  backgroundColor: '#ffffff',
+  color: '#1a1a1a',
+  border: '1px solid #cccccc',
+  borderRadius: '8px',
+  boxShadow: '0 6px 20px rgba(44,59,45,0.18)',
+  zIndex: 9999,
+  overflow: 'hidden',
+  maxHeight: '220px',
+  overflowY: 'auto',
+}
+
+
+function FubSearch({ placeholder, onSelect }) {
+  const [query, setQuery]       = useState('')
+  const [results, setResults]   = useState([])
+  const [loading, setLoading]   = useState(false)
+  const [open, setOpen]         = useState(false)
+  const timer   = useRef(null)
+  const wrapRef = useRef(null)
+
+  useEffect(() => {
+    const close = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [])
+
+  const handleChange = (val) => {
+    setQuery(val)
+    clearTimeout(timer.current)
+    if (val.trim().length < 2) { setResults([]); setOpen(false); return }
+    timer.current = setTimeout(async () => {
+      setLoading(true)
+      const people = await fetchFubContacts(val)
+      setResults(people)
+      setOpen(people.length > 0)
+      setLoading(false)
+    }, 350)
+  }
+
+  const handleSelect = (person) => {
+    onSelect(person)
+    setQuery('')
+    setResults([])
+    setOpen(false)
+  }
+
   return (
-    <div className="client-block">
-      <div className="client-block-label">{label}</div>
-      <div className="intake-row">
-        <div className="intake-group">
-          <label>First Name</label>
-          <input
-            type="text"
-            value={data.first_name}
-            onChange={e => onChange('first_name', e.target.value)}
-            className={errors?.[`${prefix}_first_name`] ? 'error' : ''}
-          />
-          {errors?.[`${prefix}_first_name`] && <span className="intake-error">{errors[`${prefix}_first_name`]}</span>}
-        </div>
-        <div className="intake-group">
-          <label>Last Name</label>
-          <input
-            type="text"
-            value={data.last_name}
-            onChange={e => onChange('last_name', e.target.value)}
-          />
-        </div>
+    <div className="fub-search-wrap" ref={wrapRef}>
+      <div className="fub-search-row">
+        <span className="fub-icon">🔍</span>
+        <input
+          className="fub-search-input"
+          type="text"
+          placeholder={placeholder || 'Search Follow Up Boss…'}
+          value={query}
+          onChange={e => handleChange(e.target.value)}
+          onFocus={() => results.length > 0 && setOpen(true)}
+          autoComplete="off"
+        />
+        {loading && <span className="fub-spinner">⏳</span>}
       </div>
-      <div className="intake-row">
-        <div className="intake-group">
-          <label>Phone</label>
-          <input
-            type="tel"
-            placeholder="(555) 000-0000"
-            value={data.phone}
-            onChange={e => onChange('phone', e.target.value)}
-          />
-        </div>
-        <div className="intake-group">
-          <label>Email</label>
-          <input
-            type="email"
-            placeholder="name@email.com"
-            value={data.email}
-            onChange={e => onChange('email', e.target.value)}
-          />
-        </div>
-      </div>
+
+      {open && (
+        <>
+          <style>{`
+            .fub-dd-result {
+              display: flex !important;
+              align-items: center !important;
+              width: 100% !important;
+              text-align: left !important;
+              padding: 10px 14px !important;
+              border: none !important;
+              border-bottom: 1px solid rgba(155,125,82,0.15) !important;
+              background-color: #ffffff !important;
+              color: #000000 !important;
+              font-weight: 500 !important;
+              font-size: 13px !important;
+              cursor: pointer !important;
+              font-family: inherit !important;
+            }
+            .fub-dd-result:hover {
+              background-color: #e8e8e8 !important;
+              color: #000000 !important;
+            }
+            .fub-dd-result:last-child {
+              border-bottom: none !important;
+            }
+            .fub-dd-result * {
+              color: inherit !important;
+            }
+          `}</style>
+          <div style={DROPDOWN_STYLE}>
+            {results.map(p => {
+              const key = p.id != null ? `person-${p.id}` : `rel-${p.relationship_id}`
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className="fub-dd-result"
+                  onClick={() => handleSelect(p)}
+                >
+                  <span style={{ fontWeight: 600 }}>{p.name}</span>
+                  {p._via && (
+                    <span style={{ fontSize: '11px', fontWeight: 500, marginLeft: '6px', opacity: 0.7 }}>
+                      via {p._via.name}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
     </div>
   )
 }
 
+// ── Client slot ─────────────────────────────────────────────
+function ClientSlot({ label, client, onSelect, onClear, error }) {
+  const hasContact = !!(client.fub_id || client.first_name || client.last_name)
+  const displayName = [client.first_name, client.last_name].filter(Boolean).join(' ')
+
+  return (
+    <div className="fub-client-slot">
+      <div className="fub-client-slot-label">{label}</div>
+      {hasContact ? (
+        <div className="fub-selected-contact">
+          <span className="fub-selected-name">👤 {displayName}</span>
+          <button type="button" className="fub-clear-btn" onClick={onClear}>Change</button>
+        </div>
+      ) : (
+        <FubSearch
+          placeholder={`Search ${label} in Follow Up Boss…`}
+          onSelect={onSelect}
+        />
+      )}
+      {error && <span className="intake-error">{error}</span>}
+    </div>
+  )
+}
+
+// ── Main modal ─────────────────────────────────────────────
 export default function IntakeModal({ onSave, onClose }) {
   const [type, setType] = useState('seller')
   const [form, setForm] = useState({
@@ -82,7 +198,7 @@ export default function IntakeModal({ onSave, onClose }) {
   })
   const [client1, setClient1] = useState({ ...EMPTY_CLIENT })
   const [client2, setClient2] = useState({ ...EMPTY_CLIENT })
-  const [showSecond, setShowSecond] = useState(false)
+  const [showClient2, setShowClient2] = useState(false)
   const [errors, setErrors] = useState({})
 
   const setField = (key, val) => {
@@ -95,14 +211,59 @@ export default function IntakeModal({ onSave, onClose }) {
     setForm(f => ({ ...f, status: t === 'seller' ? 'pre-listing' : 'buyer-broker' }))
   }
 
-  const setClient1Field = (key, val) => {
-    setClient1(c => ({ ...c, [key]: val }))
-    if (errors[`c1_${key}`]) setErrors(e => ({ ...e, [`c1_${key}`]: undefined }))
+  // Build a client object from a normalizePerson result (has 'id' field)
+  const personToClient = (p) => ({
+    first_name: p.first_name,
+    last_name:  p.last_name,
+    phone:      p.phone,
+    email:      p.email,
+    fub_id:     p.id ?? null,
+  })
+
+  // Build a client object from a normalizeRelationship result (has 'relationship_id', no 'id')
+  const relToClient = (r) => ({
+    first_name: r.first_name,
+    last_name:  r.last_name,
+    phone:      r.phone,
+    email:      r.email,
+    fub_id:     null,  // relationship contacts have no standalone FUB person ID
+  })
+
+  const handleSelectClient1 = async (person) => {
+    if (person._via) {
+      // Relationship result: person is the relationship contact, _via is the primary person.
+      // Set Client 1 = relationship contact, Client 2 = primary person.
+      setClient1(relToClient(person))
+      setClient2(personToClient(person._via))
+      setShowClient2(true)
+    } else {
+      // Primary contact selected: fetch full person + relationships in parallel
+      const data = await fetchFubPerson(person.id)
+      setClient1(data?.client1 ? personToClient(data.client1) : personToClient(person))
+
+      // Auto-populate Client 2 from the first relationship if present
+      if (data?.related?.length > 0) {
+        setClient2(relToClient(data.related[0]))
+        setShowClient2(true)
+      }
+    }
+    setErrors(e => ({ ...e, client1: undefined }))
+  }
+
+  const handleSelectClient2 = async (person) => {
+    if (person._via) {
+      setClient2(relToClient(person))
+    } else {
+      const data = await fetchFubPerson(person.id)
+      setClient2(data?.client1 ? personToClient(data.client1) : personToClient(person))
+    }
   }
 
   const validate = () => {
     const e = {}
-    if (!client1.first_name.trim() && !client1.last_name.trim()) e.c1_first_name = 'Enter at least a first or last name'
+    if (!client1.first_name && !client1.last_name) {
+      e.client1 = 'Select a contact from Follow Up Boss'
+    }
     return e
   }
 
@@ -111,16 +272,15 @@ export default function IntakeModal({ onSave, onClose }) {
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
 
-    const clientName = [client1.first_name, client1.last_name].filter(Boolean).join(' ')
-
     const tx = {
       status:            form.status,
       assigned_tc:       form.assigned_tc,
-      client_name:       clientName,
+      client_name:       [client1.first_name, client1.last_name].filter(Boolean).join(' '),
       client_first_name: client1.first_name,
       client_last_name:  client1.last_name,
       client_phone:      client1.phone,
       client_email:      client1.email,
+      fub_contact_id:    client1.fub_id,
       rep_type:          type === 'seller' ? 'Seller' : 'Buyer',
       property_address:  form.property_address,
       city:              form.city,
@@ -140,11 +300,12 @@ export default function IntakeModal({ onSave, onClose }) {
       tx.target_live_date        = form.target_live_date
     }
 
-    if (showSecond && (client2.first_name || client2.last_name)) {
+    if (showClient2 && (client2.first_name || client2.last_name)) {
       tx.client2_first_name = client2.first_name
       tx.client2_last_name  = client2.last_name
       tx.client2_phone      = client2.phone
       tx.client2_email      = client2.email
+      tx.fub_contact_id_2   = client2.fub_id
     }
 
     onSave(tx)
@@ -209,14 +370,13 @@ export default function IntakeModal({ onSave, onClose }) {
             </div>
           </div>
 
-          {/* Seller-specific: price + dates */}
+          {/* Seller-specific */}
           {type === 'seller' && (
             <>
               <div className="intake-group half">
                 <label>List Price</label>
                 <input type="text" placeholder="e.g. 309900" value={form.price} onChange={e => setField('price', e.target.value)} />
               </div>
-
               <div className="intake-row">
                 <div className="intake-group">
                   <label>Listing Contract</label>
@@ -227,7 +387,6 @@ export default function IntakeModal({ onSave, onClose }) {
                   <input type="date" value={form.listing_expiration_date} onChange={e => setField('listing_expiration_date', e.target.value)} />
                 </div>
               </div>
-
               <div className="intake-group half">
                 <label>Target Live</label>
                 <input type="date" value={form.target_live_date} onChange={e => setField('target_live_date', e.target.value)} />
@@ -235,7 +394,7 @@ export default function IntakeModal({ onSave, onClose }) {
             </>
           )}
 
-          {/* Property Details — checkboxes */}
+          {/* Property Details */}
           <div className="intake-section-label">Property Details</div>
           <div className="intake-checkboxes">
             <label className="intake-check-label">
@@ -266,17 +425,26 @@ export default function IntakeModal({ onSave, onClose }) {
             )}
           </div>
 
-          {/* Client Details */}
+          {/* Clients — FUB only */}
           <div className="intake-section-label">Client Details</div>
 
-          <ClientBlock prefix="c1" label="Primary Client" data={client1} onChange={setClient1Field} errors={errors} />
+          <ClientSlot
+            label="Client 1"
+            client={client1}
+            onSelect={handleSelectClient1}
+            onClear={() => { setClient1({ ...EMPTY_CLIENT }) }}
+            error={errors.client1}
+          />
 
-          {showSecond && (
-            <ClientBlock prefix="c2" label="Second Client" data={client2} onChange={(key, val) => setClient2(c => ({ ...c, [key]: val }))} />
-          )}
-
-          {!showSecond && (
-            <button type="button" className="add-client-btn" onClick={() => setShowSecond(true)}>
+          {showClient2 ? (
+            <ClientSlot
+              label="Client 2"
+              client={client2}
+              onSelect={handleSelectClient2}
+              onClear={() => setClient2({ ...EMPTY_CLIENT })}
+            />
+          ) : (
+            <button type="button" className="add-client-btn" onClick={() => setShowClient2(true)}>
               + Add Second Client
             </button>
           )}

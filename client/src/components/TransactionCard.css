@@ -2,7 +2,7 @@
   background: #ffffff;
   border-radius: 8px;
   padding: 10px 11px;
-  box-shadow: 0 1px 3px rgba(42,53,32,0.08), 0 0 0 1px rgba(122,122,80,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px #e0e0e0;
   cursor: grab;
   transition: box-shadow 0.15s, transform 0.15s;
   display: flex;
@@ -11,22 +11,22 @@
 }
 
 .transaction-card:hover {
-  box-shadow: 0 3px 12px rgba(42,53,32,0.12), 0 0 0 1px rgba(122,122,80,0.15);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.12), 0 0 0 1px #cccccc;
 }
 
 .transaction-card.is-overlay {
-  box-shadow: 0 8px 28px rgba(42,53,32,0.2);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.2);
   cursor: grabbing;
   transform: rotate(2deg);
 }
 
-/* Wide (Pending) — slightly more room */
+/* Wide (Pending) */
 .transaction-card.card--wide {
   padding: 11px 12px;
   gap: 6px;
 }
 
-/* Narrow (Closed) — compact */
+/* Narrow (Closed) */
 .transaction-card.card--narrow {
   padding: 9px 10px;
   gap: 5px;
@@ -35,14 +35,14 @@
 .card-address {
   font-size: 14px;
   font-weight: 600;
-  color: #2C3B2D;
+  color: #1a1a1a;
   line-height: 1.4;
 }
 
 .card-price {
   font-size: 13px;
   font-weight: 600;
-  color: #B5501A;
+  color: #1a1a1a;
 }
 
 .card-row {
@@ -50,7 +50,7 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #6B6B45;
+  color: #666666;
 }
 
 .card-icon {
@@ -60,7 +60,7 @@
 
 .card-client {
   font-size: 13px;
-  color: #6B6B45;
+  color: #666666;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -75,13 +75,13 @@
 }
 
 .card-field-label {
-  color: #6B6B45;
+  color: #666666;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .card-field-value {
-  color: #2C3B2D;
+  color: #1a1a1a;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -107,12 +107,12 @@
   margin-left: auto;
 }
 
-.card-rep-badge.buyer  { color: #2C3B2D; }
-.card-rep-badge.seller { color: #9B7D52; }
+.card-rep-badge.buyer  { color: #1a1a1a; }
+.card-rep-badge.seller { color: #666666; }
 
-/* Urgency — Autumn palette */
-.urgent-text  { color: #B5501A; }
-.overdue-text { color: #B5501A; }
+/* Urgency */
+.urgent-text  { color: #1a1a1a; font-weight: 600; }
+.overdue-text { color: #1a1a1a; font-weight: 600; }
 
 .badge {
   font-size: 10px;
@@ -121,15 +121,15 @@
   border-radius: 99px;
 }
 
-.urgent-badge  { background: rgba(181,80,26,0.1); color: #B5501A; }
-.overdue-badge { background: rgba(181,80,26,0.15); color: #B5501A; }
+.urgent-badge  { background: #f0f0f0; color: #1a1a1a; }
+.overdue-badge { background: #e8e8e8; color: #1a1a1a; }
 
-/* TC avatar — Coffee */
+/* TC avatar */
 .tc-avatar {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #9B7D52;
+  background: #666666;
   color: #ffffff;
   font-size: 10px;
   font-weight: 700;
@@ -159,5 +159,5 @@
 }
 
 .card-btn:hover {
-  background: rgba(122,122,80,0.12);
+  background: rgba(0,0,0,0.07);
 }

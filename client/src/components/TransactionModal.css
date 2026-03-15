@@ -10,11 +10,11 @@
 }
 
 .modal {
-  background: #f8fafb;
+  background: #ffffff;
   border-radius: 16px;
   width: 100%;
   max-width: 520px;
-  box-shadow: 0 20px 60px rgba(42,61,77,0.18);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
   overflow: hidden;
 }
 
@@ -23,28 +23,28 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid rgba(0,0,0,0.08);
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .modal-header h2 {
   font-size: 18px;
   font-weight: 700;
-  color: #1c2b38;
+  color: #1a1a1a;
 }
 
 .modal-close {
   background: none;
   border: none;
   font-size: 16px;
-  color: #7a9aaa;
+  color: #666666;
   padding: 4px 8px;
   border-radius: 6px;
   transition: background 0.1s;
 }
 
 .modal-close:hover {
-  background: rgba(74,124,142,0.1);
-  color: #3a5060;
+  background: #f5f5f5;
+  color: #1a1a1a;
 }
 
 .modal-form {
@@ -69,15 +69,15 @@
 .form-group label {
   font-size: 13px;
   font-weight: 600;
-  color: #3a5060;
+  color: #333333;
 }
 
 .form-group textarea {
-  border: 1.5px solid rgba(0,0,0,0.12);
+  border: 1.5px solid #e0e0e0;
   border-radius: 8px;
   padding: 9px 12px;
   font-size: 14px;
-  color: #2d2620;
+  color: #1a1a1a;
   outline: none;
   transition: border-color 0.15s;
   background: #ffffff;
@@ -87,16 +87,16 @@
 }
 
 .form-group textarea:focus {
-  border-color: #4a7c8e;
+  border-color: #000000;
 }
 
 .form-group input,
 .form-group select {
-  border: 1.5px solid rgba(0,0,0,0.12);
+  border: 1.5px solid #e0e0e0;
   border-radius: 8px;
   padding: 9px 12px;
   font-size: 14px;
-  color: #2d2620;
+  color: #1a1a1a;
   outline: none;
   transition: border-color 0.15s;
   background: #ffffff;
@@ -104,24 +104,24 @@
 
 .form-group input:focus,
 .form-group select:focus {
-  border-color: #4a7c8e;
+  border-color: #000000;
 }
 
 .form-group input.error,
 .form-group select.error {
-  border-color: #c0622a;
+  border-color: #1a1a1a;
 }
 
 .error-msg {
   font-size: 12px;
-  color: #c0622a;
+  color: #1a1a1a;
 }
 
 .form-section-divider {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #7a9aaa;
+  color: #999999;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -133,7 +133,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: rgba(0,0,0,0.1);
+  background: #e0e0e0;
 }
 
 .modal-actions {
@@ -144,8 +144,8 @@
 }
 
 .btn-cancel {
-  background: rgba(74,124,142,0.08);
-  color: #3a5060;
+  background: #f5f5f5;
+  color: #1a1a1a;
   border: none;
   padding: 9px 18px;
   border-radius: 8px;
@@ -155,11 +155,11 @@
 }
 
 .btn-cancel:hover {
-  background: rgba(74,124,142,0.14);
+  background: #ebebeb;
 }
 
 .btn-save {
-  background: #4a7c8e;
+  background: #000000;
   color: #ffffff;
   border: none;
   padding: 9px 20px;
@@ -170,5 +170,5 @@
 }
 
 .btn-save:hover {
-  background: #3a6474;
+  background: #333333;
 }

@@ -28,12 +28,12 @@ function sanitizeForDB(obj) {
 }
 
 const COLUMNS = [
-  { id: 'pre-listing',       label: 'Pre-Listing',          color: '#6B6B45', bgColor: '#D8D0BC', priceLabel: 'List Price',     viewMode: 'list'   },
-  { id: 'buyer-broker',      label: 'Buyer-Broker',         color: '#9B7D52', bgColor: '#D4CCBA', priceLabel: 'Purchase Price', viewMode: 'list'   },
-  { id: 'active-listing',    label: 'Active Listing',       color: '#9B7D52', bgColor: '#D8CEB8', priceLabel: 'List Price',     viewMode: 'medium' },
-  { id: 'pending',           label: 'Pending',              color: '#B5501A', bgColor: '#D4C8B0', priceLabel: 'Purchase Price', viewMode: 'wide'   },
-  { id: 'closed',            label: 'Closed',               color: '#6B6B45', bgColor: '#D6CEB8', priceLabel: 'Purchase Price', viewMode: 'narrow' },
-  { id: 'cancelled-expired', label: 'Cancelled / Expired',  color: '#C4B99A', bgColor: '#D0C8B4', priceLabel: null,             viewMode: 'medium' },
+  { id: 'pre-listing',       label: 'Pre-Listing',          color: '#888888', bgColor: '#e8e8e8', priceLabel: 'List Price',     viewMode: 'list'   },
+  { id: 'buyer-broker',      label: 'Buyer-Broker',         color: '#666666', bgColor: '#e8e8e8', priceLabel: 'Purchase Price', viewMode: 'list'   },
+  { id: 'active-listing',    label: 'Active Listing',       color: '#555555', bgColor: '#e8e8e8', priceLabel: 'List Price',     viewMode: 'medium' },
+  { id: 'pending',           label: 'Pending',              color: '#333333', bgColor: '#e8e8e8', priceLabel: 'Purchase Price', viewMode: 'wide'   },
+  { id: 'closed',            label: 'Closed',               color: '#444444', bgColor: '#e8e8e8', priceLabel: 'Purchase Price', viewMode: 'narrow' },
+  { id: 'cancelled-expired', label: 'Cancelled / Expired',  color: '#aaaaaa', bgColor: '#e8e8e8', priceLabel: null,             viewMode: 'medium' },
 ]
 
 export default function App() {
@@ -123,7 +123,11 @@ export default function App() {
   // ── New transaction ─────────────────────────────────────────────────────────
   const handleIntakeSave = async (data) => {
     try {
-      const insertPayload = { ...sanitizeForDB(data), price: parsePrice(data.price) }
+      const sanitized = sanitizeForDB(data)
+      // Only include FUB IDs when set — column may not exist in DB yet
+      if (!sanitized.fub_contact_id)   delete sanitized.fub_contact_id
+      if (!sanitized.fub_contact_id_2) delete sanitized.fub_contact_id_2
+      const insertPayload = { ...sanitized, price: parsePrice(data.price) }
       console.log('[intake] inserting payload:', insertPayload)
 
       const { data: newTx, error: txErr } = await supabase

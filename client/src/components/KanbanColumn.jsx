@@ -20,7 +20,7 @@ export default function KanbanColumn({ column, transactions, onEdit, onDelete, o
       className={`kanban-column kanban-column--${column.viewMode} ${isOver ? 'is-over' : ''}`}
       style={{ background: column.bgColor }}
     >
-      <div className="column-header" style={{ borderTopColor: column.color, background: column.bgColor }}>
+      <div className="column-header" style={{ borderTopColor: column.color }}>
         <div className="column-title-row">
           <span className="column-dot" style={{ background: column.color }} />
           <h3 className="column-title">{column.label}</h3>

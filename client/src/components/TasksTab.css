@@ -16,7 +16,7 @@
 .gtd-filter-group {
   display: flex;
   gap: 2px;
-  background: rgba(45,74,45,0.08);
+  background: #e0e0e0;
   padding: 3px;
   border-radius: 8px;
 }
@@ -28,30 +28,30 @@
   border-radius: 5px;
   font-size: 13px;
   font-weight: 500;
-  color: #6B6B45;
+  color: #666666;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.12s;
   white-space: nowrap;
 }
-.gtd-filter-btn:hover:not(.active) { color: #6B6B45; }
+.gtd-filter-btn:hover:not(.active) { color: #1a1a1a; }
 .gtd-filter-btn.active {
-  background: #B5501A;
+  background: #000000;
   color: #fff;
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(181,80,26,0.25);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .gtd-filter-sep {
   width: 1px;
-  background: rgba(122,122,80,0.18);
+  background: #cccccc;
   align-self: stretch;
   margin: 2px 0;
 }
 
 .gtd-summary {
   font-size: 12px;
-  color: #6B6B45;
+  color: #666666;
   margin-left: auto;
 }
 
@@ -60,7 +60,7 @@
   overflow: auto;
   border-radius: 12px;
   background: #fff;
-  box-shadow: 0 1px 4px rgba(42,53,32,0.08), 0 0 0 1px rgba(122,122,80,0.1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px #e0e0e0;
 }
 
 .gtd-table {
@@ -70,7 +70,7 @@
 }
 
 .gtd-table thead tr {
-  background: #EDE6D4;
+  background: #f5f5f5;
   position: sticky;
   top: 0;
   z-index: 1;
@@ -83,8 +83,8 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #6B6B45;
-  border-bottom: 1px solid rgba(122,122,80,0.15);
+  color: #666666;
+  border-bottom: 1px solid #e0e0e0;
   white-space: nowrap;
 }
 
@@ -92,12 +92,12 @@
   cursor: pointer;
   transition: background 0.1s;
 }
-.gtd-row:hover td { background: rgba(212,196,168,0.2); }
+.gtd-row:hover td { background: #f5f5f5; }
 
 .gtd-row td {
   padding: 9px 12px;
-  border-bottom: 1px solid rgba(122,122,80,0.08);
-  color: #2C3B2D;
+  border-bottom: 1px solid #f0f0f0;
+  color: #1a1a1a;
   white-space: nowrap;
 }
 
@@ -105,7 +105,7 @@
 
 .gtd-empty {
   text-align: center;
-  color: #6B6B45;
+  color: #666666;
   padding: 32px !important;
   font-size: 13px;
 }
@@ -114,7 +114,7 @@
   width: 16px;
   height: 16px;
   border-radius: 4px;
-  border: 1.5px solid #C4B99A;
+  border: 1.5px solid #cccccc;
   background: #fff;
   cursor: pointer;
   font-size: 10px;
@@ -125,8 +125,8 @@
   font-weight: 700;
   transition: border-color 0.1s, background 0.1s;
 }
-.gtd-check:hover { border-color: #B5501A; }
-.gtd-checked     { background: #B5501A; border-color: #B5501A; }
+.gtd-check:hover { border-color: #000000; }
+.gtd-checked     { background: #000000; border-color: #000000; }
 
 .gtd-task-title {
   max-width: 320px;
@@ -134,21 +134,21 @@
   text-overflow: ellipsis;
   font-weight: 500;
 }
-.gtd-done-text { text-decoration: line-through; color: #C4B99A; }
+.gtd-done-text { text-decoration: line-through; color: #999999; }
 
 .gtd-addr {
-  color: #6B6B45;
+  color: #666666;
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.gtd-assignee { color: #6B6B45; }
+.gtd-assignee { color: #666666; }
 
-.gtd-due      { color: #6B6B45; }
-.gtd-overdue  { color: #B5501A; font-weight: 600; }
-.gtd-today    { color: #B5501A; font-weight: 600; }
-.gtd-soon     { color: #9A5A28; }
+.gtd-due      { color: #666666; }
+.gtd-overdue  { color: #1a1a1a; font-weight: 600; }
+.gtd-today    { color: #1a1a1a; font-weight: 600; }
+.gtd-soon     { color: #333333; }
 
 .gtd-status-badge {
   font-size: 11px;
@@ -156,5 +156,5 @@
   padding: 2px 8px;
   border-radius: 99px;
 }
-.gtd-status-open { background: rgba(181,80,26,0.1);  color: #B5501A; }
-.gtd-status-done { background: rgba(155,125,82,0.15); color: #9B7D52; }
+.gtd-status-open { background: #e8e8e8; color: #1a1a1a; }
+.gtd-status-done { background: #f0f0f0; color: #666666; }

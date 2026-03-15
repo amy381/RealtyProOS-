@@ -63,14 +63,14 @@
   border: none;
   font-size: 11px;
   font-weight: 500;
-  color: #9B7D52;
+  color: #666666;
   cursor: pointer;
   padding: 3px 2px;
   letter-spacing: 0.02em;
   transition: color 0.12s;
   font-family: inherit;
 }
-.cancelled-section-toggle:hover { color: #B5501A; }
+.cancelled-section-toggle:hover { color: #1a1a1a; }
 
 .cancelled-section-rows {
   display: flex;
@@ -84,33 +84,33 @@
   align-items: center;
   gap: 8px;
   font-size: 11px;
-  color: #6B6B45;
+  color: #666666;
   cursor: pointer;
   padding: 3px 8px;
   border-radius: 4px;
-  border: 1px solid rgba(154,146,104,0.25);
-  background: rgba(212,196,168,0.25);
+  border: 1px solid #e0e0e0;
+  background: #f5f5f5;
   transition: background 0.1s;
 }
 .cancelled-section-row:hover {
-  background: rgba(212,196,168,0.5);
-  color: #6B6B45;
+  background: #ebebeb;
+  color: #1a1a1a;
 }
 
-.csr-addr   { font-weight: 500; color: #6B6B45; }
-.csr-client { color: #6B6B45; }
-.csr-rep    { font-size: 10px; color: #C4B99A; }
+.csr-addr   { font-weight: 500; color: #1a1a1a; }
+.csr-client { color: #666666; }
+.csr-rep    { font-size: 10px; color: #999999; }
 
 .cancelled-section-empty {
   font-size: 11px;
-  color: #C4B99A;
+  color: #999999;
   font-style: italic;
 }
 
 /* ── Drag overlay pill ────────────────────────────────── */
 .list-drag-pill {
-  background: #2C3B2D;
-  color: #D4C5A9;
+  background: #1a1a1a;
+  color: #ffffff;
   font-size: 13px;
   font-weight: 500;
   padding: 6px 14px;

@@ -5,7 +5,7 @@
   gap: 5px;
   min-height: 32px;
   cursor: pointer;
-  border-bottom: 1px solid rgba(122,122,80,0.1);
+  border-bottom: 1px solid #e0e0e0;
   background: #fff;
   transition: background 0.1s;
   user-select: none;
@@ -16,26 +16,26 @@
 }
 
 .list-row:hover {
-  background: rgba(212,196,168,0.25);
+  background: #f5f5f5;
 }
 
 .list-row-addr {
   flex: 1;
   font-size: 12px;
   font-weight: 500;
-  color: #2C3B2D;
+  color: #1a1a1a;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
 }
 
-/* TC avatar — Coffee */
+/* TC avatar */
 .list-row-tc {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #9B7D52;
+  background: #666666;
   color: #fff;
   font-size: 8px;
   font-weight: 700;
@@ -47,7 +47,7 @@
 
 .list-row-date {
   font-size: 11px;
-  color: #6B6B45;
+  color: #666666;
   white-space: nowrap;
   width: 36px;
   text-align: right;

@@ -10,11 +10,11 @@
 }
 
 .settings-modal {
-  background: #f8fafb;
+  background: #ffffff;
   border-radius: 16px;
   width: 100%;
   max-width: 480px;
-  box-shadow: 0 20px 60px rgba(42,61,77,0.18);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
   display: flex;
   flex-direction: column;
 }
@@ -24,28 +24,28 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px 16px;
-  border-bottom: 1px solid rgba(74,124,142,0.12);
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .settings-header h2 {
   font-size: 18px;
   font-weight: 700;
-  color: #1c2b38;
+  color: #1a1a1a;
 }
 
 .settings-close {
   background: none;
   border: none;
   font-size: 18px;
-  color: #7a9aaa;
+  color: #666666;
   cursor: pointer;
   padding: 2px 8px;
   border-radius: 6px;
 }
 
 .settings-close:hover {
-  background: rgba(74,124,142,0.1);
-  color: #3a5060;
+  background: #f5f5f5;
+  color: #1a1a1a;
 }
 
 .settings-body {
@@ -60,14 +60,14 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #7a9aaa;
+  color: #666666;
   padding-bottom: 4px;
-  border-bottom: 1px solid rgba(74,124,142,0.15);
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .settings-hint {
   font-size: 13px;
-  color: #5a7080;
+  color: #666666;
   line-height: 1.5;
 }
 
@@ -86,50 +86,50 @@
 .settings-tc-name {
   font-size: 13px;
   font-weight: 600;
-  color: #3a5060;
+  color: #1a1a1a;
   min-width: 130px;
 }
 
 .settings-email-input {
   flex: 1;
-  border: 1.5px solid rgba(74,124,142,0.2);
+  border: 1.5px solid #e0e0e0;
   border-radius: 7px;
   padding: 7px 10px;
   font-size: 13px;
   font-family: inherit;
-  color: #1c2b38;
+  color: #1a1a1a;
   background: #fff;
   outline: none;
 }
 
 .settings-email-input:focus {
-  border-color: #4a7c8e;
-  box-shadow: 0 0 0 2px rgba(74,124,142,0.12);
+  border-color: #000000;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
 }
 
 .settings-email-note {
   font-size: 12px;
-  color: #7a9aaa;
-  background: rgba(74,124,142,0.05);
-  border: 1px solid rgba(74,124,142,0.12);
+  color: #666666;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
   padding: 12px 14px;
   line-height: 1.6;
 }
 
 .settings-email-note a {
-  color: #4a7c8e;
+  color: #1a1a1a;
 }
 
 .settings-env-block {
   display: block;
   font-family: monospace;
   font-size: 11px;
-  background: rgba(42,61,77,0.06);
+  background: #f0f0f0;
   border-radius: 5px;
   padding: 6px 8px;
   margin: 6px 0;
-  color: #3a5060;
+  color: #1a1a1a;
 }
 
 .settings-actions {
@@ -137,12 +137,12 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 16px 24px;
-  border-top: 1px solid rgba(74,124,142,0.1);
+  border-top: 1px solid #e0e0e0;
 }
 
 .settings-cancel {
-  background: rgba(74,124,142,0.08);
-  color: #3a5060;
+  background: #f5f5f5;
+  color: #1a1a1a;
   border: none;
   padding: 8px 16px;
   border-radius: 8px;
@@ -153,11 +153,11 @@
 }
 
 .settings-cancel:hover {
-  background: rgba(74,124,142,0.14);
+  background: #ebebeb;
 }
 
 .settings-save {
-  background: #4a7c8e;
+  background: #000000;
   color: #fff;
   border: none;
   padding: 8px 20px;
@@ -169,5 +169,5 @@
 }
 
 .settings-save:hover {
-  background: #3a6474;
+  background: #333333;
 }

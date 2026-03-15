@@ -26,12 +26,14 @@ create table public.transactions (
   client_last_name  text,
   client_phone      text,
   client_email      text,
+  fub_contact_id    integer,   -- Follow Up Boss person ID
 
   -- Secondary client contact
-  client2_first_name text,
-  client2_last_name  text,
-  client2_phone      text,
-  client2_email      text,
+  client2_first_name  text,
+  client2_last_name   text,
+  client2_phone       text,
+  client2_email       text,
+  fub_contact_id_2    integer,  -- Follow Up Boss person ID (second client)
 
   -- Date fields
   bba_contract             date,

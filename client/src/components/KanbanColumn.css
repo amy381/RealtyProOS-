@@ -11,28 +11,28 @@
 /* List columns: width controlled by .stacked-list-panel */
 .kanban-column--list { min-width: 0; }
 
-/* Active Listing and Pending: equal, generous (25% narrower than before: 1.4 → 1.05) */
+/* Active Listing and Pending */
 .kanban-column--medium { flex: 1.05; min-width: 220px; }
 .kanban-column--wide   { flex: 1.05; min-width: 220px; }
 
-/* Closed: 30% wider than the old narrow (0.8 → 1.04) */
+/* Closed */
 .kanban-column--narrow { flex: 1.04; min-width: 200px; }
 
 .kanban-column.is-over {
-  border-color: #B5501A;
+  border-color: #000000;
   filter: brightness(0.97);
 }
 
-/* ── Header — dark Moss ────────────────────────────────── */
+/* ── Header — dark charcoal ────────────────────────────── */
 .column-header {
   padding: 10px 12px 9px;
   border-top: 3px solid #ccc; /* overridden inline per column */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(0,0,0,0.18);
+  border-bottom: 1px solid rgba(0,0,0,0.15);
   flex-shrink: 0;
-  background: #2C3B2D;
+  background: #333333;
 }
 
 .kanban-column--list .column-header {
@@ -52,7 +52,6 @@
   flex-shrink: 0;
 }
 
-/* 30% larger: 12px → 16px */
 .column-title {
   font-size: 16px;
   font-weight: 800;
@@ -66,8 +65,8 @@
 }
 
 .column-count {
-  background: rgba(255,255,255,0.14);
-  color: #D4C5A9;
+  background: rgba(255,255,255,0.15);
+  color: #ffffff;
   font-size: 11px;
   font-weight: 600;
   padding: 1px 7px;
@@ -89,10 +88,10 @@
 
 .column-empty {
   text-align: center;
-  color: #9B7D52;
+  color: #999999;
   font-size: 12px;
   padding: 20px 0;
-  border: 1.5px dashed rgba(122,122,80,0.2);
+  border: 1.5px dashed #e0e0e0;
   border-radius: 7px;
 }
 
@@ -110,8 +109,8 @@
   align-items: center;
   padding: 4px 10px;
   gap: 5px;
-  background: rgba(44,59,45,0.07);
-  border-bottom: 1px solid rgba(155,125,82,0.18);
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
   flex-shrink: 0;
 }
 
@@ -119,7 +118,7 @@
   flex: 1;
   font-size: 10px;
   font-weight: 700;
-  color: #6B6B45;
+  color: #666666;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -128,7 +127,7 @@
   width: 20px;
   font-size: 10px;
   font-weight: 700;
-  color: #6B6B45;
+  color: #666666;
   text-transform: uppercase;
   text-align: center;
 }
@@ -138,7 +137,7 @@
   width: 36px;
   font-size: 10px;
   font-weight: 700;
-  color: #6B6B45;
+  color: #666666;
   text-transform: uppercase;
   text-align: right;
 }

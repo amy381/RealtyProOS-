@@ -18,6 +18,15 @@ function parsePrice(val) {
   return isNaN(n) || n === 0 ? null : n
 }
 
+// Convert empty strings to null so PostgreSQL date/numeric columns don't reject the insert
+function sanitizeForDB(obj) {
+  const out = {}
+  for (const [k, v] of Object.entries(obj)) {
+    out[k] = v === '' ? null : v
+  }
+  return out
+}
+
 const COLUMNS = [
   { id: 'buyer-broker',      label: 'Buyer-Broker',        color: '#9ab8d0', bgColor: '#e8eef5', priceLabel: 'Purchase Price' },
   { id: 'pre-listing',       label: 'Pre-Listing',          color: '#8eb8a0', bgColor: '#e6eeea', priceLabel: 'List Price' },
@@ -116,7 +125,7 @@ export default function App() {
     try {
       const { data: newTx, error: txErr } = await supabase
         .from('transactions')
-        .insert({ ...data, price: parsePrice(data.price) })
+        .insert({ ...sanitizeForDB(data), price: parsePrice(data.price) })
         .select().single()
       if (txErr) throw txErr
 
@@ -157,7 +166,7 @@ export default function App() {
 
     try {
       const { data: updated, error } = await supabase
-        .from('transactions').update(updateData).eq('id', editingTransaction.id).select().single()
+        .from('transactions').update(sanitizeForDB(updateData)).eq('id', editingTransaction.id).select().single()
       if (error) throw error
 
       setTransactions(prev => prev.map(t => t.id === editingTransaction.id ? updated : t))

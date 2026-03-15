@@ -123,17 +123,33 @@ export default function App() {
   // ── New transaction ─────────────────────────────────────────────────────────
   const handleIntakeSave = async (data) => {
     try {
+      const insertPayload = { ...sanitizeForDB(data), price: parsePrice(data.price) }
+      console.log('[intake] inserting payload:', insertPayload)
+
       const { data: newTx, error: txErr } = await supabase
         .from('transactions')
-        .insert({ ...sanitizeForDB(data), price: parsePrice(data.price) })
+        .insert(insertPayload)
         .select().single()
-      if (txErr) throw txErr
+      if (txErr) {
+        console.error('[intake] transaction insert failed:', {
+          message: txErr.message, code: txErr.code,
+          details: txErr.details, hint: txErr.hint,
+        })
+        throw txErr
+      }
+      console.log('[intake] transaction inserted:', newTx.id)
 
       const { data: newCm, error: cmErr } = await supabase
         .from('commissions')
         .insert({ transaction_id: newTx.id, commission_status: 'Pending' })
         .select().single()
-      if (cmErr) throw cmErr
+      if (cmErr) {
+        console.error('[intake] commission insert failed:', {
+          message: cmErr.message, code: cmErr.code,
+          details: cmErr.details, hint: cmErr.hint,
+        })
+        throw cmErr
+      }
 
       setTransactions(prev => [newTx, ...prev])
       setCommissions(prev => {
@@ -142,14 +158,13 @@ export default function App() {
         return next
       })
 
-      // Auto-populate template tasks for initial status
       await insertTemplateTasks(newTx.id, newTx.status, newTx.rep_type, newTx)
 
       setIntakeOpen(false)
       toast.success('Transaction created!')
     } catch (err) {
       toast.error('Failed to create transaction')
-      console.error(err)
+      console.error('[intake] final error:', err)
     }
   }
 

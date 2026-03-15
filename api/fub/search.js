@@ -40,7 +40,7 @@ function normalizeRelationship(r, primaryPerson) {
   }
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   const q = (req.query.q || '').trim()
@@ -64,7 +64,6 @@ export default async function handler(req, res) {
 
     for (const p of (data.people || [])) {
       people.push(normalizePerson(p))
-
       for (const r of (p.relationships || [])) {
         const relName = (r.name || [r.firstName, r.lastName].filter(Boolean).join(' ')).toLowerCase()
         if (relName.includes(qLower)) {

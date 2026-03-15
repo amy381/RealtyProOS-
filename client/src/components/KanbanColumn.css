@@ -1,0 +1,75 @@
+.kanban-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 280px;
+  max-width: 280px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, filter 0.15s;
+  overflow: hidden;
+}
+
+.kanban-column.is-over {
+  border-color: #4a7c8e;
+  filter: brightness(0.97);
+}
+
+.column-header {
+  padding: 14px 16px 12px;
+  border-top: 4px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.column-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.column-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.column-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #2a3d4d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.column-count {
+  background: rgba(0,0,0,0.1);
+  color: #5a7080;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 99px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.column-cards {
+  flex: 1;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  min-height: 80px;
+}
+
+.column-empty {
+  text-align: center;
+  color: #8ca4b4;
+  font-size: 13px;
+  padding: 24px 0;
+  border: 2px dashed rgba(74,124,142,0.2);
+  border-radius: 8px;
+}

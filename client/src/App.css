@@ -1,0 +1,142 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 15px;
+  color: #9ca3af;
+  background: #f0f3f6;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 64px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1c2b38;
+}
+
+.logo-icon {
+  font-size: 22px;
+}
+
+.logo-os {
+  color: #4a7c8e;
+}
+
+.header-subtitle {
+  font-size: 13px;
+  color: #9ca3af;
+  border-left: 1px solid #e5e7eb;
+  padding-left: 16px;
+}
+
+.app-main {
+  flex: 1;
+  padding: 24px;
+  overflow: hidden;
+  background: #f0f3f6;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.board-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.btn-new-transaction {
+  background: #4a7c8e;
+  color: #ffffff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(74,124,142,0.25);
+}
+
+.btn-new-transaction:hover {
+  background: #3a6474;
+}
+
+.btn-primary {
+  background: #4a7c8e;
+  color: #ffffff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover {
+  background: #3a6474;
+}
+
+.app-tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(0,0,0,0.05);
+  padding: 4px;
+  border-radius: 8px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6a8494;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tab-btn.active {
+  background: #ffffff;
+  color: #1c2b38;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.tab-btn:hover:not(.active) {
+  color: #3a6474;
+}

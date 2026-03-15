@@ -1,0 +1,224 @@
+.commissions-tab {
+  height: calc(100vh - 64px - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cap-tracker {
+  display: flex;
+  gap: 16px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 4px rgba(42,61,77,0.08), 0 0 0 1px rgba(74,124,142,0.08);
+}
+
+.cap-tracker-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cap-tracker-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3a5060;
+}
+
+.cap-tracker-amounts {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1c2b38;
+}
+
+.cap-tracker-limit {
+  font-weight: 400;
+  color: #7a9aaa;
+}
+
+.cap-tracker-bar {
+  height: 6px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.cap-tracker-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.cap-fill     { background: #4a7c8e; }
+.royalty-fill { background: #7aac80; }
+
+.commissions-filter-bar {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  background: rgba(74,124,142,0.08);
+  padding: 4px;
+  border-radius: 8px;
+  align-self: flex-start;
+}
+
+.commissions-filter-btn {
+  background: none;
+  border: none;
+  padding: 5px 14px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #5a7080;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.commissions-filter-btn:hover:not(.active) { color: #3a5060; }
+
+.commissions-filter-btn.active {
+  background: #ffffff;
+  color: #1c2b38;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(42,61,77,0.1);
+}
+
+.commissions-scroll {
+  flex: 1;
+  overflow: auto;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(42,61,77,0.08), 0 0 0 1px rgba(74,124,142,0.08);
+}
+
+.commissions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.commissions-table thead tr {
+  background: #eef4f7;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.commissions-table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #5a7080;
+  border-bottom: 1px solid rgba(74,124,142,0.12);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.commissions-table th:hover { color: #2a3d4d; }
+.commissions-table th.sorted { color: #2a3d4d; }
+
+.commissions-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(74,124,142,0.07);
+  color: #1c2b38;
+  white-space: nowrap;
+}
+
+.commissions-table td.addr-cell {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.commissions-table td.computed { color: #3a6474; font-weight: 600; }
+
+.commissions-table input {
+  width: 70px;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: inherit;
+  background: white;
+  color: #2d2620;
+  outline: none;
+}
+
+.commissions-table input:focus { border-color: #4a7c8e; }
+
+.commissions-table select {
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: inherit;
+  background: white;
+  color: #2d2620;
+  outline: none;
+  cursor: pointer;
+}
+
+.commissions-table select:focus { border-color: #4a7c8e; }
+
+.row-pending td { background: #ffffff; }
+.row-closed td  { background: #f2f7f4; }
+
+.commissions-table tbody tr:hover td { filter: brightness(0.97); }
+
+.totals-row td {
+  background: #eef4f7;
+  border-top: 2px solid rgba(74,124,142,0.15);
+  font-weight: 600;
+  color: #1c2b38;
+  position: sticky;
+  bottom: 0;
+}
+
+.col-tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.col-tooltip-icon {
+  font-size: 11px;
+  color: #7a9aaa;
+  cursor: default;
+}
+
+.col-tooltip-box {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2d2620;
+  color: #faf8f6;
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+  padding: 6px 10px;
+  border-radius: 6px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.col-tooltip-wrap:hover .col-tooltip-box {
+  display: block;
+}

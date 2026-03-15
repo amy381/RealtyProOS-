@@ -1,0 +1,251 @@
+.intake-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.intake-modal {
+  background: #f8fafb;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(42,61,77,0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+.intake-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(74,124,142,0.12);
+  position: sticky;
+  top: 0;
+  background: #f8fafb;
+  z-index: 1;
+  border-radius: 16px 16px 0 0;
+}
+
+.intake-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1c2b38;
+}
+
+.intake-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #7a9aaa;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.intake-close:hover {
+  background: rgba(74,124,142,0.1);
+  color: #3a5060;
+}
+
+/* Toggle */
+.intake-toggle-wrap {
+  padding: 16px 24px 0;
+}
+
+.intake-toggle {
+  display: flex;
+  background: rgba(74,124,142,0.08);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.toggle-opt {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #5a7080;
+  background: none;
+  font-family: inherit;
+}
+
+.toggle-opt.active {
+  background: #ffffff;
+  color: #1c2b38;
+  box-shadow: 0 1px 4px rgba(42,61,77,0.12);
+}
+
+.toggle-opt:hover:not(.active) {
+  color: #3a5060;
+}
+
+/* Form */
+.intake-form {
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.intake-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7a9aaa;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(74,124,142,0.15);
+  margin-top: 4px;
+}
+
+.intake-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.intake-group.half {
+  max-width: 260px;
+}
+
+.intake-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a5060;
+}
+
+.intake-group input,
+.intake-group select {
+  border: 1.5px solid rgba(0,0,0,0.12);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 14px;
+  color: #2d2620;
+  background: white;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+  width: 100%;
+}
+
+.intake-group input:focus,
+.intake-group select:focus {
+  border-color: #4a7c8e;
+}
+
+.intake-group input.error {
+  border-color: #c0622a;
+}
+
+.intake-error {
+  font-size: 12px;
+  color: #c0622a;
+}
+
+.intake-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.intake-divider {
+  height: 1px;
+  background: rgba(0,0,0,0.08);
+  margin: 4px 0;
+}
+
+/* Client block */
+.client-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(74,124,142,0.04);
+  border: 1px solid rgba(74,124,142,0.12);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.client-block-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4a7c8e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Add client button */
+.add-client-btn {
+  background: none;
+  border: 1.5px dashed rgba(74,124,142,0.25);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a7c8e;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  text-align: center;
+}
+
+.add-client-btn:hover {
+  background: rgba(74,124,142,0.06);
+  border-color: #4a7c8e;
+}
+
+/* Actions */
+.intake-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+.intake-cancel {
+  background: rgba(74,124,142,0.08);
+  color: #3a5060;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.intake-cancel:hover {
+  background: rgba(74,124,142,0.14);
+}
+
+.intake-submit {
+  background: #4a7c8e;
+  color: #ffffff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.intake-submit:hover {
+  background: #3a6474;
+}

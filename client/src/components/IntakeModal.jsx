@@ -15,17 +15,31 @@ const EMPTY_CLIENT = { first_name: '', last_name: '', phone: '', email: '', fub_
 
 // ── FUB search ─────────────────────────────────────────────
 async function fetchFubContacts(query) {
-  const resp = await fetch(`/api/fub/search?q=${encodeURIComponent(query)}`)
-  if (!resp.ok) return []
-  const data = await resp.json()
-  return data.people || []
+  try {
+    const resp = await fetch(`/api/fub/search?q=${encodeURIComponent(query)}`)
+    const text = await resp.text()
+    console.log('[FUB search] status:', resp.status, 'body:', text)
+    if (!resp.ok) return []
+    const data = JSON.parse(text)
+    return data.people || []
+  } catch (err) {
+    console.error('[FUB search] fetch error:', err)
+    return []
+  }
 }
 
 // Returns { client1, related } or null
 async function fetchFubPerson(personId) {
-  const resp = await fetch(`/api/fub/person/${personId}`)
-  if (!resp.ok) return null
-  return await resp.json()
+  try {
+    const resp = await fetch(`/api/fub/person/${personId}`)
+    const text = await resp.text()
+    console.log('[FUB person] status:', resp.status, 'body:', text)
+    if (!resp.ok) return null
+    return JSON.parse(text)
+  } catch (err) {
+    console.error('[FUB person] fetch error:', err)
+    return null
+  }
 }
 
 const DROPDOWN_STYLE = {

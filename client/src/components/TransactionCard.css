@@ -91,7 +91,7 @@
 .card-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-top: 2px;
 }
 
@@ -124,19 +124,6 @@
 .urgent-badge  { background: #f0f0f0; color: #1a1a1a; }
 .overdue-badge { background: #e8e8e8; color: #1a1a1a; }
 
-/* TC avatar */
-.tc-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #666666;
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 .card-actions {
   display: flex;

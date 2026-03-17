@@ -81,10 +81,6 @@ export default function TransactionCard({ transaction, onEdit, onDelete, isDragg
   const isActiveListing = transaction.status === 'active-listing'
   const showRepBadge = REP_BADGE_STATUSES.has(transaction.status) && transaction.rep_type
 
-  const initials = transaction.assigned_tc
-    ? transaction.assigned_tc.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
-    : '?'
-
   return (
     <div
       ref={setNodeRef}
@@ -156,7 +152,6 @@ export default function TransactionCard({ transaction, onEdit, onDelete, isDragg
       })}
 
       <div className="card-footer">
-        <div className="tc-avatar" title={transaction.assigned_tc}>{initials}</div>
         <div className="card-footer-right">
           {showRepBadge && (
             <span className={`card-rep-badge ${transaction.rep_type === 'Buyer' ? 'buyer' : 'seller'}`}>{transaction.rep_type}</span>

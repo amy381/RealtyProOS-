@@ -165,6 +165,12 @@
   text-align: center;
 }
 
+.intake-state-readonly {
+  background: #f5f5f5 !important;
+  color: #999999 !important;
+  cursor: default !important;
+}
+
 .intake-divider {
   height: 1px;
   background: #e0e0e0;

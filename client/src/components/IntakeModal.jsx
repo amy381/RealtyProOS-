@@ -197,7 +197,7 @@ export default function IntakeModal({ onSave, onClose }) {
     status:                   'pre-listing',
     property_address:         '',
     city:                     '',
-    state:                    '',
+    state:                    'AZ',
     zip:                      '',
     price:                    '',
     listing_contract:         '',
@@ -376,13 +376,37 @@ export default function IntakeModal({ onSave, onClose }) {
             </div>
             <div className="intake-group intake-group-state">
               <label>State</label>
-              <input type="text" placeholder="AZ" value={form.state} onChange={e => setField('state', e.target.value)} />
+              <input type="text" value={form.state} readOnly className="intake-state-readonly" />
             </div>
             <div className="intake-group intake-group-zip">
               <label>ZIP</label>
               <input type="text" placeholder="86401" value={form.zip} onChange={e => setField('zip', e.target.value)} />
             </div>
           </div>
+
+          {/* Clients — FUB only */}
+          <div className="intake-section-label">Client Details</div>
+
+          <ClientSlot
+            label="Client 1"
+            client={client1}
+            onSelect={handleSelectClient1}
+            onClear={() => { setClient1({ ...EMPTY_CLIENT }) }}
+            error={errors.client1}
+          />
+
+          {showClient2 ? (
+            <ClientSlot
+              label="Client 2"
+              client={client2}
+              onSelect={handleSelectClient2}
+              onClear={() => setClient2({ ...EMPTY_CLIENT })}
+            />
+          ) : (
+            <button type="button" className="add-client-btn" onClick={() => setShowClient2(true)}>
+              + Add Second Client
+            </button>
+          )}
 
           {/* Seller-specific */}
           {type === 'seller' && (
@@ -425,42 +449,20 @@ export default function IntakeModal({ onSave, onClose }) {
             </label>
           </div>
 
-          {/* Contingency */}
-          <div className="intake-contingency-wrap">
-            <label className="intake-check-label">
-              <input type="checkbox" checked={form.has_contingency} onChange={e => setField('has_contingency', e.target.checked)} />
-              Contingency
-            </label>
-            {form.has_contingency && (
-              <div className="intake-group intake-contingency-date">
-                <label>Contingency Fulfilled Date</label>
-                <input type="date" value={form.contingency_fulfilled_date} onChange={e => setField('contingency_fulfilled_date', e.target.value)} />
-              </div>
-            )}
-          </div>
-
-          {/* Clients — FUB only */}
-          <div className="intake-section-label">Client Details</div>
-
-          <ClientSlot
-            label="Client 1"
-            client={client1}
-            onSelect={handleSelectClient1}
-            onClear={() => { setClient1({ ...EMPTY_CLIENT }) }}
-            error={errors.client1}
-          />
-
-          {showClient2 ? (
-            <ClientSlot
-              label="Client 2"
-              client={client2}
-              onSelect={handleSelectClient2}
-              onClear={() => setClient2({ ...EMPTY_CLIENT })}
-            />
-          ) : (
-            <button type="button" className="add-client-btn" onClick={() => setShowClient2(true)}>
-              + Add Second Client
-            </button>
+          {/* Contingency — Buyer only */}
+          {type === 'buyer' && (
+            <div className="intake-contingency-wrap">
+              <label className="intake-check-label">
+                <input type="checkbox" checked={form.has_contingency} onChange={e => setField('has_contingency', e.target.checked)} />
+                Contingency
+              </label>
+              {form.has_contingency && (
+                <div className="intake-group intake-contingency-date">
+                  <label>Contingency Fulfilled Date</label>
+                  <input type="date" value={form.contingency_fulfilled_date} onChange={e => setField('contingency_fulfilled_date', e.target.value)} />
+                </div>
+              )}
+            </div>
           )}
 
           {/* TC */}

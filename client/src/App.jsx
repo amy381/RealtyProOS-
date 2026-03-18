@@ -5,10 +5,10 @@ import { buildTemplateTasks, getTemplateKey } from './lib/taskTemplates'
 import { sendMentionNotifications, parseMentions } from './lib/emailNotify'
 import KanbanBoard from './components/KanbanBoard'
 import TransactionModal from './components/TransactionModal'
-import TransactionPanel from './components/TransactionPanel'
+import TransactionDetailPage from './components/TransactionDetailPage'
 import CommissionsTab from './components/CommissionsTab'
 import TasksTab from './components/TasksTab'
-import IntakeModal from './components/IntakeModal'
+import NewTransactionPopup from './components/NewTransactionPopup'
 import SettingsModal from './components/SettingsModal'
 import './App.css'
 
@@ -42,7 +42,7 @@ export default function App() {
   const [tasks, setTasks]                       = useState([])
   const [tcSettings, setTcSettings]             = useState([])
   const [loading, setLoading]                   = useState(true)
-  const [intakeOpen, setIntakeOpen]             = useState(false)
+  const [newTxOpen, setNewTxOpen]               = useState(false)
   const [modalOpen, setModalOpen]               = useState(false)
   const [settingsOpen, setSettingsOpen]         = useState(false)
   const [editingTransaction, setEditingTransaction] = useState(null)
@@ -121,73 +121,36 @@ export default function App() {
   }, [])
 
   // ── New transaction ─────────────────────────────────────────────────────────
-  const handleIntakeSave = async (data) => {
+  const handleCreateTransaction = async (repType, status) => {
     try {
-      const sanitized = sanitizeForDB(data)
-      // Only include FUB IDs when set — column may not exist in DB yet
-      if (!sanitized.fub_contact_id)   delete sanitized.fub_contact_id
-      if (!sanitized.fub_contact_id_2) delete sanitized.fub_contact_id_2
-      const insertPayload = { ...sanitized, price: parsePrice(data.price) }
-      console.log('[intake] inserting payload:', insertPayload)
-
       const { data: newTx, error: txErr } = await supabase
         .from('transactions')
-        .insert(insertPayload)
+        .insert({ rep_type: repType, status })
         .select().single()
-      if (txErr) {
-        console.error('[intake] transaction insert failed:', {
-          message: txErr.message, code: txErr.code,
-          details: txErr.details, hint: txErr.hint,
-        })
-        throw txErr
-      }
-      console.log('[intake] transaction inserted:', newTx.id)
+      if (txErr) throw txErr
 
       const { data: newCm, error: cmErr } = await supabase
         .from('commissions')
         .insert({ transaction_id: newTx.id, commission_status: 'Pending' })
         .select().single()
-      if (cmErr) {
-        console.error('[intake] commission insert failed:', {
-          message: cmErr.message, code: cmErr.code,
-          details: cmErr.details, hint: cmErr.hint,
-        })
-        throw cmErr
-      }
+      if (cmErr) console.warn('[create] commission insert failed:', cmErr.message)
 
       setTransactions(prev => [newTx, ...prev])
-      setCommissions(prev => {
-        const next = { ...prev, [newTx.id]: newCm }
-        commissionsRef.current = next
-        return next
-      })
+      if (newCm) {
+        setCommissions(prev => {
+          const next = { ...prev, [newTx.id]: newCm }
+          commissionsRef.current = next
+          return next
+        })
+      }
 
       await insertTemplateTasks(newTx.id, newTx.status, newTx.rep_type, newTx)
 
-      // Property detail tasks from intake checkboxes
-      const propertyTasks = []
-      if (data.has_septic) propertyTasks.push('Order Septic Inspection')
-      if (data.has_solar)  propertyTasks.push('Order Solar Documents')
-      if (data.has_well && newTx.rep_type === 'Buyer') propertyTasks.push('Order Well Inspection')
-      if (propertyTasks.length > 0) {
-        const toInsert = propertyTasks.map((title, i) => ({
-          transaction_id:    newTx.id,
-          title,
-          status:            'open',
-          assigned_to:       'Me',
-          notes:             '',
-          sort_order:        i,
-          notified_mentions: [],
-        }))
-        const { data: ptInserted, error: ptErr } = await supabase.from('tasks').insert(toInsert).select()
-        if (!ptErr && ptInserted) setTasks(prev => [...prev, ...ptInserted])
-      }
-
-      setIntakeOpen(false)
-      toast.success('Transaction created!')
+      setNewTxOpen(false)
+      setSelectedTransaction(newTx)
     } catch (err) {
       toast.error('Failed to create transaction')
-      console.error('[intake] final error:', err)
+      console.error('[create]', err)
     }
   }
 
@@ -218,13 +181,16 @@ export default function App() {
     setEditingTransaction(null)
   }
 
-  // ── Status change (drag-drop) + template auto-populate ──────────────────────
+  // ── Status change (drag-drop or detail page Stage dropdown) ────────────────
   const handleStatusChange = async (transactionId, newStatus) => {
     const transaction = transactions.find(t => t.id === transactionId)
 
     setTransactions(prev =>
       prev.map(t => t.id === transactionId ? { ...t, status: newStatus } : t)
     )
+    if (selectedTransaction?.id === transactionId) {
+      setSelectedTransaction(prev => ({ ...prev, status: newStatus }))
+    }
 
     const { error } = await supabase
       .from('transactions').update({ status: newStatus }).eq('id', transactionId)
@@ -279,7 +245,12 @@ export default function App() {
 
     const { error } = await supabase
       .from('transactions').update({ [field]: dbValue }).eq('id', txId)
-    if (error) { toast.error('Failed to save field'); console.error(error) }
+    if (error) {
+      console.error('[handleFieldSave]', field, error)
+      toast.error(`Failed to save "${field}": ${error.message}`)
+    } else {
+      toast.success('Saved', { duration: 900 })
+    }
   }
 
   // ── Delete transaction ──────────────────────────────────────────────────────
@@ -420,11 +391,15 @@ export default function App() {
           <span className="header-subtitle">Transaction Management</span>
         </div>
         <div className="app-tabs">
-          {['board', 'commissions', 'tasks'].map(tab => (
-            <button key={tab}
-              className={`tab-btn${activeTab === tab ? ' active' : ''}`}
-              onClick={() => setActiveTab(tab)}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          {[
+            { id: 'board',       label: 'The Board'   },
+            { id: 'commissions', label: 'Commissions' },
+            { id: 'tasks',       label: 'Tasks'       },
+          ].map(tab => (
+            <button key={tab.id}
+              className={`tab-btn${activeTab === tab.id ? ' active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}>
+              {tab.label}
             </button>
           ))}
         </div>
@@ -434,7 +409,7 @@ export default function App() {
       <main className="app-main">
         {activeTab === 'board' && (
           <div className="board-toolbar">
-            <button className="btn-new-transaction" onClick={() => setIntakeOpen(true)}>
+            <button className="btn-new-transaction" onClick={() => setNewTxOpen(true)}>
               + New Transaction
             </button>
           </div>
@@ -472,24 +447,28 @@ export default function App() {
       </main>
 
       {selectedTransaction && (
-        <TransactionPanel
+        <TransactionDetailPage
           transaction={selectedTransaction}
           columns={COLUMNS}
           commissions={commissions}
           tasks={panelTasks}
           tcSettings={tcSettings}
-          onClose={() => setSelectedTransaction(null)}
+          onBack={() => setSelectedTransaction(null)}
           onFieldSave={handleFieldSave}
           onCommissionChange={handleCommissionChange}
           onDelete={handleDelete}
           onAddTask={handleAddTask}
           onUpdateTask={handleUpdateTask}
           onDeleteTask={handleDeleteTask}
+          onStatusChange={handleStatusChange}
         />
       )}
 
-      {intakeOpen && (
-        <IntakeModal onSave={handleIntakeSave} onClose={() => setIntakeOpen(false)} />
+      {newTxOpen && (
+        <NewTransactionPopup
+          onCreate={handleCreateTransaction}
+          onClose={() => setNewTxOpen(false)}
+        />
       )}
 
       {modalOpen && (

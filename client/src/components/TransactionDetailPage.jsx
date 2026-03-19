@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { syncDriveFolder, uploadToDrive, getDriveUrl, CONTRACT_DOCS } from '../lib/googleDrive'
 import { TC_OPTIONS } from '../lib/columnFields'
 import { toast } from 'react-hot-toast'
 import './TransactionDetailPage.css'
 
 // ─── Sidebar nav (Tasks and Notes removed — now inline on Details view) ─────
 const SECTIONS = [
-  { id: 'details',    label: 'Transaction Details' },
-  { id: 'docs-req',   label: 'Documents Required' },
-  { id: 'commission', label: 'Commission' },
-  { id: 'history',    label: 'History' },
+  { id: 'details',      label: 'Transaction Details' },
+  { id: 'docs-req',     label: 'Documents Required' },
+  { id: 'commission',   label: 'Commission' },
+  { id: 'google-drive', label: 'Google Drive' },
+  { id: 'history',      label: 'History' },
 ]
 
 const COLUMN_OPTIONS = [
@@ -1273,10 +1275,24 @@ function CommissionSection({ transaction, commissions, onCommissionChange }) {
   )
 }
 
-// ─── Documents Required (with inline upload) ──────────────────────────────────
+// ─── Documents Required (with Google Drive upload) ────────────────────────────
 function DocsRequiredSection({ transaction }) {
-  const [uploads, setUploads] = useState({})
+  const [uploads,   setUploads]   = useState({})
+  const [uploading, setUploading] = useState({})
+  // Local copy of folder IDs so on-the-fly creation updates the upload target immediately
+  const [folderIds, setFolderIds] = useState({
+    drive_folder_id:         transaction.drive_folder_id         || null,
+    drive_under_contract_id: transaction.drive_under_contract_id || null,
+  })
   const fileRefs = useRef({})
+
+  // Keep folderIds in sync when the parent transaction prop updates (e.g. after status change)
+  useEffect(() => {
+    setFolderIds({
+      drive_folder_id:         transaction.drive_folder_id         || null,
+      drive_under_contract_id: transaction.drive_under_contract_id || null,
+    })
+  }, [transaction.drive_folder_id, transaction.drive_under_contract_id])
 
   const sellerDocs = [
     'Listing Agreement', 'Seller Disclosure Statement', 'Property Condition Report',
@@ -1289,14 +1305,60 @@ function DocsRequiredSection({ transaction }) {
     'Contingency Removal', 'Home Inspection Report', 'Appraisal Report',
     'Loan Commitment Letter', 'Final Walkthrough Verification', 'Closing Disclosure',
   ]
-
   const docs = transaction.rep_type === 'Buyer' ? buyerDocs : sellerDocs
 
-  const handleFileSelect = (docName, e) => {
+  const handleFileSelect = async (docName, e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setUploads(prev => ({ ...prev, [docName]: { filename: file.name } }))
     e.target.value = ''
+
+    setUploading(prev => ({ ...prev, [docName]: true }))
+    try {
+      let ids = folderIds
+
+      // If no Drive folder exists yet, try to create one on the fly
+      if (!ids.drive_folder_id) {
+        const addr = transaction.property_address || ''
+        const last = transaction.client_last_name  || ''
+        if (addr || last) {
+          const created = await syncDriveFolder({
+            transactionId:        transaction.id,
+            newStatus:            transaction.status,
+            driveFolderId:        null,
+            driveUnderContractId: null,
+            repType:              transaction.rep_type,
+            propertyAddress:      addr,
+            clientLastName:       last,
+          })
+          ids = { drive_folder_id: created.drive_folder_id, drive_under_contract_id: created.drive_under_contract_id }
+          setFolderIds(ids)
+        }
+      }
+
+      // Route: contract docs go to Under Contract folder (if it exists), others to main folder
+      const isContractDoc = CONTRACT_DOCS.has(docName)
+      const targetFolderId = isContractDoc && ids.drive_under_contract_id
+        ? ids.drive_under_contract_id
+        : ids.drive_folder_id
+
+      if (targetFolderId) {
+        const driveFile = await uploadToDrive(file, targetFolderId)
+        const dest = isContractDoc && ids.drive_under_contract_id ? 'Under Contract' : 'Drive'
+        setUploads(prev => ({
+          ...prev,
+          [docName]: { filename: file.name, driveId: driveFile.id, driveLink: driveFile.webViewLink },
+        }))
+        toast.success(`${docName} uploaded to ${dest}`)
+      } else {
+        // Drive not connected or no folder — store locally only
+        setUploads(prev => ({ ...prev, [docName]: { filename: file.name } }))
+        toast.success('Saved locally (connect Drive to sync)')
+      }
+    } catch (err) {
+      toast.error(`Upload failed: ${err.message}`)
+    } finally {
+      setUploading(prev => ({ ...prev, [docName]: false }))
+    }
   }
 
   return (
@@ -1305,17 +1367,23 @@ function DocsRequiredSection({ transaction }) {
       <table className="txp-docs-table">
         <tbody>
           {docs.map((doc) => {
-            const uploaded = uploads[doc]
+            const uploaded  = uploads[doc]
+            const isBusy    = uploading[doc]
             return (
               <tr key={doc} className="txp-doc-row">
                 <td className="txp-doc-td-check">
                   <span className="txp-doc-check">{uploaded ? '✓' : '☐'}</span>
                 </td>
-                <td className="txp-doc-td-name">{doc}</td>
+                <td className="txp-doc-td-name">
+                  {uploaded?.driveLink
+                    ? <a href={uploaded.driveLink} target="_blank" rel="noopener noreferrer"
+                         style={{ color: 'inherit', textDecoration: 'underline' }}>{doc}</a>
+                    : doc}
+                </td>
                 <td className="txp-doc-td-status">
                   {uploaded ? (
                     <span className="txp-doc-badge txp-doc-badge--uploaded" title={uploaded.filename}>
-                      Uploaded
+                      {uploaded.driveId ? 'In Drive' : 'Uploaded'}
                     </span>
                   ) : (
                     <span className="txp-doc-badge txp-doc-badge--pending">Pending</span>
@@ -1332,8 +1400,9 @@ function DocsRequiredSection({ transaction }) {
                   <button
                     className={`txp-doc-upload-btn${uploaded ? ' txp-doc-upload-btn--done' : ''}`}
                     onClick={() => fileRefs.current[doc]?.click()}
+                    disabled={isBusy}
                   >
-                    {uploaded ? 'Replace' : 'Upload'}
+                    {isBusy ? 'Uploading…' : uploaded ? 'Replace' : 'Upload'}
                   </button>
                 </td>
               </tr>
@@ -1341,6 +1410,106 @@ function DocsRequiredSection({ transaction }) {
           })}
         </tbody>
       </table>
+    </div>
+  )
+}
+
+// ─── Google Drive Section ─────────────────────────────────────────────────────
+function GoogleDriveSection({ transaction, onFoldersCreated }) {
+  const [connected, setConnected] = useState(null)  // null = loading
+  const [creating,  setCreating]  = useState(false)
+
+  useEffect(() => {
+    fetch('/api/google/status').then(r => r.json())
+      .then(d => setConnected(d.connected === true))
+      .catch(() => setConnected(false))
+  }, [])
+
+  const hasFolders       = !!transaction.drive_folder_id
+  const hasUnderContract = !!transaction.drive_under_contract_id
+
+  const handleCreateFolder = async () => {
+    const addr = transaction.property_address || ''
+    const last = transaction.client_last_name  || ''
+    if (!addr && !last) {
+      toast.error('Add a property address or client name before creating the Drive folder.')
+      return
+    }
+    setCreating(true)
+    try {
+      const result = await syncDriveFolder({
+        transactionId:        transaction.id,
+        newStatus:            transaction.status,
+        driveFolderId:        null,
+        driveUnderContractId: null,
+        repType:              transaction.rep_type,
+        propertyAddress:      addr,
+        clientLastName:       last,
+      })
+      onFoldersCreated(transaction.id, result)
+      toast.success('Drive folder created!')
+    } catch (err) {
+      toast.error('Could not create folder: ' + err.message)
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  if (connected === null) {
+    return (
+      <div className="txp-section">
+        <div className="txp-section-title">Google Drive</div>
+        <p className="txp-drive-status">Checking connection…</p>
+      </div>
+    )
+  }
+
+  if (!connected) {
+    return (
+      <div className="txp-section">
+        <div className="txp-section-title">Google Drive</div>
+        <p className="txp-drive-status">Not connected. Sign in once to sync folders and documents.</p>
+        <a href="/api/google/auth" className="txp-drive-connect-btn">Connect Google Drive</a>
+      </div>
+    )
+  }
+
+  return (
+    <div className="txp-section">
+      <div className="txp-section-title">Google Drive</div>
+      {hasFolders ? (
+        <div className="txp-drive-links">
+          <a
+            href={getDriveUrl(transaction.drive_folder_id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="txp-drive-folder-btn"
+          >
+            Open Folder in Drive
+          </a>
+          {hasUnderContract && (
+            <a
+              href={getDriveUrl(transaction.drive_under_contract_id)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="txp-drive-folder-btn txp-drive-folder-btn--secondary"
+            >
+              Open Under Contract Folder
+            </a>
+          )}
+        </div>
+      ) : (
+        <div className="txp-drive-links">
+          <p className="txp-drive-status">No Drive folder yet for this transaction.</p>
+          <button
+            className="txp-drive-connect-btn"
+            onClick={handleCreateFolder}
+            disabled={creating}
+          >
+            {creating ? 'Creating…' : 'Create Drive Folder'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -1427,6 +1596,7 @@ export default function TransactionDetailPage({
   onUpdateTask,
   onDeleteTask,
   onStatusChange,
+  onTransactionUpdate,
 }) {
   const [activeSection, setActiveSection]   = useState('details')
   const [sessionHistory, setSessionHistory] = useState([])
@@ -1590,6 +1760,13 @@ export default function TransactionDetailPage({
               transaction={transaction}
               commissions={commissions}
               onCommissionChange={onCommissionChange}
+            />
+          )}
+
+          {activeSection === 'google-drive' && (
+            <GoogleDriveSection
+              transaction={transaction}
+              onFoldersCreated={onTransactionUpdate}
             />
           )}
 

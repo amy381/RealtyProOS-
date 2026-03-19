@@ -32,8 +32,12 @@ export default function KanbanBoard({ columns, transactions, onEdit, onStatusCha
 
   const handleDragEnd = ({ active, over }) => {
     setActiveId(null)
+    console.log('[Drag] handleDragEnd fired — active.id:', active.id, '| over:', over ? over.id : 'null (dropped outside)')
     if (!over) return
-    if (over.id) onStatusChange(active.id, over.id)
+    if (over.id) {
+      console.log('[Drag] Calling onStatusChange with transactionId:', active.id, '→ newStatus:', over.id)
+      onStatusChange(active.id, over.id)
+    }
   }
 
   return (

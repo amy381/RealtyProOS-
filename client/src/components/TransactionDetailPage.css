@@ -1043,3 +1043,40 @@ select.txp-input { cursor: pointer; }
   padding: 18px 18px;
   font-style: italic;
 }
+
+/* ─── Google Drive Section ─────────────────────────────────────────────────────── */
+.txp-drive-status {
+  font-size: 13px;
+  color: #888888;
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+.txp-drive-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.txp-drive-connect-btn,
+.txp-drive-folder-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s, border-color 0.12s;
+  border: 1.5px solid #1a1a1a;
+  background: #1a1a1a;
+  color: #ffffff;
+}
+.txp-drive-connect-btn:hover,
+.txp-drive-folder-btn:hover   { background: #333333; }
+.txp-drive-folder-btn--secondary {
+  background: #ffffff;
+  color: #1a1a1a;
+}
+.txp-drive-folder-btn--secondary:hover { background: #f5f5f5; }

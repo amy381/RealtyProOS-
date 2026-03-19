@@ -2,9 +2,14 @@
   "buildCommand": "cd client && npm install && npm run build",
   "outputDirectory": "client/dist",
   "routes": [
-    { "src": "/api/fub/person/([^/]+)", "dest": "/api/fub/person/[id]?id=$1" },
-    { "src": "/api/(.*)",               "dest": "/api/$1" },
+    { "src": "/api/fub/person/([^/]+)",  "dest": "/api/fub/person/[id]?id=$1" },
+    { "src": "/api/google/auth",         "dest": "/api/google/auth" },
+    { "src": "/api/google/callback",     "dest": "/api/google/callback" },
+    { "src": "/api/google/status",       "dest": "/api/google/status" },
+    { "src": "/api/google/token",        "dest": "/api/google/token" },
+    { "src": "/api/google/move-folder",  "dest": "/api/google/move-folder" },
+    { "src": "/api/(.*)",                "dest": "/api/$1" },
     { "handle": "filesystem" },
-    { "src": "/(.*)",                   "dest": "/index.html" }
+    { "src": "/(.*)",                    "dest": "/index.html" }
   ]
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
 import { supabase } from './lib/supabase'
+import { syncDriveFolder } from './lib/googleDrive'
 import { buildTemplateTasks, getTemplateKey } from './lib/taskTemplates'
 import { sendMentionNotifications, parseMentions } from './lib/emailNotify'
 import KanbanBoard from './components/KanbanBoard'
@@ -51,6 +52,21 @@ export default function App() {
 
   const commissionsRef = useRef({})
   const saveTimers     = useRef({})
+
+  // Show a toast when returning from Google OAuth
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('drive_connected') === '1') {
+      toast.success('Google Drive connected!')
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
+
+  // Apply a partial update to a transaction in local state (used by Drive callbacks)
+  const handleTransactionUpdate = useCallback((transactionId, updates) => {
+    setTransactions(prev => prev.map(t => t.id === transactionId ? { ...t, ...updates } : t))
+    setSelectedTransaction(prev => prev?.id === transactionId ? { ...prev, ...updates } : prev)
+  }, [])
 
   // ── Load all data ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -183,7 +199,11 @@ export default function App() {
 
   // ── Status change (drag-drop or detail page Stage dropdown) ────────────────
   const handleStatusChange = async (transactionId, newStatus) => {
+    console.log('[StatusChange] handleStatusChange called — transactionId:', transactionId, '| newStatus:', newStatus)
     const transaction = transactions.find(t => t.id === transactionId)
+    console.log('[StatusChange] Transaction lookup:', transaction
+      ? `FOUND — drive_folder_id=${transaction.drive_folder_id || 'none'}, address=${transaction.property_address || 'none'}`
+      : 'NOT FOUND in local state')
 
     setTransactions(prev =>
       prev.map(t => t.id === transactionId ? { ...t, status: newStatus } : t)
@@ -206,6 +226,33 @@ export default function App() {
     if (transaction) {
       const updatedTx = { ...transaction, status: newStatus }
       await insertTemplateTasks(transactionId, newStatus, transaction.rep_type, updatedTx)
+    }
+
+    // Move the Drive folder to match the new status (fire-and-forget, never blocks the UI)
+    if (transaction) {
+      const hasAddress    = transaction.property_address && transaction.property_address.trim() !== ''
+      const hasFolderInfo = transaction.drive_folder_id || transaction.client_last_name
+      if (!hasAddress && !hasFolderInfo) {
+        console.log('[Drive] Skipping status-change sync — transaction has no address, name, or existing folder yet')
+      } else {
+        console.log('[Drive] Status change → syncing folder for tx', transactionId,
+          '| newStatus:', newStatus,
+          '| drive_folder_id:', transaction.drive_folder_id || '(none — will create)',
+          '| address:', transaction.property_address,
+          '| lastName:', transaction.client_last_name)
+        syncDriveFolder({
+          transactionId,
+          newStatus,
+          driveFolderId:        transaction.drive_folder_id         || null,
+          driveUnderContractId: transaction.drive_under_contract_id || null,
+          repType:              transaction.rep_type,
+          propertyAddress:      transaction.property_address,
+          clientLastName:       transaction.client_last_name,
+        }).then(result => {
+          console.log('[Drive] Status-change sync result:', result)
+          if (result?.drive_folder_id) handleTransactionUpdate(transactionId, result)
+        }).catch(err => console.error('[Drive] Status-change sync failed:', err.message))
+      }
     }
   }
 
@@ -248,8 +295,38 @@ export default function App() {
     if (error) {
       console.error('[handleFieldSave]', field, error)
       toast.error(`Failed to save "${field}": ${error.message}`)
-    } else {
-      toast.success('Saved', { duration: 900 })
+      return
+    }
+    toast.success('Saved', { duration: 900 })
+
+    // When address or client name is first entered, create the Drive folder
+    const DRIVE_FIELDS = ['property_address', 'client_last_name']
+    if (DRIVE_FIELDS.includes(field)) {
+      if (updated.drive_folder_id) {
+        console.log('[Drive] Skipping folder creation — folder already exists:', updated.drive_folder_id)
+      } else {
+        const hasName = updated.property_address || updated.client_last_name
+        if (!hasName) {
+          console.log('[Drive] Skipping folder creation — no address or client name yet')
+        } else {
+          console.log('[Drive] Triggering folder creation for tx', txId, '— status:', updated.status, 'address:', updated.property_address, 'lastName:', updated.client_last_name)
+          syncDriveFolder({
+            transactionId:        txId,
+            newStatus:            updated.status,
+            driveFolderId:        null,
+            driveUnderContractId: null,
+            repType:              updated.rep_type,
+            propertyAddress:      updated.property_address,
+            clientLastName:       updated.client_last_name,
+          }).then(result => {
+            console.log('[Drive] Folder creation result:', result)
+            if (result?.drive_folder_id) {
+              handleTransactionUpdate(txId, result)
+              toast.success('Drive folder created', { duration: 2000 })
+            }
+          }).catch(err => console.error('[Drive] Folder creation failed:', err.message))
+        }
+      }
     }
   }
 
@@ -386,7 +463,7 @@ export default function App() {
         <div className="header-left">
           <div className="logo">
             <span className="logo-icon">🏠</span>
-            <span className="logo-text">RealtyPro <span className="logo-os">OS</span></span>
+            <span className="logo-text">Legacy<span className="logo-os">OS</span></span>
           </div>
           <span className="header-subtitle">Transaction Management</span>
         </div>
@@ -461,6 +538,7 @@ export default function App() {
           onUpdateTask={handleUpdateTask}
           onDeleteTask={handleDeleteTask}
           onStatusChange={handleStatusChange}
+          onTransactionUpdate={handleTransactionUpdate}
         />
       )}
 

@@ -216,8 +216,10 @@ function FubInlineSearch({ onSelect, onClose }) {
   }
 
   const handleSelect = async (person) => {
+    console.log('[FUB] handleSelect — person from search:', person)
     if (person.id) {
       const full = await fetchFubPerson(person.id)
+      console.log('[FUB] fetchFubPerson response:', full)
       if (full) { onSelect(full); return }
     }
     onSelect({ client1: person, related: [] })
@@ -1051,8 +1053,11 @@ function DetailsSection({ transaction, columns, tasks, onFieldSave, onStatusChan
               last={transaction.client_last_name   || ''}
               tabIndex={9}
               onFubSelect={(result) => {
+                console.log('[FUB] onFubSelect called — full result:', result)
                 const p = result?.client1
-                if (!p) return
+                console.log('[FUB] client1 extracted:', p)
+                if (!p) { console.warn('[FUB] No client1 in result — aborting'); return }
+                console.log('[FUB] Saving fields — first_name:', p.first_name, '| last_name:', p.last_name, '| phone:', p.phone, '| email:', p.email)
                 save('client_first_name')(p.first_name || '')
                 save('client_last_name')(p.last_name   || '')
                 save('client_phone')(p.phone            || '')

@@ -285,10 +285,18 @@ export default function App() {
     if (!selectedTransaction) return
     const txId    = selectedTransaction.id
     const dbValue = field === 'price' ? parsePrice(value) : value
+    // Keep a snapshot for Drive sync reads below (status, rep_type, address, etc.)
     const updated = { ...selectedTransaction, [field]: dbValue }
 
-    setTransactions(prev => prev.map(t => t.id === txId ? updated : t))
-    setSelectedTransaction(updated)
+    // Functional updaters so concurrent saves (e.g. FUB multi-field select) stack correctly
+    // instead of each one overwriting from the same stale snapshot.
+    console.log('[handleFieldSave] setting state — field:', field, '| value:', dbValue, '| txId:', txId)
+    setTransactions(prev => prev.map(t => t.id === txId ? { ...t, [field]: dbValue } : t))
+    setSelectedTransaction(prev => {
+      const next = { ...prev, [field]: dbValue }
+      console.log('[handleFieldSave] setSelectedTransaction — prev client_first_name:', prev.client_first_name, '| next client_first_name:', next.client_first_name)
+      return next
+    })
 
     const { error } = await supabase
       .from('transactions').update({ [field]: dbValue }).eq('id', txId)

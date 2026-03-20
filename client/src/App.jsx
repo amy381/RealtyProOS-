@@ -199,11 +199,7 @@ export default function App() {
 
   // ── Status change (drag-drop or detail page Stage dropdown) ────────────────
   const handleStatusChange = async (transactionId, newStatus) => {
-    console.log('[StatusChange] handleStatusChange called — transactionId:', transactionId, '| newStatus:', newStatus)
     const transaction = transactions.find(t => t.id === transactionId)
-    console.log('[StatusChange] Transaction lookup:', transaction
-      ? `FOUND — drive_folder_id=${transaction.drive_folder_id || 'none'}, address=${transaction.property_address || 'none'}`
-      : 'NOT FOUND in local state')
 
     setTransactions(prev =>
       prev.map(t => t.id === transactionId ? { ...t, status: newStatus } : t)
@@ -233,13 +229,8 @@ export default function App() {
       const hasAddress    = transaction.property_address && transaction.property_address.trim() !== ''
       const hasFolderInfo = transaction.drive_folder_id || transaction.client_last_name
       if (!hasAddress && !hasFolderInfo) {
-        console.log('[Drive] Skipping status-change sync — transaction has no address, name, or existing folder yet')
+        // nothing to name the folder — skip
       } else {
-        console.log('[Drive] Status change → syncing folder for tx', transactionId,
-          '| newStatus:', newStatus,
-          '| drive_folder_id:', transaction.drive_folder_id || '(none — will create)',
-          '| address:', transaction.property_address,
-          '| lastName:', transaction.client_last_name)
         syncDriveFolder({
           transactionId,
           newStatus,
@@ -249,7 +240,6 @@ export default function App() {
           propertyAddress:      transaction.property_address,
           clientLastName:       transaction.client_last_name,
         }).then(result => {
-          console.log('[Drive] Status-change sync result:', result)
           if (result?.drive_folder_id) handleTransactionUpdate(transactionId, result)
         }).catch(err => console.error('[Drive] Status-change sync failed:', err.message))
       }
@@ -290,13 +280,8 @@ export default function App() {
 
     // Functional updaters so concurrent saves (e.g. FUB multi-field select) stack correctly
     // instead of each one overwriting from the same stale snapshot.
-    console.log('[handleFieldSave] setting state — field:', field, '| value:', dbValue, '| txId:', txId)
     setTransactions(prev => prev.map(t => t.id === txId ? { ...t, [field]: dbValue } : t))
-    setSelectedTransaction(prev => {
-      const next = { ...prev, [field]: dbValue }
-      console.log('[handleFieldSave] setSelectedTransaction — prev client_first_name:', prev.client_first_name, '| next client_first_name:', next.client_first_name)
-      return next
-    })
+    setSelectedTransaction(prev => ({ ...prev, [field]: dbValue }))
 
     const { error } = await supabase
       .from('transactions').update({ [field]: dbValue }).eq('id', txId)
@@ -310,14 +295,9 @@ export default function App() {
     // When address or client name is first entered, create the Drive folder
     const DRIVE_FIELDS = ['property_address', 'client_last_name']
     if (DRIVE_FIELDS.includes(field)) {
-      if (updated.drive_folder_id) {
-        console.log('[Drive] Skipping folder creation — folder already exists:', updated.drive_folder_id)
-      } else {
+      if (!updated.drive_folder_id) {
         const hasName = updated.property_address || updated.client_last_name
-        if (!hasName) {
-          console.log('[Drive] Skipping folder creation — no address or client name yet')
-        } else {
-          console.log('[Drive] Triggering folder creation for tx', txId, '— status:', updated.status, 'address:', updated.property_address, 'lastName:', updated.client_last_name)
+        if (hasName) {
           syncDriveFolder({
             transactionId:        txId,
             newStatus:            updated.status,
@@ -327,7 +307,6 @@ export default function App() {
             propertyAddress:      updated.property_address,
             clientLastName:       updated.client_last_name,
           }).then(result => {
-            console.log('[Drive] Folder creation result:', result)
             if (result?.drive_folder_id) {
               handleTransactionUpdate(txId, result)
               toast.success('Drive folder created', { duration: 2000 })

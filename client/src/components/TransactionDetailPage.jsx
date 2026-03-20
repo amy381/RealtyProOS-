@@ -59,11 +59,7 @@ const LOCKBOX_OPTIONS = [
 
 const TASK_ASSIGNEES = ['Me', 'Justina Morris', 'Victoria Lareau']
 
-const MENTION_PEOPLE = [
-  { handle: '@Justina',  email: 'justina@example.com' },   // ← update with real email
-  { handle: '@Victoria', email: 'victoria@example.com' },  // ← update with real email
-  { handle: '@Me',       email: null },
-]
+// MENTION_PEOPLE is now built dynamically from tcSettings — see buildMentionPeople()
 
 const STATUS_LABELS = { open: 'To Do', in_progress: 'In Progress', complete: 'Completed' }
 const STATUS_NEXT    = { open: 'in_progress', in_progress: 'complete', complete: 'open' }
@@ -123,27 +119,53 @@ function renderNoteText(text) {
   )
 }
 
-// Send EmailJS notification to each mentioned person
-async function sendMentionEmails(mentions, noteText, transactionAddr) {
+// Build the mention people list dynamically from tcSettings
+function buildMentionPeople(tcSettings = []) {
+  return tcSettings.map(tc => ({
+    handle: '@' + tc.name.split(' ')[0],
+    email:  tc.email || null,
+    name:   tc.name,
+  }))
+}
+
+// Send EmailJS notification to each mentioned person (uses live tcSettings)
+async function sendMentionEmails(mentions, noteText, transactionAddr, tcSettings = [], transactionId = null) {
   const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
   const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
   const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-  if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) return
+  console.log('[Mention] sendMentionEmails called — mentions:', mentions, '| tcSettings:', tcSettings)
+  if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
+    console.warn('[Mention] EmailJS env vars missing — SERVICE_ID:', SERVICE_ID, 'TEMPLATE_ID:', TEMPLATE_ID, 'PUBLIC_KEY:', PUBLIC_KEY ? '(set)' : '(missing)')
+    return
+  }
+  const mentionPeople = buildMentionPeople(tcSettings)
   try {
     const { default: emailjs } = await import('@emailjs/browser')
     for (const handle of mentions) {
-      const person = MENTION_PEOPLE.find(p => p.handle === handle)
-      if (!person?.email) continue
-      await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-        to_email: person.email,
-        to_name:  person.handle.slice(1),
-        transaction_addr: transactionAddr || '(No address)',
-        mention_notes:    noteText,
-        task_title:       'You were mentioned in a note',
-      }, PUBLIC_KEY)
+      const person = mentionPeople.find(p => p.handle.toLowerCase() === handle.toLowerCase())
+      console.log('[Mention] Looking up handle:', handle, '→ found:', person)
+      if (!person?.email) {
+        console.warn('[Mention] No email for handle:', handle, '— skipping')
+        continue
+      }
+      console.log('[Mention] Sending to:', person.email, '(', person.name, ')')
+      try {
+        const app_url = `https://realty-pro-os.vercel.app/transaction/${transactionId}`
+        const result = await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+          to_email:         person.email,
+          to_name:          person.name,
+          transaction_addr: transactionAddr || '(No address)',
+          mention_notes:    noteText,
+          task_title:       'You were mentioned in a note',
+          app_url,
+        }, PUBLIC_KEY)
+        console.log('[Mention] EmailJS success for', person.email, ':', result)
+      } catch (sendErr) {
+        console.error('[Mention] EmailJS send failed for', person.email, ':', sendErr)
+      }
     }
   } catch (err) {
-    console.warn('[Notes] mention email failed:', err.message)
+    console.warn('[Mention] mention email setup failed:', err.message)
   }
 }
 
@@ -370,7 +392,7 @@ function TxField({ label, value, displayValue, type, options, onSave, placeholde
 }
 
 // ─── Notes: single-line compose with @ mentions, fixed-height scroll list ──────
-function NotesSection({ transactionId, transactionAddr, onNoteAdded }) {
+function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings }) {
   const [notes, setNotes]           = useState([])
   const [newText, setNewText]       = useState('')
   const [editingId, setEditing]     = useState(null)
@@ -430,7 +452,8 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded }) {
     })
   }
 
-  const visibleMentions = MENTION_PEOPLE.filter(p =>
+  const mentionPeople   = buildMentionPeople(tcSettings)
+  const visibleMentions = mentionPeople.filter(p =>
     p.handle.slice(1).toLowerCase().startsWith(mentionFilter)
   )
 
@@ -438,6 +461,7 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded }) {
     const text = newText.trim()
     if (!text) return
     const mentions = extractMentions(text)
+    console.log('[Notes] handleAdd fired — text:', text, '| mentions:', mentions, '| tcSettings:', tcSettings)
     const now      = new Date().toISOString()
     const tempId   = `tmp-${Date.now()}`
 
@@ -457,7 +481,7 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded }) {
       })
 
     onNoteAdded?.(text, mentions)
-    if (mentions.length > 0) sendMentionEmails(mentions, text, transactionAddr)
+    if (mentions.length > 0) sendMentionEmails(mentions, text, transactionAddr, tcSettings, transactionId)
   }
 
   const handleSaveEdit = (id) => {
@@ -903,6 +927,7 @@ function SendDropdown({ tcSettings, onSend, onClose }) {
     setSelected(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name])
 
   const handleSend = async () => {
+    console.log('[Send] Send button clicked — selected:', selected, '| sendable:', sendable)
     if (!selected.length || sending) return
     setSending(true)
     await onSend(sendable.filter(tc => selected.includes(tc.name)))
@@ -1167,6 +1192,7 @@ function DetailsSection({ transaction, columns, tasks, onFieldSave, onStatusChan
             transactionId={transaction.id}
             transactionAddr={transactionAddr}
             onNoteAdded={onNoteAdded}
+            tcSettings={tcSettings}
           />
 
         </div>{/* end right */}
@@ -1664,7 +1690,12 @@ export default function TransactionDetailPage({
     const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
     const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
 
+    console.log('[Send] handleSendConfirm fired')
+    console.log('[Send] recipients:', recipients.map(r => ({ name: r.name, email: r.email })))
+    console.log('[Send] SERVICE_ID:', SERVICE_ID, '| TEMPLATE_ID:', TEMPLATE_ID, '| PUBLIC_KEY:', PUBLIC_KEY ? '(set)' : '(missing)')
+
     if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
+      console.warn('[Send] EmailJS env vars missing — falling back to clipboard copy')
       try { await navigator.clipboard.writeText(summary); toast.success('Summary copied to clipboard!') }
       catch { toast.error('Configure EmailJS to send directly') }
       return
@@ -1673,15 +1704,18 @@ export default function TransactionDetailPage({
     try {
       const { default: emailjs } = await import('@emailjs/browser')
       for (const tc of recipients) {
-        await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+        const payload = {
           to_email:         tc.email,
           to_name:          tc.name,
           subject,
           body:             summary,
-          task_title:       subject,       // backward-compat
-          mention_notes:    summary,       // backward-compat
+          task_title:       subject,
+          mention_notes:    summary,
           transaction_addr: fullAddress || '(No address)',
-        }, PUBLIC_KEY)
+        }
+        console.log('[Send] Calling emailjs.send with payload:', payload)
+        const result = await emailjs.send(SERVICE_ID, TEMPLATE_ID, payload, PUBLIC_KEY)
+        console.log('[Send] EmailJS result for', tc.email, ':', result)
       }
       toast.success(`Sent to ${recipients.map(r => r.name).join(' & ')}`)
     } catch (err) {

@@ -5,6 +5,7 @@ import { syncDriveFolder } from './lib/googleDrive'
 import { buildTemplateTasks, getTemplateKey } from './lib/taskTemplates'
 import { sendMentionNotifications, parseMentions } from './lib/emailNotify'
 import KanbanBoard from './components/KanbanBoard'
+import GoalsDashboard from './components/GoalsDashboard'
 import TransactionModal from './components/TransactionModal'
 import TransactionDetailPage from './components/TransactionDetailPage'
 import CommissionsTab from './components/CommissionsTab'
@@ -467,16 +468,17 @@ export default function App() {
             </button>
           ))}
         </div>
-        <button className="btn-settings" onClick={() => setSettingsOpen(true)} title="Settings">⚙</button>
+        <div className="header-right">
+          <button className="btn-new-transaction" onClick={() => setNewTxOpen(true)}>
+            + New Transaction
+          </button>
+          <button className="btn-settings" onClick={() => setSettingsOpen(true)} title="Settings">⚙</button>
+        </div>
       </header>
 
       <main className="app-main">
         {activeTab === 'board' && (
-          <div className="board-toolbar">
-            <button className="btn-new-transaction" onClick={() => setNewTxOpen(true)}>
-              + New Transaction
-            </button>
-          </div>
+          <GoalsDashboard transactions={transactions} commissions={commissions} />
         )}
 
         {activeTab === 'board' && (

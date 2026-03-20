@@ -70,30 +70,29 @@
   gap: 12px;
 }
 
-.board-toolbar {
+.header-right {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  flex-shrink: 0;
+  gap: 8px;
 }
 
 /* ── Buttons ────────────────────────────────────────────── */
 .btn-new-transaction {
-  background: #000000;
-  color: #ffffff;
-  border: none;
-  padding: 10px 22px;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 700;
+  background: #ffffff;
+  color: #111111;
+  border: 1px solid rgba(255,255,255,0.4);
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s;
   font-family: inherit;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 .btn-new-transaction:hover {
-  background: #333333;
+  background: #f0f0f0;
+  border-color: rgba(255,255,255,0.6);
 }
 
 .btn-primary {

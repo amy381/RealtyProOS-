@@ -1,7 +1,7 @@
 // Sends @mention email notifications via EmailJS.
 // Requires these Vercel / .env vars:
 //   VITE_EMAILJS_SERVICE_ID
-//   VITE_EMAILJS_TEMPLATE_ID   (template vars: to_email, to_name, transaction_addr, client_name, task_title, mention_notes)
+//   VITE_EMAILJS_TEMPLATE_ID   (template vars: to_email, to_name, transaction_addr, client_name, task_title, mention_notes, app_url)
 //   VITE_EMAILJS_PUBLIC_KEY
 //
 // If not configured, notifications are silently skipped.
@@ -40,6 +40,7 @@ export async function sendMentionNotifications({
 
     try {
       const { default: emailjs } = await import('@emailjs/browser')
+      const app_url = `https://realty-pro-os.vercel.app/transaction/${transaction.id}`
       await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
         to_email:         tc.email,
         to_name:          tc.name,
@@ -47,6 +48,7 @@ export async function sendMentionNotifications({
         client_name:      transaction.client_name || '',
         task_title:       taskTitle,
         mention_notes:    notes,
+        app_url,
       }, PUBLIC_KEY)
       newlyNotified.push(raw)
     } catch (err) {

@@ -1279,27 +1279,6 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
             />
           </div>
 
-          {/* OPPOSITE PARTY */}
-          <div className="txp-section">
-            <div className="txp-section-title">{isBuyer ? 'Seller Information' : 'Buyer Information'}</div>
-            <TxField
-              label={isBuyer ? 'Seller Name'  : 'Buyer Name'}
-              value={transaction.opposite_party_name  || ''}
-              type="text"
-              onSave={save('opposite_party_name')}
-              placeholder={isBuyer ? 'Seller name' : 'Buyer name'}
-              tabIndex={11}
-            />
-            <TxField
-              label={isBuyer ? 'Seller Agent' : 'Buyer Agent'}
-              value={transaction.opposite_party_agent || ''}
-              type="text"
-              onSave={save('opposite_party_agent')}
-              placeholder="Agent name"
-              tabIndex={12}
-            />
-          </div>
-
           {/* SEPTIC / SOLAR / WELL */}
           <div className="txp-section">
             <div className="txp-section-title">Property Features</div>
@@ -1353,13 +1332,21 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
             />
             <TxField label="Title Email" value={transaction.title_company_email || ''} type="text" onSave={save('title_company_email')} placeholder="title@company.com" tabIndex={18} />
             <TxField label="Title Phone" value={transaction.title_company_phone || ''} type="text" onSave={save('title_company_phone')} placeholder="(555) 000-0000"    tabIndex={19} />
+            <TxField
+              label={isBuyer ? 'Seller Name' : 'Buyer Name'}
+              value={transaction.opposite_party_name || ''}
+              type="text"
+              onSave={save('opposite_party_name')}
+              placeholder={isBuyer ? 'Seller name' : 'Buyer name'}
+              tabIndex={20}
+            />
             <CollaboratorSearch
               label="Co-op Agent"
               value={transaction.co_op_agent || ''}
               category="coop-agents"
               onSave={save('co_op_agent')}
               placeholder="Agent name"
-              tabIndex={20}
+              tabIndex={21}
             />
             <CollaboratorSearch
               label="Home Inspector"
@@ -1367,7 +1354,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               category="home-inspectors"
               onSave={save('home_inspector')}
               placeholder="Inspector name"
-              tabIndex={21}
+              tabIndex={22}
             />
             <TxField
               label="Inspection Date"
@@ -1375,7 +1362,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               displayValue={formatDate(transaction.home_inspection_date)}
               type="date"
               onSave={save('home_inspection_date')}
-              tabIndex={22}
+              tabIndex={23}
             />
           </div>
 

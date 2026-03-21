@@ -11,7 +11,7 @@ const CATEGORIES = [
   { id: 'other-vendors',   label: 'Other Vendors',    companyLabel: 'Company',   hasType: true  },
 ]
 
-const BLANK_FORM = { first_name: '', last_name: '', company: '', phone: '', email: '', type: '' }
+const BLANK_FORM = { first_name: '', last_name: '', company: '', phone: '', email: '', type: '', address: '' }
 
 export default function CollaboratorsTab() {
   const [activeCat, setActiveCat]   = useState(CATEGORIES[0].id)
@@ -48,6 +48,7 @@ export default function CollaboratorsTab() {
       phone:      record.phone      || '',
       email:      record.email      || '',
       type:       record.type       || '',
+      address:    record.address    || '',
     })
     setModalOpen(true)
   }
@@ -121,6 +122,7 @@ export default function CollaboratorsTab() {
                 <th>Name</th>
                 <th>{cat.companyLabel}</th>
                 {cat.hasType && <th>Type</th>}
+                {activeCat === 'title-escrow' && <th>Address</th>}
                 <th>Phone</th>
                 <th>Email</th>
                 <th></th>
@@ -132,6 +134,7 @@ export default function CollaboratorsTab() {
                   <td className="collab-name">{[r.first_name, r.last_name].filter(Boolean).join(' ') || '—'}</td>
                   <td>{r.company || '—'}</td>
                   {cat.hasType && <td>{r.type || '—'}</td>}
+                  {activeCat === 'title-escrow' && <td>{r.address || '—'}</td>}
                   <td>{r.phone || '—'}</td>
                   <td>{r.email || '—'}</td>
                   <td className="collab-actions">
@@ -171,6 +174,12 @@ export default function CollaboratorsTab() {
               {cat.hasType && (
                 <label>Type
                   <input value={form.type} onChange={set('type')} placeholder="e.g. Photographer, Stager, Cleaner…" />
+                </label>
+              )}
+
+              {activeCat === 'title-escrow' && (
+                <label>Address
+                  <input value={form.address} onChange={set('address')} placeholder="Street address" />
                 </label>
               )}
 

@@ -27,18 +27,29 @@ const FIELD_LABELS = {
   property_address: 'Street Address', city: 'City', state: 'State', zip: 'ZIP',
   price: 'Price', rep_type: 'Transaction Type', status: 'Stage',
   assigned_tc: 'TC',
+  apn: 'APN', mls_number: 'MLS Number',
+  vacant_or_occupied: 'Vacant or Occupied', bedrooms: 'Bedrooms', year_built: 'Year Built',
   client_first_name: 'Client 1', client_last_name: 'Client 1',
   client2_first_name: 'Client 2', client2_last_name: 'Client 2',
+  opposite_party_name: 'Opposite Party', opposite_party_agent: 'Opposite Party Agent',
   listing_contract: 'Listing Contract', listing_expiration_date: 'Listing Expiration',
   target_live_date: 'Target Live', contract_acceptance_date: 'Contract Acceptance',
   ipe_date: 'Inspection Period End', close_of_escrow: 'Close of Escrow',
   bba_contract: 'BBA Contract', bba_expiration: 'BBA Expiration',
   has_contingency: 'Contingency', contingency_fulfilled_date: 'Contingency Fulfilled',
   lender_name: 'Lender', title_company: 'Title Company',
+  title_company_email: 'Title Company Email', title_company_phone: 'Title Company Phone',
   co_op_agent: 'Co-op Agent',
+  home_inspector: 'Home Inspector', home_inspection_date: 'Home Inspection Date',
   has_septic: 'Septic', has_solar: 'Solar', has_well: 'Well', has_hoa: 'HOA', has_lbp: 'LBP',
   lockbox: 'Lockbox', has_sign: 'Sign',
 }
+
+const VACANT_OPTIONS = [
+  { value: '',         label: '—'        },
+  { value: 'Vacant',   label: 'Vacant'   },
+  { value: 'Occupied', label: 'Occupied' },
+]
 
 const LOCKBOX_OPTIONS = [
   { value: '',         label: '— None —' },
@@ -967,6 +978,146 @@ function SendDropdown({ tcSettings, onSend, onClose }) {
 }
 
 // ─── Details Section (two-column layout + tasks full-width) ───────────────────
+// ─── Collaborator add modal (used by CollaboratorSearch "Create New") ──────────
+const COLLAB_CATS = {
+  'lenders':          { label: 'Lender',         companyLabel: 'Company',   hasType: false },
+  'title-escrow':     { label: 'Title / Escrow',  companyLabel: 'Company',   hasType: false },
+  'coop-agents':      { label: 'Co-op Agent',     companyLabel: 'Brokerage', hasType: false },
+  'home-inspectors':  { label: 'Home Inspector',  companyLabel: 'Company',   hasType: false },
+  'other-vendors':    { label: 'Vendor',          companyLabel: 'Company',   hasType: true  },
+}
+
+function CollaboratorAddModal({ category, initialName = '', onSaved, onClose }) {
+  const meta = COLLAB_CATS[category] || { label: 'Collaborator', companyLabel: 'Company', hasType: false }
+  const nameParts = initialName.trim().split(/\s+/)
+  const [form, setForm] = useState({
+    first_name: nameParts[0] || '',
+    last_name:  nameParts.slice(1).join(' ') || '',
+    company: '', phone: '', email: '', type: '',
+  })
+  const set = f => e => setForm(p => ({ ...p, [f]: e.target.value }))
+
+  const handleSave = async () => {
+    const { data, error } = await supabase
+      .from('collaborators').insert({ ...form, category }).select().single()
+    if (error) { toast.error('Failed to add'); return }
+    toast.success(`${meta.label} added`)
+    onSaved(data)
+  }
+
+  return (
+    <div className="collab-add-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="collab-add-modal">
+        <div className="collab-add-header">
+          <span>Add {meta.label}</span>
+          <button onClick={onClose}>✕</button>
+        </div>
+        <div className="collab-add-body">
+          <div className="collab-add-row">
+            <label>First Name<input value={form.first_name} onChange={set('first_name')} placeholder="First" /></label>
+            <label>Last Name<input value={form.last_name}  onChange={set('last_name')}  placeholder="Last"  /></label>
+          </div>
+          <label>{meta.companyLabel}<input value={form.company} onChange={set('company')} placeholder={meta.companyLabel} /></label>
+          {meta.hasType && <label>Type<input value={form.type} onChange={set('type')} placeholder="e.g. Photographer" /></label>}
+          <div className="collab-add-row">
+            <label>Phone<input value={form.phone} onChange={set('phone')} type="tel"   placeholder="(555) 000-0000" /></label>
+            <label>Email<input value={form.email} onChange={set('email')} type="email" placeholder="email@example.com" /></label>
+          </div>
+        </div>
+        <div className="collab-add-footer">
+          <button className="collab-add-cancel" onClick={onClose}>Cancel</button>
+          <button className="collab-add-save"   onClick={handleSave}>Add</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── CollaboratorSearch — typeahead field backed by the collaborators table ────
+function CollaboratorSearch({ label, value, category, onSave, onSelect, placeholder, tabIndex }) {
+  const [text, setText]         = useState(value || '')
+  const [results, setResults]   = useState([])
+  const [open, setOpen]         = useState(false)
+  const [addOpen, setAddOpen]   = useState(false)
+  const inputRef                = useRef(null)
+
+  // Sync if parent value changes (e.g. after a save)
+  useEffect(() => { setText(value || '') }, [value])
+
+  useEffect(() => {
+    if (!text.trim()) { setResults([]); return }
+    const t = text.trim()
+    supabase.from('collaborators').select('*').eq('category', category)
+      .or(`first_name.ilike.%${t}%,last_name.ilike.%${t}%,company.ilike.%${t}%`)
+      .limit(8)
+      .then(({ data }) => setResults(data || []))
+  }, [text, category])
+
+  const displayName = c =>
+    [c.first_name, c.last_name].filter(Boolean).join(' ') || c.company || ''
+
+  const handleSelect = c => {
+    const name = displayName(c)
+    setText(name)
+    setOpen(false)
+    onSave(name)
+    onSelect?.(c)
+  }
+
+  const handleBlur = () => {
+    setTimeout(() => setOpen(false), 180)
+    onSave(text)
+  }
+
+  const handleSaved = c => {
+    setResults([])
+    setAddOpen(false)
+    handleSelect(c)
+  }
+
+  return (
+    <div className="txp-field collab-search-field">
+      <span className="txp-field-label">{label}</span>
+      <div className="collab-search-wrap">
+        <input
+          ref={inputRef}
+          className="collab-search-input"
+          value={text}
+          placeholder={placeholder || label}
+          tabIndex={tabIndex}
+          onChange={e => { setText(e.target.value); setOpen(true) }}
+          onFocus={() => text && setOpen(true)}
+          onBlur={handleBlur}
+        />
+        {open && (results.length > 0 || text.trim()) && (
+          <div className="collab-search-dropdown">
+            {results.map(c => (
+              <button key={c.id} className="collab-search-item" onMouseDown={() => handleSelect(c)}>
+                <span className="collab-search-name">{displayName(c)}</span>
+                {c.company && displayName(c) !== c.company && (
+                  <span className="collab-search-company">{c.company}</span>
+                )}
+              </button>
+            ))}
+            <button className="collab-search-create" onMouseDown={() => { setOpen(false); setAddOpen(true) }}>
+              + Create New
+            </button>
+          </div>
+        )}
+      </div>
+      {addOpen && (
+        <CollaboratorAddModal
+          category={category}
+          initialName={text}
+          onSaved={handleSaved}
+          onClose={() => setAddOpen(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── Details Section ───────────────────────────────────────────────────────────
 function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onNoteAdded, transactionAddr, tcSettings }) {
   const save   = (field) => (value) => onFieldSave(field, value)
   const column = columns.find(c => c.id === transaction.status)
@@ -1021,6 +1172,8 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               placeholder="$0"
               tabIndex={4}
             />
+            <TxField label="APN"        value={transaction.apn        || ''} type="text" onSave={save('apn')}        placeholder="000-000-000" tabIndex={4} />
+            <TxField label="MLS Number" value={transaction.mls_number || ''} type="text" onSave={save('mls_number')} placeholder="MLS #"       tabIndex={5} />
             <TxField label="Transaction Type" value={transaction.rep_type || '—'} readOnly tabIndex={-1} />
             <TxField
               label="Stage"
@@ -1029,7 +1182,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               type="select"
               options={COLUMN_OPTIONS}
               onSave={onStatusChange}
-              tabIndex={5}
+              tabIndex={6}
             />
             <TxField
               label="TC"
@@ -1037,8 +1190,20 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               type="select"
               options={[{ value: '', label: '—' }, ...TC_OPTIONS.map(o => ({ value: o, label: o }))]}
               onSave={save('assigned_tc')}
-              tabIndex={6}
+              tabIndex={7}
             />
+            {!isBuyer && (<>
+              <TxField
+                label="Vacant or Occupied"
+                value={transaction.vacant_or_occupied || ''}
+                type="select"
+                options={VACANT_OPTIONS}
+                onSave={save('vacant_or_occupied')}
+                tabIndex={8}
+              />
+              <TxField label="Bedrooms"   value={String(transaction.bedrooms   ?? '')} type="text" onSave={save('bedrooms')}   placeholder="e.g. 3"    tabIndex={9} />
+              <TxField label="Year Built" value={String(transaction.year_built  ?? '')} type="text" onSave={save('year_built')} placeholder="e.g. 1998" tabIndex={10} />
+            </>)}
           </div>
 
           {/* LISTING DETAILS — Seller only */}
@@ -1107,6 +1272,27 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
             />
           </div>
 
+          {/* OPPOSITE PARTY */}
+          <div className="txp-section">
+            <div className="txp-section-title">{isBuyer ? 'Seller Information' : 'Buyer Information'}</div>
+            <TxField
+              label={isBuyer ? 'Seller Name'  : 'Buyer Name'}
+              value={transaction.opposite_party_name  || ''}
+              type="text"
+              onSave={save('opposite_party_name')}
+              placeholder={isBuyer ? 'Seller name' : 'Buyer name'}
+              tabIndex={11}
+            />
+            <TxField
+              label={isBuyer ? 'Seller Agent' : 'Buyer Agent'}
+              value={transaction.opposite_party_agent || ''}
+              type="text"
+              onSave={save('opposite_party_agent')}
+              placeholder="Agent name"
+              tabIndex={12}
+            />
+          </div>
+
           {/* SEPTIC / SOLAR / WELL */}
           <div className="txp-section">
             <div className="txp-section-title">Property Features</div>
@@ -1138,10 +1324,52 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
           {/* TRANSACTION DETAILS */}
           <div className="txp-section">
             <div className="txp-section-title">Transaction Details</div>
-            {/* Fix 3: earnest_money_amount column doesn't exist in DB — removed */}
-            <TxField label="Lender Name"   value={transaction.lender_name   || ''} type="text" onSave={save('lender_name')}   placeholder="Lender name"  tabIndex={16} />
-            <TxField label="Title Company" value={transaction.title_company  || ''} type="text" onSave={save('title_company')} placeholder="Title company" tabIndex={17} />
-            <TxField label="Co-op Agent"   value={transaction.co_op_agent   || ''} type="text" onSave={save('co_op_agent')}   placeholder="Agent name"   tabIndex={18} />
+            <CollaboratorSearch
+              label="Lender"
+              value={transaction.lender_name || ''}
+              category="lenders"
+              onSave={save('lender_name')}
+              placeholder="Lender name"
+              tabIndex={16}
+            />
+            <CollaboratorSearch
+              label="Title Company"
+              value={transaction.title_company || ''}
+              category="title-escrow"
+              onSave={save('title_company')}
+              onSelect={c => {
+                if (c.email) save('title_company_email')(c.email)
+                if (c.phone) save('title_company_phone')(c.phone)
+              }}
+              placeholder="Title company"
+              tabIndex={17}
+            />
+            <TxField label="Title Email" value={transaction.title_company_email || ''} type="text" onSave={save('title_company_email')} placeholder="title@company.com" tabIndex={18} />
+            <TxField label="Title Phone" value={transaction.title_company_phone || ''} type="text" onSave={save('title_company_phone')} placeholder="(555) 000-0000"    tabIndex={19} />
+            <CollaboratorSearch
+              label="Co-op Agent"
+              value={transaction.co_op_agent || ''}
+              category="coop-agents"
+              onSave={save('co_op_agent')}
+              placeholder="Agent name"
+              tabIndex={20}
+            />
+            <CollaboratorSearch
+              label="Home Inspector"
+              value={transaction.home_inspector || ''}
+              category="home-inspectors"
+              onSave={save('home_inspector')}
+              placeholder="Inspector name"
+              tabIndex={21}
+            />
+            <TxField
+              label="Inspection Date"
+              value={transaction.home_inspection_date || ''}
+              displayValue={formatDate(transaction.home_inspection_date)}
+              type="date"
+              onSave={save('home_inspection_date')}
+              tabIndex={22}
+            />
           </div>
 
         </div>{/* end left */}

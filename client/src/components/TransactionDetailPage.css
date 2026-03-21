@@ -1080,3 +1080,149 @@ select.txp-input { cursor: pointer; }
   color: #1a1a1a;
 }
 .txp-drive-folder-btn--secondary:hover { background: #f5f5f5; }
+
+/* ─── CollaboratorSearch ───────────────────────────────────────────────────────── */
+.collab-search-field { position: relative; }
+
+.collab-search-wrap { position: relative; flex: 1; }
+
+.collab-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: none;
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 2px 0;
+  font-size: 14px;
+  color: #1a1a1a;
+  font-family: inherit;
+  outline: none;
+  cursor: text;
+  transition: border-color 0.12s;
+}
+.collab-search-input:focus { border-bottom-color: #999; }
+.collab-search-input::placeholder { color: #bbb; }
+
+.collab-search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  min-width: 220px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  z-index: 500;
+  overflow: hidden;
+}
+
+.collab-search-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.1s;
+}
+.collab-search-item:hover { background: #f5f5f5; }
+
+.collab-search-name    { font-size: 13px; font-weight: 500; color: #111; }
+.collab-search-company { font-size: 11px; color: #888; margin-top: 1px; }
+
+.collab-search-create {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  border-top: 1px solid #f0f0f0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  text-align: left;
+  transition: background 0.1s;
+}
+.collab-search-create:hover { background: #f5f5f5; color: #111; }
+
+/* ─── CollaboratorAddModal ─────────────────────────────────────────────────────── */
+.collab-add-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 600;
+}
+
+.collab-add-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 460px;
+  max-width: 95vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.collab-add-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid #eee;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+}
+.collab-add-header button {
+  background: none; border: none; font-size: 16px;
+  color: #999; cursor: pointer; padding: 2px 6px; border-radius: 4px;
+}
+.collab-add-header button:hover { background: #f0f0f0; color: #333; }
+
+.collab-add-body {
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.collab-add-body label {
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 11px; font-weight: 600; color: #777;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.collab-add-body input {
+  padding: 7px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #111;
+  font-family: inherit;
+  outline: none;
+}
+.collab-add-body input:focus { border-color: #999; }
+.collab-add-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.collab-add-footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid #eee;
+}
+.collab-add-cancel {
+  background: #f0f0f0; color: #555; border: none;
+  padding: 7px 16px; border-radius: 6px; font-size: 13px;
+  font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.collab-add-save {
+  background: #111; color: #fff; border: none;
+  padding: 7px 18px; border-radius: 6px; font-size: 13px;
+  font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.collab-add-save:hover { background: #333; }

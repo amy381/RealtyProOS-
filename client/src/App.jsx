@@ -10,6 +10,7 @@ import TransactionModal from './components/TransactionModal'
 import TransactionDetailPage from './components/TransactionDetailPage'
 import CommissionsTab from './components/CommissionsTab'
 import TasksTab from './components/TasksTab'
+import CollaboratorsTab from './components/CollaboratorsTab'
 import NewTransactionPopup from './components/NewTransactionPopup'
 import SettingsModal from './components/SettingsModal'
 import './App.css'
@@ -457,9 +458,10 @@ export default function App() {
         </div>
         <div className="app-tabs">
           {[
-            { id: 'board',       label: 'The Board'   },
-            { id: 'commissions', label: 'Commissions' },
-            { id: 'tasks',       label: 'Tasks'       },
+            { id: 'board',          label: 'The Board'     },
+            { id: 'commissions',    label: 'Commissions'   },
+            { id: 'tasks',          label: 'Tasks'         },
+            { id: 'collaborators',  label: 'Collaborators' },
           ].map(tab => (
             <button key={tab.id}
               className={`tab-btn${activeTab === tab.id ? ' active' : ''}`}
@@ -509,6 +511,9 @@ export default function App() {
               setActiveTab('board')
             }}
           />
+        )}
+        {activeTab === 'collaborators' && (
+          <CollaboratorsTab />
         )}
       </main>
 

@@ -1,0 +1,294 @@
+.collab-tab {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f0f0f0;
+}
+
+/* ── Sub-tabs ─────────────────────────────────────────────── */
+.collab-subtabs {
+  display: flex;
+  gap: 2px;
+  padding: 12px 24px 0;
+  border-bottom: 1px solid #e0e0e0;
+  background: #fff;
+}
+
+.collab-subtab {
+  padding: 8px 18px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #888;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  transition: color 0.12s, border-color 0.12s;
+  font-family: inherit;
+  margin-bottom: -1px;
+}
+
+.collab-subtab:hover {
+  color: #333;
+}
+
+.collab-subtab.active {
+  color: #111;
+  font-weight: 700;
+  border-bottom-color: #111;
+}
+
+/* ── Body ─────────────────────────────────────────────────── */
+.collab-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+}
+
+.collab-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.collab-count {
+  font-size: 13px;
+  color: #888;
+}
+
+.collab-add-btn {
+  background: #111;
+  color: #fff;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.13s;
+}
+
+.collab-add-btn:hover {
+  background: #333;
+}
+
+/* ── Table ────────────────────────────────────────────────── */
+.collab-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+
+.collab-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #999;
+  background: #fafafa;
+  border-bottom: 1px solid #ebebeb;
+}
+
+.collab-table td {
+  padding: 11px 14px;
+  font-size: 13px;
+  color: #222;
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.collab-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.collab-table tbody tr:hover td {
+  background: #fafafa;
+}
+
+.collab-name {
+  font-weight: 600;
+}
+
+.collab-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.collab-edit-btn,
+.collab-del-btn {
+  padding: 4px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+
+.collab-edit-btn {
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.collab-edit-btn:hover {
+  background: #e4e4e4;
+}
+
+.collab-del-btn {
+  background: #fff0f0;
+  color: #c00;
+  border: 1px solid #ffd0d0;
+}
+
+.collab-del-btn:hover {
+  background: #ffe0e0;
+}
+
+/* ── Empty state ──────────────────────────────────────────── */
+.collab-empty {
+  text-align: center;
+  padding: 60px 24px;
+  color: #aaa;
+  font-size: 14px;
+}
+
+/* ── Modal ────────────────────────────────────────────────── */
+.collab-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.collab-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 480px;
+  max-width: 95vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+.collab-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.collab-modal-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+  margin: 0;
+}
+
+.collab-modal-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #999;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.collab-modal-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.collab-modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.collab-modal-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.collab-modal-body input {
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #111;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.12s;
+}
+
+.collab-modal-body input:focus {
+  border-color: #999;
+}
+
+.collab-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.collab-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px 20px;
+  border-top: 1px solid #eee;
+}
+
+.collab-cancel-btn {
+  background: #f0f0f0;
+  color: #555;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.collab-cancel-btn:hover {
+  background: #e4e4e4;
+}
+
+.collab-save-btn {
+  background: #111;
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.13s;
+}
+
+.collab-save-btn:hover {
+  background: #333;
+}

@@ -5,13 +5,13 @@ import { TC_OPTIONS } from '../lib/columnFields'
 import { toast } from 'react-hot-toast'
 import './TransactionDetailPage.css'
 
-// ─── Sidebar nav (Tasks and Notes removed — now inline on Details view) ─────
 const SECTIONS = [
   { id: 'details',      label: 'Transaction Details' },
-  { id: 'docs-req',     label: 'Documents Required' },
-  { id: 'commission',   label: 'Commission' },
-  { id: 'google-drive', label: 'Google Drive' },
-  { id: 'history',      label: 'History' },
+  { id: 'tasks',        label: 'Tasks'               },
+  { id: 'docs-req',     label: 'Documents Required'  },
+  { id: 'commission',   label: 'Commission'           },
+  { id: 'google-drive', label: 'Google Drive'         },
+  { id: 'history',      label: 'History'              },
 ]
 
 const COLUMN_OPTIONS = [
@@ -967,7 +967,7 @@ function SendDropdown({ tcSettings, onSend, onClose }) {
 }
 
 // ─── Details Section (two-column layout + tasks full-width) ───────────────────
-function DetailsSection({ transaction, columns, tasks, onFieldSave, onStatusChange, onAddTask, onUpdateTask, onDeleteTask, onNoteAdded, transactionAddr, tcSettings }) {
+function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onNoteAdded, transactionAddr, tcSettings }) {
   const save   = (field) => (value) => onFieldSave(field, value)
   const column = columns.find(c => c.id === transaction.status)
 
@@ -1198,14 +1198,6 @@ function DetailsSection({ transaction, columns, tasks, onFieldSave, onStatusChan
         </div>{/* end right */}
       </div>
 
-      {/* TASKS — full width below both columns */}
-      <TasksSpreadsheet
-        tasks={tasks || []}
-        transactionId={transaction.id}
-        onAdd={onAddTask}
-        onUpdate={onUpdateTask}
-        onDelete={onDeleteTask}
-      />
     </div>
   )
 }
@@ -1774,15 +1766,21 @@ export default function TransactionDetailPage({
             <DetailsSection
               transaction={transaction}
               columns={columns}
-              tasks={tasks}
               onFieldSave={handleFieldSave}
               onStatusChange={handleStatusChange}
-              onAddTask={onAddTask}
-              onUpdateTask={onUpdateTask}
-              onDeleteTask={onDeleteTask}
               onNoteAdded={handleNoteAdded}
               transactionAddr={fullAddress}
               tcSettings={tcSettings}
+            />
+          )}
+
+          {activeSection === 'tasks' && (
+            <TasksSpreadsheet
+              tasks={tasks || []}
+              transactionId={transaction.id}
+              onAdd={onAddTask}
+              onUpdate={onUpdateTask}
+              onDelete={onDeleteTask}
             />
           )}
 

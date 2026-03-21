@@ -1,0 +1,143 @@
+.gd-wrap {
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid #e5e5e5;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Row 1: metric cards ────────────────────────────────────────────────────── */
+.gd-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.gd-card {
+  border: 1px solid #e2e2e2;
+  border-radius: 6px;
+  padding: 10px 12px 8px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gd-card-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #999;
+}
+
+.gd-card-actual {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.15;
+  margin-top: 1px;
+}
+
+.gd-card-goal {
+  font-size: 11px;
+  color: #aaa;
+  margin-bottom: 2px;
+}
+
+.gd-bar-wrap {
+  height: 3px;
+  background: #eaeaea;
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 4px 0 3px;
+}
+
+.gd-bar-fill {
+  height: 100%;
+  background: #444;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.gd-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gd-pct {
+  font-size: 11px;
+  font-weight: 500;
+  color: #666;
+}
+
+.gd-pace {
+  font-size: 11px;
+  color: #555;
+}
+
+/* ── Row 2: quarterly breakdown ─────────────────────────────────────────────── */
+.gd-quarters {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.gd-quarter {
+  border: 1px solid #e2e2e2;
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: #fafafa;
+}
+
+.gd-quarter--current {
+  border-color: #aaa;
+  background: #f4f4f4;
+}
+
+.gd-quarter--past {
+  opacity: 0.6;
+}
+
+.gq-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 5px;
+}
+
+.gq-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.gq-months {
+  font-size: 10px;
+  color: #bbb;
+}
+
+.gq-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.gq-key {
+  color: #999;
+  font-weight: 500;
+}
+
+.gq-val {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.gq-goal {
+  font-weight: 400;
+  color: #bbb;
+}

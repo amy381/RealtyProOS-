@@ -998,9 +998,16 @@ function CollaboratorAddModal({ category, initialName = '', onSaved, onClose }) 
   const set = f => e => setForm(p => ({ ...p, [f]: e.target.value }))
 
   const handleSave = async () => {
+    const payload = { ...form, category }
+    console.log('[CollaboratorAdd] inserting:', payload)
     const { data, error } = await supabase
-      .from('collaborators').insert({ ...form, category }).select().single()
-    if (error) { toast.error('Failed to add'); return }
+      .from('collaborators').insert(payload).select().single()
+    if (error) {
+      console.error('[CollaboratorAdd] Supabase error:', error.code, error.message, error.details, error.hint)
+      toast.error(`Failed to add: ${error.message}`)
+      return
+    }
+    console.log('[CollaboratorAdd] success:', data)
     toast.success(`${meta.label} added`)
     onSaved(data)
   }

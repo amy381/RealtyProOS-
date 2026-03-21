@@ -64,7 +64,11 @@ export default function CollaboratorsTab() {
     } else {
       const { data, error } = await supabase
         .from('collaborators').insert(payload).select().single()
-      if (error) { toast.error('Failed to add'); return }
+      if (error) {
+        console.error('[CollaboratorsTab] insert error:', error.code, error.message, error.hint)
+        toast.error(`Failed to add: ${error.message}`)
+        return
+      }
       setRecords(prev => [...prev, data])
       toast.success('Added')
     }

@@ -967,7 +967,7 @@ function SendDropdown({ tcSettings, onSend, onClose }) {
 }
 
 // ─── Details Section (two-column layout + tasks full-width) ───────────────────
-function DetailsSection({ transaction, columns, tasks, onFieldSave, onStatusChange, onAddTask, onUpdateTask, onDeleteTask, onNoteAdded, transactionAddr }) {
+function DetailsSection({ transaction, columns, tasks, onFieldSave, onStatusChange, onAddTask, onUpdateTask, onDeleteTask, onNoteAdded, transactionAddr, tcSettings }) {
   const save   = (field) => (value) => onFieldSave(field, value)
   const column = columns.find(c => c.id === transaction.status)
 
@@ -1782,6 +1782,7 @@ export default function TransactionDetailPage({
               onDeleteTask={onDeleteTask}
               onNoteAdded={handleNoteAdded}
               transactionAddr={fullAddress}
+              tcSettings={tcSettings}
             />
           )}
 

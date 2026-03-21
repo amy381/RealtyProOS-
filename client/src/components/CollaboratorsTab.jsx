@@ -84,20 +84,20 @@ export default function CollaboratorsTab() {
   return (
     <div className="collab-tab">
 
-      {/* Category sub-tabs */}
-      <div className="collab-subtabs">
+      {/* Sidebar */}
+      <aside className="collab-sidebar">
         {CATEGORIES.map(c => (
           <button
             key={c.id}
-            className={`collab-subtab${activeCat === c.id ? ' active' : ''}`}
+            className={`collab-nav-item${activeCat === c.id ? ' active' : ''}`}
             onClick={() => setActiveCat(c.id)}
           >
             {c.label}
           </button>
         ))}
-      </div>
+      </aside>
 
-      {/* Table area */}
+      {/* Main content */}
       <div className="collab-body">
         <div className="collab-toolbar">
           <span className="collab-count">

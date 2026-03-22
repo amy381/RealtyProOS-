@@ -60,6 +60,7 @@ export default function App() {
   const [tcSettings, setTcSettings]             = useState([])
   const [dbTemplates,      setDbTemplates]      = useState([])
   const [dbTemplateTasks,  setDbTemplateTasks]  = useState([])
+  const [taskComments,     setTaskComments]     = useState([])
   const [backMoveModal,    setBackMoveModal]    = useState(null)
   const [loading, setLoading]                   = useState(true)
   const [newTxOpen, setNewTxOpen]               = useState(false)
@@ -157,15 +158,18 @@ export default function App() {
         { data: tcData, error: tcErr },
         { data: tplData },
         { data: tplTaskData },
+        { data: tcmData },
       ] = await Promise.all([
         supabase.from('tasks').select('*').order('sort_order', { ascending: true }),
         supabase.from('tc_settings').select('*'),
         supabase.from('task_templates').select('*').order('sort_order', { ascending: true }),
         supabase.from('template_tasks').select('*').order('sort_order', { ascending: true }),
+        supabase.from('task_comments').select('*').order('created_at', { ascending: true }),
       ])
 
       setDbTemplates(tplData || [])
       setDbTemplateTasks(tplTaskData || [])
+      setTaskComments(tcmData || [])
 
       if (tkErr) {
         console.warn('tasks table not found — run the new SQL in Supabase to enable tasks:', tkErr.message)
@@ -500,8 +504,25 @@ export default function App() {
 
   const handleDeleteTask = useCallback(async (taskId) => {
     setTasks(prev => prev.filter(t => t.id !== taskId))
+    setTaskComments(prev => prev.filter(c => c.task_id !== taskId))
     const { error } = await supabase.from('tasks').delete().eq('id', taskId)
     if (error) console.error('Task delete error:', error)
+  }, [])
+
+  const handleAddTaskComment = useCallback(async (taskId, author, body) => {
+    const { data, error } = await supabase
+      .from('task_comments')
+      .insert({ task_id: taskId, author, body })
+      .select()
+      .single()
+    if (error) { toast.error('Failed to add comment'); return }
+    if (data) setTaskComments(prev => [...prev, data])
+  }, [])
+
+  const handleDeleteTaskComment = useCallback(async (commentId) => {
+    setTaskComments(prev => prev.filter(c => c.id !== commentId))
+    const { error } = await supabase.from('task_comments').delete().eq('id', commentId)
+    if (error) console.error('Comment delete error:', error)
   }, [])
 
   // ── Apply template manually ─────────────────────────────────────────────────
@@ -680,6 +701,10 @@ export default function App() {
             transactions={transactions}
             onTaskUpdate={handleUpdateTask}
             onDeleteTask={handleDeleteTask}
+            taskComments={taskComments}
+            onAddTaskComment={handleAddTaskComment}
+            onDeleteTaskComment={handleDeleteTaskComment}
+            tcSettings={tcSettings}
             onCardClick={(tx) => {
               setSelectedTransaction(tx)
               setActiveTab('board')
@@ -719,6 +744,9 @@ export default function App() {
           onStatusChange={handleStatusChange}
           onTransactionUpdate={handleTransactionUpdate}
           onApplyTemplate={handleApplyTemplate}
+          taskComments={taskComments}
+          onAddTaskComment={handleAddTaskComment}
+          onDeleteTaskComment={handleDeleteTaskComment}
         />
       )}
 

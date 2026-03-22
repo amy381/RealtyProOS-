@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import TaskCommentPanel from './TaskCommentPanel'
 import { syncDriveFolder, uploadToDrive, getDriveUrl, CONTRACT_DOCS } from '../lib/googleDrive'
 import { TC_OPTIONS } from '../lib/columnFields'
 import { toast } from 'react-hot-toast'
@@ -218,17 +219,20 @@ function formatTimestamp(isoStr) {
   })
 }
 
-// Fix 8: completed tasks always render gray — overdue styling only for open tasks
-function getDueCls(dateStr, isDone) {
-  if (isDone) return ''
-  if (!dateStr) return ''
+// Due date countdown label for open tasks; completion date for done tasks
+function dueDateLabel(dateStr, isDone, completedAt) {
+  if (isDone) {
+    return { text: completedAt ? formatLocalDate(completedAt) : '—', cls: 'done' }
+  }
+  if (!dateStr) return { text: null, cls: '' }
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const due   = new Date(dateStr + 'T00:00:00')
   const diff  = Math.ceil((due - today) / 86400000)
-  if (diff < 0) return ' overdue'
-  if (diff === 0) return ' today'
-  if (diff <= 3) return ' soon'
-  return ''
+  const abs   = Math.abs(diff)
+  if (diff < 0)   return { text: `${abs} day${abs !== 1 ? 's' : ''} overdue`, cls: 'overdue' }
+  if (diff === 0) return { text: 'Due Today', cls: 'today' }
+  if (diff <= 3)  return { text: `Due in ${diff}`, cls: 'soon' }
+  return { text: `Due in ${diff}`, cls: 'upcoming' }
 }
 
 // ─── FUB API ──────────────────────────────────────────────────────────────────
@@ -626,7 +630,7 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
 }
 
 // ─── Tasks Spreadsheet ─────────────────────────────────────────────────────────
-function TaskRow({ task, onUpdate, onDelete }) {
+function TaskRow({ task, onUpdate, onDelete, commentCount = 0, onOpenComments }) {
   const [editTitle, setEditTitle] = useState(false)
   const [titleDraft, setTitle]    = useState(task.title)
   const [editDate, setEditDate]   = useState(false)
@@ -695,11 +699,14 @@ function TaskRow({ task, onUpdate, onDelete }) {
             onChange={e => { onUpdate(task.id, { due_date: e.target.value }); setEditDate(false) }}
             onBlur={() => setEditDate(false)}
           />
-        ) : (
-          <span className={`txp-task-date${getDueCls(task.due_date, isDone)}`} onClick={() => setEditDate(true)}>
-            {task.due_date ? formatDate(task.due_date) : <span className="txp-task-no-date">+ date</span>}
-          </span>
-        )}
+        ) : (() => {
+          const ddl = dueDateLabel(task.due_date, isDone, task.completed_at)
+          return (
+            <span className={`txp-task-date txp-task-date--${ddl.cls || 'none'}`} onClick={() => !isDone && setEditDate(true)}>
+              {ddl.text ?? <span className="txp-task-no-date">+ date</span>}
+            </span>
+          )
+        })()}
       </td>
       <td className="txp-task-td txp-task-td-assign">
         {editAssign ? (
@@ -727,11 +734,15 @@ function TaskRow({ task, onUpdate, onDelete }) {
         >
           {statusLabel}
         </button>
-        {isDone && task.completed_at && (
-          <div className="txp-task-completed-at">
-            {formatLocalDate(task.completed_at)}
-          </div>
-        )}
+      </td>
+      <td className="txp-task-td txp-task-td-cmt" onClick={e => e.stopPropagation()}>
+        <button
+          className={`txp-cmt-btn${commentCount > 0 ? ' active' : ''}`}
+          onClick={onOpenComments}
+          title={commentCount > 0 ? `${commentCount} comment${commentCount !== 1 ? 's' : ''}` : 'Add comment'}
+        >
+          💬{commentCount > 0 && <span className="txp-cmt-count">{commentCount}</span>}
+        </button>
       </td>
       <td className="txp-task-td txp-task-td-del">
         <button className="txp-task-del-btn" onClick={() => onDelete(task.id)}>✕</button>
@@ -758,7 +769,7 @@ function fmtTemplateTiming(timingType, timingDays) {
   return `${days}${labels[timingType] || timingType}`
 }
 
-function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, onDelete, dbTemplates, dbTemplateTasks, onApplyTemplate }) {
+function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, onDelete, dbTemplates, dbTemplateTasks, onApplyTemplate, taskComments = [], onAddTaskComment, onDeleteTaskComment, tcSettings = [], transactionAddr = '' }) {
   const [search, setSearch]         = useState('')
   const [filterAssign, setAssign]   = useState('All')
   const [filterStatus, setStatus]   = useState('All')
@@ -766,9 +777,10 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
   const [adding, setAdding]         = useState(false)
   const [newTitle, setNewTitle]     = useState('')
   const newInputRef                 = useRef(null)
-  const [tplDropOpen,  setTplDropOpen]  = useState(false)
-  const [previewTpl,   setPreviewTpl]   = useState(null)
-  const [applying,     setApplying]     = useState(false)
+  const [tplDropOpen,    setTplDropOpen]    = useState(false)
+  const [previewTpl,     setPreviewTpl]     = useState(null)
+  const [applying,       setApplying]       = useState(false)
+  const [commentTaskId,  setCommentTaskId]  = useState(null)
   const tplDropRef = useRef(null)
 
   useEffect(() => {
@@ -873,6 +885,7 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
             <th className="txp-task-th">Due Date</th>
             <th className="txp-task-th">Assigned To</th>
             <th className="txp-task-th">Status</th>
+            <th className="txp-task-th txp-task-th-cmt"></th>
             <th className="txp-task-th txp-task-th-del"></th>
           </tr>
         </thead>
@@ -880,7 +893,7 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
           {adding && (
             <tr className="txp-task-row">
               <td className="txp-task-td txp-task-td-check"><span className="txp-task-check"></span></td>
-              <td className="txp-task-td txp-task-td-name" colSpan={4}>
+              <td className="txp-task-td txp-task-td-name" colSpan={5}>
                 <input
                   ref={newInputRef}
                   className="txp-task-inline-input"
@@ -896,18 +909,45 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
               </td>
             </tr>
           )}
-          {filtered.map(t => (
-            <TaskRow key={t.id} task={t} onUpdate={onUpdate} onDelete={onDelete} />
-          ))}
+          {filtered.map(t => {
+            const cCount = taskComments.filter(c => c.task_id === t.id).length
+            return (
+              <TaskRow
+                key={t.id}
+                task={t}
+                onUpdate={onUpdate}
+                onDelete={onDelete}
+                commentCount={cCount}
+                onOpenComments={() => setCommentTaskId(t.id)}
+              />
+            )
+          })}
           {filtered.length === 0 && !adding && (
             <tr>
-              <td className="txp-task-empty" colSpan={6}>
+              <td className="txp-task-empty" colSpan={7}>
                 No tasks yet — click + Add Task to create one
               </td>
             </tr>
           )}
         </tbody>
       </table>
+
+      {/* Task comment panel */}
+      {commentTaskId && (() => {
+        const ct = tasks.find(t => t.id === commentTaskId)
+        const comments = taskComments.filter(c => c.task_id === commentTaskId)
+        return (
+          <TaskCommentPanel
+            taskTitle={ct?.title || ''}
+            comments={comments}
+            onAdd={(author, body) => onAddTaskComment?.(commentTaskId, author, body)}
+            onDelete={onDeleteTaskComment}
+            onClose={() => setCommentTaskId(null)}
+            tcSettings={tcSettings}
+            transactionAddr={transactionAddr}
+          />
+        )
+      })()}
 
       {/* Apply Template preview modal */}
       {previewTpl && (
@@ -2269,6 +2309,9 @@ export default function TransactionDetailPage({
   dbTemplates,
   dbTemplateTasks,
   onApplyTemplate,
+  taskComments,
+  onAddTaskComment,
+  onDeleteTaskComment,
   initialSection = 'details',
 }) {
   const [activeSection, setActiveSection]   = useState(initialSection)
@@ -2438,6 +2481,11 @@ export default function TransactionDetailPage({
               dbTemplates={dbTemplates}
               dbTemplateTasks={dbTemplateTasks}
               onApplyTemplate={onApplyTemplate}
+              taskComments={taskComments}
+              onAddTaskComment={onAddTaskComment}
+              onDeleteTaskComment={onDeleteTaskComment}
+              tcSettings={tcSettings}
+              transactionAddr={fullAddress}
             />
           )}
 

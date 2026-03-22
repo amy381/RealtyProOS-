@@ -1,21 +1,25 @@
 import { useState, useMemo, useRef } from 'react'
+import TaskCommentPanel from './TaskCommentPanel'
 import './TasksTab.css'
 
-function fmtDate(dateStr) {
-  if (!dateStr) return '—'
-  const d = new Date(dateStr + 'T00:00:00')
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+function formatLocalDate(isoStr) {
+  if (!isoStr) return ''
+  return new Date(isoStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function dueCls(dateStr) {
-  if (!dateStr) return ''
+function dueDateLabel(dateStr, isDone, completedAt) {
+  if (isDone) {
+    return { text: completedAt ? formatLocalDate(completedAt) : '—', cls: 'done' }
+  }
+  if (!dateStr) return { text: '—', cls: '' }
   const today = new Date(); today.setHours(0,0,0,0)
   const due   = new Date(dateStr + 'T00:00:00')
   const diff  = Math.ceil((due - today) / 86400000)
-  if (diff < 0)   return 'gtd-overdue'
-  if (diff === 0) return 'gtd-today'
-  if (diff <= 3)  return 'gtd-soon'
-  return ''
+  const abs   = Math.abs(diff)
+  if (diff < 0)   return { text: `${abs} day${abs !== 1 ? 's' : ''} overdue`, cls: 'overdue' }
+  if (diff === 0) return { text: 'Due Today', cls: 'today' }
+  if (diff <= 3)  return { text: `Due in ${diff}`, cls: 'soon' }
+  return { text: `Due in ${diff}`, cls: 'upcoming' }
 }
 
 function startOfWeek() {
@@ -33,7 +37,7 @@ const DATE_FILTERS     = ['All', 'Due Today', 'This Week']
 const ASSIGNEE_OPTIONS = ['Me', 'Justina Morris', 'Victoria Lareau']
 const STATUS_OPTIONS   = [{ value: 'open', label: 'Open' }, { value: 'complete', label: 'Done' }]
 
-export default function TasksTab({ tasks, transactions, onTaskUpdate, onDeleteTask, onCardClick }) {
+export default function TasksTab({ tasks, transactions, onTaskUpdate, onDeleteTask, taskComments = [], onAddTaskComment, onDeleteTaskComment, tcSettings = [], onCardClick }) {
   const [assigneeFilter, setAssigneeFilter] = useState('All')
   const [dateFilter,     setDateFilter]     = useState('All')
 
@@ -43,6 +47,9 @@ export default function TasksTab({ tasks, transactions, onTaskUpdate, onDeleteTa
   const [bulkAssignTo,  setBulkAssignTo]  = useState('')
   const [bulkStatus,    setBulkStatus]    = useState('')
   const [bulkApplying,  setBulkApplying]  = useState(false)
+
+  // Comment panel
+  const [commentTaskId, setCommentTaskId] = useState(null)
 
   const selectAllRef = useRef(null)
 
@@ -254,19 +261,21 @@ export default function TasksTab({ tasks, transactions, onTaskUpdate, onDeleteTa
               <th>Assigned To</th>
               <th>Due Date</th>
               <th>Status</th>
+              <th style={{ width: 36 }}></th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="gtd-empty">No tasks match these filters</td>
+                <td colSpan={7} className="gtd-empty">No tasks match these filters</td>
               </tr>
             )}
             {filtered.map(task => {
-              const tx   = txMap[task.transaction_id]
-              const dc   = dueCls(task.due_date)
-              const done = task.status === 'complete'
-              const sel  = selectedIds.has(task.id)
+              const tx           = txMap[task.transaction_id]
+              const done         = task.status === 'complete'
+              const sel          = selectedIds.has(task.id)
+              const ddl          = dueDateLabel(task.due_date, done, task.completed_at)
+              const commentCount = taskComments.filter(c => c.task_id === task.id).length
 
               return (
                 <tr
@@ -300,11 +309,20 @@ export default function TasksTab({ tasks, transactions, onTaskUpdate, onDeleteTa
                   <td className={`gtd-task-title${done ? ' gtd-done-text' : ''}`}>{task.title}</td>
                   <td className="gtd-addr">{tx?.property_address?.split(',')[0] || '—'}</td>
                   <td className="gtd-assignee">{task.assigned_to}</td>
-                  <td className={`gtd-due ${dc}`}>{fmtDate(task.due_date)}</td>
+                  <td className={`gtd-due gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</td>
                   <td>
                     <span className={`gtd-status-badge${done ? ' gtd-status-done' : ' gtd-status-open'}`}>
                       {done ? 'Done' : 'Open'}
                     </span>
+                  </td>
+                  <td className="gtd-cmt-td" onClick={e => e.stopPropagation()}>
+                    <button
+                      className={`gtd-cmt-btn${commentCount > 0 ? ' active' : ''}`}
+                      onClick={e => { e.stopPropagation(); setCommentTaskId(task.id) }}
+                      title={commentCount > 0 ? `${commentCount} comment${commentCount !== 1 ? 's' : ''}` : 'Add comment'}
+                    >
+                      💬{commentCount > 0 && <span className="gtd-cmt-count">{commentCount}</span>}
+                    </button>
                   </td>
                 </tr>
               )
@@ -312,6 +330,24 @@ export default function TasksTab({ tasks, transactions, onTaskUpdate, onDeleteTa
           </tbody>
         </table>
       </div>
+
+      {/* Comment panel */}
+      {commentTaskId && (() => {
+        const ct = tasks.find(t => t.id === commentTaskId)
+        const tx = ct ? txMap[ct.transaction_id] : null
+        const comments = taskComments.filter(c => c.task_id === commentTaskId)
+        return (
+          <TaskCommentPanel
+            taskTitle={ct?.title || ''}
+            comments={comments}
+            onAdd={(author, body) => onAddTaskComment?.(commentTaskId, author, body)}
+            onDelete={onDeleteTaskComment}
+            onClose={() => setCommentTaskId(null)}
+            tcSettings={tcSettings}
+            transactionAddr={tx?.property_address || ''}
+          />
+        )
+      })()}
     </div>
   )
 }

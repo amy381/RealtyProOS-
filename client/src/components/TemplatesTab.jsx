@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -23,7 +23,7 @@ const TIMING_OPTIONS = [
   { value: 'days_before_coe',             label: 'days before Close of Escrow',                    hasDays: true  },
   { value: 'days_after_coe',              label: 'days after Close of Escrow',                     hasDays: true  },
   { value: 'days_after_listing_contract', label: 'days after Listing Contract',                    hasDays: true  },
-  { value: 'days_after_bba',              label: 'days after BBA Contract',                        hasDays: true  },
+  { value: 'days_after_bba',             label: 'days after BBA Contract',                        hasDays: true  },
   { value: 'days_before_ipe',             label: 'days before Inspection Period End / BINSR Due',  hasDays: true  },
   { value: 'days_after_ipe',              label: 'days after Inspection Period End / BINSR Due',   hasDays: true  },
   { value: 'days_after_binsr',            label: 'days after BINSR Submitted',                     hasDays: true  },
@@ -52,9 +52,10 @@ const EMPTY_TASK = {
   auto_assign_to: 'Me',
 }
 
-function SortableRow({ task, onEdit, onDelete }) {
+// ── Sortable row (normal + bulk mode) ────────────────────────────────────────
+function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: task.id })
+    useSortable({ id: task.id, disabled: bulkMode })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -63,8 +64,26 @@ function SortableRow({ task, onEdit, onDelete }) {
   }
 
   return (
-    <tr ref={setNodeRef} style={style} className={isDragging ? 'tt-row-dragging' : ''}>
-      <td className="tt-drag-cell" {...attributes} {...listeners}>⠿</td>
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={[
+        isDragging  ? 'tt-row-dragging' : '',
+        isSelected  ? 'tt-row-selected' : '',
+      ].filter(Boolean).join(' ')}
+    >
+      {bulkMode ? (
+        <td className="tt-check-cell">
+          <input
+            type="checkbox"
+            className="tt-checkbox"
+            checked={isSelected}
+            onChange={() => onToggle(task.id)}
+          />
+        </td>
+      ) : (
+        <td className="tt-drag-cell" {...attributes} {...listeners}>⠿</td>
+      )}
       <td className="tt-order-cell">{task.sort_order + 1}</td>
       <td className="tt-title-cell">{task.title}</td>
       <td className="tt-type-cell">
@@ -75,29 +94,172 @@ function SortableRow({ task, onEdit, onDelete }) {
       <td className="tt-timing-cell">{formatTiming(task.timing_type, task.timing_days)}</td>
       <td className="tt-applies-cell">{task.applies_to}</td>
       <td className="tt-assign-cell">{task.auto_assign_to}</td>
-      <td className="tt-actions-cell">
-        <button className="tt-row-btn" onClick={() => onEdit(task)} title="Edit">✏️</button>
-        <button className="tt-row-btn tt-delete-btn" onClick={() => onDelete(task.id)} title="Delete">✕</button>
-      </td>
+      {!bulkMode && (
+        <td className="tt-actions-cell">
+          <button className="tt-row-btn" onClick={() => onEdit(task)} title="Edit">✏️</button>
+          <button className="tt-row-btn tt-delete-btn" onClick={() => onDelete(task.id)} title="Delete">✕</button>
+        </td>
+      )}
     </tr>
   )
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
 export default function TemplatesTab({ templates, allTemplateTasks, onRefresh }) {
-  const [sideSection,         setSideSection]         = useState('tasks')
-  const [selectedTemplateId,  setSelectedTemplateId]  = useState(null)
-  const [editingTask,         setEditingTask]         = useState(null)
-  const [saving,              setSaving]              = useState(false)
+  const [sideSection,        setSideSection]        = useState('tasks')
+  const [selectedTemplateId, setSelectedTemplateId] = useState(null)
+  const [editingTask,        setEditingTask]        = useState(null)
+  const [saving,             setSaving]             = useState(false)
+
+  // Export dropdown
+  const [exportOpen, setExportOpen] = useState(false)
+  const exportRef = useRef(null)
+
+  // Bulk edit
+  const [bulkMode,      setBulkMode]      = useState(false)
+  const [selectedIds,   setSelectedIds]   = useState(new Set())
+  const [bulkAssignTo,  setBulkAssignTo]  = useState('')
+  const [bulkTaskType,  setBulkTaskType]  = useState('')
+  const [bulkAppliesTo, setBulkAppliesTo] = useState('')
+  const [bulkSaving,    setBulkSaving]    = useState(false)
 
   const sensors = useSensors(useSensor(PointerSensor))
 
   const selectedTemplate = templates.find(t => t.id === selectedTemplateId) || null
-
   const taskRows = selectedTemplateId
     ? [...allTemplateTasks.filter(t => t.template_id === selectedTemplateId)]
         .sort((a, b) => a.sort_order - b.sort_order)
     : []
 
+  // Close export dropdown when clicking outside
+  useEffect(() => {
+    if (!exportOpen) return
+    const handler = (e) => { if (!exportRef.current?.contains(e.target)) setExportOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [exportOpen])
+
+  // Reset bulk state when template changes
+  const selectTemplate = (id) => {
+    setSelectedTemplateId(id)
+    setEditingTask(null)
+    setBulkMode(false)
+    setSelectedIds(new Set())
+  }
+
+  // ── Export ──────────────────────────────────────────────────────────────────
+  const handleExportCSV = () => {
+    setExportOpen(false)
+    const headers = ['Order', 'Task Name', 'Task Type', 'Timing', 'Applies To', 'Auto-Assign To']
+    const rows = taskRows.map((t, i) => [
+      i + 1,
+      `"${t.title.replace(/"/g, '""')}"`,
+      t.task_type,
+      `"${formatTiming(t.timing_type, t.timing_days)}"`,
+      t.applies_to,
+      t.auto_assign_to,
+    ].join(','))
+    const csv = [headers.join(','), ...rows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `${selectedTemplate.name.replace(/[^a-z0-9]/gi, '_')}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleExportPDF = () => {
+    setExportOpen(false)
+    const tblRows = taskRows.map((t, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${t.title.replace(/</g, '&lt;')}</td>
+        <td>${t.task_type}</td>
+        <td>${formatTiming(t.timing_type, t.timing_days)}</td>
+        <td>${t.applies_to}</td>
+        <td>${t.auto_assign_to}</td>
+      </tr>`).join('')
+
+    const html = `<!DOCTYPE html><html><head><title>${selectedTemplate.name}</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 32px; color: #111; }
+        h1   { font-size: 18px; margin: 0 0 4px; }
+        .meta { font-size: 12px; color: #777; margin-bottom: 24px; text-transform: capitalize; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th    { text-align: left; padding: 7px 10px; border-bottom: 2px solid #111;
+                font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: #555; }
+        td    { padding: 8px 10px; border-bottom: 1px solid #e8e8e8; vertical-align: top; }
+        tr:last-child td { border-bottom: none; }
+        @media print { body { padding: 0; } }
+      </style></head><body>
+      <h1>${selectedTemplate.name}</h1>
+      <div class="meta">${selectedTemplate.stage} &middot; ${selectedTemplate.rep_type || 'Both'} &middot; ${taskRows.length} tasks</div>
+      <table>
+        <thead><tr><th>#</th><th>Task Name</th><th>Type</th><th>Timing</th><th>Applies To</th><th>Auto-Assign To</th></tr></thead>
+        <tbody>${tblRows}</tbody>
+      </table></body></html>`
+
+    const win = window.open('', '_blank')
+    win.document.write(html)
+    win.document.close()
+    win.focus()
+    setTimeout(() => { win.print() }, 300)
+  }
+
+  // ── Bulk edit ───────────────────────────────────────────────────────────────
+  const enterBulkMode = () => {
+    setBulkMode(true)
+    setSelectedIds(new Set())
+    setBulkAssignTo('')
+    setBulkTaskType('')
+    setBulkAppliesTo('')
+  }
+
+  const exitBulkMode = () => {
+    setBulkMode(false)
+    setSelectedIds(new Set())
+  }
+
+  const toggleId = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const toggleAll = () => {
+    if (selectedIds.size === taskRows.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(taskRows.map(t => t.id)))
+    }
+  }
+
+  const handleBulkApply = async () => {
+    if (selectedIds.size === 0) return
+    const updates = {}
+    if (bulkAssignTo)  updates.auto_assign_to = bulkAssignTo
+    if (bulkTaskType)  updates.task_type       = bulkTaskType
+    if (bulkAppliesTo) updates.applies_to      = bulkAppliesTo
+    if (Object.keys(updates).length === 0) return
+
+    setBulkSaving(true)
+    try {
+      await Promise.all([...selectedIds].map(id =>
+        supabase.from('template_tasks').update(updates).eq('id', id)
+      ))
+      await onRefresh()
+      exitBulkMode()
+    } catch (err) {
+      alert('Bulk update failed: ' + err.message)
+    } finally {
+      setBulkSaving(false)
+    }
+  }
+
+  // ── Template CRUD ───────────────────────────────────────────────────────────
   const handleCreateTemplate = async () => {
     const name = window.prompt('Template name:')
     if (!name?.trim()) return
@@ -105,12 +267,10 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
     if (!stage?.trim()) return
     const repTypeRaw = window.prompt('Rep type — enter Buyer, Seller, or leave blank for Both:')
     const repType = repTypeRaw?.trim() || null
-
     const { data, error } = await supabase
       .from('task_templates')
       .insert({ name: name.trim(), stage: stage.trim(), rep_type: repType, sort_order: templates.length + 1 })
       .select().single()
-
     if (error) { alert('Failed to create template: ' + error.message); return }
     await onRefresh()
     setSelectedTemplateId(data.id)
@@ -123,6 +283,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
     if (selectedTemplateId === id) setSelectedTemplateId(null)
   }
 
+  // ── Task CRUD ───────────────────────────────────────────────────────────────
   const handleDragEnd = async ({ active, over }) => {
     if (!over || active.id === over.id) return
     const oldIdx = taskRows.findIndex(t => t.id === active.id)
@@ -165,13 +326,15 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
   }
 
   const timingOption = TIMING_OPTIONS.find(o => o.value === editingTask?.timing_type)
+  const allSelected  = taskRows.length > 0 && selectedIds.size === taskRows.length
+  const someSelected = selectedIds.size > 0 && !allSelected
+  const hasChanges   = bulkAssignTo || bulkTaskType || bulkAppliesTo
 
   return (
     <div className="templates-tab">
 
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────── */}
       <aside className="templates-sidebar">
-
         <div
           className={`templates-sidebar-hdr${sideSection === 'tasks' ? ' active' : ''}`}
           onClick={() => setSideSection('tasks')}
@@ -186,7 +349,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
                 <div
                   key={t.id}
                   className={`templates-list-item${selectedTemplateId === t.id ? ' active' : ''}`}
-                  onClick={() => { setSelectedTemplateId(t.id); setEditingTask(null) }}
+                  onClick={() => selectTemplate(t.id)}
                 >
                   <span className="templates-list-name">{t.name}</span>
                   <button
@@ -223,6 +386,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
           </div>
         ) : (
           <>
+            {/* Header */}
             <div className="templates-main-header">
               <div>
                 <h2 className="templates-main-title">{selectedTemplate.name}</h2>
@@ -231,28 +395,121 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
                   {' · '}{taskRows.length} task{taskRows.length !== 1 ? 's' : ''}
                 </div>
               </div>
-              <button
-                className="templates-add-task-btn"
-                onClick={() => setEditingTask({ ...EMPTY_TASK, template_id: selectedTemplateId })}
-              >
-                + Add Task
-              </button>
+              <div className="templates-header-actions">
+                {/* Export dropdown */}
+                <div className="tt-export-wrap" ref={exportRef}>
+                  <button
+                    className="tt-header-btn tt-export-btn"
+                    onClick={() => setExportOpen(o => !o)}
+                  >
+                    Export ▾
+                  </button>
+                  {exportOpen && (
+                    <div className="tt-export-menu">
+                      <button className="tt-export-item" onClick={handleExportPDF}>
+                        Export as PDF
+                      </button>
+                      <button className="tt-export-item" onClick={handleExportCSV}>
+                        Export as CSV
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Bulk edit toggle */}
+                {bulkMode ? (
+                  <button className="tt-header-btn tt-bulk-cancel-btn" onClick={exitBulkMode}>
+                    Cancel
+                  </button>
+                ) : (
+                  <button className="tt-header-btn tt-bulk-btn" onClick={enterBulkMode}>
+                    Bulk Edit
+                  </button>
+                )}
+
+                {!bulkMode && (
+                  <button
+                    className="templates-add-task-btn"
+                    onClick={() => setEditingTask({ ...EMPTY_TASK, template_id: selectedTemplateId })}
+                  >
+                    + Add Task
+                  </button>
+                )}
+              </div>
             </div>
 
+            {/* Bulk action bar */}
+            {bulkMode && (
+              <div className="tt-bulk-bar">
+                <label className="tt-bulk-selectall">
+                  <input
+                    type="checkbox"
+                    className="tt-checkbox"
+                    checked={allSelected}
+                    ref={el => { if (el) el.indeterminate = someSelected }}
+                    onChange={toggleAll}
+                  />
+                  <span>
+                    {selectedIds.size === 0
+                      ? 'Select all'
+                      : `${selectedIds.size} of ${taskRows.length} selected`}
+                  </span>
+                </label>
+
+                <div className="tt-bulk-fields">
+                  <select
+                    className="tt-bulk-select"
+                    value={bulkAssignTo}
+                    onChange={e => setBulkAssignTo(e.target.value)}
+                  >
+                    <option value="">Auto-Assign To…</option>
+                    {TC_ASSIGNEES.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+
+                  <select
+                    className="tt-bulk-select"
+                    value={bulkTaskType}
+                    onChange={e => setBulkTaskType(e.target.value)}
+                  >
+                    <option value="">Task Type…</option>
+                    {TASK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+
+                  <select
+                    className="tt-bulk-select"
+                    value={bulkAppliesTo}
+                    onChange={e => setBulkAppliesTo(e.target.value)}
+                  >
+                    <option value="">Applies To…</option>
+                    {APPLIES_TO.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+
+                  <button
+                    className="tt-bulk-apply-btn"
+                    onClick={handleBulkApply}
+                    disabled={bulkSaving || selectedIds.size === 0 || !hasChanges}
+                  >
+                    {bulkSaving ? 'Applying…' : 'Apply'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Task table */}
             <div className="templates-table-wrap">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={taskRows.map(t => t.id)} strategy={verticalListSortingStrategy}>
                   <table className="templates-table">
                     <thead>
                       <tr>
-                        <th className="tt-drag-cell"></th>
+                        <th className={bulkMode ? 'tt-check-cell' : 'tt-drag-cell'}></th>
                         <th className="tt-order-cell">#</th>
                         <th>Task Name</th>
                         <th className="tt-type-cell">Type</th>
                         <th className="tt-timing-cell">Timing</th>
                         <th className="tt-applies-cell">Applies To</th>
                         <th className="tt-assign-cell">Auto-Assign To</th>
-                        <th className="tt-actions-cell">Actions</th>
+                        {!bulkMode && <th className="tt-actions-cell">Actions</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -262,11 +519,14 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
                           task={task}
                           onEdit={t => setEditingTask({ ...t })}
                           onDelete={handleDeleteTask}
+                          bulkMode={bulkMode}
+                          isSelected={selectedIds.has(task.id)}
+                          onToggle={toggleId}
                         />
                       ))}
                       {taskRows.length === 0 && (
                         <tr>
-                          <td colSpan={8} className="tt-empty-row">
+                          <td colSpan={bulkMode ? 7 : 8} className="tt-empty-row">
                             No tasks yet — click + Add Task to get started
                           </td>
                         </tr>

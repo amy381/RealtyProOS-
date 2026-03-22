@@ -135,12 +135,14 @@ function fmtCents(value) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-// Commission calc: uses explicit commission_type ('flat' | 'pct'), defaults to 'pct'
-function gciFor(transaction, commission) {
-  const salePrice = Number(transaction.price) || 0
-  const rate      = Number((commission.commission_rate || '').toString().replace(/[$,%]/g, '').trim()) || 0
-  const isFlat    = (commission.commission_type || 'pct') === 'flat'
-  return isFlat ? rate : salePrice * rate / 100
+// Smart-parse a concession/contribution value:
+//   "$5000" or "$5,000" → flat $5000
+//   "3" or "3%" → 3% of price
+function parseContrib(val, price) {
+  if (!val) return 0
+  const s = String(val).trim()
+  if (s.startsWith('$')) return Number(s.replace(/[$,\s]/g, '')) || 0
+  return (Number(s.replace(/[%\s]/g, '')) || 0) / 100 * price
 }
 
 // Extract all @handle tokens from a note string
@@ -1530,114 +1532,146 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
   )
 }
 
-// ─── Commission Rate inline-edit + type toggle ────────────────────────────────
-function CommissionRateField({ value, commType, onSaveRate, onSaveType }) {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft]     = useState('')
-  const ref                   = useRef(null)
+// ─── Commission Section ────────────────────────────────────────────────────────
+function CommissionSection({ transaction, commissions, onCommissionChange, onAddTask, tasks }) {
+  const commission = commissions?.[transaction.id] || {}
+  const saveCm = field => value => onCommissionChange(transaction.id, field, value)
 
-  useEffect(() => {
-    if (editing && ref.current) { ref.current.focus(); ref.current.select?.() }
-  }, [editing])
+  const price = Number(transaction.price) || 0
+  const referralPct = Number(transaction.referral_pct) || 0
 
-  const commit = () => {
-    setEditing(false)
-    const next = draft.trim()
-    if (next !== (value ?? '').trim()) onSaveRate(next || null)
+  const sellerAmt  = parseContrib(commission.seller_concession, price)
+  const buyerAmt   = commission.buyer_contribution ? parseContrib(commission.buyer_contribution, price) : 0
+  const gci        = sellerAmt + buyerAmt
+
+  const referralAmt    = referralPct > 0 ? gci * referralPct / 100 : 0
+  const capAmt         = commission.cap_deduction     ? gci * 0.30 : 0
+  const royaltyAmt     = commission.royalty_deduction ? gci * 0.06 : 0
+  const eoAmt          = 35
+  const tcFeeAmt       = Number(commission.tc_fee_commission) || 0
+  const concessionsAmt = Number(commission.concessions) || 0
+  const net = gci - referralAmt - capAmt - royaltyAmt - eoAmt - tcFeeAmt - concessionsAmt
+
+  const address = [transaction.property_address, transaction.city].filter(Boolean).join(', ')
+
+  const handleBba = checked => {
+    saveCm('buyer_broker_addendum')(checked)
+    if (checked) {
+      const already = (tasks || []).some(t => /buyer broker addendum/i.test(t.title || ''))
+      if (!already) onAddTask?.({
+        title: 'Complete Buyer Broker Addendum',
+        transaction_id: transaction.id,
+        status: 'open',
+        assigned_to: 'Me',
+        notes: '',
+        due_date: '',
+      })
+    }
   }
 
-  return (
-    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-      {editing ? (
-        <input
-          ref={ref}
-          className="txp-input"
-          style={{ flex: 1 }}
-          value={draft}
-          placeholder={commType === 'flat' ? '1500' : '3'}
-          onChange={e => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
-        />
-      ) : (
-        <span
-          className="txp-field-value"
-          style={{ flex: 1 }}
-          onClick={() => { setDraft(value); setEditing(true) }}
-        >
-          {value || <span className="txp-placeholder">{commType === 'flat' ? '1500' : '3'}</span>}
-        </span>
-      )}
-      <div className="txp-cm-type-toggle">
-        <button
-          className={`txp-cm-type-btn${commType === 'pct'  ? ' active' : ''}`}
-          onClick={() => onSaveType('pct')}
-        >%</button>
-        <button
-          className={`txp-cm-type-btn${commType === 'flat' ? ' active' : ''}`}
-          onClick={() => onSaveType('flat')}
-        >Flat $</button>
-      </div>
+  const Sub = ({ label }) => <div className="txp-cm-sub-header">{label}</div>
+
+  const ReadRow = ({ label, value, minus, bold, color }) => (
+    <div className="txp-field">
+      <span className="txp-field-label">{label}</span>
+      <span className="txp-field-readonly" style={{ fontWeight: bold ? 700 : undefined, color }}>
+        {value > 0 ? `${minus ? '−' : ''}${fmtCents(value)}` : '—'}
+      </span>
     </div>
   )
-}
-
-// ─── Commission Section ────────────────────────────────────────────────────────
-function CommissionSection({ transaction, commissions, onCommissionChange }) {
-  const commission     = commissions?.[transaction.id] || {}
-  const commType       = commission.commission_type || 'pct'
-  const gci            = gciFor(transaction, commission)
-  const saveCm         = (field) => (value) => onCommissionChange(transaction.id, field, value)
-
-  const referralPct    = Number(transaction.referral_pct) || 0
-  const referralAmt    = referralPct > 0 ? gci * (referralPct / 100) : 0
-  const netGci         = referralPct > 0 ? gci - referralAmt : null
 
   return (
     <div className="txp-section" style={{ maxWidth: 520 }}>
       <div className="txp-section-title">Commission</div>
 
-      {/* Rate + type toggle on same row */}
-      <div className="txp-field">
-        <span className="txp-field-label">Commission Rate</span>
-        <CommissionRateField
-          value={commission.commission_rate || ''}
-          commType={commType}
-          onSaveRate={saveCm('commission_rate')}
-          onSaveType={saveCm('commission_type')}
-        />
-      </div>
+      {address && <div className="txp-cm-address">{address}</div>}
 
-      <div className="txp-field">
-        <span className="txp-field-label">GCI (computed)</span>
-        <span className="txp-field-readonly">{fmtCents(gci) || '—'}</span>
-      </div>
-
-      {netGci !== null && (<>
-        <div className="txp-field">
-          <span className="txp-field-label">Referral Amount ({referralPct}%)</span>
-          <span className="txp-field-readonly" style={{ color: '#c00' }}>−{fmtCents(referralAmt)}</span>
-        </div>
-        <div className="txp-field">
-          <span className="txp-field-label">Net GCI (after referral)</span>
-          <span className="txp-field-readonly" style={{ fontWeight: 600 }}>{fmtCents(netGci)}</span>
-        </div>
-      </>)}
-
-      <TxField label="TC Fee" value={String(commission.tc_fee ?? '')} displayValue={fmtCents(commission.tc_fee)} type="text" onSave={saveCm('tc_fee')} placeholder="$0" />
+      {/* ── Commission Source ── */}
+      <Sub label="Commission Source" />
       <TxField
-        label="Status"
-        value={commission.commission_status || 'Pending'}
-        type="select"
-        options={['Pending', 'Closed'].map(o => ({ value: o, label: o }))}
-        onSave={saveCm('commission_status')}
+        label="Seller Concession"
+        value={commission.seller_concession || ''}
+        type="text"
+        onSave={saveCm('seller_concession')}
+        placeholder="3  or  $5000"
       />
+      <TxField
+        label="Buyer Contribution"
+        value={commission.buyer_contribution || ''}
+        type="text"
+        onSave={saveCm('buyer_contribution')}
+        placeholder="2.5  or  $3000"
+      />
+      <div className="txp-field">
+        <span className="txp-field-label">GCI</span>
+        <span className="txp-field-readonly" style={{ fontWeight: 600 }}>{fmtCents(gci) || '—'}</span>
+      </div>
+
+      {/* ── Deductions ── */}
+      <Sub label="Deductions" />
+      <div className="txp-field">
+        <span className="txp-field-label">Referral %</span>
+        <span className="txp-field-readonly">
+          {referralPct > 0 ? `${referralPct}%` : <span className="txp-placeholder">Set in Referrals section</span>}
+        </span>
+      </div>
+      <ReadRow label="Referral $" value={referralAmt} minus />
+      <div className="txp-field">
+        <span className="txp-field-label">Deduct Cap</span>
+        <label className="txp-checkbox-item">
+          <input type="checkbox" checked={!!commission.cap_deduction} onChange={e => saveCm('cap_deduction')(e.target.checked)} />
+          <span className="txp-cm-check-hint">30% of GCI{commission.cap_deduction && capAmt > 0 ? ` — ${fmtCents(capAmt)}` : ''}</span>
+        </label>
+      </div>
+      <div className="txp-field">
+        <span className="txp-field-label">Deduct Royalty</span>
+        <label className="txp-checkbox-item">
+          <input type="checkbox" checked={!!commission.royalty_deduction} onChange={e => saveCm('royalty_deduction')(e.target.checked)} />
+          <span className="txp-cm-check-hint">6% of GCI{commission.royalty_deduction && royaltyAmt > 0 ? ` — ${fmtCents(royaltyAmt)}` : ''}</span>
+        </label>
+      </div>
+      <div className="txp-field">
+        <span className="txp-field-label">E&amp;O</span>
+        <span className="txp-field-readonly">$35.00</span>
+      </div>
+      <TxField
+        label="TC Fee"
+        value={String(commission.tc_fee_commission ?? '')}
+        displayValue={commission.tc_fee_commission ? fmtCents(commission.tc_fee_commission) : ''}
+        type="text"
+        onSave={saveCm('tc_fee_commission')}
+        placeholder="$0"
+      />
+      <TxField
+        label="Concessions"
+        value={String(commission.concessions ?? '')}
+        displayValue={commission.concessions ? fmtCents(commission.concessions) : ''}
+        type="text"
+        onSave={saveCm('concessions')}
+        placeholder="$0"
+      />
+
+      {/* ── Net ── */}
+      <div className="txp-field txp-cm-net-row">
+        <span className="txp-field-label txp-cm-net-label">Net</span>
+        <span className="txp-cm-net-value">{fmtCents(net) || '—'}</span>
+      </div>
+
+      {/* ── Buyer Broker Addendum ── */}
+      <Sub label="Buyer Broker Addendum" />
+      <div className="txp-field">
+        <span className="txp-field-label">BBA Required</span>
+        <label className="txp-checkbox-item">
+          <input type="checkbox" checked={!!commission.buyer_broker_addendum} onChange={e => handleBba(e.target.checked)} />
+          {commission.buyer_broker_addendum && <span className="txp-cm-check-hint">Task + doc added</span>}
+        </label>
+      </div>
     </div>
   )
 }
 
 // ─── Documents Required (with Google Drive upload) ────────────────────────────
-function DocsRequiredSection({ transaction }) {
+function DocsRequiredSection({ transaction, extraDocs = [] }) {
   const [uploads,   setUploads]   = useState({})
   const [uploading, setUploading] = useState({})
   // Local copy of folder IDs so on-the-fly creation updates the upload target immediately
@@ -1666,7 +1700,7 @@ function DocsRequiredSection({ transaction }) {
     'Contingency Removal', 'Home Inspection Report', 'Appraisal Report',
     'Loan Commitment Letter', 'Final Walkthrough Verification', 'Closing Disclosure',
   ]
-  const docs = transaction.rep_type === 'Buyer' ? buyerDocs : sellerDocs
+  const docs = [...(transaction.rep_type === 'Buyer' ? buyerDocs : sellerDocs), ...extraDocs]
 
   const handleFileSelect = async (docName, e) => {
     const file = e.target.files?.[0]
@@ -2126,7 +2160,10 @@ export default function TransactionDetailPage({
           )}
 
           {activeSection === 'docs-req' && (
-            <DocsRequiredSection transaction={transaction} />
+            <DocsRequiredSection
+              transaction={transaction}
+              extraDocs={commissions?.[transaction.id]?.buyer_broker_addendum ? ['Buyer Broker Addendum'] : []}
+            />
           )}
 
           {activeSection === 'commission' && (
@@ -2134,6 +2171,8 @@ export default function TransactionDetailPage({
               transaction={transaction}
               commissions={commissions}
               onCommissionChange={onCommissionChange}
+              onAddTask={onAddTask}
+              tasks={tasks}
             />
           )}
 

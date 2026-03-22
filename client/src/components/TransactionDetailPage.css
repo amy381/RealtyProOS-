@@ -1003,6 +1003,55 @@ select.txp-input { cursor: pointer; }
   flex-shrink: 0;
 }
 
+/* ─── Commission Section ───────────────────────────────────────────────────────── */
+.txp-cm-address {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  letter-spacing: -0.01em;
+}
+
+.txp-cm-sub-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #aaaaaa;
+  padding: 12px 18px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.txp-cm-check-hint {
+  font-size: 13px;
+  color: #888888;
+  margin-left: 4px;
+}
+
+.txp-cm-net-row {
+  background: #f7f7f7;
+  border-top: 1.5px solid #e8e8e8 !important;
+  border-bottom: 1.5px solid #e8e8e8 !important;
+}
+
+.txp-cm-net-label {
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  color: #1a1a1a !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.txp-cm-net-value {
+  flex: 1;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+  padding: 6px 7px;
+}
+
 /* ─── Commission type toggle (% / Flat $) ─────────────────────────────────────── */
 .txp-cm-type-toggle {
   display: flex;

@@ -287,7 +287,7 @@
 
 .txp-field-value {
   flex: 1;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 500;
   color: #1a1a1a;
   cursor: pointer;
@@ -305,7 +305,7 @@
 
 .txp-field-readonly {
   flex: 1;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 500;
   color: #1a1a1a;
   padding: 5px 7px;
@@ -315,7 +315,7 @@
 
 .txp-input {
   flex: 1;
-  font-size: 17px;
+  font-size: 16px;
   font-family: inherit;
   font-weight: 500;
   color: #1a1a1a;
@@ -352,7 +352,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-client-linked-name {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 500;
   color: #1a1a1a;
 }
@@ -381,7 +381,7 @@ select.txp-input { cursor: pointer; }
 
 .txp-fub-inline-input {
   width: 100%;
-  font-size: 17px;
+  font-size: 16px;
   font-family: inherit;
   font-weight: 500;
   color: #1a1a1a;
@@ -968,7 +968,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-csz-val {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 500;
   color: #1a1a1a;
   cursor: pointer;
@@ -982,7 +982,7 @@ select.txp-input { cursor: pointer; }
 .txp-csz-val:hover { background: #f0f0f0; }
 
 .txp-csz-input {
-  font-size: 17px;
+  font-size: 16px;
   font-family: inherit;
   font-weight: 500;
   color: #1a1a1a;
@@ -996,7 +996,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-csz-state {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 500;
   color: #999999;
   white-space: nowrap;
@@ -1086,7 +1086,7 @@ select.txp-input { cursor: pointer; }
   border: none;
   border-radius: 4px;
   padding: 5px 7px;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 500;
   color: #1a1a1a;
   font-family: inherit;

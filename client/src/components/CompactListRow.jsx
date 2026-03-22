@@ -34,7 +34,10 @@ export default function CompactListRow({ transaction, columnId, onCardClick }) {
 
   const fields = LIST_FIELDS[columnId] || []
 
-  const street = transaction.property_address || '(No address)'
+  const isBuyerBroker = columnId === 'buyer-broker'
+  const client1 = [transaction.client_first_name, transaction.client_last_name].filter(Boolean).join(' ') || transaction.client_name || ''
+  const client2 = [transaction.client2_first_name, transaction.client2_last_name].filter(Boolean).join(' ') || ''
+  const street  = transaction.property_address || ''
 
   return (
     <div
@@ -57,7 +60,15 @@ export default function CompactListRow({ transaction, columnId, onCardClick }) {
         if (!hasDragged.current) onCardClick?.(transaction)
       }}
     >
-      <span className="list-row-addr">{street}</span>
+      {isBuyerBroker ? (
+        <span className="list-row-primary">
+          <span className="list-row-addr">{client1 || '(No name)'}</span>
+          {client2 && <span className="list-row-client2">{client2}</span>}
+          {street  && <span className="list-row-sub">{street}</span>}
+        </span>
+      ) : (
+        <span className="list-row-addr">{street || '(No address)'}</span>
+      )}
       {fields.map(f => (
         <span key={f.key} className="list-row-date">{fmtShort(transaction[f.key])}</span>
       ))}

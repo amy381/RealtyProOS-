@@ -21,6 +21,13 @@ import './App.css'
 const ALLOWED_EMAILS = (import.meta.env.VITE_ALLOWED_EMAILS || '')
   .split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
 
+const STAGE_ORDER = ['pre-listing', 'buyer-broker', 'active-listing', 'pending', 'closed', 'cancelled-expired']
+
+function stageName(s) {
+  return { 'pre-listing': 'Pre-Listing', 'buyer-broker': 'Buyer-Broker', 'active-listing': 'Active Listing',
+           'pending': 'Pending', 'closed': 'Closed', 'cancelled-expired': 'Cancelled/Expired' }[s] || s
+}
+
 function parsePrice(val) {
   if (val === null || val === undefined || val === '') return null
   const n = Number(String(val).replace(/[^0-9.]/g, ''))
@@ -53,6 +60,7 @@ export default function App() {
   const [tcSettings, setTcSettings]             = useState([])
   const [dbTemplates,      setDbTemplates]      = useState([])
   const [dbTemplateTasks,  setDbTemplateTasks]  = useState([])
+  const [backMoveModal,    setBackMoveModal]    = useState(null)
   const [loading, setLoading]                   = useState(true)
   const [newTxOpen, setNewTxOpen]               = useState(false)
   const [modalOpen, setModalOpen]               = useState(false)
@@ -216,8 +224,6 @@ export default function App() {
         })
       }
 
-      await insertTemplateTasks(newTx.id, newTx.status, newTx.rep_type, newTx)
-
       setNewTxOpen(false)
       setSelectedTransaction(newTx)
     } catch (err) {
@@ -280,10 +286,16 @@ export default function App() {
       setCommissions(prev => { const next = { ...prev }; delete next[transactionId]; return next })
     }
 
-    // Auto-populate template tasks (only if not already populated for this stage)
+    // Backward stage move: offer to remove incomplete tasks
     if (transaction) {
-      const updatedTx = { ...transaction, status: newStatus }
-      await insertTemplateTasks(transactionId, newStatus, transaction.rep_type, updatedTx)
+      const oldIdx = STAGE_ORDER.indexOf(transaction.status)
+      const newIdx = STAGE_ORDER.indexOf(newStatus)
+      if (oldIdx > 0 && newIdx >= 0 && newIdx < oldIdx) {
+        const incompleteTasks = tasks.filter(t => t.transaction_id === transactionId && t.status === 'open')
+        if (incompleteTasks.length > 0) {
+          setBackMoveModal({ transactionId, oldStage: transaction.status, newStage: newStatus })
+        }
+      }
     }
 
     // Move the Drive folder to match the new status (fire-and-forget, never blocks the UI)
@@ -492,6 +504,30 @@ export default function App() {
     if (error) console.error('Task delete error:', error)
   }, [])
 
+  // ── Apply template manually ─────────────────────────────────────────────────
+  const handleApplyTemplate = useCallback(async (transactionId, templateId, transaction) => {
+    const tplTaskRows = dbTemplateTasks.filter(t => t.template_id === templateId)
+    const builtTasks  = buildTemplateTasksFromDB(tplTaskRows, transaction)
+    if (!builtTasks.length) return
+    const toInsert = builtTasks.map(t => ({ ...t, transaction_id: transactionId, template_key: templateId }))
+    const { data: inserted, error } = await supabase.from('tasks').insert(toInsert).select()
+    if (error) { toast.error('Failed to apply template'); return }
+    if (inserted) {
+      setTasks(prev => [...prev, ...inserted])
+      toast.success(`${inserted.length} tasks added`, { duration: 2000 })
+    }
+  }, [dbTemplateTasks])
+
+  // ── Backward move — remove incomplete tasks ──────────────────────────────────
+  const handleBackMoveYes = useCallback(async () => {
+    if (!backMoveModal) return
+    const { transactionId } = backMoveModal
+    const toDelete = tasks.filter(t => t.transaction_id === transactionId && t.status === 'open')
+    setTasks(prev => prev.filter(t => !(t.transaction_id === transactionId && t.status === 'open')))
+    await Promise.all(toDelete.map(t => supabase.from('tasks').delete().eq('id', t.id)))
+    setBackMoveModal(null)
+  }, [backMoveModal, tasks])
+
   // ── Templates refresh ───────────────────────────────────────────────────────
   const handleTemplatesRefresh = useCallback(async () => {
     const [{ data: tplData }, { data: tplTaskData }] = await Promise.all([
@@ -671,6 +707,8 @@ export default function App() {
           commissions={commissions}
           tasks={panelTasks}
           tcSettings={tcSettings}
+          dbTemplates={dbTemplates}
+          dbTemplateTasks={dbTemplateTasks}
           onBack={() => setSelectedTransaction(null)}
           onFieldSave={handleFieldSave}
           onCommissionChange={handleCommissionChange}
@@ -680,7 +718,26 @@ export default function App() {
           onDeleteTask={handleDeleteTask}
           onStatusChange={handleStatusChange}
           onTransactionUpdate={handleTransactionUpdate}
+          onApplyTemplate={handleApplyTemplate}
         />
+      )}
+
+      {backMoveModal && (
+        <div className="back-move-overlay">
+          <div className="back-move-modal">
+            <div className="back-move-title">Stage Moving Back</div>
+            <div className="back-move-body">
+              This transaction is moving back to <strong>{stageName(backMoveModal.newStage)}</strong>.
+              Would you like to remove incomplete {stageName(backMoveModal.oldStage)} tasks?
+              <br /><br />
+              Completed tasks will always be kept.
+            </div>
+            <div className="back-move-actions">
+              <button className="back-move-no"  onClick={() => setBackMoveModal(null)}>No, keep them</button>
+              <button className="back-move-yes" onClick={handleBackMoveYes}>Yes, remove them</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {newTxOpen && (

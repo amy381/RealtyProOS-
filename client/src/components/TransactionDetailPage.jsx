@@ -740,7 +740,25 @@ function TaskRow({ task, onUpdate, onDelete }) {
   )
 }
 
-function TasksSpreadsheet({ tasks, transactionId, onAdd, onUpdate, onDelete }) {
+function fmtTemplateTiming(timingType, timingDays) {
+  if (timingType === 'at_stage_change') return 'At stage change'
+  if (timingType === 'specific_date')   return 'Specific date'
+  const days = Number(timingDays) || 0
+  const labels = {
+    days_after_contract:         'd after Contract Acceptance',
+    days_before_coe:             'd before COE',
+    days_after_coe:              'd after COE',
+    days_after_listing_contract: 'd after Listing Contract',
+    days_after_bba:              'd after BBA',
+    days_before_ipe:             'd before IPE',
+    days_after_ipe:              'd after IPE',
+    days_after_binsr:            'd after BINSR Submitted',
+  }
+  if (timingType === 'days_before_ipe' && days === 0) return 'At IPE'
+  return `${days}${labels[timingType] || timingType}`
+}
+
+function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, onDelete, dbTemplates, dbTemplateTasks, onApplyTemplate }) {
   const [search, setSearch]         = useState('')
   const [filterAssign, setAssign]   = useState('All')
   const [filterStatus, setStatus]   = useState('All')
@@ -748,6 +766,33 @@ function TasksSpreadsheet({ tasks, transactionId, onAdd, onUpdate, onDelete }) {
   const [adding, setAdding]         = useState(false)
   const [newTitle, setNewTitle]     = useState('')
   const newInputRef                 = useRef(null)
+  const [tplDropOpen,  setTplDropOpen]  = useState(false)
+  const [previewTpl,   setPreviewTpl]   = useState(null)
+  const [applying,     setApplying]     = useState(false)
+  const tplDropRef = useRef(null)
+
+  useEffect(() => {
+    if (!tplDropOpen) return
+    const handler = (e) => { if (!tplDropRef.current?.contains(e.target)) setTplDropOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [tplDropOpen])
+
+  const previewTasks = previewTpl
+    ? (dbTemplateTasks || []).filter(t => t.template_id === previewTpl.id)
+        .sort((a, b) => a.sort_order - b.sort_order)
+    : []
+
+  const handleConfirmApply = async () => {
+    if (!previewTpl || !onApplyTemplate) return
+    setApplying(true)
+    try {
+      await onApplyTemplate(transactionId, previewTpl.id, transaction)
+      setPreviewTpl(null)
+    } finally {
+      setApplying(false)
+    }
+  }
 
   useEffect(() => { if (adding) newInputRef.current?.focus() }, [adding])
 
@@ -796,6 +841,26 @@ function TasksSpreadsheet({ tasks, transactionId, onAdd, onUpdate, onDelete }) {
           <button className="txp-task-sort-btn" onClick={() => setSortAsc(a => !a)}>
             Due {sortAsc ? '↑' : '↓'}
           </button>
+          {dbTemplates?.length > 0 && (
+            <div className="txp-tpl-wrap" ref={tplDropRef}>
+              <button className="txp-tpl-btn" onClick={() => setTplDropOpen(o => !o)}>
+                Apply Template ▾
+              </button>
+              {tplDropOpen && (
+                <div className="txp-tpl-menu">
+                  {dbTemplates.map(tpl => (
+                    <button
+                      key={tpl.id}
+                      className="txp-tpl-item"
+                      onClick={() => { setPreviewTpl(tpl); setTplDropOpen(false) }}
+                    >
+                      {tpl.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <button className="txp-task-add-btn" onClick={() => setAdding(true)}>+ Add Task</button>
         </div>
       </div>
@@ -843,6 +908,53 @@ function TasksSpreadsheet({ tasks, transactionId, onAdd, onUpdate, onDelete }) {
           )}
         </tbody>
       </table>
+
+      {/* Apply Template preview modal */}
+      {previewTpl && (
+        <div className="txp-tpl-overlay" onClick={e => { if (e.target === e.currentTarget) setPreviewTpl(null) }}>
+          <div className="txp-tpl-modal">
+            <div className="txp-tpl-modal-header">
+              <div>
+                <div className="txp-tpl-modal-title">Apply Template</div>
+                <div className="txp-tpl-modal-sub">{previewTpl.name} — {previewTasks.length} tasks</div>
+              </div>
+              <button className="txp-tpl-modal-close" onClick={() => setPreviewTpl(null)}>✕</button>
+            </div>
+            <div className="txp-tpl-modal-body">
+              <table className="txp-tpl-preview-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Task Name</th>
+                    <th>Timing</th>
+                    <th>Assign To</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewTasks.map((t, i) => (
+                    <tr key={t.id}>
+                      <td className="txp-tpl-preview-num">{i + 1}</td>
+                      <td>{t.title}</td>
+                      <td className="txp-tpl-preview-timing">{fmtTemplateTiming(t.timing_type, t.timing_days)}</td>
+                      <td className="txp-tpl-preview-assign">{t.auto_assign_to}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="txp-tpl-modal-actions">
+              <button className="txp-tpl-cancel" onClick={() => setPreviewTpl(null)}>Cancel</button>
+              <button
+                className="txp-tpl-confirm"
+                onClick={handleConfirmApply}
+                disabled={applying}
+              >
+                {applying ? 'Adding…' : `Add ${previewTasks.length} Tasks`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -2154,6 +2266,9 @@ export default function TransactionDetailPage({
   onDeleteTask,
   onStatusChange,
   onTransactionUpdate,
+  dbTemplates,
+  dbTemplateTasks,
+  onApplyTemplate,
   initialSection = 'details',
 }) {
   const [activeSection, setActiveSection]   = useState(initialSection)
@@ -2316,9 +2431,13 @@ export default function TransactionDetailPage({
             <TasksSpreadsheet
               tasks={tasks || []}
               transactionId={transaction.id}
+              transaction={transaction}
               onAdd={onAddTask}
               onUpdate={onUpdateTask}
               onDelete={onDeleteTask}
+              dbTemplates={dbTemplates}
+              dbTemplateTasks={dbTemplateTasks}
+              onApplyTemplate={onApplyTemplate}
             />
           )}
 

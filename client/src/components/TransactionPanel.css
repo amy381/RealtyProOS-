@@ -37,7 +37,7 @@
 }
 
 .panel-address {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: #ffffff;
   line-height: 1.4;
@@ -47,7 +47,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: #cccccc;
   margin-top: 4px;
@@ -67,7 +67,7 @@
 }
 
 .panel-section-title {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -92,13 +92,13 @@
 }
 
 .panel-label {
-  font-size: 13px;
+  font-size: 15px;
   color: #666666;
   white-space: nowrap;
 }
 
 .panel-value {
-  font-size: 13px;
+  font-size: 15px;
   color: #1a1a1a;
   text-align: right;
 }
@@ -112,7 +112,7 @@
 .panel-close-btn {
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 20px;
   color: #cccccc;
   cursor: pointer;
   padding: 2px 6px;
@@ -130,7 +130,7 @@
 }
 
 .panel-notes {
-  font-size: 13px;
+  font-size: 15px;
   color: #666666;
   line-height: 1.6;
   white-space: pre-wrap;
@@ -159,7 +159,7 @@
 }
 
 .panel-input {
-  font-size: 13px;
+  font-size: 15px;
   font-family: inherit;
   color: #1a1a1a;
   background: #fff;
@@ -187,7 +187,7 @@ select.panel-input {
 }
 
 .panel-textarea {
-  font-size: 13px;
+  font-size: 15px;
   font-family: inherit;
   color: #1a1a1a;
   background: #fff;
@@ -217,7 +217,7 @@ select.panel-input {
   color: #666666;
   padding: 7px 14px;
   border-radius: 7px;
-  font-size: 13px;
+  font-size: 15px;
   font-family: inherit;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;

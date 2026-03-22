@@ -26,7 +26,7 @@
   border: none;
   padding: 5px 13px;
   border-radius: 5px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   color: #666666;
   cursor: pointer;
@@ -50,7 +50,7 @@
 }
 
 .gtd-summary {
-  font-size: 12px;
+  font-size: 14px;
   color: #666666;
   margin-left: auto;
 }
@@ -66,7 +66,7 @@
 .gtd-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .gtd-table thead tr {
@@ -79,7 +79,7 @@
 .gtd-table th {
   padding: 10px 12px;
   text-align: left;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -107,7 +107,7 @@
   text-align: center;
   color: #666666;
   padding: 32px !important;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .gtd-check {
@@ -117,7 +117,7 @@
   border: 1.5px solid #cccccc;
   background: #fff;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -151,7 +151,7 @@
 .gtd-soon     { color: #333333; }
 
 .gtd-status-badge {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 99px;

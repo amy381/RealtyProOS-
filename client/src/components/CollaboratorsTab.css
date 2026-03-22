@@ -23,7 +23,7 @@
   border-left: 3px solid transparent;
   text-align: left;
   padding: 11px 20px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 400;
   color: #777;
   cursor: pointer;
@@ -59,7 +59,7 @@
 }
 
 .collab-count {
-  font-size: 13px;
+  font-size: 15px;
   color: #888;
 }
 
@@ -69,7 +69,7 @@
   border: none;
   padding: 7px 16px;
   border-radius: 7px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -93,7 +93,7 @@
 .collab-table th {
   text-align: left;
   padding: 10px 14px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -104,7 +104,7 @@
 
 .collab-table td {
   padding: 11px 14px;
-  font-size: 13px;
+  font-size: 15px;
   color: #222;
   border-bottom: 1px solid #f2f2f2;
 }
@@ -132,7 +132,7 @@
 .collab-del-btn {
   padding: 4px 12px;
   border-radius: 5px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
@@ -164,7 +164,7 @@
   text-align: center;
   padding: 60px 24px;
   color: #aaa;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 /* ── Modal ────────────────────────────────────────────────── */
@@ -197,7 +197,7 @@
 }
 
 .collab-modal-header h2 {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: #111;
   margin: 0;
@@ -206,7 +206,7 @@
 .collab-modal-close {
   background: none;
   border: none;
-  font-size: 16px;
+  font-size: 18px;
   color: #999;
   cursor: pointer;
   padding: 2px 6px;
@@ -229,7 +229,7 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: #666;
   text-transform: uppercase;
@@ -240,7 +240,7 @@
   padding: 8px 10px;
   border: 1px solid #ddd;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 16px;
   color: #111;
   font-family: inherit;
   outline: none;
@@ -271,7 +271,7 @@
   border: none;
   padding: 8px 18px;
   border-radius: 7px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -287,7 +287,7 @@
   border: none;
   padding: 8px 20px;
   border-radius: 7px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;

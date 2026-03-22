@@ -28,7 +28,7 @@
 }
 
 .settings-header h2 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: #1a1a1a;
 }
@@ -36,7 +36,7 @@
 .settings-close {
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 20px;
   color: #666666;
   cursor: pointer;
   padding: 2px 8px;
@@ -56,7 +56,7 @@
 }
 
 .settings-section-label {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -66,7 +66,7 @@
 }
 
 .settings-hint {
-  font-size: 13px;
+  font-size: 15px;
   color: #666666;
   line-height: 1.5;
 }
@@ -84,7 +84,7 @@
 }
 
 .settings-tc-name {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: #1a1a1a;
   min-width: 130px;
@@ -95,7 +95,7 @@
   border: 1.5px solid #e0e0e0;
   border-radius: 7px;
   padding: 7px 10px;
-  font-size: 13px;
+  font-size: 15px;
   font-family: inherit;
   color: #1a1a1a;
   background: #fff;
@@ -108,7 +108,7 @@
 }
 
 .settings-email-note {
-  font-size: 12px;
+  font-size: 14px;
   color: #666666;
   background: #f5f5f5;
   border: 1px solid #e0e0e0;
@@ -124,7 +124,7 @@
 .settings-env-block {
   display: block;
   font-family: monospace;
-  font-size: 11px;
+  font-size: 13px;
   background: #f0f0f0;
   border-radius: 5px;
   padding: 6px 8px;
@@ -146,7 +146,7 @@
   border: none;
   padding: 8px 16px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -162,7 +162,7 @@
   border: none;
   padding: 8px 20px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;

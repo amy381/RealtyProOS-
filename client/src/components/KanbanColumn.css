@@ -54,7 +54,7 @@
 }
 
 .column-title {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   color: #ffffff;
   text-transform: uppercase;
@@ -62,14 +62,14 @@
 }
 
 .kanban-column--list .column-title {
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.09em;
 }
 
 .column-count {
   background: rgba(255,255,255,0.15);
   color: #ffffff;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   padding: 1px 7px;
   border-radius: 99px;
@@ -91,7 +91,7 @@
 .column-empty {
   text-align: center;
   color: #999999;
-  font-size: 12px;
+  font-size: 14px;
   padding: 20px 0;
   border: 1.5px dashed #e0e0e0;
   border-radius: 7px;
@@ -118,7 +118,7 @@
 
 .lch-addr {
   flex: 1;
-  font-size: 11px;
+  font-size: 13px;
   font-variant: small-caps;
   font-weight: 600;
   color: #aaaaaa;
@@ -128,7 +128,7 @@
 .lch-d1,
 .lch-d2 {
   width: 38px;
-  font-size: 11px;
+  font-size: 13px;
   font-variant: small-caps;
   font-weight: 600;
   color: #aaaaaa;

@@ -13,7 +13,7 @@
 }
 
 .ts-title {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -22,11 +22,11 @@
 }
 
 .ts-counts { display: flex; gap: 6px; }
-.ts-count-open { font-size: 11px; color: #1a1a1a; font-weight: 600; }
-.ts-count-done { font-size: 11px; color: #999999; font-weight: 600; }
+.ts-count-open { font-size: 13px; color: #1a1a1a; font-weight: 600; }
+.ts-count-done { font-size: 13px; color: #999999; font-weight: 600; }
 
 .ts-add-btn {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: #1a1a1a;
   background: none;
@@ -48,7 +48,7 @@
 }
 
 .ts-input {
-  font-size: 13px;
+  font-size: 15px;
   font-family: inherit;
   border: 1px solid #e0e0e0;
   border-radius: 5px;
@@ -71,7 +71,7 @@
 }
 
 .ts-btn-save {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   background: #000000;
   color: #fff;
@@ -85,7 +85,7 @@
 .ts-btn-save:hover { background: #333333; }
 
 .ts-btn-cancel {
-  font-size: 13px;
+  font-size: 15px;
   background: none;
   border: none;
   color: #666666;
@@ -98,7 +98,7 @@
 .ts-list { display: flex; flex-direction: column; gap: 1px; }
 
 .ts-empty {
-  font-size: 12px;
+  font-size: 14px;
   color: #999999;
   padding: 10px 0;
   text-align: center;
@@ -131,7 +131,7 @@
   border: 1.5px solid #cccccc;
   background: #fff;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -152,7 +152,7 @@
 }
 
 .ts-row-title {
-  font-size: 13px;
+  font-size: 15px;
   color: #1a1a1a;
   cursor: pointer;
   line-height: 1.4;
@@ -162,7 +162,7 @@
 .ts-title-done         { text-decoration: line-through; color: #999999; cursor: default; }
 
 .ts-title-input {
-  font-size: 13px;
+  font-size: 15px;
   font-family: inherit;
   border: 1px solid #000000;
   border-radius: 4px;
@@ -178,7 +178,7 @@
 }
 
 .ts-due {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   padding: 1px 5px;
@@ -188,11 +188,11 @@
 .ts-due-soon    { color: #1a1a1a; background: #f0f0f0; }
 .ts-due-today   { color: #000000; background: #e8e8e8; font-weight: 700; }
 .ts-due-overdue { color: #000000; background: #e0e0e0; font-weight: 700; }
-.ts-due-none    { color: #999999; font-size: 11px; }
+.ts-due-none    { color: #999999; font-size: 13px; }
 .ts-due-none:hover { color: #1a1a1a; }
 
 .ts-meta-input {
-  font-size: 11px;
+  font-size: 13px;
   font-family: inherit;
   border: 1px solid #000000;
   border-radius: 3px;
@@ -202,7 +202,7 @@
 }
 
 .ts-assignee {
-  font-size: 11px;
+  font-size: 13px;
   color: #666666;
   cursor: pointer;
   padding: 1px 6px;
@@ -223,7 +223,7 @@
 .ts-row:hover .ts-row-actions { opacity: 1; }
 
 .ts-notes-toggle {
-  font-size: 9px;
+  font-size: 11px;
   color: #999999;
   background: none;
   border: none;
@@ -235,7 +235,7 @@
 .ts-notes-toggle:hover { background: rgba(0,0,0,0.06); }
 
 .ts-del {
-  font-size: 10px;
+  font-size: 12px;
   color: #999999;
   background: none;
   border: none;
@@ -248,7 +248,7 @@
 .ts-notes-wrap { padding: 0 4px 6px 28px; }
 
 .ts-notes-text {
-  font-size: 12px;
+  font-size: 14px;
   color: #666666;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -262,7 +262,7 @@
 .ts-notes-ph { color: #999999; font-style: italic; }
 
 .ts-notes-area {
-  font-size: 12px;
+  font-size: 14px;
   font-family: inherit;
   border: 1px solid #000000;
   border-radius: 4px;

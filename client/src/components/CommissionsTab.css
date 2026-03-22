@@ -26,13 +26,13 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: #333333;
 }
 
 .cap-tracker-amounts {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   color: #1a1a1a;
 }
@@ -73,7 +73,7 @@
   border: none;
   padding: 5px 14px;
   border-radius: 5px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   color: #666666;
   cursor: pointer;
@@ -101,7 +101,7 @@
 .commissions-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .commissions-table thead tr {
@@ -114,7 +114,7 @@
 .commissions-table th {
   padding: 10px 12px;
   text-align: left;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -150,7 +150,7 @@
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   padding: 3px 6px;
-  font-size: 12px;
+  font-size: 14px;
   font-family: inherit;
   background: white;
   color: #1a1a1a;
@@ -163,7 +163,7 @@
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   padding: 3px 6px;
-  font-size: 12px;
+  font-size: 14px;
   font-family: inherit;
   background: white;
   color: #1a1a1a;
@@ -195,7 +195,7 @@
 }
 
 .col-tooltip-icon {
-  font-size: 11px;
+  font-size: 13px;
   color: #999999;
   cursor: default;
 }
@@ -208,7 +208,7 @@
   transform: translateX(-50%);
   background: #1a1a1a;
   color: #ffffff;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 400;
   text-transform: none;
   letter-spacing: 0;

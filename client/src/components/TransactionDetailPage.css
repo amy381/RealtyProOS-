@@ -31,7 +31,7 @@
   background: none;
   border: none;
   color: #555;
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
   padding: 6px 10px;
@@ -69,7 +69,7 @@
 }
 
 .txp-send-dropdown-title {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   color: #888888;
   letter-spacing: 0.07em;
@@ -81,7 +81,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   color: #1a1a1a;
   cursor: pointer;
@@ -97,7 +97,7 @@
 }
 
 .txp-send-no-emails {
-  font-size: 13px;
+  font-size: 15px;
   color: #888888;
   line-height: 1.5;
   margin-bottom: 12px;
@@ -115,7 +115,7 @@
   border: 1.5px solid #e0e0e0;
   border-radius: 6px;
   color: #555555;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   font-family: inherit;
   padding: 6px 14px;
@@ -129,7 +129,7 @@
   border: none;
   border-radius: 6px;
   color: #ffffff;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   font-family: inherit;
   padding: 6px 18px;
@@ -145,7 +145,7 @@
   border: none;
   padding: 8px 22px;
   border-radius: 7px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -161,7 +161,7 @@
   color: #aaaaaa;
   padding: 7px 16px;
   border-radius: 7px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
@@ -190,7 +190,7 @@
   border-left: 3px solid transparent;
   text-align: left;
   padding: 11px 20px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 400;
   color: #777777;
   cursor: pointer;
@@ -243,7 +243,7 @@
 }
 
 .txp-section-title {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -269,7 +269,7 @@
 .txp-field-label {
   width: 152px;
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: 14px;
   font-variant: small-caps;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -287,7 +287,7 @@
 
 .txp-field-value {
   flex: 1;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   color: #1a1a1a;
   cursor: pointer;
@@ -305,17 +305,17 @@
 
 .txp-field-readonly {
   flex: 1;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   color: #1a1a1a;
   padding: 5px 7px;
 }
 
-.txp-placeholder { color: #cccccc; font-style: italic; font-size: 14px; font-weight: 400; }
+.txp-placeholder { color: #cccccc; font-style: italic; font-size: 16px; font-weight: 400; }
 
 .txp-input {
   flex: 1;
-  font-size: 15px;
+  font-size: 17px;
   font-family: inherit;
   font-weight: 500;
   color: #1a1a1a;
@@ -352,7 +352,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-client-linked-name {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   color: #1a1a1a;
 }
@@ -364,7 +364,7 @@ select.txp-input { cursor: pointer; }
   color: #666666;
   padding: 4px 12px;
   border-radius: 5px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
@@ -381,7 +381,7 @@ select.txp-input { cursor: pointer; }
 
 .txp-fub-inline-input {
   width: 100%;
-  font-size: 15px;
+  font-size: 17px;
   font-family: inherit;
   font-weight: 500;
   color: #1a1a1a;
@@ -429,10 +429,10 @@ select.txp-input { cursor: pointer; }
 .txp-fub-result:last-child { border-bottom: none; }
 .txp-fub-result:hover { background: #f7f7f7; }
 
-.txp-fub-name  { font-size: 14px; font-weight: 600; color: #1a1a1a; flex-shrink: 0; }
-.txp-fub-email { font-size: 13px; color: #999; flex-shrink: 0; }
-.txp-fub-via   { font-size: 12px; color: #bbb; font-style: italic; flex-shrink: 0; }
-.txp-fub-loading, .txp-fub-empty { padding: 12px 14px; font-size: 14px; color: #999999; white-space: nowrap; }
+.txp-fub-name  { font-size: 16px; font-weight: 600; color: #1a1a1a; flex-shrink: 0; }
+.txp-fub-email { font-size: 15px; color: #999; flex-shrink: 0; }
+.txp-fub-via   { font-size: 14px; color: #bbb; font-style: italic; flex-shrink: 0; }
+.txp-fub-loading, .txp-fub-empty { padding: 12px 14px; font-size: 16px; color: #999999; white-space: nowrap; }
 
 /* ─── Checkboxes (property features) ──────────────────────────────────────────── */
 .txp-checks-row {
@@ -448,7 +448,7 @@ select.txp-input { cursor: pointer; }
   align-items: center;
   gap: 7px;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   color: #1a1a1a;
 }
@@ -464,7 +464,7 @@ select.txp-input { cursor: pointer; }
 
 .txp-note-compose-input {
   width: 100%;
-  font-size: 15px;
+  font-size: 17px;
   font-family: inherit;
   font-weight: 400;
   color: #1a1a1a;
@@ -515,7 +515,7 @@ select.txp-input { cursor: pointer; }
   border-bottom: 1px solid #f2f2f2;
   text-align: left;
   padding: 9px 14px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   font-family: inherit;
   color: #1a1a1a;
@@ -542,7 +542,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-note-text {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 400;
   color: #1a1a1a;
   line-height: 1.55;
@@ -560,10 +560,10 @@ select.txp-input { cursor: pointer; }
   align-items: center;
   margin-top: 8px;
 }
-.txp-note-info { font-size: 13px; color: #bbbbbb; }
+.txp-note-info { font-size: 15px; color: #bbbbbb; }
 .txp-note-del {
   background: none; border: none; color: #dddddd; cursor: pointer;
-  font-size: 14px; padding: 2px 6px; border-radius: 4px; transition: color 0.12s, background 0.12s;
+  font-size: 16px; padding: 2px 6px; border-radius: 4px; transition: color 0.12s, background 0.12s;
 }
 .txp-note-del:hover { color: #888888; background: #eeeeee; }
 
@@ -589,7 +589,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-tasks-title {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -605,7 +605,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-task-search {
-  font-size: 14px;
+  font-size: 16px;
   font-family: inherit;
   color: #1a1a1a;
   border: 1.5px solid #e4e4e4;
@@ -620,7 +620,7 @@ select.txp-input { cursor: pointer; }
 .txp-task-search::placeholder { color: #bbbbbb; }
 
 .txp-task-filter {
-  font-size: 14px;
+  font-size: 16px;
   font-family: inherit;
   color: #555555;
   border: 1.5px solid #e4e4e4;
@@ -634,7 +634,7 @@ select.txp-input { cursor: pointer; }
 .txp-task-filter:focus { border-color: #aaaaaa; }
 
 .txp-task-sort-btn {
-  font-size: 14px;
+  font-size: 16px;
   font-family: inherit;
   color: #555555;
   border: 1.5px solid #e4e4e4;
@@ -648,7 +648,7 @@ select.txp-input { cursor: pointer; }
 .txp-task-sort-btn:hover { background: #f4f4f4; border-color: #cccccc; }
 
 .txp-task-add-btn {
-  font-size: 14px;
+  font-size: 16px;
   font-family: inherit;
   font-weight: 600;
   color: #ffffff;
@@ -666,12 +666,12 @@ select.txp-input { cursor: pointer; }
 .txp-task-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 15px;
+  font-size: 17px;
 }
 
 .txp-task-th {
   text-align: left;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -710,7 +710,7 @@ select.txp-input { cursor: pointer; }
 
 /* Completion date shown below the badge */
 .txp-task-completed-at {
-  font-size: 12px;
+  font-size: 14px;
   color: #b0b0b0;
   margin-top: 3px;
   white-space: nowrap;
@@ -726,7 +726,7 @@ select.txp-input { cursor: pointer; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 14px;
   color: #ffffff;
   transition: all 0.12s;
   flex-shrink: 0;
@@ -734,7 +734,7 @@ select.txp-input { cursor: pointer; }
 .txp-task-check.checked { background: #1a1a1a; border-color: #1a1a1a; }
 
 .txp-task-name-text {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   color: #1a1a1a;
   cursor: pointer;
@@ -748,7 +748,7 @@ select.txp-input { cursor: pointer; }
 .txp-task-name-text.done { text-decoration: line-through; color: #aaaaaa; cursor: default; }
 
 .txp-task-inline-input {
-  font-size: 15px;
+  font-size: 17px;
   font-family: inherit;
   font-weight: 500;
   color: #1a1a1a;
@@ -763,7 +763,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-task-date {
-  font-size: 14px;
+  font-size: 16px;
   color: #555555;
   cursor: pointer;
   border-radius: 4px;
@@ -776,10 +776,10 @@ select.txp-input { cursor: pointer; }
 .txp-task-date.overdue { color: #dc2626; font-weight: 600; }
 .txp-task-date.today   { color: #d97706; font-weight: 600; }
 .txp-task-date.soon    { color: #0284c7; }
-.txp-task-no-date { color: #cccccc; font-style: italic; font-size: 14px; }
+.txp-task-no-date { color: #cccccc; font-style: italic; font-size: 16px; }
 
 .txp-task-assignee-text {
-  font-size: 14px;
+  font-size: 16px;
   color: #555555;
   cursor: pointer;
   border-radius: 4px;
@@ -791,7 +791,7 @@ select.txp-input { cursor: pointer; }
 .txp-task-assignee-text:hover { background: #eeeeee; }
 
 .txp-task-status-badge {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 5px;
@@ -809,7 +809,7 @@ select.txp-input { cursor: pointer; }
   border: none;
   color: #cccccc;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 17px;
   padding: 3px 7px;
   border-radius: 4px;
   transition: color 0.12s, background 0.12s;
@@ -819,7 +819,7 @@ select.txp-input { cursor: pointer; }
 .txp-task-empty {
   text-align: center;
   padding: 24px;
-  font-size: 15px;
+  font-size: 17px;
   color: #c0c0c0;
   font-style: italic;
 }
@@ -834,7 +834,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-history-filter {
-  font-size: 13px;
+  font-size: 15px;
   font-family: inherit;
   font-weight: 500;
   color: #555555;
@@ -862,7 +862,7 @@ select.txp-input { cursor: pointer; }
 
 .txp-history-badge {
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -874,13 +874,13 @@ select.txp-input { cursor: pointer; }
 .txp-history-badge--note    { background: #dcfce7; color: #166534; }
 .txp-history-badge--mention { background: #dbeafe; color: #1e40af; }
 
-.txp-history-desc { font-size: 15px; color: #1a1a1a; line-height: 1.5; flex: 1; }
-.txp-history-time { font-size: 13px; color: #bbbbbb; white-space: nowrap; flex-shrink: 0; padding-top: 2px; }
+.txp-history-desc { font-size: 17px; color: #1a1a1a; line-height: 1.5; flex: 1; }
+.txp-history-time { font-size: 15px; color: #bbbbbb; white-space: nowrap; flex-shrink: 0; padding-top: 2px; }
 
 /* ─── Documents Required ────────────────────────────────────────────────────────── */
 .txp-docs-table {
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 16px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
@@ -899,7 +899,7 @@ select.txp-input { cursor: pointer; }
 }
 .txp-doc-check {
   color: #cccccc;
-  font-size: 16px;
+  font-size: 18px;
   display: block;
 }
 
@@ -922,7 +922,7 @@ select.txp-input { cursor: pointer; }
 
 .txp-doc-badge {
   display: inline-block;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -947,7 +947,7 @@ select.txp-input { cursor: pointer; }
   color: #555555;
   padding: 4px 12px;
   border-radius: 5px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
@@ -968,7 +968,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-csz-val {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   color: #1a1a1a;
   cursor: pointer;
@@ -982,7 +982,7 @@ select.txp-input { cursor: pointer; }
 .txp-csz-val:hover { background: #f0f0f0; }
 
 .txp-csz-input {
-  font-size: 15px;
+  font-size: 17px;
   font-family: inherit;
   font-weight: 500;
   color: #1a1a1a;
@@ -996,7 +996,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-csz-state {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   color: #999999;
   white-space: nowrap;
@@ -1017,7 +1017,7 @@ select.txp-input { cursor: pointer; }
   border: none;
   border-right: 1.5px solid #e0e0e0;
   color: #999999;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   font-family: inherit;
   padding: 5px 12px;
@@ -1031,7 +1031,7 @@ select.txp-input { cursor: pointer; }
 
 /* ─── Empty State ──────────────────────────────────────────────────────────────── */
 .txp-empty-state {
-  font-size: 15px;
+  font-size: 17px;
   color: #c0c0c0;
   padding: 18px 18px;
   font-style: italic;
@@ -1039,7 +1039,7 @@ select.txp-input { cursor: pointer; }
 
 /* ─── Google Drive Section ─────────────────────────────────────────────────────── */
 .txp-drive-status {
-  font-size: 13px;
+  font-size: 15px;
   color: #888888;
   margin: 0 0 14px;
   line-height: 1.5;
@@ -1056,7 +1056,7 @@ select.txp-input { cursor: pointer; }
   justify-content: center;
   padding: 9px 16px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -1086,7 +1086,7 @@ select.txp-input { cursor: pointer; }
   border: none;
   border-bottom: 1px solid transparent;
   padding: 2px 0;
-  font-size: 14px;
+  font-size: 16px;
   color: #1a1a1a;
   font-family: inherit;
   outline: none;
@@ -1125,8 +1125,8 @@ select.txp-input { cursor: pointer; }
 }
 .collab-search-item:hover { background: #f5f5f5; }
 
-.collab-search-name    { font-size: 13px; font-weight: 500; color: #111; }
-.collab-search-company { font-size: 11px; color: #888; margin-top: 1px; }
+.collab-search-name    { font-size: 15px; font-weight: 500; color: #111; }
+.collab-search-company { font-size: 13px; color: #888; margin-top: 1px; }
 
 .collab-search-create {
   display: block;
@@ -1137,7 +1137,7 @@ select.txp-input { cursor: pointer; }
   border-top: 1px solid #f0f0f0;
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: #555;
   text-align: left;
@@ -1170,12 +1170,12 @@ select.txp-input { cursor: pointer; }
   align-items: center;
   padding: 18px 22px 14px;
   border-bottom: 1px solid #eee;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: #111;
 }
 .collab-add-header button {
-  background: none; border: none; font-size: 16px;
+  background: none; border: none; font-size: 18px;
   color: #999; cursor: pointer; padding: 2px 6px; border-radius: 4px;
 }
 .collab-add-header button:hover { background: #f0f0f0; color: #333; }
@@ -1188,14 +1188,14 @@ select.txp-input { cursor: pointer; }
 }
 .collab-add-body label {
   display: flex; flex-direction: column; gap: 4px;
-  font-size: 11px; font-weight: 600; color: #777;
+  font-size: 13px; font-weight: 600; color: #777;
   text-transform: uppercase; letter-spacing: 0.04em;
 }
 .collab-add-body input {
   padding: 7px 10px;
   border: 1px solid #ddd;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 15px;
   color: #111;
   font-family: inherit;
   outline: none;
@@ -1210,12 +1210,12 @@ select.txp-input { cursor: pointer; }
 }
 .collab-add-cancel {
   background: #f0f0f0; color: #555; border: none;
-  padding: 7px 16px; border-radius: 6px; font-size: 13px;
+  padding: 7px 16px; border-radius: 6px; font-size: 15px;
   font-weight: 600; cursor: pointer; font-family: inherit;
 }
 .collab-add-save {
   background: #111; color: #fff; border: none;
-  padding: 7px 18px; border-radius: 6px; font-size: 13px;
+  padding: 7px 18px; border-radius: 6px; font-size: 15px;
   font-weight: 600; cursor: pointer; font-family: inherit;
 }
 .collab-add-save:hover { background: #333; }

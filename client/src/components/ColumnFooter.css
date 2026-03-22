@@ -8,7 +8,7 @@
 }
 
 .column-footer select {
-  font-size: 11px;
+  font-size: 13px;
   color: #666666;
   background: none;
   border: none;
@@ -19,7 +19,7 @@
 }
 
 .footer-value {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: #1a1a1a;
 }

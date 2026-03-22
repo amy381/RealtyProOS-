@@ -95,7 +95,7 @@ export default function KanbanBoard({ columns, transactions, onEdit, onStatusCha
                     onClick={() => onCardClick(tx)}
                   >
                     <span className="csr-addr">{tx.property_address || '—'}</span>
-                    <span className="csr-client">{tx.client_name || '—'}</span>
+                    <span className="csr-client">{[tx.client_first_name, tx.client_last_name].filter(Boolean).join(' ') || tx.client_name || '—'}</span>
                     <span className="csr-rep">{tx.rep_type || ''}</span>
                   </div>
                 ))

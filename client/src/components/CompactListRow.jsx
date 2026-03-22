@@ -34,10 +34,6 @@ export default function CompactListRow({ transaction, columnId, onCardClick }) {
 
   const fields = LIST_FIELDS[columnId] || []
 
-  const initials = transaction.assigned_tc
-    ? transaction.assigned_tc.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
-    : '?'
-
   const street = transaction.property_address || '(No address)'
 
   return (
@@ -62,7 +58,6 @@ export default function CompactListRow({ transaction, columnId, onCardClick }) {
       }}
     >
       <span className="list-row-addr">{street}</span>
-      <span className="list-row-tc" title={transaction.assigned_tc}>{initials}</span>
       {fields.map(f => (
         <span key={f.key} className="list-row-date">{fmtShort(transaction[f.key])}</span>
       ))}

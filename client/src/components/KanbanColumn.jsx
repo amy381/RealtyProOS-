@@ -5,8 +5,8 @@ import ColumnFooter from './ColumnFooter'
 import './KanbanColumn.css'
 
 const LIST_HEADERS = {
-  'buyer-broker': ['Address', 'TC', 'BBA', 'Exp'],
-  'pre-listing':  ['Address', 'TC', 'Listed', 'Exp'],
+  'buyer-broker': ['Address', 'BBA', 'Exp'],
+  'pre-listing':  ['Address', 'Listed', 'Exp'],
 }
 
 export default function KanbanColumn({ column, transactions, onEdit, onDelete, onCardClick, commissions }) {
@@ -33,9 +33,8 @@ export default function KanbanColumn({ column, transactions, onEdit, onDelete, o
           {headers && (
             <div className="list-col-header">
               <span className="lch-addr">{headers[0]}</span>
-              <span className="lch-tc">{headers[1]}</span>
-              <span className="lch-d1">{headers[2]}</span>
-              <span className="lch-d2">{headers[3]}</span>
+              <span className="lch-d1">{headers[1]}</span>
+              <span className="lch-d2">{headers[2]}</span>
             </div>
           )}
           <div className="list-rows">

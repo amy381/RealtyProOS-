@@ -43,9 +43,11 @@ function getCardFields(transaction) {
 
   // Only show date fields that have a value (keeps cards compact).
   // Target Live is suppressed on Pending and Active Listing cards (still visible in side panel).
+  // Close of Escrow never shown on Active Listing cards.
   const visibleDateFields = dateFields.filter(f =>
     f.type === 'date' && transaction[f.key] &&
-    !(f.key === 'target_live_date' && (status === 'pending' || status === 'active-listing'))
+    !(f.key === 'target_live_date' && (status === 'pending' || status === 'active-listing')) &&
+    !(f.key === 'close_of_escrow' && status === 'active-listing')
   )
 
   // Always include text fields from COLUMN_FIELDS that have values (e.g. Lender, Title Co.)
@@ -107,7 +109,7 @@ export default function TransactionCard({ transaction, onEdit, onDelete, isDragg
       <div className="card-row">
         <span className="card-icon">👤</span>
         <span className="card-client">
-          <span>{transaction.client_name}</span>
+          <span>{[transaction.client_first_name, transaction.client_last_name].filter(Boolean).join(' ') || transaction.client_name || '—'}</span>
           {(transaction.client2_first_name || transaction.client2_last_name) && (
             <span>{[transaction.client2_first_name, transaction.client2_last_name].filter(Boolean).join(' ')}</span>
           )}

@@ -19,11 +19,11 @@
 
 /* ── Stacked left panel ───────────────────────────────── */
 .stacked-list-panel {
-  width: 294px;
+  width: 440px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 90px;
   min-height: 0;
 }
 
@@ -55,17 +55,17 @@
 /* ── Cancelled / Expired section ─────────────────────── */
 .cancelled-section {
   flex-shrink: 0;
-  padding: 2px 0 4px;
+  padding: 6px 0 8px;
 }
 
 .cancelled-section-toggle {
   background: none;
   border: none;
-  font-size: 11px;
-  font-weight: 500;
-  color: #666666;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555555;
   cursor: pointer;
-  padding: 3px 2px;
+  padding: 4px 2px;
   letter-spacing: 0.02em;
   transition: color 0.12s;
   font-family: inherit;
@@ -75,36 +75,35 @@
 .cancelled-section-rows {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 12px;
-  padding: 6px 2px 2px;
+  gap: 8px 14px;
+  padding: 10px 2px 4px;
 }
 
 .cancelled-section-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: #666666;
+  gap: 12px;
   cursor: pointer;
-  padding: 3px 8px;
-  border-radius: 4px;
-  border: 1px solid #e0e0e0;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid #d8d8d8;
   background: #f5f5f5;
   transition: background 0.1s;
+  min-width: 220px;
 }
 .cancelled-section-row:hover {
   background: #ebebeb;
-  color: #1a1a1a;
 }
 
-.csr-addr   { font-weight: 500; color: #1a1a1a; }
-.csr-client { color: #666666; }
-.csr-rep    { font-size: 10px; color: #999999; }
+.csr-addr   { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+.csr-client { font-size: 12px; color: #555555; }
+.csr-rep    { font-size: 11px; font-weight: 600; color: #888888; margin-left: auto; flex-shrink: 0; }
 
 .cancelled-section-empty {
-  font-size: 11px;
+  font-size: 13px;
   color: #999999;
   font-style: italic;
+  padding: 8px 2px;
 }
 
 /* ── Drag overlay pill ────────────────────────────────── */

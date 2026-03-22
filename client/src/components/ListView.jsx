@@ -613,16 +613,16 @@ export default function ListView({ transactions, commissions, columns, onCardCli
 
       {/* Toolbar */}
       <div className="lv-toolbar">
+        <span className="lv-result-count">{sorted.length} transaction{sorted.length !== 1 ? 's' : ''}</span>
+        {filterCount > 0 && (
+          <button className="lv-clear-btn" onClick={clearAll}>Clear All</button>
+        )}
         <button
           className={`lv-filters-btn${filterCount > 0 ? ' has-filters' : ''}`}
           onClick={openPanel}
         >
           Filters{filterCount > 0 ? ` (${filterCount})` : ''}
         </button>
-        <span className="lv-result-count">{sorted.length} transaction{sorted.length !== 1 ? 's' : ''}</span>
-        {filterCount > 0 && (
-          <button className="lv-clear-btn" onClick={clearAll}>Clear All</button>
-        )}
       </div>
 
       {/* Filter panel */}

@@ -51,6 +51,7 @@
 }
 
 .lv-filters-btn {
+  margin-left: auto;
   border: 1.5px solid #ddd;
   border-radius: 8px;
   background: #fff;
@@ -112,11 +113,11 @@
 .lv-fpanel {
   position: fixed;
   top: 0;
-  left: 0;
-  width: 320px;
+  right: 0;
+  width: 416px;
   height: 100vh;
   background: #fff;
-  box-shadow: 4px 0 24px rgba(0,0,0,0.14);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.14);
   z-index: 901;
   display: flex;
   flex-direction: column;
@@ -124,8 +125,8 @@
 }
 
 @keyframes lv-fpanel-slide-in {
-  from { transform: translateX(-100%); opacity: 0; }
-  to   { transform: translateX(0);     opacity: 1; }
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
 }
 
 .lv-fpanel-header {

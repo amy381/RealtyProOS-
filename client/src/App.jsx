@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
 import { supabase } from './lib/supabase'
 import { syncDriveFolder } from './lib/googleDrive'
-import { buildTemplateTasks, getTemplateKey } from './lib/taskTemplates'
+import { buildTemplateTasks, buildTemplateTasksFromDB, getTemplateKey } from './lib/taskTemplates'
 import { sendMentionNotifications, parseMentions } from './lib/emailNotify'
 import KanbanBoard from './components/KanbanBoard'
 import ListView from './components/ListView'
@@ -15,6 +15,7 @@ import CollaboratorsTab from './components/CollaboratorsTab'
 import NewTransactionPopup from './components/NewTransactionPopup'
 import SettingsModal from './components/SettingsModal'
 import LoginPage from './components/LoginPage'
+import TemplatesTab from './components/TemplatesTab'
 import './App.css'
 
 const ALLOWED_EMAILS = (import.meta.env.VITE_ALLOWED_EMAILS || '')
@@ -50,6 +51,8 @@ export default function App() {
   const [commissions, setCommissions]           = useState({})
   const [tasks, setTasks]                       = useState([])
   const [tcSettings, setTcSettings]             = useState([])
+  const [dbTemplates,      setDbTemplates]      = useState([])
+  const [dbTemplateTasks,  setDbTemplateTasks]  = useState([])
   const [loading, setLoading]                   = useState(true)
   const [newTxOpen, setNewTxOpen]               = useState(false)
   const [modalOpen, setModalOpen]               = useState(false)
@@ -140,14 +143,21 @@ export default function App() {
       setCommissions(cmMap)
       commissionsRef.current = cmMap
 
-      // Task tables — optional, gracefully degrade if not created yet
+      // Optional tables — gracefully degrade if not created yet
       const [
         { data: tkData, error: tkErr },
         { data: tcData, error: tcErr },
+        { data: tplData },
+        { data: tplTaskData },
       ] = await Promise.all([
         supabase.from('tasks').select('*').order('sort_order', { ascending: true }),
         supabase.from('tc_settings').select('*'),
+        supabase.from('task_templates').select('*').order('sort_order', { ascending: true }),
+        supabase.from('template_tasks').select('*').order('sort_order', { ascending: true }),
       ])
+
+      setDbTemplates(tplData || [])
+      setDbTemplateTasks(tplTaskData || [])
 
       if (tkErr) {
         console.warn('tasks table not found — run the new SQL in Supabase to enable tasks:', tkErr.message)
@@ -300,6 +310,37 @@ export default function App() {
 
   // ── Template task insertion helper ──────────────────────────────────────────
   const insertTemplateTasks = async (transactionId, status, repType, transaction) => {
+    // Prefer DB templates when available
+    if (dbTemplates.length > 0) {
+      const tpl = dbTemplates.find(t =>
+        t.stage === status &&
+        (t.rep_type === repType || t.rep_type === null || t.rep_type === 'Both')
+      )
+      if (tpl) {
+        const alreadyHas = tasks.some(
+          t => t.transaction_id === transactionId && t.template_key === tpl.id
+        )
+        if (alreadyHas) return
+
+        const tplTaskRows = dbTemplateTasks.filter(t => t.template_id === tpl.id)
+        const builtTasks  = buildTemplateTasksFromDB(tplTaskRows, transaction)
+        if (!builtTasks.length) return
+
+        const toInsert = builtTasks.map(t => ({ ...t, transaction_id: transactionId }))
+        const { data: inserted, error } = await supabase.from('tasks').insert(toInsert).select()
+        if (error) {
+          console.warn('Could not insert template tasks:', error.message)
+          return
+        }
+        if (inserted) {
+          setTasks(prev => [...prev, ...inserted])
+          toast.success(`${inserted.length} tasks added`, { duration: 2000 })
+        }
+        return
+      }
+    }
+
+    // Fallback: hardcoded templates
     const templateKey = getTemplateKey(status, repType)
     const alreadyHas = tasks.some(
       t => t.transaction_id === transactionId && t.template_key === templateKey
@@ -312,7 +353,6 @@ export default function App() {
     const toInsert = tplTasks.map(t => ({ ...t, transaction_id: transactionId }))
     const { data: inserted, error } = await supabase.from('tasks').insert(toInsert).select()
     if (error) {
-      // Table may not exist yet — fail silently so transaction creation still succeeds
       console.warn('Could not insert template tasks (run the tasks SQL in Supabase):', error.message)
       return
     }
@@ -452,6 +492,16 @@ export default function App() {
     if (error) console.error('Task delete error:', error)
   }, [])
 
+  // ── Templates refresh ───────────────────────────────────────────────────────
+  const handleTemplatesRefresh = useCallback(async () => {
+    const [{ data: tplData }, { data: tplTaskData }] = await Promise.all([
+      supabase.from('task_templates').select('*').order('sort_order', { ascending: true }),
+      supabase.from('template_tasks').select('*').order('sort_order', { ascending: true }),
+    ])
+    setDbTemplates(tplData || [])
+    setDbTemplateTasks(tplTaskData || [])
+  }, [])
+
   // ── Commission change ───────────────────────────────────────────────────────
   const handleCommissionChange = useCallback((txId, field, value) => {
     setCommissions(prev => {
@@ -532,6 +582,7 @@ export default function App() {
             { id: 'tasks',          label: 'Tasks'         },
             { id: 'commissions',    label: 'Commissions'   },
             { id: 'collaborators',  label: 'Collaborators' },
+            { id: 'templates',      label: 'Templates'     },
           ].map(tab => (
             <button key={tab.id}
               className={`tab-btn${activeTab === tab.id ? ' active' : ''}`}
@@ -600,6 +651,13 @@ export default function App() {
         )}
         {activeTab === 'collaborators' && (
           <CollaboratorsTab />
+        )}
+        {activeTab === 'templates' && (
+          <TemplatesTab
+            templates={dbTemplates}
+            allTemplateTasks={dbTemplateTasks}
+            onRefresh={handleTemplatesRefresh}
+          />
         )}
       </main>
 

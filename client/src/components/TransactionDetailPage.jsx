@@ -39,7 +39,7 @@ const FIELD_LABELS = {
   opposite_party_name: 'Opposite Party', opposite_party_agent: 'Opposite Party Agent',
   listing_contract: 'Listing Contract', listing_expiration_date: 'Listing Expiration',
   target_live_date: 'Target Live', contract_acceptance_date: 'Contract Acceptance',
-  ipe_date: 'Inspection Period End', close_of_escrow: 'Close of Escrow',
+  ipe_date: 'Inspection Period End', binsr_submitted_date: 'BINSR Submitted', close_of_escrow: 'Close of Escrow',
   bba_contract: 'BBA Contract', bba_expiration: 'BBA Expiration',
   has_contingency: 'Contingency', contingency_fulfilled_date: 'Contingency Fulfilled',
   lender_name: 'Lender', title_company: 'Title Company',
@@ -918,6 +918,7 @@ function buildTransactionSummary(transaction, column, fullAddress) {
     { key: 'bba_expiration',           label: 'BBA Expiration'         },
     { key: 'contract_acceptance_date', label: 'Contract Acceptance'    },
     { key: 'ipe_date',                 label: 'Inspection Period End'  },
+    { key: 'binsr_submitted_date',     label: 'BINSR Submitted'        },
     { key: 'close_of_escrow',          label: 'Close of Escrow'        },
     { key: 'contingency_fulfilled_date', label: 'Contingency Fulfilled' },
   ]
@@ -1184,6 +1185,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
     { key: 'bba_expiration',           label: 'BBA Expiration',        required: true  },
     { key: 'contract_acceptance_date', label: 'Contract Acceptance',   required: true  },
     { key: 'ipe_date',                 label: 'Inspection Period End', required: false },
+    { key: 'binsr_submitted_date',     label: 'BINSR Submitted',       required: false },
     { key: 'close_of_escrow',          label: 'Close of Escrow',       required: true  },
   ] : [
     { key: 'listing_contract',         label: 'Listing Contract',      required: true  },

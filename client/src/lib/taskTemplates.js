@@ -10,6 +10,44 @@ function addDays(dateStr, days) {
 
 export const TC_ASSIGNEES = ['Me', 'Justina Morris', 'Victoria Lareau']
 
+// Calculate due date from a timing_type + timing_days + transaction fields.
+// Day counting rules: day of trigger does NOT count as day 1; counting starts the next day.
+// "X days before Y" = Y minus X full days.
+export function calcDueDate(timingType, timingDays, tx) {
+  const days = Number(timingDays) || 0
+  switch (timingType) {
+    case 'at_stage_change':            return null
+    case 'days_after_contract':        return addDays(tx.contract_acceptance_date, days)
+    case 'days_before_coe':            return addDays(tx.close_of_escrow, -days)
+    case 'days_after_coe':             return addDays(tx.close_of_escrow, days)
+    case 'days_after_listing_contract': return addDays(tx.listing_contract, days)
+    case 'days_after_bba':             return addDays(tx.bba_contract, days)
+    case 'days_before_ipe':            return addDays(tx.ipe_date, -days)
+    case 'days_after_ipe':             return addDays(tx.ipe_date, days)
+    case 'days_after_binsr':           return addDays(tx.binsr_submitted_date, days)
+    case 'specific_date':              return null
+    default:                           return null
+  }
+}
+
+// Build task records from DB template_task rows for a given transaction.
+export function buildTemplateTasksFromDB(templateTaskRows, transaction) {
+  return [...templateTaskRows]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((t, i) => ({
+      title:             t.title,
+      due_date:          calcDueDate(t.timing_type, t.timing_days, transaction),
+      assigned_to:       t.auto_assign_to || 'Me',
+      status:            'open',
+      notes:             '',
+      sort_order:        i,
+      template_key:      t.template_id,
+      notified_mentions: [],
+    }))
+}
+
+// ── Hardcoded fallback templates (used when DB templates not yet loaded) ──────
+
 const TEMPLATES = {
   'pre-listing-seller': [
     { title: 'Order Photos' },

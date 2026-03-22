@@ -27,35 +27,21 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-.txp-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.txp-crumb-back {
+.txp-back-btn {
   background: none;
   border: none;
-  color: #1a1a1a;
-  font-size: 15px;
-  font-weight: 600;
+  color: #555;
+  font-size: 20px;
+  line-height: 1;
   cursor: pointer;
-  padding: 0;
+  padding: 6px 10px;
+  border-radius: 6px;
   font-family: inherit;
-  letter-spacing: -0.01em;
+  transition: background 0.12s, color 0.12s;
 }
-.txp-crumb-back:hover { text-decoration: underline; text-underline-offset: 2px; }
-
-.txp-crumb-sep { color: #cccccc; font-size: 17px; font-weight: 300; }
-
-.txp-crumb-current {
-  color: #999999;
-  font-size: 15px;
-  font-weight: 400;
-  max-width: 560px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.txp-back-btn:hover {
+  background: #f0f0f0;
+  color: #111;
 }
 
 .txp-topbar-right {
@@ -412,8 +398,9 @@ select.txp-input { cursor: pointer; }
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  right: 0;
-  min-width: 240px;
+  min-width: max(100%, 360px);
+  width: max-content;
+  max-width: 520px;
   background: #ffffff;
   border: 1px solid #dddddd;
   border-radius: 9px;
@@ -425,24 +412,27 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-fub-result {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
   width: 100%;
   background: none;
   border: none;
   text-align: left;
-  padding: 11px 14px;
+  padding: 10px 14px;
   cursor: pointer;
   font-family: inherit;
   border-bottom: 1px solid #f2f2f2;
   transition: background 0.1s;
+  white-space: nowrap;
 }
 .txp-fub-result:last-child { border-bottom: none; }
 .txp-fub-result:hover { background: #f7f7f7; }
 
-.txp-fub-name  { display: block; font-size: 15px; font-weight: 500; color: #1a1a1a; }
-.txp-fub-email { display: block; font-size: 13px; color: #888888; margin-top: 2px; }
-.txp-fub-via   { display: block; font-size: 13px; color: #aaaaaa; font-style: italic; }
-.txp-fub-loading, .txp-fub-empty { padding: 12px 14px; font-size: 14px; color: #999999; }
+.txp-fub-name  { font-size: 14px; font-weight: 600; color: #1a1a1a; flex-shrink: 0; }
+.txp-fub-email { font-size: 13px; color: #999; flex-shrink: 0; }
+.txp-fub-via   { font-size: 12px; color: #bbb; font-style: italic; flex-shrink: 0; }
+.txp-fub-loading, .txp-fub-empty { padding: 12px 14px; font-size: 14px; color: #999999; white-space: nowrap; }
 
 /* ─── Checkboxes (property features) ──────────────────────────────────────────── */
 .txp-checks-row {

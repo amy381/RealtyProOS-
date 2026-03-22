@@ -199,7 +199,11 @@ export default function IntakeModal({ onSave, onClose }) {
     city:                     '',
     state:                    'AZ',
     zip:                      '',
+    property_type:            '',
     price:                    '',
+    bedrooms:                 '',
+    square_ft:                '',
+    year_built:               '',
     listing_contract:         '',
     listing_expiration_date:  '',
     target_live_date:         '',
@@ -286,6 +290,8 @@ export default function IntakeModal({ onSave, onClose }) {
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
 
+    const isVacantLand = form.property_type === 'Vacant Land'
+
     const tx = {
       status:            form.status,
       assigned_tc:       form.assigned_tc,
@@ -300,6 +306,7 @@ export default function IntakeModal({ onSave, onClose }) {
       city:              form.city,
       state:             form.state,
       zip:               form.zip,
+      property_type:     form.property_type || null,
       has_septic:        form.has_septic,
       has_solar:         form.has_solar,
       has_well:          form.has_well,
@@ -312,6 +319,11 @@ export default function IntakeModal({ onSave, onClose }) {
       tx.listing_contract        = form.listing_contract
       tx.listing_expiration_date = form.listing_expiration_date
       tx.target_live_date        = form.target_live_date
+      if (!isVacantLand) {
+        if (form.bedrooms)  tx.bedrooms  = form.bedrooms
+        if (form.square_ft) tx.square_ft = form.square_ft
+        if (form.year_built) tx.year_built = form.year_built
+      }
     }
 
     if (showClient2 && (client2.first_name || client2.last_name)) {
@@ -356,6 +368,15 @@ export default function IntakeModal({ onSave, onClose }) {
 
           {/* Property */}
           <div className="intake-section-label">Property</div>
+
+          <div className="intake-group half">
+            <label>Property Type</label>
+            <select value={form.property_type} onChange={e => setField('property_type', e.target.value)}>
+              <option value="">—</option>
+              <option value="Residential">Residential</option>
+              <option value="Vacant Land">Vacant Land</option>
+            </select>
+          </div>
 
           <div className="intake-group">
             <label>Street Address</label>
@@ -415,6 +436,22 @@ export default function IntakeModal({ onSave, onClose }) {
                 <label>List Price</label>
                 <input type="text" placeholder="e.g. 309900" value={form.price} onChange={e => setField('price', e.target.value)} />
               </div>
+              {form.property_type !== 'Vacant Land' && (
+                <div className="intake-row">
+                  <div className="intake-group">
+                    <label>Bedrooms</label>
+                    <input type="number" placeholder="e.g. 3" value={form.bedrooms} onChange={e => setField('bedrooms', e.target.value)} />
+                  </div>
+                  <div className="intake-group">
+                    <label>Square Ft</label>
+                    <input type="number" placeholder="e.g. 1800" value={form.square_ft} onChange={e => setField('square_ft', e.target.value)} />
+                  </div>
+                  <div className="intake-group">
+                    <label>Year Built</label>
+                    <input type="number" placeholder="e.g. 1998" value={form.year_built} onChange={e => setField('year_built', e.target.value)} />
+                  </div>
+                </div>
+              )}
               <div className="intake-row">
                 <div className="intake-group">
                   <label>Listing Contract</label>

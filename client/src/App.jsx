@@ -139,11 +139,11 @@ export default function App() {
   }, [])
 
   // ── New transaction ─────────────────────────────────────────────────────────
-  const handleCreateTransaction = async (repType, status) => {
+  const handleCreateTransaction = async (txData) => {
     try {
       const { data: newTx, error: txErr } = await supabase
         .from('transactions')
-        .insert({ rep_type: repType, status })
+        .insert(txData)
         .select().single()
       if (txErr) throw txErr
 

@@ -1378,15 +1378,6 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
             </div>
           )}
 
-          {/* REFERRALS */}
-          <div className="txp-section">
-            <div className="txp-section-title">Referrals</div>
-            <TxField label="Referring Agent"       value={transaction.referring_agent       || ''} type="text" onSave={save('referring_agent')}       placeholder="Agent name"        tabIndex={28} />
-            <TxField label="Referring Agent Email" value={transaction.referring_agent_email || ''} type="text" onSave={save('referring_agent_email')} placeholder="email@example.com" tabIndex={29} />
-            <TxField label="Referring Agent Phone" value={transaction.referring_agent_phone || ''} type="text" onSave={save('referring_agent_phone')} placeholder="(555) 000-0000"   tabIndex={30} />
-            <TxField label="Referral %"            value={String(transaction.referral_pct   ?? '')} type="text" onSave={save('referral_pct')}         placeholder="e.g. 25"           tabIndex={31} />
-          </div>
-
           {/* CONTRACT DETAILS — Pending, Closed, Cancelled/Expired only */}
           {isPendingOrBeyond && (
             <div className="txp-section">
@@ -1471,6 +1462,15 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               />
             </div>
           )}
+
+          {/* REFERRALS */}
+          <div className="txp-section">
+            <div className="txp-section-title">Referrals</div>
+            <TxField label="Referring Agent"       value={transaction.referring_agent       || ''} type="text" onSave={save('referring_agent')}       placeholder="Agent name"        tabIndex={43} />
+            <TxField label="Referring Agent Email" value={transaction.referring_agent_email || ''} type="text" onSave={save('referring_agent_email')} placeholder="email@example.com" tabIndex={44} />
+            <TxField label="Referring Agent Phone" value={transaction.referring_agent_phone || ''} type="text" onSave={save('referring_agent_phone')} placeholder="(555) 000-0000"   tabIndex={45} />
+            <TxField label="Referral %"            value={String(transaction.referral_pct   ?? '')} type="text" onSave={save('referral_pct')}         placeholder="e.g. 25"           tabIndex={46} />
+          </div>
 
         </div>{/* end left */}
 

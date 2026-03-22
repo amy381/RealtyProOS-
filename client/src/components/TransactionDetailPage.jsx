@@ -1671,17 +1671,18 @@ function CommissionSection({ transaction, commissions, onCommissionChange, onAdd
 }
 
 // ─── Documents Required (with Google Drive upload) ────────────────────────────
-function DocsRequiredSection({ transaction, extraDocs = [] }) {
-  const [uploads,   setUploads]   = useState({})
-  const [uploading, setUploading] = useState({})
-  // Local copy of folder IDs so on-the-fly creation updates the upload target immediately
-  const [folderIds, setFolderIds] = useState({
+function DocsRequiredSection({ transaction, commissions }) {
+  const [docStatuses, setDocStatuses] = useState({})   // { docName: { checked, filename, drive_id, drive_link } }
+  const [uploading,   setUploading]   = useState({})
+  const [customDocs,  setCustomDocs]  = useState({ buyer: [], listing: [], pending: [] })
+  const [customInput, setCustomInput] = useState({ buyer: '', listing: '', pending: '' })
+  const [folderIds,   setFolderIds]   = useState({
     drive_folder_id:         transaction.drive_folder_id         || null,
     drive_under_contract_id: transaction.drive_under_contract_id || null,
   })
   const fileRefs = useRef({})
 
-  // Keep folderIds in sync when the parent transaction prop updates (e.g. after status change)
+  // Keep folderIds in sync
   useEffect(() => {
     setFolderIds({
       drive_folder_id:         transaction.drive_folder_id         || null,
@@ -1689,29 +1690,123 @@ function DocsRequiredSection({ transaction, extraDocs = [] }) {
     })
   }, [transaction.drive_folder_id, transaction.drive_under_contract_id])
 
-  const sellerDocs = [
-    'Listing Agreement', 'Seller Disclosure Statement', 'Property Condition Report',
-    'HOA Documents', 'Transfer Disclosure Statement', 'Natural Hazard Disclosure',
-    'Preliminary Title Report', 'Pest Inspection Report', 'Home Inspection Report',
-    'Solar / Septic / Well Documentation',
-  ]
-  const buyerDocs = [
-    'Buyer Broker Agreement', 'Pre-Approval Letter', 'Purchase & Sale Agreement',
-    'Contingency Removal', 'Home Inspection Report', 'Appraisal Report',
-    'Loan Commitment Letter', 'Final Walkthrough Verification', 'Closing Disclosure',
-  ]
-  const docs = [...(transaction.rep_type === 'Buyer' ? buyerDocs : sellerDocs), ...extraDocs]
+  // Load doc statuses from Supabase
+  useEffect(() => {
+    supabase.from('document_uploads')
+      .select('*')
+      .eq('transaction_id', transaction.id)
+      .then(({ data }) => {
+        if (!data) return
+        const map = {}
+        const customs = { buyer: [], listing: [], pending: [] }
+        data.forEach(r => {
+          map[r.doc_name] = r
+          if (r.is_custom && r.section && customs[r.section]) {
+            customs[r.section].push(r.doc_name)
+          }
+        })
+        setDocStatuses(map)
+        setCustomDocs(customs)
+      })
+  }, [transaction.id])
 
+  // ── Derived flags ──────────────────────────────────────────────────────────
+  const isBuyer       = transaction.rep_type === 'Buyer'
+  const isSeller      = transaction.rep_type === 'Seller'
+  const isResidential = transaction.property_type === 'Residential'
+  const isVacantLand  = transaction.property_type === 'Vacant Land'
+  const stage         = transaction.status || ''
+  const isListingStage = ['pre-listing', 'active-listing'].includes(stage)
+  const isPendingStage = ['pending', 'closed', 'cancelled-expired'].includes(stage)
+
+  const hasWell        = !!transaction.has_well
+  const hasSolar       = !!transaction.has_solar
+  const hasHoa         = !!transaction.has_hoa
+  const hasLbp         = !!transaction.has_lbp
+  const hasSeptic      = !!transaction.has_septic
+  const hasContingency = !!transaction.has_contingency
+  const yearBuilt      = Number(transaction.year_built) || 0
+  const financingType  = transaction.financing_type || ''
+  const referralPct    = Number(transaction.referral_pct) || 0
+  const hasBba         = !!(commissions?.[transaction.id]?.buyer_broker_addendum)
+
+  const showBuyerSection   = isBuyer
+  const showListingSection = isSeller && isListingStage
+  const showPendingSection = isPendingStage
+
+  // ── Doc lists ──────────────────────────────────────────────────────────────
+  const BUYER_DOCS = [
+    'Buyer Broker Agreement (BBA)',
+    'Real Estate Agency Disclosure and Election (READE)',
+    'Wire Fraud Disclosure (WFD)',
+    'Buyer Advisory Disclosure (BAD)',
+    'Market Conditions Advisory (MCA)',
+    'Affiliated Business Agreement (ABA)',
+    'Pre-Qualification Letter',
+  ]
+
+  const LISTING_DOCS = [
+    ...(isResidential ? ['Exclusive Right to Sell — Residential (ER RES)'] : []),
+    ...(isVacantLand  ? ['Exclusive Right to Sell — Vacant Land (ER VL)']  : []),
+    'Real Estate Agency Disclosure and Election (READE)',
+    "Owner's Delay Limited Marketing Election (ODLM)",
+    'Non-Dissemination Authorization (NDA)',
+    'Wire Fraud Disclosure (WFD)',
+    'Affiliated Business Agreement (ABA)',
+    ...(hasWell  ? ['Domestic Well Water Seller Property Disclosure Statement (DWW SPDS)'] : []),
+    'Market Conditions Advisory (MCA)',
+    ...(isVacantLand  ? ['Vacant Land SPDS (VL SPDS)']                  : []),
+    ...(isResidential ? ['Seller Property Disclosure Statement (SPDS)'] : []),
+    ...(isResidential ? ['Insurance History Report (IHR)']              : []),
+    ...(hasSolar ? ['Solar Addendum']                    : []),
+    ...(hasSolar ? ['Solar Documents']                   : []),
+    ...(hasHoa   ? ['HOA Documents']                     : []),
+    ...(hasLbp   ? ['Lead Based Paint Disclosure (LBP)'] : []),
+    ...(hasBba   ? ['Buyer Broker Addendum']              : []),
+  ]
+
+  const PENDING_DOCS = [
+    ...(isResidential ? ['Residential Real Estate Purchase Contract (RRPC)'] : []),
+    ...(isVacantLand  ? ['Vacant Land Purchase Contract (VLPC)']             : []),
+    ...(hasSeptic ? ['Onsite Wastewater Treatment Facility Addendum (OSWW)'] : []),
+    ...(hasHoa    ? ['HOA Documents']    : []),
+    ...(hasSolar  ? ['Solar Addendum']   : []),
+    ...(hasSolar  ? ['Solar Documents']  : []),
+    'Seller Compensation Addendum (SCA)',
+    ...(hasWell ? ['Domestic Well Water Addendum (DWWA)'] : []),
+    ...((hasLbp || (yearBuilt > 0 && yearBuilt < 1978)) ? ['Lead Based Paint Disclosure (LBP)'] : []),
+    'Affiliated Business Agreement (ABA)',
+    'Counter Offer 1',
+    'Pre-Qualification Letter',
+    ...(hasContingency ? ['Buyer Contingency Addendum (BCA)'] : []),
+    ...(hasContingency ? ["Buyer's Accepted Contract"]         : []),
+    'Additional Clause Addendum (ACA)',
+    ...(financingType === 'Owner Finance' ? ['Seller Financing Addendum (SFA)'] : []),
+    ...(financingType === 'Cash'          ? ['Proof of Funds']                  : []),
+    ...(referralPct > 0 ? ['Referring Brokerage W-9'] : []),
+    ...(referralPct > 0 ? ['Referral Form']            : []),
+  ]
+
+  // ── Checkbox toggle ────────────────────────────────────────────────────────
+  const toggleCheck = async (docName) => {
+    const cur        = docStatuses[docName] || {}
+    const newChecked = !cur.checked
+    setDocStatuses(prev => ({ ...prev, [docName]: { ...cur, checked: newChecked } }))
+    await supabase.from('document_uploads').upsert(
+      { transaction_id: transaction.id, doc_name: docName, checked: newChecked,
+        filename: cur.filename || null, drive_id: cur.drive_id || null, drive_link: cur.drive_link || null },
+      { onConflict: 'transaction_id,doc_name' }
+    )
+  }
+
+  // ── File upload ────────────────────────────────────────────────────────────
   const handleFileSelect = async (docName, e) => {
     const file = e.target.files?.[0]
     if (!file) return
     e.target.value = ''
-
     setUploading(prev => ({ ...prev, [docName]: true }))
     try {
       let ids = folderIds
-
-      // If no Drive folder exists yet, try to create one on the fly
       if (!ids.drive_folder_id) {
         const addr = transaction.property_address || ''
         const last = transaction.client_last_name  || ''
@@ -1729,26 +1824,26 @@ function DocsRequiredSection({ transaction, extraDocs = [] }) {
           setFolderIds(ids)
         }
       }
-
-      // Route: contract docs go to Under Contract folder (if it exists), others to main folder
-      const isContractDoc = CONTRACT_DOCS.has(docName)
+      const isContractDoc  = CONTRACT_DOCS.has(docName)
       const targetFolderId = isContractDoc && ids.drive_under_contract_id
-        ? ids.drive_under_contract_id
-        : ids.drive_folder_id
+        ? ids.drive_under_contract_id : ids.drive_folder_id
 
+      let driveId = null, driveLink = null
       if (targetFolderId) {
         const driveFile = await uploadToDrive(file, targetFolderId)
+        driveId   = driveFile.id
+        driveLink = driveFile.webViewLink
         const dest = isContractDoc && ids.drive_under_contract_id ? 'Under Contract' : 'Drive'
-        setUploads(prev => ({
-          ...prev,
-          [docName]: { filename: file.name, driveId: driveFile.id, driveLink: driveFile.webViewLink },
-        }))
         toast.success(`${docName} uploaded to ${dest}`)
       } else {
-        // Drive not connected or no folder — store locally only
-        setUploads(prev => ({ ...prev, [docName]: { filename: file.name } }))
         toast.success('Saved locally (connect Drive to sync)')
       }
+      const record = {
+        transaction_id: transaction.id, doc_name: docName,
+        checked: true, filename: file.name, drive_id: driveId, drive_link: driveLink,
+      }
+      await supabase.from('document_uploads').upsert(record, { onConflict: 'transaction_id,doc_name' })
+      setDocStatuses(prev => ({ ...prev, [docName]: { checked: true, filename: file.name, drive_id: driveId, drive_link: driveLink } }))
     } catch (err) {
       toast.error(`Upload failed: ${err.message}`)
     } finally {
@@ -1756,55 +1851,120 @@ function DocsRequiredSection({ transaction, extraDocs = [] }) {
     }
   }
 
+  // ── Add custom doc ─────────────────────────────────────────────────────────
+  const addCustomDoc = async (section) => {
+    const name = customInput[section]?.trim()
+    if (!name) return
+    const record = {
+      transaction_id: transaction.id, doc_name: name,
+      section, is_custom: true, checked: false,
+    }
+    const { error } = await supabase.from('document_uploads')
+      .upsert(record, { onConflict: 'transaction_id,doc_name' })
+    if (error) { toast.error('Could not add document'); return }
+    setCustomDocs(prev => ({ ...prev, [section]: [...prev[section], name] }))
+    setCustomInput(prev => ({ ...prev, [section]: '' }))
+  }
+
+  // ── Render helpers ─────────────────────────────────────────────────────────
+  const DocRow = ({ doc }) => {
+    const s        = docStatuses[doc] || {}
+    const uploaded = !!s.filename
+    const isBusy   = !!uploading[doc]
+    return (
+      <tr className="txp-doc-row">
+        <td className="txp-doc-td-check">
+          <button className="txp-doc-check-btn" onClick={() => toggleCheck(doc)} title="Mark complete">
+            <span className={`txp-doc-check${s.checked ? ' txp-doc-check--done' : ''}`}>
+              {s.checked ? '✓' : '○'}
+            </span>
+          </button>
+        </td>
+        <td className="txp-doc-td-name">
+          {s.drive_link
+            ? <a href={s.drive_link} target="_blank" rel="noopener noreferrer"
+                 className="txp-doc-link">{doc}</a>
+            : doc}
+          {s.filename && <span className="txp-doc-filename">{s.filename}</span>}
+        </td>
+        <td className="txp-doc-td-status">
+          {uploaded
+            ? <span className="txp-doc-badge txp-doc-badge--uploaded" title={s.filename}>
+                {s.drive_id ? 'In Drive' : 'Uploaded'}
+              </span>
+            : <span className="txp-doc-badge txp-doc-badge--pending">Pending</span>
+          }
+        </td>
+        <td className="txp-doc-td-action">
+          <input type="file" style={{ display: 'none' }}
+            ref={el => { fileRefs.current[doc] = el }}
+            onChange={e => handleFileSelect(doc, e)}
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+          />
+          <button
+            className={`txp-doc-upload-btn${uploaded ? ' txp-doc-upload-btn--done' : ''}`}
+            onClick={() => fileRefs.current[doc]?.click()}
+            disabled={isBusy}
+          >
+            {isBusy ? 'Uploading…' : uploaded ? 'Replace' : 'Upload'}
+          </button>
+        </td>
+      </tr>
+    )
+  }
+
+  const DocSection = ({ title, docs, customList, sectionKey }) => (
+    <div className="txp-docs-section">
+      <div className="txp-docs-section-header">{title}</div>
+      <table className="txp-docs-table">
+        <tbody>
+          {docs.map(doc => <DocRow key={doc} doc={doc} />)}
+          {customList.map(doc => <DocRow key={doc} doc={doc} />)}
+          <tr className="txp-doc-row txp-doc-add-row">
+            <td className="txp-doc-td-check"></td>
+            <td className="txp-doc-td-name">
+              <input
+                className="txp-doc-custom-input"
+                placeholder="Additional document name…"
+                value={customInput[sectionKey]}
+                onChange={e => setCustomInput(prev => ({ ...prev, [sectionKey]: e.target.value }))}
+                onKeyDown={e => { if (e.key === 'Enter') addCustomDoc(sectionKey) }}
+              />
+            </td>
+            <td className="txp-doc-td-status"></td>
+            <td className="txp-doc-td-action">
+              <button
+                className="txp-doc-upload-btn"
+                disabled={!customInput[sectionKey]?.trim()}
+                onClick={() => addCustomDoc(sectionKey)}
+              >
+                Add
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  )
+
   return (
     <div className="txp-section">
       <div className="txp-section-title">Documents Required</div>
-      <table className="txp-docs-table">
-        <tbody>
-          {docs.map((doc) => {
-            const uploaded  = uploads[doc]
-            const isBusy    = uploading[doc]
-            return (
-              <tr key={doc} className="txp-doc-row">
-                <td className="txp-doc-td-check">
-                  <span className="txp-doc-check">{uploaded ? '✓' : '☐'}</span>
-                </td>
-                <td className="txp-doc-td-name">
-                  {uploaded?.driveLink
-                    ? <a href={uploaded.driveLink} target="_blank" rel="noopener noreferrer"
-                         style={{ color: 'inherit', textDecoration: 'underline' }}>{doc}</a>
-                    : doc}
-                </td>
-                <td className="txp-doc-td-status">
-                  {uploaded ? (
-                    <span className="txp-doc-badge txp-doc-badge--uploaded" title={uploaded.filename}>
-                      {uploaded.driveId ? 'In Drive' : 'Uploaded'}
-                    </span>
-                  ) : (
-                    <span className="txp-doc-badge txp-doc-badge--pending">Pending</span>
-                  )}
-                </td>
-                <td className="txp-doc-td-action">
-                  <input
-                    type="file"
-                    style={{ display: 'none' }}
-                    ref={el => { fileRefs.current[doc] = el }}
-                    onChange={e => handleFileSelect(doc, e)}
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                  />
-                  <button
-                    className={`txp-doc-upload-btn${uploaded ? ' txp-doc-upload-btn--done' : ''}`}
-                    onClick={() => fileRefs.current[doc]?.click()}
-                    disabled={isBusy}
-                  >
-                    {isBusy ? 'Uploading…' : uploaded ? 'Replace' : 'Upload'}
-                  </button>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
+      {!showBuyerSection && !showListingSection && !showPendingSection && (
+        <div className="txp-docs-empty">No document sections apply to this transaction&rsquo;s type and stage.</div>
+      )}
+      {showBuyerSection && (
+        <DocSection title="Buyer Documents" docs={BUYER_DOCS}
+          customList={customDocs.buyer} sectionKey="buyer" />
+      )}
+      {showListingSection && (
+        <DocSection title="Listing Documents" docs={LISTING_DOCS}
+          customList={customDocs.listing} sectionKey="listing" />
+      )}
+      {showPendingSection && (
+        <DocSection title="Pending Documents" docs={PENDING_DOCS}
+          customList={customDocs.pending} sectionKey="pending" />
+      )}
     </div>
   )
 }
@@ -2163,7 +2323,7 @@ export default function TransactionDetailPage({
           {activeSection === 'docs-req' && (
             <DocsRequiredSection
               transaction={transaction}
-              extraDocs={commissions?.[transaction.id]?.buyer_broker_addendum ? ['Buyer Broker Addendum'] : []}
+              commissions={commissions}
             />
           )}
 

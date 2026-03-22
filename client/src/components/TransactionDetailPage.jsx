@@ -1236,21 +1236,8 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                 placeholder="$0"
                 tabIndex={5}
               />
-              {!isVacantLand && (<>
-                <TxField label="Square Ft"  value={String(transaction.square_ft  ?? '')} type="text" onSave={save('square_ft')}  placeholder="e.g. 1800" tabIndex={6} />
-                <TxField label="Year Built" value={String(transaction.year_built  ?? '')} type="text" onSave={save('year_built')} placeholder="e.g. 1998" tabIndex={7} />
-              </>)}
-              <TxField label="APN"        value={transaction.apn        || ''} type="text" onSave={save('apn')}        placeholder="000-000-000" tabIndex={8} />
-              <TxField label="MLS Number" value={transaction.mls_number || ''} type="text" onSave={save('mls_number')} placeholder="MLS #"       tabIndex={9} />
-              <TxField label="Access"     value={transaction.access     || ''} type="text" onSave={save('access')}     placeholder="e.g. lockbox code, call agent" tabIndex={10} />
-              <TxField
-                label="Occupancy"
-                value={transaction.occupancy || ''}
-                type="select"
-                options={VACANT_OPTIONS}
-                onSave={save('occupancy')}
-                tabIndex={11}
-              />
+              <TxField label="APN"    value={transaction.apn    || ''} type="text" onSave={save('apn')}    placeholder="000-000-000" tabIndex={6} />
+              <TxField label="Access" value={transaction.access || ''} type="text" onSave={save('access')} placeholder="e.g. lockbox code, call agent" tabIndex={7} />
             </>)}
 
             <TxField label="Transaction Type" value={transaction.rep_type || '—'} readOnly tabIndex={-1} />

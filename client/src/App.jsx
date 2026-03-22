@@ -37,7 +37,6 @@ const COLUMNS = [
   { id: 'active-listing',    label: 'Active Listing',       color: '#555555', bgColor: '#e8e8e8', priceLabel: 'List Price',     viewMode: 'medium' },
   { id: 'pending',           label: 'Pending',              color: '#333333', bgColor: '#e8e8e8', priceLabel: 'Purchase Price', viewMode: 'wide'   },
   { id: 'closed',            label: 'Closed',               color: '#444444', bgColor: '#e8e8e8', priceLabel: 'Purchase Price', viewMode: 'narrow' },
-  { id: 'cancelled-expired', label: 'Cancelled / Expired',  color: '#aaaaaa', bgColor: '#e8e8e8', priceLabel: null,             viewMode: 'medium' },
 ]
 
 export default function App() {
@@ -230,6 +229,12 @@ export default function App() {
       const { data } = await supabase.from('transactions').select('*').order('created_at', { ascending: false })
       if (data) setTransactions(data)
       return
+    }
+
+    // Auto-delete commission row when moved to Cancelled/Expired
+    if (newStatus === 'cancelled-expired' && commissions[transactionId]) {
+      await supabase.from('commissions').delete().eq('transaction_id', transactionId)
+      setCommissions(prev => { const next = { ...prev }; delete next[transactionId]; return next })
     }
 
     // Auto-populate template tasks (only if not already populated for this stage)
@@ -434,6 +439,13 @@ export default function App() {
     }, 600)
   }, [])
 
+  // ── Commission delete ───────────────────────────────────────────────────────
+  const handleDeleteCommission = useCallback(async (txId) => {
+    setCommissions(prev => { const next = { ...prev }; delete next[txId]; return next })
+    const { error } = await supabase.from('commissions').delete().eq('transaction_id', txId)
+    if (error) console.error('Commission delete error:', error)
+  }, [])
+
   // ── TC Settings save ────────────────────────────────────────────────────────
   const handleSaveTcSettings = useCallback(async (updated) => {
     setTcSettings(updated)
@@ -471,13 +483,13 @@ export default function App() {
         <div className="app-tabs">
           {[
             { id: 'board',          label: 'The Board'     },
-            { id: 'commissions',    label: 'Commissions'   },
             { id: 'tasks',          label: 'Tasks'         },
+            { id: 'commissions',    label: 'Commissions'   },
             { id: 'collaborators',  label: 'Collaborators' },
           ].map(tab => (
             <button key={tab.id}
               className={`tab-btn${activeTab === tab.id ? ' active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}>
+              onClick={() => { setActiveTab(tab.id); setSelectedTransaction(null) }}>
               {tab.label}
             </button>
           ))}
@@ -526,7 +538,7 @@ export default function App() {
           <CommissionsTab
             transactions={transactions}
             commissions={commissions}
-            onCommissionChange={handleCommissionChange}
+            onDeleteCommission={handleDeleteCommission}
           />
         )}
         {activeTab === 'tasks' && (

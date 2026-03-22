@@ -643,6 +643,7 @@ export default function App() {
             tasks={tasks}
             transactions={transactions}
             onTaskUpdate={handleUpdateTask}
+            onDeleteTask={handleDeleteTask}
             onCardClick={(tx) => {
               setSelectedTransaction(tx)
               setActiveTab('board')

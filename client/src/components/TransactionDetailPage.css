@@ -1084,17 +1084,19 @@ select.txp-input { cursor: pointer; }
   box-sizing: border-box;
   background: none;
   border: none;
-  border-bottom: 1px solid transparent;
-  padding: 2px 0;
-  font-size: 16px;
+  border-radius: 4px;
+  padding: 5px 7px;
+  font-size: 17px;
+  font-weight: 500;
   color: #1a1a1a;
   font-family: inherit;
   outline: none;
   cursor: text;
-  transition: border-color 0.12s;
+  transition: background 0.1s;
 }
-.collab-search-input:focus { border-bottom-color: #999; }
-.collab-search-input::placeholder { color: #bbb; }
+.collab-search-input:hover { background: #f0f0f0; }
+.collab-search-input:focus { background: #f5f5f5; outline: none; }
+.collab-search-input::placeholder { color: #cccccc; font-style: italic; font-size: 16px; font-weight: 400; }
 
 .collab-search-dropdown {
   position: absolute;

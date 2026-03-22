@@ -1,0 +1,469 @@
+/* ─── Wrapper ─────────────────────────────────────────────────────────────── */
+.lv-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ─── Summary boxes ───────────────────────────────────────────────────────── */
+.lv-summary {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.lv-summary-box {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 16px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  min-width: 140px;
+}
+
+.lv-summary-val {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.lv-summary-label {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  color: #aaaaaa;
+}
+
+/* ─── Saved views strip ───────────────────────────────────────────────────── */
+.lv-saved-views {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 9px 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.lv-saved-views-label {
+  font-size: 11px;
+  font-weight: 700;
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+  color: #aaaaaa;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.lv-saved-views-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.lv-view-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 99px;
+  overflow: hidden;
+  transition: border-color 0.12s;
+}
+.lv-view-chip:hover { border-color: #bbb; }
+.lv-view-chip.active {
+  border-color: #1a1a1a;
+  background: #1a1a1a;
+}
+
+.lv-view-chip-name {
+  background: none;
+  border: none;
+  padding: 4px 10px 4px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.1s;
+}
+.lv-view-chip.active .lv-view-chip-name { color: #ffffff; }
+
+.lv-view-chip-del {
+  background: none;
+  border: none;
+  border-left: 1px solid #e0e0e0;
+  padding: 4px 8px;
+  font-size: 14px;
+  line-height: 1;
+  color: #bbb;
+  cursor: pointer;
+  transition: color 0.1s, background 0.1s;
+}
+.lv-view-chip-del:hover { color: #555; background: rgba(0,0,0,0.04); }
+.lv-view-chip.active .lv-view-chip-del { border-left-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); }
+.lv-view-chip.active .lv-view-chip-del:hover { color: #ffffff; background: rgba(255,255,255,0.12); }
+
+/* ─── Filter bar ──────────────────────────────────────────────────────────── */
+.lv-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  flex-shrink: 0;
+}
+
+.lv-search {
+  flex: 1;
+  min-width: 180px;
+  max-width: 260px;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 7px;
+  padding: 7px 11px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1a1a1a;
+  outline: none;
+  transition: border-color 0.12s;
+}
+.lv-search:focus { border-color: #1a1a1a; }
+.lv-search::placeholder { color: #bbb; }
+
+.lv-filter-sel {
+  border: 1.5px solid #e8e8e8;
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #444;
+  background: #fff;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+.lv-filter-sel:focus { border-color: #1a1a1a; }
+
+.lv-date-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lv-date-label {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  color: #888;
+  white-space: nowrap;
+}
+
+.lv-date-input {
+  border: 1.5px solid #e8e8e8;
+  border-radius: 7px;
+  padding: 7px 9px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #444;
+  outline: none;
+  transition: border-color 0.12s;
+}
+.lv-date-input:focus { border-color: #1a1a1a; }
+
+.lv-date-sep {
+  font-size: 14px;
+  color: #aaa;
+  font-weight: 500;
+}
+
+.lv-clear-btn {
+  background: none;
+  border: 1.5px solid #ddd;
+  border-radius: 7px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #666;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.12s, color 0.12s;
+}
+.lv-clear-btn:hover { border-color: #888; color: #1a1a1a; }
+
+.lv-save-view-btn {
+  background: none;
+  border: 1.5px solid #1a1a1a;
+  border-radius: 7px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #1a1a1a;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+  margin-left: auto;
+}
+.lv-save-view-btn:hover:not(:disabled) { background: #1a1a1a; color: #fff; }
+.lv-save-view-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ─── Table wrapper ───────────────────────────────────────────────────────── */
+.lv-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+
+/* ─── Table ───────────────────────────────────────────────────────────────── */
+.lv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+}
+
+.lv-thead-row {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.lv-th {
+  background: #f7f7f7;
+  border-bottom: 1.5px solid #e8e8e8;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  color: #888888;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s, color 0.1s;
+}
+.lv-th:hover { background: #efefef; color: #1a1a1a; }
+.lv-th-actions {
+  cursor: default;
+  text-align: right;
+  min-width: 120px;
+}
+.lv-th-actions:hover { background: #f7f7f7; color: #888888; }
+
+.lv-th-arrow {
+  font-size: 11px;
+  margin-left: 3px;
+  color: #555;
+}
+.lv-th-arrow--inactive {
+  color: #ccc;
+}
+
+.lv-row {
+  cursor: pointer;
+  transition: background 0.1s;
+  border-bottom: 1px solid #f0f0f0;
+}
+.lv-row:last-child { border-bottom: none; }
+.lv-row:hover { background: #fafafa; }
+
+.lv-td {
+  padding: 11px 14px;
+  color: #1a1a1a;
+  font-size: 14px;
+  font-weight: 400;
+  vertical-align: middle;
+}
+
+.lv-td-addr {
+  font-weight: 500;
+  min-width: 160px;
+}
+
+.lv-td-client {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 140px;
+}
+
+.lv-client1 {
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.lv-client2 {
+  font-size: 13px;
+  color: #777;
+}
+
+.lv-td-tc {
+  font-size: 13px;
+  color: #555;
+  white-space: nowrap;
+}
+
+.lv-td-date {
+  font-size: 13px;
+  color: #555;
+  white-space: nowrap;
+}
+
+.lv-td-price {
+  font-weight: 500;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.lv-td-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ─── Stage badges ────────────────────────────────────────────────────────── */
+.lv-stage {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+.lv-stage--pre-listing       { background: #ebebeb; color: #555; }
+.lv-stage--active-listing    { background: #e0e0e0; color: #333; }
+.lv-stage--buyer-broker      { background: #ebebeb; color: #555; }
+.lv-stage--pending           { background: #d8d8d8; color: #222; }
+.lv-stage--closed            { background: #1a1a1a; color: #fff; }
+.lv-stage--cancelled-expired { background: #f5f5f5; color: #999; }
+
+/* ─── Empty state ─────────────────────────────────────────────────────────── */
+.lv-empty {
+  text-align: center;
+  padding: 40px;
+  color: #bbb;
+  font-size: 15px;
+  font-style: italic;
+}
+
+/* ─── Action buttons ──────────────────────────────────────────────────────── */
+.lv-action-btn {
+  border: 1.5px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+  white-space: nowrap;
+}
+.lv-action-btn:hover { background: #f5f5f5; border-color: #bbb; }
+.lv-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ─── Go To dropdown ──────────────────────────────────────────────────────── */
+.lv-goto-wrap {
+  position: relative;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.lv-goto-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  z-index: 100;
+  overflow: hidden;
+  min-width: 180px;
+}
+
+.lv-goto-item {
+  display: block;
+  width: 100%;
+  padding: 9px 14px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 500;
+  color: #1a1a1a;
+  cursor: pointer;
+  border-bottom: 1px solid #f5f5f5;
+  transition: background 0.1s;
+}
+.lv-goto-item:last-child { border-bottom: none; }
+.lv-goto-item:hover { background: #f5f5f5; }
+
+/* ─── Upload dropdown ─────────────────────────────────────────────────────── */
+.lv-upload-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.lv-upload-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  z-index: 100;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 220px;
+}
+
+.lv-upload-sel {
+  width: 100%;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #1a1a1a;
+  outline: none;
+  cursor: pointer;
+}
+
+.lv-upload-go {
+  background: #1a1a1a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.lv-upload-go:hover:not(:disabled) { background: #333; }
+.lv-upload-go:disabled { opacity: 0.4; cursor: not-allowed; }

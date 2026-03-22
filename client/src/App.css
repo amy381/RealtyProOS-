@@ -76,6 +76,31 @@
   gap: 8px;
 }
 
+/* ── Board view toggle ──────────────────────────────────── */
+.board-view-toggle {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.bvt-btn {
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 13px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: rgba(255,255,255,0.65);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.bvt-btn:hover { color: #ffffff; background: rgba(255,255,255,0.1); }
+.bvt-btn.active { background: #ffffff; color: #1a1a1a; }
+
 /* ── Buttons ────────────────────────────────────────────── */
 .btn-new-transaction {
   background: #ffffff;

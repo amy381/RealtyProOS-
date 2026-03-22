@@ -5,6 +5,7 @@ import { syncDriveFolder } from './lib/googleDrive'
 import { buildTemplateTasks, getTemplateKey } from './lib/taskTemplates'
 import { sendMentionNotifications, parseMentions } from './lib/emailNotify'
 import KanbanBoard from './components/KanbanBoard'
+import ListView from './components/ListView'
 import GoalsDashboard from './components/GoalsDashboard'
 import TransactionModal from './components/TransactionModal'
 import TransactionDetailPage from './components/TransactionDetailPage'
@@ -50,10 +51,21 @@ export default function App() {
   const [settingsOpen, setSettingsOpen]         = useState(false)
   const [editingTransaction, setEditingTransaction] = useState(null)
   const [selectedTransaction, setSelectedTransaction] = useState(null)
-  const [activeTab, setActiveTab]               = useState('board')
+  const [selectedSection,     setSelectedSection]     = useState('details')
+  const [txOpenRevision,      setTxOpenRevision]      = useState(0)
+  const [activeTab,  setActiveTab]  = useState('board')
+  const [boardView,  setBoardView]  = useState(() => localStorage.getItem('boardView') || 'board')
 
   const commissionsRef = useRef({})
   const saveTimers     = useRef({})
+
+  const switchBoardView = (v) => { setBoardView(v); localStorage.setItem('boardView', v) }
+
+  const openTransaction = (tx, section = 'details') => {
+    setSelectedSection(section)
+    setSelectedTransaction(tx)
+    setTxOpenRevision(r => r + 1)
+  }
 
   // Show a toast when returning from Google OAuth
   useEffect(() => {
@@ -471,6 +483,12 @@ export default function App() {
           ))}
         </div>
         <div className="header-right">
+          {activeTab === 'board' && (
+            <div className="board-view-toggle">
+              <button className={`bvt-btn${boardView === 'board' ? ' active' : ''}`} onClick={() => switchBoardView('board')}>Board</button>
+              <button className={`bvt-btn${boardView === 'list'  ? ' active' : ''}`} onClick={() => switchBoardView('list')}>List</button>
+            </div>
+          )}
           <button className="btn-new-transaction" onClick={() => setNewTxOpen(true)}>
             + New Transaction
           </button>
@@ -479,19 +497,29 @@ export default function App() {
       </header>
 
       <main className="app-main">
-        {activeTab === 'board' && (
+        {activeTab === 'board' && boardView === 'board' && (
           <GoalsDashboard transactions={transactions} commissions={commissions} />
         )}
 
-        {activeTab === 'board' && (
+        {activeTab === 'board' && boardView === 'board' && (
           <KanbanBoard
             columns={COLUMNS}
             transactions={transactions}
             onEdit={handleEdit}
             onStatusChange={handleStatusChange}
             onDelete={handleDelete}
-            onCardClick={(tx) => setSelectedTransaction(tx)}
+            onCardClick={(tx) => openTransaction(tx)}
             commissions={commissions}
+          />
+        )}
+
+        {activeTab === 'board' && boardView === 'list' && (
+          <ListView
+            transactions={transactions}
+            commissions={commissions}
+            columns={COLUMNS}
+            onCardClick={(tx) => openTransaction(tx)}
+            onOpenSection={(tx, section) => openTransaction(tx, section)}
           />
         )}
         {activeTab === 'commissions' && (
@@ -519,7 +547,9 @@ export default function App() {
 
       {selectedTransaction && (
         <TransactionDetailPage
+          key={txOpenRevision}
           transaction={selectedTransaction}
+          initialSection={selectedSection}
           columns={COLUMNS}
           commissions={commissions}
           tasks={panelTasks}

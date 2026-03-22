@@ -1992,8 +1992,9 @@ export default function TransactionDetailPage({
   onDeleteTask,
   onStatusChange,
   onTransactionUpdate,
+  initialSection = 'details',
 }) {
-  const [activeSection, setActiveSection]   = useState('details')
+  const [activeSection, setActiveSection]   = useState(initialSection)
   const [sessionHistory, setSessionHistory] = useState([])
   const [sendOpen, setSendOpen]             = useState(false)
 

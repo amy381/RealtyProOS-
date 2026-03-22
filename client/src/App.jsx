@@ -14,7 +14,11 @@ import TasksTab from './components/TasksTab'
 import CollaboratorsTab from './components/CollaboratorsTab'
 import NewTransactionPopup from './components/NewTransactionPopup'
 import SettingsModal from './components/SettingsModal'
+import LoginPage from './components/LoginPage'
 import './App.css'
+
+const ALLOWED_EMAILS = (import.meta.env.VITE_ALLOWED_EMAILS || '')
+  .split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
 
 function parsePrice(val) {
   if (val === null || val === undefined || val === '') return null
@@ -40,6 +44,8 @@ const COLUMNS = [
 ]
 
 export default function App() {
+  const [session, setSession]                   = useState(undefined) // undefined = loading
+  const [accessDenied, setAccessDenied]         = useState(false)
   const [transactions, setTransactions]         = useState([])
   const [commissions, setCommissions]           = useState({})
   const [tasks, setTasks]                       = useState([])
@@ -59,6 +65,33 @@ export default function App() {
   const saveTimers     = useRef({})
 
   const switchBoardView = (v) => { setBoardView(v); localStorage.setItem('boardView', v) }
+
+  // ── Auth ─────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      const email = s?.user?.email?.toLowerCase() || ''
+      if (s && ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(email)) {
+        setAccessDenied(true)
+        setSession(null)
+      } else {
+        setSession(s)
+        setAccessDenied(false)
+      }
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      const email = s?.user?.email?.toLowerCase() || ''
+      if (s && ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(email)) {
+        setAccessDenied(true)
+        setSession(null)
+      } else {
+        setSession(s)
+        setAccessDenied(false)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   const openTransaction = (tx, section = 'details') => {
     setSelectedSection(section)
@@ -293,7 +326,9 @@ export default function App() {
   const handleFieldSave = async (field, value) => {
     if (!selectedTransaction) return
     const txId    = selectedTransaction.id
-    const dbValue = field === 'price' ? parsePrice(value) : value
+    const dbValue = field === 'price'     ? parsePrice(value)
+                  : field === 'square_ft' ? (String(value).replace(/,/g, '') || null)
+                  : value
     // Keep a snapshot for Drive sync reads below (status, rep_type, address, etc.)
     const updated = { ...selectedTransaction, [field]: dbValue }
 
@@ -457,6 +492,17 @@ export default function App() {
   }, [])
 
   // ── Render ──────────────────────────────────────────────────────────────────
+
+  // Auth loading (session not yet resolved)
+  if (session === undefined) {
+    return <div className="app"><div className="app-loading">Loading…</div></div>
+  }
+
+  // Not authenticated or access denied
+  if (!session || accessDenied) {
+    return <LoginPage accessDenied={accessDenied} />
+  }
+
   if (loading) {
     return (
       <div className="app">

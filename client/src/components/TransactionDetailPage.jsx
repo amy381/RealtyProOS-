@@ -1725,7 +1725,7 @@ function DocsRequiredSection({ transaction, commissions }) {
   const hasLbp         = !!transaction.has_lbp
   const hasSeptic      = !!transaction.has_septic
   const hasContingency = !!transaction.has_contingency
-  const yearBuilt      = Number(transaction.year_built) || 0
+  const yearBuilt      = Number((String(transaction.year_built || '')).match(/\d{4}/)?.[0]) || 0
   const financingType  = transaction.financing_type || ''
   const referralPct    = Number(transaction.referral_pct) || 0
   const hasBba         = !!(commissions?.[transaction.id]?.buyer_broker_addendum)

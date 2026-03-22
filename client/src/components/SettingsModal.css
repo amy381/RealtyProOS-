@@ -134,10 +134,33 @@
 
 .settings-actions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 10px;
   padding: 16px 24px;
   border-top: 1px solid #e0e0e0;
+}
+
+.settings-actions-right {
+  display: flex;
+  gap: 10px;
+}
+
+.settings-signout {
+  background: none;
+  color: #c0392b;
+  border: 1px solid #e0b0b0;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.settings-signout:hover {
+  background: #fdf2f2;
+  border-color: #c0392b;
 }
 
 .settings-cancel {

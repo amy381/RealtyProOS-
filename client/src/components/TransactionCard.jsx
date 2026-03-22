@@ -37,17 +37,25 @@ function getCardFields(transaction) {
   }
 
   let dateFields
-  if (rep_type === 'Buyer')        dateFields = BUYER_DATE_FIELDS
-  else if (rep_type === 'Seller')  dateFields = SELLER_DATE_FIELDS
-  else                             dateFields = COLUMN_FIELDS[status] || []
+  if (status === 'pending') {
+    // Pending cards always use the pending-specific field set regardless of rep_type.
+    // This ensures ipe_date and other pending dates show consistently across all Pending cards.
+    dateFields = COLUMN_FIELDS['pending']
+  } else if (rep_type === 'Buyer') {
+    dateFields = BUYER_DATE_FIELDS
+  } else if (rep_type === 'Seller') {
+    dateFields = SELLER_DATE_FIELDS
+  } else {
+    dateFields = COLUMN_FIELDS[status] || []
+  }
 
   // Only show date fields that have a value (keeps cards compact).
-  // Target Live is suppressed on Pending and Active Listing cards (still visible in side panel).
+  // Target Live is suppressed on Active Listing cards (still visible in side panel).
   // Close of Escrow never shown on Active Listing cards.
   const visibleDateFields = dateFields.filter(f =>
     f.type === 'date' && transaction[f.key] &&
-    !(f.key === 'target_live_date' && (status === 'pending' || status === 'active-listing')) &&
-    !(f.key === 'close_of_escrow' && status === 'active-listing')
+    !(f.key === 'target_live_date' && status === 'active-listing') &&
+    !(f.key === 'close_of_escrow'  && status === 'active-listing')
   )
 
   // Always include text fields from COLUMN_FIELDS that have values (e.g. Lender, Title Co.)

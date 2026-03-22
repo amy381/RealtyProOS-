@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { supabase } from '../lib/supabase'
 import './SettingsModal.css'
 
 export default function SettingsModal({ tcSettings, onSave, onClose }) {
@@ -56,8 +57,16 @@ export default function SettingsModal({ tcSettings, onSave, onClose }) {
         </div>
 
         <div className="settings-actions">
-          <button className="settings-cancel" onClick={onClose}>Cancel</button>
-          <button className="settings-save" onClick={handleSave}>Save</button>
+          <button
+            className="settings-signout"
+            onClick={() => supabase.auth.signOut()}
+          >
+            Sign Out
+          </button>
+          <div className="settings-actions-right">
+            <button className="settings-cancel" onClick={onClose}>Cancel</button>
+            <button className="settings-save" onClick={handleSave}>Save</button>
+          </div>
         </div>
       </div>
     </div>

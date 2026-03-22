@@ -1,19 +1,22 @@
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { TC_OPTIONS } from '../lib/columnFields'
 import { uploadToDrive, syncDriveFolder, CONTRACT_DOCS } from '../lib/googleDrive'
 import toast from 'react-hot-toast'
 import './ListView.css'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const STAGES = [
+  { value: 'buyer-broker',      label: 'Buyer-Broker'        },
   { value: 'pre-listing',       label: 'Pre-Listing'         },
   { value: 'active-listing',    label: 'Active Listing'      },
-  { value: 'buyer-broker',      label: 'Buyer-Broker'        },
   { value: 'pending',           label: 'Pending'             },
   { value: 'closed',            label: 'Closed'              },
   { value: 'cancelled-expired', label: 'Cancelled / Expired' },
 ]
+
+const DEFAULT_STAGE_CHECKS = new Set([
+  'buyer-broker', 'pre-listing', 'active-listing', 'pending', 'closed',
+])
 
 const STAGE_ORDER = {
   'pre-listing': 0, 'active-listing': 1, 'buyer-broker': 2,
@@ -37,6 +40,20 @@ const ALL_DOCS = [
   'Appraisal Report', 'Loan Commitment Letter',
   'Final Walkthrough Verification', 'Closing Disclosure',
 ]
+
+const TC_NAMES = ['Justina Morris', 'Victoria Lareau']
+
+const DEFAULT_FILTERS = {
+  search:         '',
+  typeFilter:     'All',
+  stageChecks:    DEFAULT_STAGE_CHECKS,
+  tcFilter:       'All',
+  propTypeFilter: 'All',
+  coeFrom:        '',
+  coeTo:          '',
+  minPrice:       '',
+  maxPrice:       '',
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function parseContrib(val, price) {
@@ -77,6 +94,209 @@ function getPrice(tx) { return Number(tx.price) || 0 }
 
 function getContractDate(tx) {
   return tx.rep_type === 'Buyer' ? tx.bba_contract : tx.listing_contract
+}
+
+function countActiveFilters(f) {
+  let n = 0
+  if (f.search.trim()) n++
+  if (f.typeFilter !== 'All') n++
+  if (f.tcFilter !== 'All') n++
+  if (f.propTypeFilter !== 'All') n++
+  if (f.coeFrom || f.coeTo) n++
+  if (f.minPrice || f.maxPrice) n++
+  const sc = f.stageChecks
+  if (sc.size !== DEFAULT_STAGE_CHECKS.size || [...DEFAULT_STAGE_CHECKS].some(s => !sc.has(s))) n++
+  return n
+}
+
+// ─── Filters Panel ────────────────────────────────────────────────────────────
+function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, onSaveView, onApplyView, onDeleteView, activeViewId, saving }) {
+  const set = (key, val) => setDraft(d => ({ ...d, [key]: val }))
+
+  const toggleStage = (value) => {
+    setDraft(d => {
+      const next = new Set(d.stageChecks)
+      next.has(value) ? next.delete(value) : next.add(value)
+      return { ...d, stageChecks: next }
+    })
+  }
+
+  return (
+    <>
+      <div className="lv-fpanel-overlay" onClick={onClose} />
+      <div className="lv-fpanel">
+
+        <div className="lv-fpanel-header">
+          <span className="lv-fpanel-title">Filters</span>
+          <button className="lv-fpanel-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="lv-fpanel-body">
+
+          {/* STAGE */}
+          <div className="lv-fpanel-section">
+            <div className="lv-fpanel-section-title">Stage</div>
+            <div className="lv-fpanel-checks">
+              {STAGES.map(s => (
+                <label key={s.value} className="lv-fpanel-check-item">
+                  <input
+                    type="checkbox"
+                    className="lv-fpanel-checkbox"
+                    checked={draft.stageChecks.has(s.value)}
+                    onChange={() => toggleStage(s.value)}
+                  />
+                  <span>{s.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* TRANSACTION TYPE */}
+          <div className="lv-fpanel-section">
+            <div className="lv-fpanel-section-title">Transaction Type</div>
+            <div className="lv-fpanel-toggles">
+              {['All', 'Buyer', 'Seller'].map(v => (
+                <button
+                  key={v}
+                  className={`lv-fpanel-toggle${draft.typeFilter === v ? ' active' : ''}`}
+                  onClick={() => set('typeFilter', v)}
+                >{v}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* TC */}
+          <div className="lv-fpanel-section">
+            <div className="lv-fpanel-section-title">TC</div>
+            <div className="lv-fpanel-toggles">
+              {['All', ...TC_NAMES].map(v => (
+                <button
+                  key={v}
+                  className={`lv-fpanel-toggle${draft.tcFilter === v ? ' active' : ''}`}
+                  onClick={() => set('tcFilter', v)}
+                >{v === 'Justina Morris' ? 'Justina' : v === 'Victoria Lareau' ? 'Victoria' : v}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* PROPERTY TYPE */}
+          <div className="lv-fpanel-section">
+            <div className="lv-fpanel-section-title">Property Type</div>
+            <div className="lv-fpanel-toggles">
+              {['All', 'Residential', 'Vacant Land'].map(v => (
+                <button
+                  key={v}
+                  className={`lv-fpanel-toggle${draft.propTypeFilter === v ? ' active' : ''}`}
+                  onClick={() => set('propTypeFilter', v)}
+                >{v}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* DATE RANGE */}
+          <div className="lv-fpanel-section">
+            <div className="lv-fpanel-section-title">COE Date Range</div>
+            <div className="lv-fpanel-row">
+              <div className="lv-fpanel-field">
+                <label className="lv-fpanel-field-label">From</label>
+                <input
+                  type="date"
+                  className="lv-fpanel-input"
+                  value={draft.coeFrom}
+                  onChange={e => set('coeFrom', e.target.value)}
+                />
+              </div>
+              <div className="lv-fpanel-field">
+                <label className="lv-fpanel-field-label">To</label>
+                <input
+                  type="date"
+                  className="lv-fpanel-input"
+                  value={draft.coeTo}
+                  onChange={e => set('coeTo', e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* PRICE RANGE */}
+          <div className="lv-fpanel-section">
+            <div className="lv-fpanel-section-title">Price Range</div>
+            <div className="lv-fpanel-row">
+              <div className="lv-fpanel-field">
+                <label className="lv-fpanel-field-label">Min Price</label>
+                <input
+                  type="number"
+                  className="lv-fpanel-input"
+                  placeholder="0"
+                  value={draft.minPrice}
+                  onChange={e => set('minPrice', e.target.value)}
+                />
+              </div>
+              <div className="lv-fpanel-field">
+                <label className="lv-fpanel-field-label">Max Price</label>
+                <input
+                  type="number"
+                  className="lv-fpanel-input"
+                  placeholder="Any"
+                  value={draft.maxPrice}
+                  onChange={e => set('maxPrice', e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* SEARCH */}
+          <div className="lv-fpanel-section">
+            <div className="lv-fpanel-section-title">Search</div>
+            <input
+              type="text"
+              className="lv-fpanel-input lv-fpanel-input--full"
+              placeholder="Address or client name…"
+              value={draft.search}
+              onChange={e => set('search', e.target.value)}
+            />
+          </div>
+
+          {/* SAVED VIEWS */}
+          {savedViews.length > 0 && (
+            <div className="lv-fpanel-section">
+              <div className="lv-fpanel-section-title">Saved Views</div>
+              <div className="lv-fpanel-views">
+                {savedViews.map(view => (
+                  <div
+                    key={view.id}
+                    className={`lv-fpanel-view-chip${activeViewId === view.id ? ' active' : ''}`}
+                  >
+                    <button className="lv-fpanel-view-name" onClick={() => onApplyView(view)}>
+                      {view.name}
+                    </button>
+                    <button
+                      className="lv-fpanel-view-del"
+                      onClick={e => { e.stopPropagation(); onDeleteView(view.id, e) }}
+                      title="Delete view"
+                    >×</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* Footer */}
+        <div className="lv-fpanel-footer">
+          <button className="lv-fpanel-clear" onClick={onClear}>Clear All</button>
+          <div className="lv-fpanel-footer-right">
+            <button className="lv-fpanel-save" onClick={onSaveView} disabled={saving}>
+              {saving ? 'Saving…' : 'Save View'}
+            </button>
+            <button className="lv-fpanel-apply" onClick={onApply}>Apply Filters</button>
+          </div>
+        </div>
+
+      </div>
+    </>
+  )
 }
 
 // ─── GoTo Dropdown ────────────────────────────────────────────────────────────
@@ -204,6 +424,10 @@ function ListRow({ tx, stageLabel, onCardClick, onOpenSection }) {
 
   return (
     <tr className="lv-row" onClick={() => onCardClick(tx)}>
+      <td className="lv-td lv-td-actions" onClick={e => e.stopPropagation()}>
+        <GoToDropdown tx={tx} onOpenSection={onOpenSection} />
+        <UploadButton tx={tx} />
+      </td>
       <td className="lv-td lv-td-addr">{tx.property_address || '—'}</td>
       <td className="lv-td lv-td-client">
         <span className="lv-client1">{c1}</span>
@@ -218,28 +442,20 @@ function ListRow({ tx, stageLabel, onCardClick, onOpenSection }) {
       <td className="lv-td lv-td-date">{fmtDate(contractDate)}</td>
       <td className="lv-td lv-td-date">{fmtDate(tx.close_of_escrow)}</td>
       <td className="lv-td lv-td-price">{price ? fmtMoney(price) : '—'}</td>
-      <td className="lv-td lv-td-actions" onClick={e => e.stopPropagation()}>
-        <GoToDropdown tx={tx} onOpenSection={onOpenSection} />
-        <UploadButton tx={tx} />
-      </td>
     </tr>
   )
 }
 
 // ─── Main ListView ────────────────────────────────────────────────────────────
 export default function ListView({ transactions, commissions, columns, onCardClick, onOpenSection }) {
-  const [search,      setSearch]      = useState('')
-  const [typeFilter,  setTypeFilter]  = useState('All')
-  const [stageFilter, setStageFilter] = useState('All')
-  const [tcFilter,    setTcFilter]    = useState('All')
-  const [coeFrom,     setCoeFrom]     = useState('')
-  const [coeTo,       setCoeTo]       = useState('')
-  const [sortCol,     setSortCol]     = useState('status')
-  const [sortDir,     setSortDir]     = useState('asc')
-
-  const [savedViews,  setSavedViews]  = useState([])
+  const [filters,      setFilters]      = useState(DEFAULT_FILTERS)
+  const [draft,        setDraft]        = useState(DEFAULT_FILTERS)
+  const [panelOpen,    setPanelOpen]    = useState(false)
+  const [sortCol,      setSortCol]      = useState('status')
+  const [sortDir,      setSortDir]      = useState('asc')
+  const [savedViews,   setSavedViews]   = useState([])
   const [activeViewId, setActiveViewId] = useState(null)
-  const [saving,      setSaving]      = useState(false)
+  const [saving,       setSaving]       = useState(false)
 
   // Load saved views on mount
   useEffect(() => {
@@ -248,80 +464,100 @@ export default function ListView({ transactions, commissions, columns, onCardCli
     })
   }, [])
 
-  // Wrappers that clear active view when user manually changes a filter
-  const changeSearch      = v => { setSearch(v);      setActiveViewId(null) }
-  const changeTypeFilter  = v => { setTypeFilter(v);  setActiveViewId(null) }
-  const changeStageFilter = v => { setStageFilter(v); setActiveViewId(null) }
-  const changeTcFilter    = v => { setTcFilter(v);    setActiveViewId(null) }
-  const changeCoeFrom     = v => { setCoeFrom(v);     setActiveViewId(null) }
-  const changeCoeTo       = v => { setCoeTo(v);       setActiveViewId(null) }
+  const openPanel = () => {
+    setDraft(filters)
+    setPanelOpen(true)
+  }
+
+  const closePanel = () => setPanelOpen(false)
+
+  const applyPanel = () => {
+    setFilters(draft)
+    setActiveViewId(null)
+    setPanelOpen(false)
+  }
 
   const clearAll = () => {
-    setSearch(''); setTypeFilter('All'); setStageFilter('All')
-    setTcFilter('All'); setCoeFrom(''); setCoeTo('')
+    setDraft(DEFAULT_FILTERS)
+    setFilters(DEFAULT_FILTERS)
     setActiveViewId(null)
+    setPanelOpen(false)
   }
 
   const applyView = (view) => {
     const f = view.filters || {}
-    setSearch(f.search       ?? '')
-    setTypeFilter(f.typeFilter  ?? 'All')
-    setStageFilter(f.stageFilter ?? 'All')
-    setTcFilter(f.tcFilter    ?? 'All')
-    setCoeFrom(f.coeFrom      ?? '')
-    setCoeTo(f.coeTo        ?? '')
+    const applied = {
+      search:         f.search         ?? '',
+      typeFilter:     f.typeFilter      ?? 'All',
+      stageChecks:    new Set(f.stageChecks ?? [...DEFAULT_STAGE_CHECKS]),
+      tcFilter:       f.tcFilter        ?? 'All',
+      propTypeFilter: f.propTypeFilter  ?? 'All',
+      coeFrom:        f.coeFrom         ?? '',
+      coeTo:          f.coeTo           ?? '',
+      minPrice:       f.minPrice        ?? '',
+      maxPrice:       f.maxPrice        ?? '',
+    }
+    setFilters(applied)
+    setDraft(applied)
     setActiveViewId(view.id)
+    setPanelOpen(false)
   }
 
   const saveView = async () => {
     const name = window.prompt('Name this view:')
     if (!name?.trim()) return
     setSaving(true)
-    const filters = { search, typeFilter, stageFilter, tcFilter, coeFrom, coeTo }
+    const toSave = { ...draft, stageChecks: [...draft.stageChecks] }
     const { data, error } = await supabase
       .from('saved_filters')
-      .insert({ name: name.trim(), filters })
+      .insert({ name: name.trim(), filters: toSave })
       .select()
       .single()
     setSaving(false)
     if (error) { toast.error('Failed to save view'); return }
     setSavedViews(v => [...v, data])
     setActiveViewId(data.id)
+    setFilters(draft)
+    setPanelOpen(false)
     toast.success(`View "${data.name}" saved`)
   }
 
   const deleteView = async (id, e) => {
-    e.stopPropagation()
+    e?.stopPropagation()
     const { error } = await supabase.from('saved_filters').delete().eq('id', id)
     if (error) { toast.error('Failed to delete view'); return }
     setSavedViews(v => v.filter(sv => sv.id !== id))
     if (activeViewId === id) setActiveViewId(null)
   }
 
-  const hasFilters = search || typeFilter !== 'All' || stageFilter !== 'All'
-    || tcFilter !== 'All' || coeFrom || coeTo
+  const filterCount = countActiveFilters(filters)
 
   const gciFor = tx => calcGCI(tx, commissions?.[tx.id])
-
   const closed     = transactions.filter(t => t.status === 'closed')
   const pending    = transactions.filter(t => t.status === 'pending')
   const closedGCI  = closed.reduce((s, t)  => s + gciFor(t), 0)
   const pendingGCI = pending.reduce((s, t) => s + gciFor(t), 0)
 
-  // Filter
+  // Apply filters
   let filtered = transactions
-  if (search.trim()) {
-    const q = search.toLowerCase()
+
+  // Stage: only show transactions whose stage is in stageChecks
+  filtered = filtered.filter(t => filters.stageChecks.has(t.status))
+
+  if (filters.search.trim()) {
+    const q = filters.search.toLowerCase()
     filtered = filtered.filter(t =>
       (t.property_address || '').toLowerCase().includes(q) ||
       clientNames(t).toLowerCase().includes(q)
     )
   }
-  if (typeFilter  !== 'All') filtered = filtered.filter(t => t.rep_type     === typeFilter)
-  if (stageFilter !== 'All') filtered = filtered.filter(t => t.status       === stageFilter)
-  if (tcFilter    !== 'All') filtered = filtered.filter(t => t.assigned_tc  === tcFilter)
-  if (coeFrom) filtered = filtered.filter(t => t.close_of_escrow && t.close_of_escrow >= coeFrom)
-  if (coeTo)   filtered = filtered.filter(t => t.close_of_escrow && t.close_of_escrow <= coeTo)
+  if (filters.typeFilter     !== 'All') filtered = filtered.filter(t => t.rep_type      === filters.typeFilter)
+  if (filters.tcFilter       !== 'All') filtered = filtered.filter(t => t.assigned_tc   === filters.tcFilter)
+  if (filters.propTypeFilter !== 'All') filtered = filtered.filter(t => t.property_type === filters.propTypeFilter)
+  if (filters.coeFrom) filtered = filtered.filter(t => t.close_of_escrow && t.close_of_escrow >= filters.coeFrom)
+  if (filters.coeTo)   filtered = filtered.filter(t => t.close_of_escrow && t.close_of_escrow <= filters.coeTo)
+  if (filters.minPrice) filtered = filtered.filter(t => getPrice(t) >= Number(filters.minPrice))
+  if (filters.maxPrice) filtered = filtered.filter(t => getPrice(t) <= Number(filters.maxPrice))
 
   // Sort
   const toggleSort = col => {
@@ -375,80 +611,43 @@ export default function ListView({ transactions, commissions, columns, onCardCli
         </div>
       </div>
 
-      {/* Saved views strip — only shown when views exist */}
-      {savedViews.length > 0 && (
-        <div className="lv-saved-views">
-          <span className="lv-saved-views-label">Views</span>
-          <div className="lv-saved-views-chips">
-            {savedViews.map(view => (
-              <div
-                key={view.id}
-                className={`lv-view-chip${activeViewId === view.id ? ' active' : ''}`}
-              >
-                <button
-                  className="lv-view-chip-name"
-                  onClick={() => applyView(view)}
-                >
-                  {view.name}
-                </button>
-                <button
-                  className="lv-view-chip-del"
-                  onClick={e => deleteView(view.id, e)}
-                  title="Remove view"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Filter bar */}
-      <div className="lv-filters">
-        <input
-          className="lv-search"
-          placeholder="Search address or client…"
-          value={search}
-          onChange={e => changeSearch(e.target.value)}
-        />
-        <select className="lv-filter-sel" value={typeFilter} onChange={e => changeTypeFilter(e.target.value)}>
-          <option value="All">All Types</option>
-          <option value="Buyer">Buyer</option>
-          <option value="Seller">Seller</option>
-        </select>
-        <select className="lv-filter-sel" value={stageFilter} onChange={e => changeStageFilter(e.target.value)}>
-          <option value="All">All Stages</option>
-          {STAGES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-        </select>
-        <select className="lv-filter-sel" value={tcFilter} onChange={e => changeTcFilter(e.target.value)}>
-          <option value="All">All TCs</option>
-          {TC_OPTIONS.map(tc => <option key={tc} value={tc}>{tc}</option>)}
-        </select>
-        <div className="lv-date-range">
-          <span className="lv-date-label">COE</span>
-          <input className="lv-date-input" type="date" value={coeFrom} onChange={e => changeCoeFrom(e.target.value)} />
-          <span className="lv-date-sep">–</span>
-          <input className="lv-date-input" type="date" value={coeTo} onChange={e => changeCoeTo(e.target.value)} />
-        </div>
-        {hasFilters && (
+      {/* Toolbar */}
+      <div className="lv-toolbar">
+        <button
+          className={`lv-filters-btn${filterCount > 0 ? ' has-filters' : ''}`}
+          onClick={openPanel}
+        >
+          Filters{filterCount > 0 ? ` (${filterCount})` : ''}
+        </button>
+        <span className="lv-result-count">{sorted.length} transaction{sorted.length !== 1 ? 's' : ''}</span>
+        {filterCount > 0 && (
           <button className="lv-clear-btn" onClick={clearAll}>Clear All</button>
         )}
-        <button
-          className="lv-save-view-btn"
-          onClick={saveView}
-          disabled={saving}
-          title="Save current filters as a view"
-        >
-          {saving ? 'Saving…' : 'Save View'}
-        </button>
       </div>
+
+      {/* Filter panel */}
+      {panelOpen && (
+        <FiltersPanel
+          draft={draft}
+          setDraft={setDraft}
+          onApply={applyPanel}
+          onClear={() => setDraft(DEFAULT_FILTERS)}
+          onClose={closePanel}
+          savedViews={savedViews}
+          onSaveView={saveView}
+          onApplyView={applyView}
+          onDeleteView={deleteView}
+          activeViewId={activeViewId}
+          saving={saving}
+        />
+      )}
 
       {/* Table */}
       <div className="lv-table-wrap">
         <table className="lv-table">
           <thead>
             <tr className="lv-thead-row">
+              <th className="lv-th lv-th-actions">Actions</th>
               <th className="lv-th" onClick={() => toggleSort('address')}>Address {arrow('address')}</th>
               <th className="lv-th" onClick={() => toggleSort('client')}>Client {arrow('client')}</th>
               <th className="lv-th" onClick={() => toggleSort('rep_type')}>Type {arrow('rep_type')}</th>
@@ -458,7 +657,6 @@ export default function ListView({ transactions, commissions, columns, onCardCli
               <th className="lv-th" onClick={() => toggleSort('contract')}>Contract {arrow('contract')}</th>
               <th className="lv-th" onClick={() => toggleSort('coe')}>COE {arrow('coe')}</th>
               <th className="lv-th" onClick={() => toggleSort('price')}>Price {arrow('price')}</th>
-              <th className="lv-th lv-th-actions">Actions</th>
             </tr>
           </thead>
           <tbody>

@@ -8,6 +8,7 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .transaction-card:hover {
@@ -36,51 +37,58 @@
   font-size: 14px;
   font-weight: 600;
   color: #1a1a1a;
-  line-height: 1.4;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
 }
 
 .card-price {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: #1a1a1a;
 }
 
 .card-row {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #666666;
+  align-items: flex-start;
+  gap: 5px;
 }
 
 .card-icon {
-  font-size: 12px;
+  font-size: 11px;
   flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .card-client {
   font-size: 13px;
-  color: #666666;
+  font-weight: 500;
+  color: #555555;
   display: flex;
   flex-direction: column;
   gap: 1px;
+  line-height: 1.3;
 }
 
 .card-field-row {
   display: flex;
   align-items: baseline;
-  gap: 5px;
-  font-size: 12px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .card-field-label {
-  color: #666666;
+  font-size: 11px;
+  font-variant: small-caps;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #888888;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .card-field-value {
+  font-size: 13px;
+  font-weight: 500;
   color: #1a1a1a;
   display: flex;
   align-items: center;
@@ -102,13 +110,15 @@
 }
 
 .card-rep-badge {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   margin-left: auto;
 }
 
 .card-rep-badge.buyer  { color: #1a1a1a; }
-.card-rep-badge.seller { color: #666666; }
+.card-rep-badge.seller { color: #888888; }
 
 /* Urgency */
 .urgent-text  { color: #1a1a1a; font-weight: 600; }
@@ -123,7 +133,6 @@
 
 .urgent-badge  { background: #f0f0f0; color: #1a1a1a; }
 .overdue-badge { background: #e8e8e8; color: #1a1a1a; }
-
 
 .card-actions {
   display: flex;

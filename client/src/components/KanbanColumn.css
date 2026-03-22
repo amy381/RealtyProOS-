@@ -6,6 +6,7 @@
   transition: border-color 0.15s, filter 0.15s;
   overflow: hidden;
   flex-shrink: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* List columns: width controlled by .stacked-list-panel */
@@ -53,15 +54,16 @@
 }
 
 .column-title {
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 13px;
+  font-weight: 700;
   color: #ffffff;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
 }
 
 .kanban-column--list .column-title {
-  font-size: 14px;
+  font-size: 12px;
+  letter-spacing: 0.09em;
 }
 
 .column-count {
@@ -107,38 +109,30 @@
 .list-col-header {
   display: flex;
   align-items: center;
-  padding: 4px 10px;
-  gap: 5px;
-  background: #f5f5f5;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 5px 12px;
+  gap: 8px;
+  background: #f7f7f7;
+  border-bottom: 1px solid #ebebeb;
   flex-shrink: 0;
 }
 
 .lch-addr {
   flex: 1;
-  font-size: 10px;
-  font-weight: 700;
-  color: #666666;
-  text-transform: uppercase;
+  font-size: 11px;
+  font-variant: small-caps;
+  font-weight: 600;
+  color: #aaaaaa;
   letter-spacing: 0.04em;
-}
-
-.lch-tc {
-  width: 20px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #666666;
-  text-transform: uppercase;
-  text-align: center;
 }
 
 .lch-d1,
 .lch-d2 {
-  width: 36px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #666666;
-  text-transform: uppercase;
+  width: 38px;
+  font-size: 11px;
+  font-variant: small-caps;
+  font-weight: 600;
+  color: #aaaaaa;
+  letter-spacing: 0.04em;
   text-align: right;
 }
 

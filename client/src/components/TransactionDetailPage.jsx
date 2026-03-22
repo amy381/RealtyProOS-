@@ -50,7 +50,20 @@ const FIELD_LABELS = {
   lockbox: 'Lockbox', has_sign: 'Sign',
   referring_agent: 'Referring Agent', referring_agent_email: 'Referring Agent Email',
   referring_agent_phone: 'Referring Agent Phone', referral_pct: 'Referral %',
+  financing_type: 'Financing Type', additional_terms: 'Additional Terms & Conditions',
+  additional_parcels: 'Additional Parcel(s)',
 }
+
+const FINANCING_TYPE_OPTIONS = [
+  { value: '',               label: '—'             },
+  { value: 'Conventional',   label: 'Conventional'  },
+  { value: 'FHA',            label: 'FHA'           },
+  { value: 'VA',             label: 'VA'            },
+  { value: 'Cash',           label: 'Cash'          },
+  { value: 'USDA',           label: 'USDA'          },
+  { value: 'Owner Finance',  label: 'Owner Finance' },
+  { value: 'Other',          label: 'Other'         },
+]
 
 const VACANT_OPTIONS = [
   { value: '',          label: '—'         },
@@ -390,6 +403,18 @@ function TxField({ label, value, displayValue, type, options, onSave, placeholde
               </option>
             ))}
           </select>
+        ) : type === 'textarea' ? (
+          <textarea
+            ref={inputRef}
+            className="txp-textarea"
+            tabIndex={tabIndex}
+            value={draft}
+            placeholder={placeholder}
+            rows={4}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={e => { if (e.key === 'Escape') setEditing(false) }}
+          />
         ) : (
           <input
             ref={inputRef}
@@ -405,7 +430,7 @@ function TxField({ label, value, displayValue, type, options, onSave, placeholde
         )
       ) : (
         <span
-          className="txp-field-value"
+          className={`txp-field-value${type === 'textarea' ? ' txp-field-value--multiline' : ''}`}
           tabIndex={tabIndex}
           onClick={startEdit}
           onFocus={startEdit}
@@ -1187,44 +1212,30 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               </div>
             </div>
             <TxField
-              label={priceLabel}
-              value={String(transaction.price || '')}
-              displayValue={fmtWhole(transaction.price)}
-              type="text"
-              onSave={save('price')}
-              placeholder="$0"
-              tabIndex={4}
-            />
-            <TxField
               label="Property Type"
               value={transaction.property_type || ''}
               type="select"
               options={PROPERTY_TYPE_OPTIONS}
               onSave={save('property_type')}
-              tabIndex={5}
+              tabIndex={4}
             />
 
-            {/* Seller property fields — always visible */}
-            {!isBuyer && (<>
-              <TxField label="APN"        value={transaction.apn        || ''} type="text" onSave={save('apn')}        placeholder="000-000-000" tabIndex={6} />
-              <TxField label="MLS Number" value={transaction.mls_number || ''} type="text" onSave={save('mls_number')} placeholder="MLS #"       tabIndex={7} />
-              <TxField
-                label="Vacant or Occupied"
-                value={transaction.vacant_or_occupied || ''}
-                type="select"
-                options={VACANT_OPTIONS}
-                onSave={save('vacant_or_occupied')}
-                tabIndex={8}
-              />
-              {!isVacantLand && (<>
-                <TxField label="Bedrooms"   value={String(transaction.bedrooms   ?? '')} type="text" onSave={save('bedrooms')}   placeholder="e.g. 3"    tabIndex={9} />
-                <TxField label="Square Ft"  value={String(transaction.square_ft  ?? '')} type="text" onSave={save('square_ft')}  placeholder="e.g. 1800" tabIndex={10} />
-                <TxField label="Year Built" value={String(transaction.year_built  ?? '')} type="text" onSave={save('year_built')} placeholder="e.g. 1998" tabIndex={11} />
-              </>)}
-            </>)}
+            {/* Seller: APN always visible */}
+            {!isBuyer && (
+              <TxField label="APN" value={transaction.apn || ''} type="text" onSave={save('apn')} placeholder="000-000-000" tabIndex={5} />
+            )}
 
             {/* Buyer pending+ property fields */}
             {isBuyer && isPendingOrBeyond && (<>
+              <TxField
+                label="Purchase Price"
+                value={String(transaction.price || '')}
+                displayValue={fmtWhole(transaction.price)}
+                type="text"
+                onSave={save('price')}
+                placeholder="$0"
+                tabIndex={5}
+              />
               {!isVacantLand && (<>
                 <TxField label="Square Ft"  value={String(transaction.square_ft  ?? '')} type="text" onSave={save('square_ft')}  placeholder="e.g. 1800" tabIndex={6} />
                 <TxField label="Year Built" value={String(transaction.year_built  ?? '')} type="text" onSave={save('year_built')} placeholder="e.g. 1998" tabIndex={7} />
@@ -1307,128 +1318,172 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
             <div className="txp-section">
               <div className="txp-section-title">Listing Details</div>
               <TxField
+                label="List Price"
+                value={String(transaction.price || '')}
+                displayValue={fmtWhole(transaction.price)}
+                type="text"
+                onSave={save('price')}
+                placeholder="$0"
+                tabIndex={14}
+              />
+              <TxField label="MLS Number" value={transaction.mls_number || ''} type="text" onSave={save('mls_number')} placeholder="MLS #" tabIndex={15} />
+              <TxField
+                label="Vacant or Occupied"
+                value={transaction.vacant_or_occupied || ''}
+                type="select"
+                options={VACANT_OPTIONS}
+                onSave={save('vacant_or_occupied')}
+                tabIndex={16}
+              />
+              <TxField
                 label="Lockbox"
                 value={transaction.lockbox || ''}
                 type="select"
                 options={LOCKBOX_OPTIONS}
                 onSave={save('lockbox')}
-                tabIndex={14}
+                tabIndex={17}
               />
               <div className="txp-field">
                 <span className="txp-field-label">Sign</span>
                 <label className="txp-checkbox-item">
-                  <input
-                    type="checkbox"
-                    tabIndex={15}
-                    checked={!!transaction.has_sign}
-                    onChange={e => save('has_sign')(e.target.checked)}
-                  />
+                  <input type="checkbox" tabIndex={18} checked={!!transaction.has_sign} onChange={e => save('has_sign')(e.target.checked)} />
                 </label>
               </div>
             </div>
           )}
 
-          {/* PROPERTY FEATURES */}
-          <div className="txp-section">
-            <div className="txp-section-title">Property Features</div>
-            <div className="txp-checks-row">
-              <label className="txp-checkbox-item">
-                <input type="checkbox" tabIndex={18} checked={!!transaction.has_septic} onChange={e => save('has_septic')(e.target.checked)} />
-                <span>Septic</span>
-              </label>
-              <label className="txp-checkbox-item">
-                <input type="checkbox" tabIndex={19} checked={!!transaction.has_solar} onChange={e => save('has_solar')(e.target.checked)} />
-                <span>Solar</span>
-              </label>
-              <label className="txp-checkbox-item">
-                <input type="checkbox" tabIndex={20} checked={!!transaction.has_well} onChange={e => save('has_well')(e.target.checked)} />
-                <span>Well</span>
-              </label>
-              <label className="txp-checkbox-item">
-                <input type="checkbox" tabIndex={21} checked={!!transaction.has_hoa} onChange={e => save('has_hoa')(e.target.checked)} />
-                <span>HOA</span>
-              </label>
-              <label className="txp-checkbox-item">
-                <input type="checkbox" tabIndex={22} checked={!!transaction.has_lbp} onChange={e => save('has_lbp')(e.target.checked)} />
-                <span>LBP</span>
-              </label>
-              {/* New Construction: Seller always, Buyer only when Pending+ */}
-              {(!isBuyer || isPendingOrBeyond) && (
+          {/* PROPERTY FEATURES — Seller: always; Buyer: Pending+ only */}
+          {(!isBuyer || isPendingOrBeyond) && (
+            <div className="txp-section">
+              <div className="txp-section-title">Property Features</div>
+              {/* Seller numeric fields */}
+              {!isBuyer && !isVacantLand && (<>
+                <TxField label="Bedrooms"   value={String(transaction.bedrooms   ?? '')} type="text" onSave={save('bedrooms')}   placeholder="e.g. 3"    tabIndex={19} />
+                <TxField label="Square Ft"  value={String(transaction.square_ft  ?? '')} type="text" onSave={save('square_ft')}  placeholder="e.g. 1800" tabIndex={20} />
+                <TxField label="Year Built" value={String(transaction.year_built  ?? '')} type="text" onSave={save('year_built')} placeholder="e.g. 1998" tabIndex={21} />
+              </>)}
+              <div className="txp-checks-row">
                 <label className="txp-checkbox-item">
-                  <input type="checkbox" tabIndex={23} checked={!!transaction.new_construction} onChange={e => save('new_construction')(e.target.checked)} />
+                  <input type="checkbox" tabIndex={22} checked={!!transaction.has_septic} onChange={e => save('has_septic')(e.target.checked)} />
+                  <span>Septic</span>
+                </label>
+                <label className="txp-checkbox-item">
+                  <input type="checkbox" tabIndex={23} checked={!!transaction.has_solar} onChange={e => save('has_solar')(e.target.checked)} />
+                  <span>Solar</span>
+                </label>
+                <label className="txp-checkbox-item">
+                  <input type="checkbox" tabIndex={24} checked={!!transaction.has_well} onChange={e => save('has_well')(e.target.checked)} />
+                  <span>Well</span>
+                </label>
+                <label className="txp-checkbox-item">
+                  <input type="checkbox" tabIndex={25} checked={!!transaction.has_hoa} onChange={e => save('has_hoa')(e.target.checked)} />
+                  <span>HOA</span>
+                </label>
+                <label className="txp-checkbox-item">
+                  <input type="checkbox" tabIndex={26} checked={!!transaction.has_lbp} onChange={e => save('has_lbp')(e.target.checked)} />
+                  <span>LBP</span>
+                </label>
+                <label className="txp-checkbox-item">
+                  <input type="checkbox" tabIndex={27} checked={!!transaction.new_construction} onChange={e => save('new_construction')(e.target.checked)} />
                   <span>New Construction</span>
                 </label>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* REFERRALS */}
           <div className="txp-section">
             <div className="txp-section-title">Referrals</div>
-            <TxField label="Referring Agent"       value={transaction.referring_agent       || ''} type="text" onSave={save('referring_agent')}       placeholder="Agent name"        tabIndex={24} />
-            <TxField label="Referring Agent Email" value={transaction.referring_agent_email || ''} type="text" onSave={save('referring_agent_email')} placeholder="email@example.com" tabIndex={25} />
-            <TxField label="Referring Agent Phone" value={transaction.referring_agent_phone || ''} type="text" onSave={save('referring_agent_phone')} placeholder="(555) 000-0000"   tabIndex={26} />
-            <TxField label="Referral %"            value={String(transaction.referral_pct   ?? '')} type="text" onSave={save('referral_pct')}         placeholder="e.g. 25"           tabIndex={27} />
+            <TxField label="Referring Agent"       value={transaction.referring_agent       || ''} type="text" onSave={save('referring_agent')}       placeholder="Agent name"        tabIndex={28} />
+            <TxField label="Referring Agent Email" value={transaction.referring_agent_email || ''} type="text" onSave={save('referring_agent_email')} placeholder="email@example.com" tabIndex={29} />
+            <TxField label="Referring Agent Phone" value={transaction.referring_agent_phone || ''} type="text" onSave={save('referring_agent_phone')} placeholder="(555) 000-0000"   tabIndex={30} />
+            <TxField label="Referral %"            value={String(transaction.referral_pct   ?? '')} type="text" onSave={save('referral_pct')}         placeholder="e.g. 25"           tabIndex={31} />
           </div>
 
-          {/* TRANSACTION DETAILS */}
-          <div className="txp-section">
-            <div className="txp-section-title">Transaction Details</div>
-            <CollaboratorSearch
-              label="Lender"
-              value={transaction.lender_name || ''}
-              category="lenders"
-              onSave={save('lender_name')}
-              placeholder="Lender name"
-              tabIndex={28}
-            />
-            <CollaboratorSearch
-              label="Title Company"
-              value={transaction.title_company || ''}
-              category="title-escrow"
-              onSave={save('title_company')}
-              onSelect={c => {
-                if (c.email) save('title_company_email')(c.email)
-                if (c.phone) save('title_company_phone')(c.phone)
-              }}
-              placeholder="Title company"
-              tabIndex={29}
-            />
-            <TxField label="Title Email" value={transaction.title_company_email || ''} type="text" onSave={save('title_company_email')} placeholder="title@company.com" tabIndex={30} />
-            <TxField label="Title Phone" value={transaction.title_company_phone || ''} type="text" onSave={save('title_company_phone')} placeholder="(555) 000-0000"    tabIndex={31} />
-            <TxField
-              label={isBuyer ? 'Seller Name' : 'Buyer Name'}
-              value={transaction.opposite_party_name || ''}
-              type="text"
-              onSave={save('opposite_party_name')}
-              placeholder={isBuyer ? 'Seller name' : 'Buyer name'}
-              tabIndex={32}
-            />
-            <CollaboratorSearch
-              label="Co-op Agent"
-              value={transaction.co_op_agent || ''}
-              category="coop-agents"
-              onSave={save('co_op_agent')}
-              placeholder="Agent name"
-              tabIndex={33}
-            />
-            <CollaboratorSearch
-              label="Home Inspector"
-              value={transaction.home_inspector || ''}
-              category="home-inspectors"
-              onSave={save('home_inspector')}
-              placeholder="Inspector name"
-              tabIndex={34}
-            />
-            <TxField
-              label="Inspection Date"
-              value={transaction.home_inspection_date || ''}
-              displayValue={formatDate(transaction.home_inspection_date)}
-              type="date"
-              onSave={save('home_inspection_date')}
-              tabIndex={35}
-            />
-          </div>
+          {/* CONTRACT DETAILS — Pending, Closed, Cancelled/Expired only */}
+          {isPendingOrBeyond && (
+            <div className="txp-section">
+              <div className="txp-section-title">Contract Details</div>
+              <CollaboratorSearch
+                label="Lender"
+                value={transaction.lender_name || ''}
+                category="lenders"
+                onSave={save('lender_name')}
+                placeholder="Lender name"
+                tabIndex={32}
+              />
+              <CollaboratorSearch
+                label="Title Company"
+                value={transaction.title_company || ''}
+                category="title-escrow"
+                onSave={save('title_company')}
+                onSelect={c => {
+                  if (c.email) save('title_company_email')(c.email)
+                  if (c.phone) save('title_company_phone')(c.phone)
+                }}
+                placeholder="Title company"
+                tabIndex={33}
+              />
+              <TxField label="Title Email" value={transaction.title_company_email || ''} type="text" onSave={save('title_company_email')} placeholder="title@company.com" tabIndex={34} />
+              <TxField label="Title Phone" value={transaction.title_company_phone || ''} type="text" onSave={save('title_company_phone')} placeholder="(555) 000-0000"    tabIndex={35} />
+              <TxField
+                label={isBuyer ? 'Seller Name' : 'Buyer Name'}
+                value={transaction.opposite_party_name || ''}
+                type="text"
+                onSave={save('opposite_party_name')}
+                placeholder={isBuyer ? 'Seller name' : 'Buyer name'}
+                tabIndex={36}
+              />
+              <CollaboratorSearch
+                label="Co-op Agent"
+                value={transaction.co_op_agent || ''}
+                category="coop-agents"
+                onSave={save('co_op_agent')}
+                placeholder="Agent name"
+                tabIndex={37}
+              />
+              {!isVacantLand && (<>
+                <CollaboratorSearch
+                  label="Home Inspector"
+                  value={transaction.home_inspector || ''}
+                  category="home-inspectors"
+                  onSave={save('home_inspector')}
+                  placeholder="Inspector name"
+                  tabIndex={38}
+                />
+                <TxField
+                  label="Inspection Date"
+                  value={transaction.home_inspection_date || ''}
+                  displayValue={formatDate(transaction.home_inspection_date)}
+                  type="date"
+                  onSave={save('home_inspection_date')}
+                  tabIndex={39}
+                />
+              </>)}
+              <TxField
+                label="Financing Type"
+                value={transaction.financing_type || ''}
+                type="select"
+                options={FINANCING_TYPE_OPTIONS}
+                onSave={save('financing_type')}
+                tabIndex={40}
+              />
+              <div className="txp-field">
+                <span className="txp-field-label">Additional Parcel(s)</span>
+                <label className="txp-checkbox-item">
+                  <input type="checkbox" tabIndex={41} checked={!!transaction.additional_parcels} onChange={e => save('additional_parcels')(e.target.checked)} />
+                </label>
+              </div>
+              <TxField
+                label="Additional Terms & Conditions"
+                value={transaction.additional_terms || ''}
+                type="textarea"
+                onSave={save('additional_terms')}
+                placeholder="Enter any additional terms or conditions…"
+                tabIndex={42}
+              />
+            </div>
+          )}
 
         </div>{/* end left */}
 

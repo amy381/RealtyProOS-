@@ -102,11 +102,11 @@ const EMAIL_VARIABLES = [
   },
   {
     group: 'Property',
-    vars:  ['property_address', 'city', 'zip'],
+    vars:  ['property_address', 'city', 'zip', 'occupancy', 'year_built', 'square_ft'],
   },
   {
     group: 'Price',
-    vars:  ['list_price', 'purchase_price'],
+    vars:  ['list_price', 'purchase_price', 'commission_rate'],
   },
   {
     group: 'Listing Dates',
@@ -117,8 +117,16 @@ const EMAIL_VARIABLES = [
     vars:  ['contract_acceptance', 'inspection_period_end', 'close_of_escrow'],
   },
   {
+    group: 'Contract Details',
+    vars:  ['co_agent', 'home_inspection_date', 'home_inspector'],
+  },
+  {
     group: 'Parties',
     vars:  ['lender_name', 'title_company', 'escrow_officer', 'tc_name', 'tc_email', 'agent_name'],
+  },
+  {
+    group: 'Blocks',
+    vars:  ['title_block', 'lender_block'],
   },
 ]
 
@@ -767,6 +775,19 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                         {[
                           { label: '• —', cmd: 'insertUnorderedList', title: 'Bullet list'    },
                           { label: '1. —', cmd: 'insertOrderedList',  title: 'Numbered list'  },
+                        ].map(({ label, cmd, title }) => (
+                          <button
+                            key={cmd}
+                            type="button"
+                            className="et-toolbar-btn"
+                            title={title}
+                            onMouseDown={e => { e.preventDefault(); execCmd(cmd) }}
+                          >{label}</button>
+                        ))}
+                        <span className="et-toolbar-sep" />
+                        {[
+                          { label: '→', cmd: 'indent',  title: 'Indent'  },
+                          { label: '←', cmd: 'outdent', title: 'Outdent' },
                         ].map(({ label, cmd, title }) => (
                           <button
                             key={cmd}

@@ -103,7 +103,7 @@ const EMAIL_VARIABLES = [
   },
   {
     group: 'Property',
-    vars:  ['property_address', 'city', 'zip', 'occupancy', 'year_built', 'square_ft'],
+    vars:  ['property_address', 'city', 'zip', 'apn', 'occupancy', 'year_built', 'square_ft'],
   },
   {
     group: 'Price',

@@ -165,6 +165,7 @@ export function resolveVars(text, tx, tcSettings = []) {
     property_address:      tx.property_address        || '',
     city:                  tx.city                    || '',
     zip:                   tx.zip                     || '',
+    apn:                   tx.apn                     || '',
     occupancy:             tx.vacant_or_occupied      || '',
     year_built:            tx.year_built ? String(tx.year_built) : '',
     square_ft:             tx.square_ft  ? String(tx.square_ft)  : '',

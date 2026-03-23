@@ -1,0 +1,170 @@
+/* ── Global Showings Tab ─────────────────────────────────────────────────── */
+.showings-tab {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px - 48px);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px #e0e0e0;
+  overflow: hidden;
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────────────── */
+.sht-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e8e8e8;
+  flex-shrink: 0;
+}
+
+.sht-searchbar {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.sht-searchbar-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
+  font-size: 1.05rem;
+  pointer-events: none;
+}
+
+.sht-searchbar-input {
+  width: 100%;
+  padding: 8px 32px 8px 32px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #111;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.sht-searchbar-input:focus {
+  outline: none;
+  border-color: #111;
+}
+
+.sht-searchbar-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 0.75rem;
+  padding: 2px 4px;
+}
+
+.sht-searchbar-clear:hover { color: #333; }
+
+.sht-count {
+  font-size: 0.78rem;
+  color: #aaa;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Loading / Empty ─────────────────────────────────────────────────────── */
+.sht-loading {
+  padding: 48px;
+  text-align: center;
+  color: #aaa;
+  font-size: 0.875rem;
+}
+
+.sht-empty {
+  text-align: center;
+  color: #bbb;
+  padding: 48px !important;
+  font-size: 0.875rem;
+}
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+.sht-scroll {
+  flex: 1;
+  overflow: auto;
+}
+
+.sht-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.sht-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #888;
+  border-bottom: 2px solid #e0e0e0;
+  background: #fafafa;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.1s;
+}
+
+.sht-table th:hover { color: #333; }
+.sht-table th.sht-sorted { color: #111; }
+.sht-table th.sht-th-del { cursor: default; width: 40px; }
+
+.sht-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+  color: #222;
+}
+
+.sht-table tbody tr:hover td {
+  background: #fafafa;
+}
+
+.sht-arrow { font-size: 0.72rem; margin-left: 2px; }
+.sht-arrow--dim { color: #ccc; }
+
+.sht-addr  { font-weight: 500; min-width: 180px; }
+.sht-email { color: #555; }
+.sht-date  { white-space: nowrap; }
+
+.sht-feedback {
+  max-width: 320px;
+  color: #555;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sht-del-cell { text-align: right; }
+
+.sht-del-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ccc;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color 0.1s, background 0.1s;
+}
+
+.sht-del-btn:hover {
+  color: #c0392b;
+  background: #fdf2f2;
+}

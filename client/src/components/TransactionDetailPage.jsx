@@ -12,6 +12,7 @@ const SECTIONS = [
   { id: 'tasks',        label: 'Tasks'               },
   { id: 'docs-req',     label: 'Documents Required'  },
   { id: 'commission',   label: 'Commission'           },
+  { id: 'showings',     label: 'Showings',  sellerOnly: true },
   { id: 'google-drive', label: 'Google Drive'         },
   { id: 'history',      label: 'History'              },
 ]
@@ -2290,6 +2291,243 @@ function HistorySection({ transactionId, sessionEntries = [] }) {
   )
 }
 
+// ─── Showings Section ─────────────────────────────────────────────────────────
+function fmtShowingDate(d) {
+  if (!d) return '—'
+  const dt = new Date(d + 'T00:00:00')
+  return `${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}/${dt.getFullYear()}`
+}
+
+const EMPTY_SHOWING = { agent_name: '', agent_email: '', showing_date: '', feedback: '' }
+
+function ShowingsSection({ transaction }) {
+  const [showings,   setShowings]   = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [formOpen,   setFormOpen]   = useState(false)
+  const [editing,    setEditing]    = useState(null)
+  const [saving,     setSaving]     = useState(false)
+  const [emailingId, setEmailingId] = useState(null)
+
+  useEffect(() => { loadShowings() }, [transaction.id])
+
+  const loadShowings = async () => {
+    setLoading(true)
+    const { data } = await supabase
+      .from('showings')
+      .select('*')
+      .eq('transaction_id', transaction.id)
+      .order('showing_date', { ascending: false })
+    setShowings(data || [])
+    setLoading(false)
+  }
+
+  const openAdd   = () => { setEditing({ ...EMPTY_SHOWING }); setFormOpen(true) }
+  const openEdit  = (s) => { setEditing({ ...s });            setFormOpen(true) }
+  const closeForm = () => { setFormOpen(false); setEditing(null) }
+
+  const handleSave = async () => {
+    if (!editing) return
+    setSaving(true)
+    try {
+      if (editing.id) {
+        const { id, created_at, transaction_id, ...updates } = editing
+        const { error } = await supabase.from('showings').update(updates).eq('id', id)
+        if (error) throw error
+        setShowings(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s))
+      } else {
+        const { data, error } = await supabase
+          .from('showings')
+          .insert({ ...editing, transaction_id: transaction.id })
+          .select().single()
+        if (error) throw error
+        setShowings(prev => [data, ...prev])
+      }
+      closeForm()
+    } catch (err) {
+      toast.error('Failed to save: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this showing?')) return
+    const { error } = await supabase.from('showings').delete().eq('id', id)
+    if (error) { toast.error('Delete failed'); return }
+    setShowings(prev => prev.filter(s => s.id !== id))
+  }
+
+  const sendEmail = async ({ toEmail, toName, subject, body, emailingKey }) => {
+    const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
+    const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+    const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+    setEmailingId(emailingKey)
+    try {
+      if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
+        toast.success(`[Demo] Would email "${toName}" at ${toEmail}`)
+        return
+      }
+      const { default: emailjs } = await import('@emailjs/browser')
+      await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+        to_email:         toEmail,
+        to_name:          toName,
+        subject,
+        task_title:       subject,
+        mention_notes:    body,
+        transaction_addr: transaction.property_address || '',
+      }, PUBLIC_KEY)
+      toast.success('Email sent')
+    } catch (err) {
+      toast.error('Email failed: ' + (err?.text || err?.message || 'Unknown error'))
+    } finally {
+      setEmailingId(null)
+    }
+  }
+
+  const handleSendFeedbackToSeller = (s) => {
+    const toEmail = transaction.client_email
+    if (!toEmail) { toast.error('No client email on this transaction'); return }
+    const clientName = [transaction.client_first_name, transaction.client_last_name].filter(Boolean).join(' ') || 'Seller'
+    const addr = transaction.property_address || 'your property'
+    sendEmail({
+      toEmail,
+      toName:     clientName,
+      subject:    `Showing Feedback — ${addr}`,
+      body:       `Hi ${clientName},\n\nA showing was held at ${addr} on ${fmtShowingDate(s.showing_date)} by ${s.agent_name || 'an agent'}.\n\nFeedback:\n${s.feedback || '(No feedback provided yet)'}`,
+      emailingKey: `${s.id}_seller`,
+    })
+  }
+
+  const handleRequestFeedback = (s) => {
+    const toEmail = s.agent_email
+    if (!toEmail) { toast.error('No agent email for this showing'); return }
+    const addr = transaction.property_address || 'our listing'
+    sendEmail({
+      toEmail,
+      toName:     s.agent_name || 'Agent',
+      subject:    `Feedback Request — ${addr}`,
+      body:       `Hi ${s.agent_name || 'there'},\n\nThank you for showing ${addr} on ${fmtShowingDate(s.showing_date)}. We'd love to hear your client's feedback about the property.\n\nPlease reply with any thoughts — it's greatly appreciated!\n\nThank you,\nLegacy Real Estate`,
+      emailingKey: `${s.id}_agent`,
+    })
+  }
+
+  return (
+    <div className="sh-section">
+      <div className="sh-section-header">
+        <h3 className="sh-section-title">Showings</h3>
+        <button className="sh-add-btn" onClick={openAdd}>+ Add Showing</button>
+      </div>
+
+      {loading ? (
+        <div className="sh-section-loading">Loading…</div>
+      ) : showings.length === 0 ? (
+        <div className="sh-section-empty">
+          No showings recorded. Click <strong>+ Add Showing</strong> to log one.
+        </div>
+      ) : (
+        <div className="sh-section-scroll">
+          <table className="sh-section-table">
+            <thead>
+              <tr>
+                <th>Agent Name</th>
+                <th>Agent Email</th>
+                <th>Date</th>
+                <th>Feedback</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {showings.map(s => (
+                <tr key={s.id}>
+                  <td>{s.agent_name  || '—'}</td>
+                  <td className="sh-sec-email">{s.agent_email || '—'}</td>
+                  <td className="sh-sec-date">{fmtShowingDate(s.showing_date)}</td>
+                  <td className="sh-sec-feedback">{s.feedback || '—'}</td>
+                  <td className="sh-sec-actions">
+                    <button className="sh-sec-btn sh-sec-btn--icon" onClick={() => openEdit(s)} title="Edit">✏️</button>
+                    <button
+                      className="sh-sec-btn sh-sec-btn--action"
+                      onClick={() => handleSendFeedbackToSeller(s)}
+                      disabled={!!emailingId}
+                      title="Send feedback to seller"
+                    >
+                      {emailingId === `${s.id}_seller` ? '…' : 'Send to Seller'}
+                    </button>
+                    <button
+                      className="sh-sec-btn sh-sec-btn--action"
+                      onClick={() => handleRequestFeedback(s)}
+                      disabled={!!emailingId}
+                      title="Request feedback from showing agent"
+                    >
+                      {emailingId === `${s.id}_agent` ? '…' : 'Req. Feedback'}
+                    </button>
+                    <button
+                      className="sh-sec-btn sh-sec-btn--delete"
+                      onClick={() => handleDelete(s.id)}
+                      title="Delete"
+                    >✕</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {formOpen && editing && (
+        <div className="sh-modal-overlay" onClick={e => { if (e.target === e.currentTarget) closeForm() }}>
+          <div className="sh-modal">
+            <div className="sh-modal-header">
+              <h3 className="sh-modal-title">{editing.id ? 'Edit Showing' : 'Add Showing'}</h3>
+              <button className="sh-modal-close" onClick={closeForm}>✕</button>
+            </div>
+            <div className="sh-modal-body">
+              <label className="sh-modal-label">Showing Agent Name</label>
+              <input
+                className="sh-modal-input"
+                type="text"
+                placeholder="Agent name"
+                value={editing.agent_name}
+                onChange={e => setEditing(p => ({ ...p, agent_name: e.target.value }))}
+                autoFocus
+              />
+              <label className="sh-modal-label">Showing Agent Email</label>
+              <input
+                className="sh-modal-input"
+                type="email"
+                placeholder="agent@brokerage.com"
+                value={editing.agent_email}
+                onChange={e => setEditing(p => ({ ...p, agent_email: e.target.value }))}
+              />
+              <label className="sh-modal-label">Date</label>
+              <input
+                className="sh-modal-input"
+                type="date"
+                value={editing.showing_date}
+                onChange={e => setEditing(p => ({ ...p, showing_date: e.target.value }))}
+              />
+              <label className="sh-modal-label">Feedback</label>
+              <textarea
+                className="sh-modal-textarea"
+                placeholder="Buyer's feedback on the property…"
+                value={editing.feedback}
+                onChange={e => setEditing(p => ({ ...p, feedback: e.target.value }))}
+                rows={5}
+              />
+            </div>
+            <div className="sh-modal-footer">
+              <button className="sh-modal-cancel" onClick={closeForm}>Cancel</button>
+              <button className="sh-modal-save" onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function TransactionDetailPage({
   transaction,
@@ -2446,7 +2684,7 @@ export default function TransactionDetailPage({
       {/* Body */}
       <div className="txp-body">
         <aside className="txp-sidebar">
-          {SECTIONS.map(s => (
+          {SECTIONS.filter(s => !s.sellerOnly || transaction.rep_type === 'Seller').map(s => (
             <button
               key={s.id}
               className={`txp-nav-item${activeSection === s.id ? ' active' : ''}`}
@@ -2504,6 +2742,10 @@ export default function TransactionDetailPage({
               onAddTask={onAddTask}
               tasks={tasks}
             />
+          )}
+
+          {activeSection === 'showings' && transaction.rep_type === 'Seller' && (
+            <ShowingsSection transaction={transaction} />
           )}
 
           {activeSection === 'google-drive' && (

@@ -16,6 +16,7 @@ import NewTransactionPopup from './components/NewTransactionPopup'
 import SettingsModal from './components/SettingsModal'
 import LoginPage from './components/LoginPage'
 import TemplatesTab from './components/TemplatesTab'
+import ShowingsTab  from './components/ShowingsTab'
 import './App.css'
 
 const ALLOWED_EMAILS = (import.meta.env.VITE_ALLOWED_EMAILS || '')
@@ -288,6 +289,11 @@ export default function App() {
     if (newStatus === 'cancelled-expired' && commissions[transactionId]) {
       await supabase.from('commissions').delete().eq('transaction_id', transactionId)
       setCommissions(prev => { const next = { ...prev }; delete next[transactionId]; return next })
+    }
+
+    // Auto-delete showings when transaction is closed or cancelled
+    if (newStatus === 'closed' || newStatus === 'cancelled-expired') {
+      await supabase.from('showings').delete().eq('transaction_id', transactionId)
     }
 
     // Backward stage move: offer to remove incomplete tasks
@@ -640,6 +646,7 @@ export default function App() {
             { id: 'commissions',    label: 'Commissions'   },
             { id: 'collaborators',  label: 'Collaborators' },
             { id: 'templates',      label: 'Templates'     },
+            { id: 'showings',       label: 'Showings'      },
           ].map(tab => (
             <button key={tab.id}
               className={`tab-btn${activeTab === tab.id ? ' active' : ''}`}
@@ -713,6 +720,9 @@ export default function App() {
         )}
         {activeTab === 'collaborators' && (
           <CollaboratorsTab />
+        )}
+        {activeTab === 'showings' && (
+          <ShowingsTab transactions={transactions} />
         )}
         {activeTab === 'templates' && (
           <TemplatesTab

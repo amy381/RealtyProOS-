@@ -1,4 +1,6 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { supabase } from '../lib/supabase'
+import { toast } from 'react-hot-toast'
 import TaskCommentPanel from './TaskCommentPanel'
 import './TasksTab.css'
 
@@ -106,6 +108,443 @@ function deserializeFilters(raw) {
 function loadSavedViews() {
   try { return JSON.parse(localStorage.getItem('taskSavedViews') || '[]') }
   catch { return [] }
+}
+
+// ─── Variable resolver ────────────────────────────────────────────────────────
+function resolveVars(text, tx, tcSettings = []) {
+  if (!text) return ''
+  if (!tx)   return text
+  const tc = tcSettings.find(t => t.name === tx.assigned_tc)
+  const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''
+  const map = {
+    client_first_name:    tx.client_first_name      || '',
+    client_last_name:     tx.client_last_name       || '',
+    client_phone:         tx.client_phone           || '',
+    client_email:         tx.client_email           || '',
+    client2_first_name:   tx.client2_first_name     || '',
+    client2_last_name:    tx.client2_last_name      || '',
+    client2_phone:        tx.client2_phone          || '',
+    client2_email:        tx.client2_email          || '',
+    property_address:     tx.property_address       || '',
+    city:                 tx.city                   || '',
+    zip:                  tx.zip                    || '',
+    list_price:           tx.price ? `$${Number(tx.price).toLocaleString()}` : '',
+    purchase_price:       tx.price ? `$${Number(tx.price).toLocaleString()}` : '',
+    listing_contract:     fmt(tx.listing_contract),
+    listing_expiration:   fmt(tx.listing_expiration_date),
+    target_live:          fmt(tx.target_live_date),
+    contract_acceptance:  fmt(tx.contract_acceptance_date),
+    inspection_period_end: fmt(tx.ipe_date),
+    close_of_escrow:      fmt(tx.close_of_escrow),
+    lender_name:          tx.lender_name            || '',
+    title_company:        tx.title_company          || '',
+    escrow_officer:       tx.escrow_officer         || '',
+    tc_name:              tx.assigned_tc            || '',
+    tc_email:             tc?.email                 || '',
+    agent_name:           tx.agent_name             || '',
+  }
+  return text.replace(/\{\{(\w+)\}\}/g, (_, k) => map[k] !== undefined ? map[k] : `{{${k}}}`)
+}
+
+function fmtTs(ts) {
+  if (!ts) return '—'
+  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+// ─── Compose Modal ────────────────────────────────────────────────────────────
+function ComposeModal({ row, transactions, tcSettings, onSave, onClose }) {
+  const [emailTemplates, setEmailTemplates] = useState([])
+  const [form, setForm] = useState({
+    transaction_id: row?.transaction_id || '',
+    template_id:    row?.template_id    || '',
+    template_name:  row?.template_name  || '',
+    to_email:       row?.to_email       || '',
+    to_name:        row?.to_name        || '',
+    subject:        row?.subject        || '',
+    cc:             row?.cc             || '',
+    body:           row?.body           || '',
+    ...(row?.id ? { id: row.id, created_at: row.created_at } : {}),
+  })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    supabase.from('email_templates').select('*').order('name')
+      .then(({ data }) => setEmailTemplates(data || []))
+  }, [])
+
+  const selectedTx = transactions.find(t => t.id === form.transaction_id) || null
+
+  // When template is picked, fill subject/cc/body with resolved vars
+  const applyTemplate = (tmplId) => {
+    const tmpl = emailTemplates.find(t => t.id === tmplId)
+    if (!tmpl) { setForm(f => ({ ...f, template_id: '', template_name: '' })); return }
+    setForm(f => ({
+      ...f,
+      template_id:   tmpl.id,
+      template_name: tmpl.name,
+      subject:       resolveVars(tmpl.subject, selectedTx, tcSettings),
+      cc:            resolveVars(tmpl.cc,      selectedTx, tcSettings),
+      body:          resolveVars(tmpl.body,    selectedTx, tcSettings),
+    }))
+  }
+
+  // Re-resolve when transaction changes (if a template is selected)
+  const applyTransaction = (txId) => {
+    const tx   = transactions.find(t => t.id === txId) || null
+    const tmpl = emailTemplates.find(t => t.id === form.template_id)
+    setForm(f => ({
+      ...f,
+      transaction_id: txId,
+      ...(tmpl ? {
+        subject: resolveVars(tmpl.subject, tx, tcSettings),
+        cc:      resolveVars(tmpl.cc,      tx, tcSettings),
+        body:    resolveVars(tmpl.body,    tx, tcSettings),
+      } : {}),
+    }))
+  }
+
+  const useClientEmail = () => {
+    if (!selectedTx) return
+    const name = [selectedTx.client_first_name, selectedTx.client_last_name].filter(Boolean).join(' ')
+    setForm(f => ({ ...f, to_email: selectedTx.client_email || '', to_name: name }))
+  }
+
+  const handleSave = async () => {
+    if (!form.to_email.trim() || !form.subject.trim()) {
+      toast.error('To email and subject are required')
+      return
+    }
+    setSaving(true)
+    try { await onSave(form) }
+    finally { setSaving(false) }
+  }
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  return (
+    <div className="sq-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="sq-modal sq-modal--compose">
+        <div className="sq-modal-header">
+          <h3 className="sq-modal-title">{form.id ? 'Edit Email' : 'Compose Email'}</h3>
+          <button className="sq-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="sq-modal-body">
+
+          <div className="sq-field-row">
+            <div className="sq-field">
+              <label className="sq-label">Transaction</label>
+              <select className="sq-input" value={form.transaction_id} onChange={e => applyTransaction(e.target.value)}>
+                <option value="">— None —</option>
+                {transactions.map(tx => (
+                  <option key={tx.id} value={tx.id}>{tx.property_address || '(No address)'}</option>
+                ))}
+              </select>
+            </div>
+            <div className="sq-field">
+              <label className="sq-label">Email Template</label>
+              <select className="sq-input" value={form.template_id} onChange={e => applyTemplate(e.target.value)}>
+                <option value="">— Manual / None —</option>
+                {emailTemplates.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="sq-field-row">
+            <div className="sq-field">
+              <label className="sq-label">To Name</label>
+              <input className="sq-input" type="text" placeholder="Recipient name" value={form.to_name} onChange={e => set('to_name', e.target.value)} />
+            </div>
+            <div className="sq-field">
+              <label className="sq-label">
+                To Email
+                {selectedTx?.client_email && (
+                  <button className="sq-use-client" onClick={useClientEmail} type="button">Use client email</button>
+                )}
+              </label>
+              <input className="sq-input" type="email" placeholder="recipient@example.com" value={form.to_email} onChange={e => set('to_email', e.target.value)} />
+            </div>
+          </div>
+
+          <div className="sq-field">
+            <label className="sq-label">Subject</label>
+            <input className="sq-input" type="text" placeholder="Email subject" value={form.subject} onChange={e => set('subject', e.target.value)} />
+          </div>
+
+          <div className="sq-field">
+            <label className="sq-label">CC</label>
+            <input className="sq-input" type="text" placeholder="cc@example.com, another@example.com" value={form.cc} onChange={e => set('cc', e.target.value)} />
+          </div>
+
+          <div className="sq-field">
+            <label className="sq-label">Body</label>
+            <textarea className="sq-textarea" value={form.body} onChange={e => set('body', e.target.value)} rows={12} placeholder="Email body…" />
+          </div>
+
+        </div>
+        <div className="sq-modal-footer">
+          <button className="sq-modal-cancel" onClick={onClose}>Cancel</button>
+          <button className="sq-modal-save" onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving…' : 'Add to Queue'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Send Queue View ──────────────────────────────────────────────────────────
+function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
+  const [queue,      setQueue]      = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [previewing, setPreviewing] = useState(null)
+  const [composing,  setComposing]  = useState(null)   // null | 'new' | row
+  const [sending,    setSending]    = useState(null)   // row.id
+
+  const txById = useMemo(() => {
+    const m = {}; for (const t of transactions) m[t.id] = t; return m
+  }, [transactions])
+
+  useEffect(() => { loadQueue() }, [])
+
+  const loadQueue = async () => {
+    setLoading(true)
+    const { data } = await supabase
+      .from('email_queue')
+      .select('*')
+      .eq('status', 'pending')
+      .order('prepared_at', { ascending: false })
+    const rows = data || []
+    setQueue(rows)
+    onQueueCountChange?.(rows.length)
+    setLoading(false)
+  }
+
+  const logSent = async (row) => {
+    await supabase.from('email_sent_log').insert({
+      transaction_id: row.transaction_id || null,
+      to_email:       row.to_email,
+      to_name:        row.to_name        || '',
+      subject:        row.subject,
+      body:           row.body           || '',
+      cc:             row.cc             || '',
+      sent_by:        'Me',
+      template_name:  row.template_name  || '',
+    })
+  }
+
+  const handleSend = async (row) => {
+    setSending(row.id)
+    try {
+      const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
+      const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+      const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+
+      if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
+        toast.success(`[Demo] Would send "${row.subject}" to ${row.to_email}`)
+      } else {
+        const { default: emailjs } = await import('@emailjs/browser')
+        await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+          to_email:         row.to_email,
+          to_name:          row.to_name  || '',
+          subject:          row.subject,
+          task_title:       row.subject,
+          mention_notes:    row.body     || '',
+          transaction_addr: txById[row.transaction_id]?.property_address || '',
+        }, PUBLIC_KEY)
+        toast.success('Email sent')
+      }
+
+      await logSent(row)
+      await supabase.from('email_queue').delete().eq('id', row.id)
+      const next = queue.filter(q => q.id !== row.id)
+      setQueue(next)
+      onQueueCountChange?.(next.length)
+      setPreviewing(null)
+    } catch (err) {
+      toast.error('Send failed: ' + (err?.text || err?.message || 'Unknown error'))
+    } finally { setSending(null) }
+  }
+
+  const handleDiscard = async (id) => {
+    if (!window.confirm('Remove this email from the queue?')) return
+    await supabase.from('email_queue').delete().eq('id', id)
+    const next = queue.filter(q => q.id !== id)
+    setQueue(next)
+    onQueueCountChange?.(next.length)
+  }
+
+  const handleSaveCompose = async (entry) => {
+    if (entry.id) {
+      const { id, created_at, ...updates } = entry
+      const { error } = await supabase.from('email_queue').update(updates).eq('id', id)
+      if (error) { toast.error('Save failed'); return }
+      setQueue(prev => prev.map(q => q.id === id ? { ...q, ...updates } : q))
+    } else {
+      const { data, error } = await supabase
+        .from('email_queue')
+        .insert({ ...entry, status: 'pending', prepared_by: 'Me' })
+        .select().single()
+      if (error) { toast.error('Failed to add to queue'); return }
+      const next = [data, ...queue]
+      setQueue(next)
+      onQueueCountChange?.(next.length)
+    }
+    setComposing(null)
+    toast.success('Added to Send Queue')
+  }
+
+  return (
+    <div className="sq-view">
+      <div className="sq-topbar">
+        <span className="sq-count">
+          {loading ? '…' : `${queue.length} email${queue.length !== 1 ? 's' : ''} waiting`}
+        </span>
+        <button className="sq-compose-btn" onClick={() => setComposing('new')}>+ Compose Email</button>
+      </div>
+
+      {loading ? (
+        <div className="sq-loading">Loading queue…</div>
+      ) : queue.length === 0 ? (
+        <div className="sq-empty">The queue is empty. Compose an email or trigger one from a template.</div>
+      ) : (
+        <div className="sq-scroll">
+          <table className="sq-table">
+            <thead>
+              <tr>
+                <th>To</th>
+                <th>Subject</th>
+                <th>Transaction</th>
+                <th>Template</th>
+                <th>Prepared</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {queue.map(row => (
+                <tr key={row.id} className="sq-row" onClick={() => setPreviewing(row)} title="Click to preview">
+                  <td className="sq-col-to">{row.to_name ? `${row.to_name}` : row.to_email}<span className="sq-email-small"> {row.to_name ? `<${row.to_email}>` : ''}</span></td>
+                  <td className="sq-col-subject">{row.subject}</td>
+                  <td className="sq-col-tx">{txById[row.transaction_id]?.property_address?.split(',')[0] || '—'}</td>
+                  <td className="sq-col-tmpl">{row.template_name || '—'}</td>
+                  <td className="sq-col-date">{fmtTs(row.prepared_at)}</td>
+                  <td className="sq-col-actions" onClick={e => e.stopPropagation()}>
+                    <button className="sq-btn sq-btn--send" onClick={() => handleSend(row)} disabled={!!sending}>
+                      {sending === row.id ? '…' : 'Send'}
+                    </button>
+                    <button className="sq-btn sq-btn--edit" onClick={() => setComposing(row)} disabled={!!sending}>Edit</button>
+                    <button className="sq-btn sq-btn--discard" onClick={() => handleDiscard(row.id)} disabled={!!sending}>Discard</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Preview modal */}
+      {previewing && (
+        <div className="sq-modal-overlay" onClick={e => { if (e.target === e.currentTarget) setPreviewing(null) }}>
+          <div className="sq-modal sq-modal--preview">
+            <div className="sq-modal-header">
+              <h3 className="sq-modal-title">Email Preview</h3>
+              <button className="sq-modal-close" onClick={() => setPreviewing(null)}>✕</button>
+            </div>
+            <div className="sq-modal-body">
+              <div className="sq-preview-meta">
+                <div className="sq-preview-row"><span className="sq-preview-label">To</span><span>{previewing.to_name ? `${previewing.to_name} <${previewing.to_email}>` : previewing.to_email}</span></div>
+                {previewing.cc && <div className="sq-preview-row"><span className="sq-preview-label">CC</span><span>{previewing.cc}</span></div>}
+                <div className="sq-preview-row"><span className="sq-preview-label">Subject</span><strong>{previewing.subject}</strong></div>
+              </div>
+              <div className="sq-preview-divider" />
+              <pre className="sq-preview-body">{previewing.body}</pre>
+            </div>
+            <div className="sq-modal-footer">
+              <button className="sq-modal-cancel" onClick={() => setPreviewing(null)}>Close</button>
+              <button className="sq-modal-save" onClick={() => handleSend(previewing)} disabled={!!sending}>
+                {sending === previewing.id ? 'Sending…' : 'Send Now'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Compose / Edit modal */}
+      {composing && (
+        <ComposeModal
+          row={composing === 'new' ? null : composing}
+          transactions={transactions}
+          tcSettings={tcSettings}
+          onSave={handleSaveCompose}
+          onClose={() => setComposing(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── Sent Log View ────────────────────────────────────────────────────────────
+function SentLogView({ transactions }) {
+  const [log,     setLog]     = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const txById = useMemo(() => {
+    const m = {}; for (const t of transactions) m[t.id] = t; return m
+  }, [transactions])
+
+  useEffect(() => { load() }, [])
+
+  const load = async () => {
+    setLoading(true)
+    const { data } = await supabase
+      .from('email_sent_log')
+      .select('*')
+      .order('sent_at', { ascending: false })
+    setLog(data || [])
+    setLoading(false)
+  }
+
+  return (
+    <div className="sq-view">
+      <div className="sq-topbar">
+        <span className="sq-count">{loading ? '…' : `${log.length} email${log.length !== 1 ? 's' : ''} sent`}</span>
+      </div>
+
+      {loading ? (
+        <div className="sq-loading">Loading sent log…</div>
+      ) : log.length === 0 ? (
+        <div className="sq-empty">No emails have been sent yet.</div>
+      ) : (
+        <div className="sq-scroll">
+          <table className="sq-table">
+            <thead>
+              <tr>
+                <th>To</th>
+                <th>Subject</th>
+                <th>Transaction</th>
+                <th>Template</th>
+                <th>Sent Date</th>
+                <th>Sent By</th>
+              </tr>
+            </thead>
+            <tbody>
+              {log.map(row => (
+                <tr key={row.id}>
+                  <td className="sq-col-to">{row.to_name ? `${row.to_name}` : row.to_email}<span className="sq-email-small"> {row.to_name ? `<${row.to_email}>` : ''}</span></td>
+                  <td className="sq-col-subject">{row.subject}</td>
+                  <td className="sq-col-tx">{txById[row.transaction_id]?.property_address?.split(',')[0] || '—'}</td>
+                  <td className="sq-col-tmpl">{row.template_name || '—'}</td>
+                  <td className="sq-col-date">{row.sent_at ? new Date(row.sent_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'}</td>
+                  <td>{row.sent_by || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ─── Filters Panel ────────────────────────────────────────────────────────────
@@ -242,6 +681,18 @@ export default function TasksTab({
   taskComments = [], onAddTaskComment, onDeleteTaskComment,
   tcSettings = [], onCardClick,
 }) {
+  // Sub-tab
+  const [activeSubTab,  setActiveSubTab]  = useState('tasks')
+  const [queueCount,    setQueueCount]    = useState(0)
+
+  useEffect(() => {
+    supabase
+      .from('email_queue')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending')
+      .then(({ count }) => setQueueCount(count || 0))
+  }, [])
+
   // Filter state
   const [filters,      setFilters]      = useState(DEFAULT_FILTERS)
   const [draft,        setDraft]        = useState(DEFAULT_FILTERS)
@@ -519,6 +970,42 @@ export default function TasksTab({
   return (
     <div className="tasks-tab">
 
+      {/* ── Sub-tab bar ─────────────────────────────────────────────── */}
+      <div className="gtd-subtabs">
+        <button
+          className={`gtd-subtab${activeSubTab === 'tasks' ? ' active' : ''}`}
+          onClick={() => setActiveSubTab('tasks')}
+        >Tasks</button>
+        <button
+          className={`gtd-subtab${activeSubTab === 'queue' ? ' active' : ''}`}
+          onClick={() => setActiveSubTab('queue')}
+        >
+          Send Queue
+          {queueCount > 0 && <span className="gtd-subtab-badge">{queueCount}</span>}
+        </button>
+        <button
+          className={`gtd-subtab${activeSubTab === 'log' ? ' active' : ''}`}
+          onClick={() => setActiveSubTab('log')}
+        >Sent Log</button>
+      </div>
+
+      {/* ── Send Queue view ─────────────────────────────────────────── */}
+      {activeSubTab === 'queue' && (
+        <SendQueueView
+          transactions={transactions}
+          tcSettings={tcSettings}
+          onQueueCountChange={setQueueCount}
+        />
+      )}
+
+      {/* ── Sent Log view ───────────────────────────────────────────── */}
+      {activeSubTab === 'log' && (
+        <SentLogView transactions={transactions} />
+      )}
+
+      {activeSubTab !== 'tasks' && null}
+      {activeSubTab === 'tasks' && <>
+
       {/* ── Search bar ──────────────────────────────────────────────── */}
       <div className="gtd-searchbar">
         <span className="gtd-searchbar-icon">⌕</span>
@@ -748,6 +1235,7 @@ export default function TasksTab({
           />
         )
       })()}
+      </>}
     </div>
   )
 }

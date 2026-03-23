@@ -36,6 +36,7 @@ export function buildTemplateTasksFromDB(templateTaskRows, transaction) {
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((t, i) => ({
       title:             t.title,
+      task_type:         t.task_type || 'Task',
       due_date:          calcDueDate(t.timing_type, t.timing_days, transaction),
       assigned_to:       t.auto_assign_to || 'Me',
       status:            'open',

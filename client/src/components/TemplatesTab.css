@@ -740,6 +740,90 @@
   border-color: #111;
 }
 
+/* ── Rich body editor ─────────────────────────────────────────────────────── */
+.et-richbody-wrap {
+  border: 1px solid #ddd;
+  border-radius: 7px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.et-richbody-wrap:focus-within {
+  border-color: #111;
+}
+
+.et-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 8px;
+  background: #f7f7f7;
+  border-bottom: 1px solid #e8e8e8;
+  flex-wrap: wrap;
+}
+
+.et-toolbar-btn {
+  padding: 4px 9px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: none;
+  font-size: 0.8rem;
+  font-family: inherit;
+  color: #444;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: background 0.1s, border-color 0.1s;
+  white-space: nowrap;
+}
+
+.et-toolbar-btn:hover {
+  background: #ebebeb;
+  border-color: #d0d0d0;
+}
+
+.et-tb-bold   { font-weight: 700; }
+.et-tb-italic { font-style: italic; }
+.et-tb-under  { text-decoration: underline; }
+
+.et-toolbar-sep {
+  width: 1px;
+  height: 18px;
+  background: #ddd;
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.et-richbody {
+  padding: 12px 14px;
+  min-height: 280px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #111;
+  line-height: 1.6;
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.et-richbody:empty::before {
+  content: 'Hi {{client_greeting}},\A\AYour transaction at {{property_address}} is underway…';
+  white-space: pre;
+  color: #bbb;
+  pointer-events: none;
+}
+
+/* Ensure lists render visibly inside the editor */
+.et-richbody ul,
+.et-richbody ol {
+  padding-left: 1.5em;
+  margin: 0.4em 0;
+}
+
+.et-richbody a {
+  color: #1a56db;
+  text-decoration: underline;
+}
+
 /* Applies-to toggle group */
 .et-toggle-group {
   display: flex;

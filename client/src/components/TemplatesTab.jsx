@@ -489,9 +489,30 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   // Insert variable at cursor in the last-focused field (subject, cc, or body)
   const insertVariable = (varName) => {
     const token = `{{${varName}}}`
-    const refMap   = { subject: subjectRef, cc: ccRef, body: bodyRef }
-    const ref   = refMap[lastFocused] ?? bodyRef
-    const field = lastFocused === 'subject' ? 'subject' : lastFocused === 'cc' ? 'cc' : 'body'
+
+    if (lastFocused === 'body') {
+      // contentEditable — use Selection API
+      const el = bodyRef.current
+      if (!el) return
+      el.focus()
+      const sel = window.getSelection()
+      if (sel && sel.rangeCount) {
+        const range = sel.getRangeAt(0)
+        range.deleteContents()
+        const node = document.createTextNode(token)
+        range.insertNode(node)
+        range.setStartAfter(node)
+        range.setEndAfter(node)
+        sel.removeAllRanges()
+        sel.addRange(range)
+      }
+      setEmailField('body', el.innerHTML)
+      return
+    }
+
+    // Subject / CC — plain textarea API
+    const ref   = lastFocused === 'subject' ? subjectRef : ccRef
+    const field = lastFocused === 'subject' ? 'subject'  : 'cc'
     const el = ref.current
     if (!el) return
     const start  = el.selectionStart ?? el.value.length
@@ -502,6 +523,19 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
       el.focus()
       el.setSelectionRange(start + token.length, start + token.length)
     }, 0)
+  }
+
+  // Rich-text commands for the body toolbar
+  const execCmd = (cmd, value = null) => {
+    bodyRef.current?.focus()
+    document.execCommand(cmd, false, value)
+    setEmailField('body', bodyRef.current?.innerHTML || '')
+  }
+
+  const insertLink = () => {
+    const url = window.prompt('Enter URL:', 'https://')
+    if (!url?.trim()) return
+    execCmd('createLink', url.trim())
   }
 
   // ── Computed
@@ -684,16 +718,57 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
 
                   <div className="et-field">
                     <label className="et-label">Body</label>
-                    <textarea
-                      ref={bodyRef}
-                      className="et-textarea"
-                      placeholder={"Hi {{client_first_name}},\n\nYour transaction at {{property_address}} is underway…"}
-                      value={editingEmail.body}
-                      onChange={e => setEmailField('body', e.target.value)}
-                      onFocus={() => setLastFocused('body')}
-                      rows={16}
-                    />
-                    <span className="et-hint">Plain text or HTML. Click variables on the right to insert them.</span>
+                    <div className="et-richbody-wrap">
+                      {/* Formatting toolbar */}
+                      <div className="et-toolbar">
+                        {[
+                          { label: 'B',  cmd: 'bold',                title: 'Bold',           cls: 'et-tb-bold'   },
+                          { label: 'I',  cmd: 'italic',              title: 'Italic',          cls: 'et-tb-italic' },
+                          { label: 'U',  cmd: 'underline',           title: 'Underline',       cls: 'et-tb-under'  },
+                        ].map(({ label, cmd, title, cls }) => (
+                          <button
+                            key={cmd}
+                            type="button"
+                            className={`et-toolbar-btn ${cls}`}
+                            title={title}
+                            onMouseDown={e => { e.preventDefault(); execCmd(cmd) }}
+                          >{label}</button>
+                        ))}
+                        <span className="et-toolbar-sep" />
+                        {[
+                          { label: '• —', cmd: 'insertUnorderedList', title: 'Bullet list'    },
+                          { label: '1. —', cmd: 'insertOrderedList',  title: 'Numbered list'  },
+                        ].map(({ label, cmd, title }) => (
+                          <button
+                            key={cmd}
+                            type="button"
+                            className="et-toolbar-btn"
+                            title={title}
+                            onMouseDown={e => { e.preventDefault(); execCmd(cmd) }}
+                          >{label}</button>
+                        ))}
+                        <span className="et-toolbar-sep" />
+                        <button
+                          type="button"
+                          className="et-toolbar-btn"
+                          title="Insert hyperlink"
+                          onMouseDown={e => { e.preventDefault(); insertLink() }}
+                        >🔗</button>
+                      </div>
+
+                      {/* contentEditable body */}
+                      <div
+                        key={editingEmail.id || 'new'}
+                        ref={bodyRef}
+                        className="et-richbody"
+                        contentEditable
+                        suppressContentEditableWarning
+                        dangerouslySetInnerHTML={{ __html: editingEmail.body || '' }}
+                        onInput={() => setEmailField('body', bodyRef.current?.innerHTML || '')}
+                        onFocus={() => setLastFocused('body')}
+                      />
+                    </div>
+                    <span className="et-hint">Select text then click a format button. Click variables on the right to insert them.</span>
                   </div>
 
                   <div className="et-field-row">

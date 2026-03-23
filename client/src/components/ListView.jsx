@@ -98,7 +98,7 @@ function getContractDate(tx) {
 
 function countActiveFilters(f) {
   let n = 0
-  if (f.search.trim()) n++
+  // search is always visible — not counted in badge
   if (f.typeFilter !== 'All') n++
   if (f.tcFilter !== 'All') n++
   if (f.propTypeFilter !== 'All') n++
@@ -243,18 +243,6 @@ function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, 
                 />
               </div>
             </div>
-          </div>
-
-          {/* SEARCH */}
-          <div className="lv-fpanel-section">
-            <div className="lv-fpanel-section-title">Search</div>
-            <input
-              type="text"
-              className="lv-fpanel-input lv-fpanel-input--full"
-              placeholder="Address or client name…"
-              value={draft.search}
-              onChange={e => set('search', e.target.value)}
-            />
           </div>
 
           {/* SAVED VIEWS */}
@@ -588,6 +576,85 @@ export default function ListView({ transactions, commissions, columns, onCardCli
 
   const stageLabel = status => columns.find(c => c.id === status)?.label || status
 
+  const setSearch = (val) => {
+    setFilters(f => ({ ...f, search: val }))
+    setDraft(d => ({ ...d, search: val }))
+  }
+
+  const activeChips = (() => {
+    const chips = []
+
+    if (activeViewId) {
+      const view = savedViews.find(v => v.id === activeViewId)
+      if (view) chips.push({
+        key: 'view',
+        label: `View: ${view.name}`,
+        onRemove: () => { setFilters(DEFAULT_FILTERS); setDraft(DEFAULT_FILTERS); setActiveViewId(null) }
+      })
+    }
+
+    const stageDiffers = DEFAULT_STAGE_CHECKS.size !== filters.stageChecks.size ||
+      [...DEFAULT_STAGE_CHECKS].some(s => !filters.stageChecks.has(s))
+    if (stageDiffers) {
+      const labels = STAGES.filter(s => filters.stageChecks.has(s.value)).map(s => s.label)
+      chips.push({
+        key: 'stage',
+        label: `Stage: ${labels.length <= 2 ? labels.join(', ') : `${labels.length} stages`}`,
+        onRemove: () => {
+          setFilters(f => ({ ...f, stageChecks: DEFAULT_STAGE_CHECKS }))
+          setDraft(d => ({ ...d, stageChecks: DEFAULT_STAGE_CHECKS }))
+          setActiveViewId(null)
+        }
+      })
+    }
+
+    if (filters.typeFilter !== 'All') chips.push({
+      key: 'type',
+      label: `Type: ${filters.typeFilter}`,
+      onRemove: () => { setFilters(f => ({ ...f, typeFilter: 'All' })); setDraft(d => ({ ...d, typeFilter: 'All' })); setActiveViewId(null) }
+    })
+
+    if (filters.tcFilter !== 'All') {
+      const short = filters.tcFilter === 'Justina Morris' ? 'Justina' : 'Victoria'
+      chips.push({
+        key: 'tc',
+        label: `TC: ${short}`,
+        onRemove: () => { setFilters(f => ({ ...f, tcFilter: 'All' })); setDraft(d => ({ ...d, tcFilter: 'All' })); setActiveViewId(null) }
+      })
+    }
+
+    if (filters.propTypeFilter !== 'All') chips.push({
+      key: 'propType',
+      label: `Property: ${filters.propTypeFilter}`,
+      onRemove: () => { setFilters(f => ({ ...f, propTypeFilter: 'All' })); setDraft(d => ({ ...d, propTypeFilter: 'All' })); setActiveViewId(null) }
+    })
+
+    if (filters.coeFrom || filters.coeTo) {
+      const label = filters.coeFrom && filters.coeTo
+        ? `COE: ${filters.coeFrom} – ${filters.coeTo}`
+        : filters.coeFrom ? `COE from ${filters.coeFrom}` : `COE to ${filters.coeTo}`
+      chips.push({
+        key: 'coe',
+        label,
+        onRemove: () => { setFilters(f => ({ ...f, coeFrom: '', coeTo: '' })); setDraft(d => ({ ...d, coeFrom: '', coeTo: '' })); setActiveViewId(null) }
+      })
+    }
+
+    if (filters.minPrice || filters.maxPrice) {
+      const fmtP = v => v ? `$${Number(v).toLocaleString()}` : ''
+      const label = filters.minPrice && filters.maxPrice
+        ? `Price: ${fmtP(filters.minPrice)} – ${fmtP(filters.maxPrice)}`
+        : filters.minPrice ? `Price ≥ ${fmtP(filters.minPrice)}` : `Price ≤ ${fmtP(filters.maxPrice)}`
+      chips.push({
+        key: 'price',
+        label,
+        onRemove: () => { setFilters(f => ({ ...f, minPrice: '', maxPrice: '' })); setDraft(d => ({ ...d, minPrice: '', maxPrice: '' })); setActiveViewId(null) }
+      })
+    }
+
+    return chips
+  })()
+
   return (
     <div className="lv-wrap">
 
@@ -611,6 +678,21 @@ export default function ListView({ transactions, commissions, columns, onCardCli
         </div>
       </div>
 
+      {/* Search bar */}
+      <div className="lv-searchbar">
+        <span className="lv-searchbar-icon">⌕</span>
+        <input
+          className="lv-searchbar-input"
+          type="text"
+          placeholder="Search address or client name…"
+          value={filters.search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        {filters.search && (
+          <button className="lv-searchbar-clear" onClick={() => setSearch('')}>✕</button>
+        )}
+      </div>
+
       {/* Toolbar */}
       <div className="lv-toolbar">
         <span className="lv-result-count">{sorted.length} transaction{sorted.length !== 1 ? 's' : ''}</span>
@@ -624,6 +706,18 @@ export default function ListView({ transactions, commissions, columns, onCardCli
           Filters{filterCount > 0 ? ` (${filterCount})` : ''}
         </button>
       </div>
+
+      {/* Active filter chips */}
+      {activeChips.length > 0 && (
+        <div className="lv-chips">
+          {activeChips.map(chip => (
+            <span key={chip.key} className="lv-chip">
+              {chip.label}
+              <button className="lv-chip-remove" onClick={chip.onRemove}>×</button>
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Filter panel */}
       {panelOpen && (

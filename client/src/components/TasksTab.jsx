@@ -22,15 +22,18 @@ const DEFAULT_STAGE_CHECKS = new Set([
   'buyer-broker', 'pre-listing', 'active-listing', 'pending', 'closed',
 ])
 
+const DUE_OPTIONS = ['Overdue', 'Due Today', 'Due This Week', 'Upcoming', 'Completed']
+const DEFAULT_DUE_CHECKS = new Set(['Overdue', 'Due Today', 'Due This Week', 'Upcoming'])
+
 const DEFAULT_FILTERS = {
   search:      '',
   stageChecks: DEFAULT_STAGE_CHECKS,
   typeFilter:  'All',
   tcFilter:    'All',
-  dueStatus:   'All',
+  dueChecks:   DEFAULT_DUE_CHECKS,
 }
 
-const TC_NAMES       = ['Justina Morris', 'Victoria Lareau']
+const TC_NAMES         = ['Justina Morris', 'Victoria Lareau']
 const ASSIGNEE_OPTIONS = ['Me', 'Justina Morris', 'Victoria Lareau']
 const STATUS_OPTIONS   = [{ value: 'open', label: 'Open' }, { value: 'complete', label: 'Done' }]
 
@@ -63,25 +66,40 @@ function endOfWeek() {
   return d
 }
 
+// Classify a task into exactly one due-status bucket
+function dueBucket(task, today, eow) {
+  if (task.status === 'complete') return 'Completed'
+  if (!task.due_date) return 'Upcoming'
+  const diff = Math.ceil((new Date(task.due_date + 'T00:00:00') - today) / 86400000)
+  if (diff < 0)  return 'Overdue'
+  if (diff === 0) return 'Due Today'
+  if (new Date(task.due_date + 'T00:00:00') <= eow) return 'Due This Week'
+  return 'Upcoming'
+}
+
 function countFilters(f) {
   let n = 0
-  if (f.search.trim()) n++
+  // search is always visible — not counted in badge
   if (f.typeFilter !== 'All') n++
   if (f.tcFilter   !== 'All') n++
-  if (f.dueStatus  !== 'All') n++
   if (f.stageChecks.size !== DEFAULT_STAGE_CHECKS.size ||
       [...DEFAULT_STAGE_CHECKS].some(s => !f.stageChecks.has(s))) n++
+  const dueDiffers = f.dueChecks.size !== DEFAULT_DUE_CHECKS.size ||
+    [...DEFAULT_DUE_CHECKS].some(s => !f.dueChecks.has(s)) ||
+    [...f.dueChecks].some(s => !DEFAULT_DUE_CHECKS.has(s))
+  if (dueDiffers) n++
   return n
 }
 
 function serializeFilters(f) {
-  return { ...f, stageChecks: [...f.stageChecks] }
+  return { ...f, stageChecks: [...f.stageChecks], dueChecks: [...f.dueChecks] }
 }
 function deserializeFilters(raw) {
   return {
     ...DEFAULT_FILTERS,
     ...raw,
     stageChecks: new Set(raw.stageChecks ?? [...DEFAULT_STAGE_CHECKS]),
+    dueChecks:   new Set(raw.dueChecks   ?? [...DEFAULT_DUE_CHECKS]),
   }
 }
 
@@ -99,6 +117,14 @@ function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, 
       const next = new Set(d.stageChecks)
       next.has(value) ? next.delete(value) : next.add(value)
       return { ...d, stageChecks: next }
+    })
+  }
+
+  const toggleDue = (value) => {
+    setDraft(d => {
+      const next = new Set(d.dueChecks)
+      next.has(value) ? next.delete(value) : next.add(value)
+      return { ...d, dueChecks: next }
     })
   }
 
@@ -162,30 +188,22 @@ function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, 
             </div>
           </div>
 
-          {/* DUE STATUS */}
+          {/* DUE STATUS — checkboxes */}
           <div className="gtd-fp-section">
             <div className="gtd-fp-section-title">Due Status</div>
-            <div className="gtd-fp-toggles gtd-fp-toggles--wrap">
-              {['All', 'Overdue', 'Due Today', 'Due This Week', 'Completed'].map(v => (
-                <button
-                  key={v}
-                  className={`gtd-fp-toggle${draft.dueStatus === v ? ' active' : ''}`}
-                  onClick={() => set('dueStatus', v)}
-                >{v}</button>
+            <div className="gtd-fp-checks">
+              {DUE_OPTIONS.map(v => (
+                <label key={v} className="gtd-fp-check-item">
+                  <input
+                    type="checkbox"
+                    className="gtd-fp-checkbox"
+                    checked={draft.dueChecks.has(v)}
+                    onChange={() => toggleDue(v)}
+                  />
+                  <span>{v}</span>
+                </label>
               ))}
             </div>
-          </div>
-
-          {/* SEARCH */}
-          <div className="gtd-fp-section">
-            <div className="gtd-fp-section-title">Search</div>
-            <input
-              type="text"
-              className="gtd-fp-input"
-              placeholder="Task name or address…"
-              value={draft.search}
-              onChange={e => set('search', e.target.value)}
-            />
           </div>
 
           {/* SAVED VIEWS */}
@@ -261,8 +279,7 @@ export default function TasksTab({
     const eow   = endOfWeek()
 
     const results = tasks.filter(task => {
-      const tx   = txMap[task.transaction_id]
-      const done = task.status === 'complete'
+      const tx = txMap[task.transaction_id]
 
       // Stage (based on transaction stage)
       const txStage = tx?.status
@@ -274,24 +291,11 @@ export default function TasksTab({
       // TC
       if (filters.tcFilter !== 'All' && tx?.assigned_tc !== filters.tcFilter) return false
 
-      // Due Status
-      if (filters.dueStatus !== 'All') {
-        if (filters.dueStatus === 'Completed') {
-          if (!done) return false
-        } else if (filters.dueStatus === 'Overdue') {
-          if (done || !task.due_date) return false
-          if (Math.ceil((new Date(task.due_date + 'T00:00:00') - today) / 86400000) >= 0) return false
-        } else if (filters.dueStatus === 'Due Today') {
-          if (done || !task.due_date) return false
-          if (new Date(task.due_date + 'T00:00:00').getTime() !== today.getTime()) return false
-        } else if (filters.dueStatus === 'Due This Week') {
-          if (done || !task.due_date) return false
-          const d = new Date(task.due_date + 'T00:00:00')
-          if (d < today || d > eow) return false
-        }
-      }
+      // Due Status checkboxes — hide task if its bucket is unchecked
+      // Completed tasks hidden by default (Completed not in DEFAULT_DUE_CHECKS)
+      if (!filters.dueChecks.has(dueBucket(task, today, eow))) return false
 
-      // Search
+      // Search (live, always applied)
       if (filters.search.trim()) {
         const q = filters.search.toLowerCase()
         if (!(task.title || '').toLowerCase().includes(q) &&
@@ -325,9 +329,80 @@ export default function TasksTab({
     })
   }, [tasks, txMap, filters, sortCol, sortDir])
 
-  const openCount    = filtered.filter(t => t.status === 'open').length
-  const doneCount    = filtered.filter(t => t.status === 'complete').length
-  const filterCount  = countFilters(filters)
+  const openCount   = filtered.filter(t => t.status !== 'complete').length
+  const doneCount   = filtered.filter(t => t.status === 'complete').length
+  const filterCount = countFilters(filters)
+
+  // ── Active filter chips ────────────────────────────────────────────────────
+  const activeChips = useMemo(() => {
+    const chips = []
+
+    if (activeViewId) {
+      const view = savedViews.find(v => v.id === activeViewId)
+      if (view) chips.push({
+        key: 'view',
+        label: `View: ${view.name}`,
+        onRemove: () => { setFilters(DEFAULT_FILTERS); setDraft(DEFAULT_FILTERS); setActiveViewId(null) }
+      })
+    }
+
+    const stageDiffers = DEFAULT_STAGE_CHECKS.size !== filters.stageChecks.size ||
+      [...DEFAULT_STAGE_CHECKS].some(s => !filters.stageChecks.has(s))
+    if (stageDiffers) {
+      const labels = TASK_STAGES.filter(s => filters.stageChecks.has(s.value)).map(s => s.label)
+      chips.push({
+        key: 'stage',
+        label: `Stage: ${labels.length <= 2 ? labels.join(', ') : `${labels.length} stages`}`,
+        onRemove: () => {
+          setFilters(f => ({ ...f, stageChecks: DEFAULT_STAGE_CHECKS }))
+          setDraft(d => ({ ...d, stageChecks: DEFAULT_STAGE_CHECKS }))
+          setActiveViewId(null)
+        }
+      })
+    }
+
+    if (filters.typeFilter !== 'All') chips.push({
+      key: 'type',
+      label: `Type: ${filters.typeFilter}`,
+      onRemove: () => {
+        setFilters(f => ({ ...f, typeFilter: 'All' }))
+        setDraft(d => ({ ...d, typeFilter: 'All' }))
+        setActiveViewId(null)
+      }
+    })
+
+    if (filters.tcFilter !== 'All') {
+      const short = filters.tcFilter === 'Justina Morris' ? 'Justina' : 'Victoria'
+      chips.push({
+        key: 'tc',
+        label: `TC: ${short}`,
+        onRemove: () => {
+          setFilters(f => ({ ...f, tcFilter: 'All' }))
+          setDraft(d => ({ ...d, tcFilter: 'All' }))
+          setActiveViewId(null)
+        }
+      })
+    }
+
+    const dueDiffers = filters.dueChecks.size !== DEFAULT_DUE_CHECKS.size ||
+      [...DEFAULT_DUE_CHECKS].some(s => !filters.dueChecks.has(s)) ||
+      [...filters.dueChecks].some(s => !DEFAULT_DUE_CHECKS.has(s))
+    if (dueDiffers) {
+      const checked = [...filters.dueChecks]
+      const label = checked.length === 1 ? `Due: ${checked[0]}` : `Due: ${checked.length} selected`
+      chips.push({
+        key: 'due',
+        label,
+        onRemove: () => {
+          setFilters(f => ({ ...f, dueChecks: DEFAULT_DUE_CHECKS }))
+          setDraft(d => ({ ...d, dueChecks: DEFAULT_DUE_CHECKS }))
+          setActiveViewId(null)
+        }
+      })
+    }
+
+    return chips
+  }, [filters, activeViewId, savedViews])
 
   // ── Filter panel handlers ──────────────────────────────────────────────────
   const openPanel  = () => { setDraft(filters); setPanelOpen(true) }
@@ -434,9 +509,30 @@ export default function TasksTab({
 
   const hasChanges = bulkAssignTo || bulkStatus
 
+  // ── Search helpers ─────────────────────────────────────────────────────────
+  const setSearch = (val) => {
+    setFilters(f => ({ ...f, search: val }))
+    setDraft(d => ({ ...d, search: val }))
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="tasks-tab">
+
+      {/* ── Search bar ──────────────────────────────────────────────── */}
+      <div className="gtd-searchbar">
+        <span className="gtd-searchbar-icon">⌕</span>
+        <input
+          className="gtd-searchbar-input"
+          type="text"
+          placeholder="Search tasks or addresses…"
+          value={filters.search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        {filters.search && (
+          <button className="gtd-searchbar-clear" onClick={() => setSearch('')}>✕</button>
+        )}
+      </div>
 
       {/* ── Toolbar ─────────────────────────────────────────────────── */}
       <div className="gtd-toolbar">
@@ -458,6 +554,18 @@ export default function TasksTab({
           Filters{filterCount > 0 ? ` (${filterCount})` : ''}
         </button>
       </div>
+
+      {/* ── Active filter chips ──────────────────────────────────────── */}
+      {activeChips.length > 0 && (
+        <div className="gtd-chips">
+          {activeChips.map(chip => (
+            <span key={chip.key} className="gtd-chip">
+              {chip.label}
+              <button className="gtd-chip-remove" onClick={chip.onRemove}>×</button>
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* ── Filter panel ────────────────────────────────────────────── */}
       {panelOpen && (

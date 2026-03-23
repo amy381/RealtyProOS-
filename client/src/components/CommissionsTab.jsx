@@ -189,13 +189,15 @@ export default function CommissionsTab({ transactions, commissions, onDeleteComm
     return 0
   }), [visibleRows, sortKey, sortDir])
 
-  const totals = rows.reduce((acc, r) => ({
+  const totals = visibleRows.reduce((acc, r) => ({
     sale_price: acc.sale_price + r.sale_price,
     gci:        acc.gci        + r.gci,
     ref_dollar: acc.ref_dollar + r.ref_dollar,
+    cap:        acc.cap        + r.cap,
+    royalty:    acc.royalty    + r.royalty,
     net:        acc.net        + r.net,
     tc_fee:     acc.tc_fee     + r.tc_fee,
-  }), { sale_price: 0, gci: 0, ref_dollar: 0, net: 0, tc_fee: 0 })
+  }), { sale_price: 0, gci: 0, ref_dollar: 0, cap: 0, royalty: 0, net: 0, tc_fee: 0 })
 
   const capPct     = Math.min(capPaidYTD     / CAP_LIMIT     * 100, 100)
   const royaltyPct = Math.min(royaltyPaidYTD / ROYALTY_LIMIT * 100, 100)
@@ -303,14 +305,15 @@ export default function CommissionsTab({ transactions, commissions, onDeleteComm
             <tr className="totals-row">
               <td><strong>Totals</strong></td>
               <td></td><td></td>
-              <td className="computed">{fmt(totals.sale_price)}</td>
+              <td className="computed"><strong>{fmt(totals.sale_price)}</strong></td>
               <td></td>
               <td className="computed"><strong>{fmtCents(totals.gci)}</strong></td>
               <td className="computed"><strong>{fmtCents(totals.net)}</strong></td>
               <td></td>
-              <td className="computed">{fmtCents(totals.ref_dollar)}</td>
-              <td></td><td></td>
-              <td className="computed">{fmtCents(totals.tc_fee)}</td>
+              <td className="computed"><strong>{fmtCents(totals.ref_dollar)}</strong></td>
+              <td className="computed"><strong>{fmtCents(totals.cap)}</strong></td>
+              <td className="computed"><strong>{fmtCents(totals.royalty)}</strong></td>
+              <td className="computed"><strong>{fmtCents(totals.tc_fee)}</strong></td>
               <td></td><td></td>
             </tr>
           </tfoot>

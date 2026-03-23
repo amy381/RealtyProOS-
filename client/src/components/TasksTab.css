@@ -5,6 +5,88 @@
   gap: 10px;
 }
 
+/* ── Search bar ──────────────────────────────────────────────────────────── */
+.gtd-searchbar {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 0 12px;
+  gap: 8px;
+  flex-shrink: 0;
+  transition: border-color 0.12s;
+}
+.gtd-searchbar:focus-within { border-color: #1a1a1a; }
+
+.gtd-searchbar-icon {
+  font-size: 17px;
+  color: #bbb;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.gtd-searchbar-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  font-family: inherit;
+  color: #1a1a1a;
+  padding: 11px 0;
+  background: transparent;
+}
+.gtd-searchbar-input::placeholder { color: #bbb; }
+
+.gtd-searchbar-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #bbb;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.1s;
+}
+.gtd-searchbar-clear:hover { color: #555; }
+
+/* ── Active filter chips ─────────────────────────────────────────────────── */
+.gtd-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.gtd-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f0f4ff;
+  border: 1px solid #c7d7f5;
+  border-radius: 99px;
+  padding: 4px 10px 4px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2b4db5;
+  white-space: nowrap;
+}
+
+.gtd-chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #7b9de0;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: 50%;
+  transition: color 0.1s, background 0.1s;
+}
+.gtd-chip-remove:hover { color: #1a3a9f; background: rgba(0,0,0,0.06); }
+
 /* ── Toolbar ─────────────────────────────────────────────────────────────── */
 .gtd-toolbar {
   display: flex;

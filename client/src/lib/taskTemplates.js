@@ -16,7 +16,14 @@ export const TC_ASSIGNEES = ['Me', 'Justina Morris', 'Victoria Lareau']
 export function calcDueDate(timingType, timingDays, tx) {
   const days = Number(timingDays) || 0
   switch (timingType) {
-    case 'at_stage_change':            return null
+    // Stage-triggered — no calculated date, task becomes due at the transition
+    case 'at_stage_change':          // legacy
+    case 'stage_pre_listing':
+    case 'stage_active_listing':
+    case 'stage_buyer_broker':
+    case 'stage_pending':
+    case 'stage_closed':
+    case 'stage_cancelled_expired':  return null
     case 'days_after_contract':        return addDays(tx.contract_acceptance_date, days)
     case 'days_before_coe':            return addDays(tx.close_of_escrow, -days)
     case 'days_after_coe':             return addDays(tx.close_of_escrow, days)

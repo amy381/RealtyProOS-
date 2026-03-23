@@ -19,15 +19,20 @@ import './TemplatesTab.css'
 
 // ─── Task template constants ───────────────────────────────────────────────────
 const TIMING_OPTIONS = [
-  { value: 'at_stage_change',             label: 'At stage change',                                hasDays: false },
+  { value: 'stage_pre_listing',           label: 'When moved to Pre-Listing',                      hasDays: false },
+  { value: 'stage_active_listing',        label: 'When moved to Active Listing',                   hasDays: false },
+  { value: 'stage_buyer_broker',          label: 'When moved to Buyer-Broker',                     hasDays: false },
+  { value: 'stage_pending',               label: 'When moved to Pending',                          hasDays: false },
+  { value: 'stage_closed',               label: 'When moved to Closed',                           hasDays: false },
+  { value: 'stage_cancelled_expired',    label: 'When moved to Cancelled/Expired',                hasDays: false },
   { value: 'days_after_contract',         label: 'days after Contract Acceptance',                 hasDays: true  },
   { value: 'days_before_coe',             label: 'days before Close of Escrow',                    hasDays: true  },
-  { value: 'days_after_coe',              label: 'days after Close of Escrow',                     hasDays: true  },
+  { value: 'days_after_coe',             label: 'days after Close of Escrow',                     hasDays: true  },
   { value: 'days_after_listing_contract', label: 'days after Listing Contract',                    hasDays: true  },
-  { value: 'days_after_bba',              label: 'days after BBA Contract',                        hasDays: true  },
+  { value: 'days_after_bba',             label: 'days after BBA Contract',                        hasDays: true  },
   { value: 'days_before_ipe',             label: 'days before Inspection Period End / BINSR Due',  hasDays: true  },
-  { value: 'days_after_ipe',              label: 'days after Inspection Period End / BINSR Due',   hasDays: true  },
-  { value: 'days_after_binsr',            label: 'days after BINSR Submitted',                     hasDays: true  },
+  { value: 'days_after_ipe',             label: 'days after Inspection Period End / BINSR Due',   hasDays: true  },
+  { value: 'days_after_binsr',           label: 'days after BINSR Submitted',                     hasDays: true  },
   { value: 'specific_date',               label: 'Specific date (manual)',                         hasDays: false },
 ]
 
@@ -35,10 +40,11 @@ const TASK_TYPES = ['Task', 'Email', 'Notification']
 const APPLIES_TO = ['Buyer', 'Seller', 'Both']
 
 function formatTiming(timingType, timingDays) {
-  if (timingType === 'at_stage_change') return 'At stage change'
-  if (timingType === 'specific_date')   return 'Specific date'
+  if (timingType === 'specific_date') return 'Specific date'
+  if (timingType === 'at_stage_change') return 'At stage change' // legacy fallback
   const opt = TIMING_OPTIONS.find(o => o.value === timingType)
   if (!opt) return timingType
+  if (!opt.hasDays) return opt.label
   const d = Number(timingDays) || 0
   if (timingType === 'days_before_ipe' && d === 0) return 'At Inspection Period End'
   return `${d} ${opt.label}`
@@ -47,7 +53,7 @@ function formatTiming(timingType, timingDays) {
 const EMPTY_TASK = {
   title:          '',
   task_type:      'Task',
-  timing_type:    'at_stage_change',
+  timing_type:    'stage_pending',
   timing_days:    0,
   applies_to:     'Both',
   auto_assign_to: 'Me',
@@ -65,8 +71,13 @@ const EMPTY_EMAIL = {
 }
 
 const TRIGGER_OPTIONS = [
-  { value: 'manual',       label: 'Manual only'    },
-  { value: 'stage_change', label: 'At stage change' },
+  { value: 'manual',                label: 'Manual only'                    },
+  { value: 'stage_pre_listing',     label: 'When moved to Pre-Listing'      },
+  { value: 'stage_active_listing',  label: 'When moved to Active Listing'   },
+  { value: 'stage_buyer_broker',    label: 'When moved to Buyer-Broker'     },
+  { value: 'stage_pending',         label: 'When moved to Pending'          },
+  { value: 'stage_closed',          label: 'When moved to Closed'           },
+  { value: 'stage_cancelled_expired', label: 'When moved to Cancelled/Expired' },
 ]
 
 const EMAIL_APPLIES_TO = ['Buyer', 'Seller', 'Both']

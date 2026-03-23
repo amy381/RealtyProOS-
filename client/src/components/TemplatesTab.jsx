@@ -434,20 +434,23 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
 
   const handleSaveEmail = async () => {
     if (!editingEmail.name?.trim()) { alert('Please enter a template name.'); return }
+    // Read body directly from DOM — body editor is fully uncontrolled so state may be stale
+    const currentBody = bodyRef.current?.innerHTML ?? editingEmail.body ?? ''
     setEmailSaving(true)
     try {
       if (editingEmail.id) {
         const { id, created_at, ...updates } = editingEmail
-        const { error } = await supabase.from('email_templates').update(updates).eq('id', id)
+        const payload = { ...updates, body: currentBody }
+        const { error } = await supabase.from('email_templates').update(payload).eq('id', id)
         if (error) throw error
-        setEmailTemplates(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e))
+        setEmailTemplates(prev => prev.map(e => e.id === id ? { ...e, ...payload } : e))
       } else {
         const { data, error } = await supabase
           .from('email_templates')
           .insert({
             name:       editingEmail.name.trim(),
             subject:    editingEmail.subject,
-            body:       editingEmail.body,
+            body:       currentBody,
             cc:         editingEmail.cc || '',
             auto_send:  editingEmail.auto_send ?? false,
             trigger:    editingEmail.trigger,
@@ -481,7 +484,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
         .insert({
           name:       `Copy of ${editingEmail.name || 'Template'}`,
           subject:    editingEmail.subject,
-          body:       editingEmail.body,
+          body:       bodyRef.current?.innerHTML ?? editingEmail.body ?? '',
           trigger:    editingEmail.trigger,
           applies_to: editingEmail.applies_to,
         })
@@ -503,7 +506,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     const token = `{{${varName}}}`
 
     if (lastFocused === 'body') {
-      // contentEditable — use Selection API
+      // contentEditable — use Selection API; don't sync to state (read at save time)
       const el = bodyRef.current
       if (!el) return
       el.focus()
@@ -518,7 +521,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
         sel.removeAllRanges()
         sel.addRange(range)
       }
-      setEmailField('body', el.innerHTML)
       return
     }
 
@@ -538,10 +540,10 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   }
 
   // Rich-text commands for the body toolbar
+  // Body is fully uncontrolled — don't sync to state here, read from DOM at save time
   const execCmd = (cmd, value = null) => {
     bodyRef.current?.focus()
     document.execCommand(cmd, false, value)
-    setEmailField('body', bodyRef.current?.innerHTML || '')
   }
 
   const insertLink = () => {
@@ -768,14 +770,15 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                         >🔗</button>
                       </div>
 
-                      {/* contentEditable body — uncontrolled after mount;
-                          content is set imperatively via useEffect above */}
+                      {/* contentEditable body — fully uncontrolled.
+                          React never writes innerHTML here during typing.
+                          Content is synced in only on template switch (useEffect above).
+                          Body is read from DOM at save time via bodyRef.current.innerHTML. */}
                       <div
                         ref={bodyRef}
                         className="et-richbody"
                         contentEditable
                         suppressContentEditableWarning
-                        onInput={() => setEmailField('body', bodyRef.current?.innerHTML || '')}
                         onFocus={() => setLastFocused('body')}
                       />
                     </div>

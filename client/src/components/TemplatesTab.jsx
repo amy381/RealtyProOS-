@@ -17,13 +17,14 @@ import { supabase } from '../lib/supabase'
 import { TC_ASSIGNEES } from '../lib/taskTemplates'
 import './TemplatesTab.css'
 
+// ─── Task template constants ───────────────────────────────────────────────────
 const TIMING_OPTIONS = [
   { value: 'at_stage_change',             label: 'At stage change',                                hasDays: false },
   { value: 'days_after_contract',         label: 'days after Contract Acceptance',                 hasDays: true  },
   { value: 'days_before_coe',             label: 'days before Close of Escrow',                    hasDays: true  },
   { value: 'days_after_coe',              label: 'days after Close of Escrow',                     hasDays: true  },
   { value: 'days_after_listing_contract', label: 'days after Listing Contract',                    hasDays: true  },
-  { value: 'days_after_bba',             label: 'days after BBA Contract',                        hasDays: true  },
+  { value: 'days_after_bba',              label: 'days after BBA Contract',                        hasDays: true  },
   { value: 'days_before_ipe',             label: 'days before Inspection Period End / BINSR Due',  hasDays: true  },
   { value: 'days_after_ipe',              label: 'days after Inspection Period End / BINSR Due',   hasDays: true  },
   { value: 'days_after_binsr',            label: 'days after BINSR Submitted',                     hasDays: true  },
@@ -52,7 +53,54 @@ const EMPTY_TASK = {
   auto_assign_to: 'Me',
 }
 
-// ── Sortable row (normal + bulk mode) ────────────────────────────────────────
+// ─── Email template constants ─────────────────────────────────────────────────
+const EMPTY_EMAIL = {
+  name:       '',
+  subject:    '',
+  body:       '',
+  trigger:    'manual',
+  applies_to: 'Both',
+}
+
+const TRIGGER_OPTIONS = [
+  { value: 'manual',       label: 'Manual only'    },
+  { value: 'stage_change', label: 'At stage change' },
+]
+
+const EMAIL_APPLIES_TO = ['Buyer', 'Seller', 'Both']
+
+const EMAIL_VARIABLES = [
+  {
+    group: 'Client',
+    vars:  ['client_first_name', 'client_last_name', 'client2_first_name', 'client2_last_name'],
+  },
+  {
+    group: 'Property',
+    vars:  ['property_address', 'city', 'zip'],
+  },
+  {
+    group: 'Price',
+    vars:  ['list_price', 'purchase_price'],
+  },
+  {
+    group: 'Listing Dates',
+    vars:  ['listing_contract', 'listing_expiration', 'target_live'],
+  },
+  {
+    group: 'Contract Dates',
+    vars:  ['contract_acceptance', 'inspection_period_end', 'close_of_escrow'],
+  },
+  {
+    group: 'Parties',
+    vars:  ['lender_name', 'title_company', 'escrow_officer', 'tc_name', 'agent_name'],
+  },
+  {
+    group: 'BBA',
+    vars:  ['bba_contract', 'bba_expiration'],
+  },
+]
+
+// ─── Sortable task row ────────────────────────────────────────────────────────
 function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id, disabled: bulkMode })
@@ -104,24 +152,37 @@ function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle })
   )
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function TemplatesTab({ templates, allTemplateTasks, onRefresh }) {
+  // ── Sidebar section
   const [sideSection,        setSideSection]        = useState('tasks')
+
+  // ── Task template state
   const [selectedTemplateId, setSelectedTemplateId] = useState(null)
   const [editingTask,        setEditingTask]        = useState(null)
   const [saving,             setSaving]             = useState(false)
 
-  // Export dropdown
+  // ── Task template export
   const [exportOpen, setExportOpen] = useState(false)
   const exportRef = useRef(null)
 
-  // Bulk edit
+  // ── Task template bulk edit
   const [bulkMode,      setBulkMode]      = useState(false)
   const [selectedIds,   setSelectedIds]   = useState(new Set())
   const [bulkAssignTo,  setBulkAssignTo]  = useState('')
   const [bulkTaskType,  setBulkTaskType]  = useState('')
   const [bulkAppliesTo, setBulkAppliesTo] = useState('')
   const [bulkSaving,    setBulkSaving]    = useState(false)
+
+  // ── Email template state
+  const [emailTemplates,  setEmailTemplates]  = useState([])
+  const [emailsLoading,   setEmailsLoading]   = useState(false)
+  const [editingEmail,    setEditingEmail]    = useState(null)  // null = nothing selected
+  const [emailSaving,     setEmailSaving]     = useState(false)
+  const [lastFocused,     setLastFocused]     = useState('body') // 'subject' | 'body'
+
+  const subjectRef = useRef(null)
+  const bodyRef    = useRef(null)
 
   const sensors = useSensors(useSensor(PointerSensor))
 
@@ -131,7 +192,23 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
         .sort((a, b) => a.sort_order - b.sort_order)
     : []
 
-  // Close export dropdown when clicking outside
+  // ── Load email templates when switching to email section
+  useEffect(() => {
+    if (sideSection !== 'email') return
+    loadEmailTemplates()
+  }, [sideSection])
+
+  const loadEmailTemplates = async () => {
+    setEmailsLoading(true)
+    const { data } = await supabase
+      .from('email_templates')
+      .select('*')
+      .order('created_at', { ascending: true })
+    setEmailTemplates(data || [])
+    setEmailsLoading(false)
+  }
+
+  // ── Close export dropdown on outside click
   useEffect(() => {
     if (!exportOpen) return
     const handler = (e) => { if (!exportRef.current?.contains(e.target)) setExportOpen(false) }
@@ -139,7 +216,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
     return () => document.removeEventListener('mousedown', handler)
   }, [exportOpen])
 
-  // Reset bulk state when template changes
+  // ── Reset task bulk state on template switch
   const selectTemplate = (id) => {
     setSelectedTemplateId(id)
     setEditingTask(null)
@@ -147,7 +224,22 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
     setSelectedIds(new Set())
   }
 
-  // ── Export ──────────────────────────────────────────────────────────────────
+  // ── Switch sidebar section
+  const switchSection = (section) => {
+    setSideSection(section)
+    if (section === 'tasks') {
+      setEditingEmail(null)
+    } else {
+      setSelectedTemplateId(null)
+      setEditingTask(null)
+      setBulkMode(false)
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // TASK TEMPLATE HANDLERS (unchanged)
+  // ══════════════════════════════════════════════════════════════
+
   const handleExportCSV = () => {
     setExportOpen(false)
     const headers = ['Order', 'Task Name', 'Task Type', 'Timing', 'Applies To', 'Auto-Assign To']
@@ -180,7 +272,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
         <td>${t.applies_to}</td>
         <td>${t.auto_assign_to}</td>
       </tr>`).join('')
-
     const html = `<!DOCTYPE html><html><head><title>${selectedTemplate.name}</title>
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 32px; color: #111; }
@@ -199,7 +290,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
         <thead><tr><th>#</th><th>Task Name</th><th>Type</th><th>Timing</th><th>Applies To</th><th>Auto-Assign To</th></tr></thead>
         <tbody>${tblRows}</tbody>
       </table></body></html>`
-
     const win = window.open('', '_blank')
     win.document.write(html)
     win.document.close()
@@ -207,19 +297,11 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
     setTimeout(() => { win.print() }, 300)
   }
 
-  // ── Bulk edit ───────────────────────────────────────────────────────────────
   const enterBulkMode = () => {
-    setBulkMode(true)
-    setSelectedIds(new Set())
-    setBulkAssignTo('')
-    setBulkTaskType('')
-    setBulkAppliesTo('')
+    setBulkMode(true); setSelectedIds(new Set())
+    setBulkAssignTo(''); setBulkTaskType(''); setBulkAppliesTo('')
   }
-
-  const exitBulkMode = () => {
-    setBulkMode(false)
-    setSelectedIds(new Set())
-  }
+  const exitBulkMode = () => { setBulkMode(false); setSelectedIds(new Set()) }
 
   const toggleId = (id) => {
     setSelectedIds(prev => {
@@ -230,11 +312,8 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
   }
 
   const toggleAll = () => {
-    if (selectedIds.size === taskRows.length) {
-      setSelectedIds(new Set())
-    } else {
-      setSelectedIds(new Set(taskRows.map(t => t.id)))
-    }
+    if (selectedIds.size === taskRows.length) setSelectedIds(new Set())
+    else setSelectedIds(new Set(taskRows.map(t => t.id)))
   }
 
   const handleBulkApply = async () => {
@@ -244,7 +323,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
     if (bulkTaskType)  updates.task_type       = bulkTaskType
     if (bulkAppliesTo) updates.applies_to      = bulkAppliesTo
     if (Object.keys(updates).length === 0) return
-
     setBulkSaving(true)
     try {
       await Promise.all([...selectedIds].map(id =>
@@ -254,12 +332,9 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
       exitBulkMode()
     } catch (err) {
       alert('Bulk update failed: ' + err.message)
-    } finally {
-      setBulkSaving(false)
-    }
+    } finally { setBulkSaving(false) }
   }
 
-  // ── Template CRUD ───────────────────────────────────────────────────────────
   const handleCreateTemplate = async () => {
     const name = window.prompt('Template name:')
     if (!name?.trim()) return
@@ -283,7 +358,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
     if (selectedTemplateId === id) setSelectedTemplateId(null)
   }
 
-  // ── Task CRUD ───────────────────────────────────────────────────────────────
   const handleDragEnd = async ({ active, over }) => {
     if (!over || active.id === over.id) return
     const oldIdx = taskRows.findIndex(t => t.id === active.id)
@@ -311,8 +385,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
         if (error) throw error
       } else {
         const { error } = await supabase.from('template_tasks').insert({
-          ...editingTask,
-          sort_order: taskRows.length,
+          ...editingTask, sort_order: taskRows.length,
         })
         if (error) throw error
       }
@@ -320,24 +393,125 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
       setEditingTask(null)
     } catch (err) {
       alert('Failed to save task: ' + err.message)
-    } finally {
-      setSaving(false)
-    }
+    } finally { setSaving(false) }
   }
 
+  // ══════════════════════════════════════════════════════════════
+  // EMAIL TEMPLATE HANDLERS
+  // ══════════════════════════════════════════════════════════════
+
+  const selectEmail = (et) => {
+    setEditingEmail({ ...et })
+  }
+
+  const newEmail = () => {
+    setEditingEmail({ ...EMPTY_EMAIL })
+  }
+
+  const handleSaveEmail = async () => {
+    if (!editingEmail.name?.trim()) { alert('Please enter a template name.'); return }
+    setEmailSaving(true)
+    try {
+      if (editingEmail.id) {
+        const { id, created_at, ...updates } = editingEmail
+        const { error } = await supabase.from('email_templates').update(updates).eq('id', id)
+        if (error) throw error
+        setEmailTemplates(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e))
+      } else {
+        const { data, error } = await supabase
+          .from('email_templates')
+          .insert({
+            name:       editingEmail.name.trim(),
+            subject:    editingEmail.subject,
+            body:       editingEmail.body,
+            trigger:    editingEmail.trigger,
+            applies_to: editingEmail.applies_to,
+          })
+          .select().single()
+        if (error) throw error
+        setEmailTemplates(prev => [...prev, data])
+        setEditingEmail(data)
+      }
+    } catch (err) {
+      alert('Failed to save email template: ' + err.message)
+    } finally { setEmailSaving(false) }
+  }
+
+  const handleDeleteEmail = async () => {
+    if (!editingEmail?.id) return
+    if (!window.confirm(`Delete "${editingEmail.name}"? This cannot be undone.`)) return
+    const { error } = await supabase.from('email_templates').delete().eq('id', editingEmail.id)
+    if (error) { alert('Failed to delete: ' + error.message); return }
+    setEmailTemplates(prev => prev.filter(e => e.id !== editingEmail.id))
+    setEditingEmail(null)
+  }
+
+  const handleDuplicateEmail = async () => {
+    if (!editingEmail) return
+    setEmailSaving(true)
+    try {
+      const { data, error } = await supabase
+        .from('email_templates')
+        .insert({
+          name:       `Copy of ${editingEmail.name || 'Template'}`,
+          subject:    editingEmail.subject,
+          body:       editingEmail.body,
+          trigger:    editingEmail.trigger,
+          applies_to: editingEmail.applies_to,
+        })
+        .select().single()
+      if (error) throw error
+      setEmailTemplates(prev => [...prev, data])
+      setEditingEmail(data)
+    } catch (err) {
+      alert('Failed to duplicate: ' + err.message)
+    } finally { setEmailSaving(false) }
+  }
+
+  const setEmailField = (key, val) => {
+    setEditingEmail(e => ({ ...e, [key]: val }))
+  }
+
+  // Insert variable at cursor in the currently focused field (subject or body)
+  const insertVariable = (varName) => {
+    const token = `{{${varName}}}`
+    const isSubject = lastFocused === 'subject'
+    const ref = isSubject ? subjectRef : bodyRef
+    const field = isSubject ? 'subject' : 'body'
+    const el = ref.current
+    if (!el) return
+    const start = el.selectionStart ?? el.value.length
+    const end   = el.selectionEnd   ?? el.value.length
+    const before = el.value.substring(0, start)
+    const after  = el.value.substring(end)
+    const newVal = before + token + after
+    setEmailField(field, newVal)
+    // Restore cursor after state update
+    setTimeout(() => {
+      el.focus()
+      el.setSelectionRange(start + token.length, start + token.length)
+    }, 0)
+  }
+
+  // ── Computed
   const timingOption = TIMING_OPTIONS.find(o => o.value === editingTask?.timing_type)
   const allSelected  = taskRows.length > 0 && selectedIds.size === taskRows.length
   const someSelected = selectedIds.size > 0 && !allSelected
   const hasChanges   = bulkAssignTo || bulkTaskType || bulkAppliesTo
 
+  // ══════════════════════════════════════════════════════════════
+  // RENDER
+  // ══════════════════════════════════════════════════════════════
   return (
     <div className="templates-tab">
 
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────── */}
       <aside className="templates-sidebar">
+
+        {/* Task Templates section */}
         <div
           className={`templates-sidebar-hdr${sideSection === 'tasks' ? ' active' : ''}`}
-          onClick={() => setSideSection('tasks')}
+          onClick={() => switchSection('tasks')}
         >
           Task Templates
         </div>
@@ -366,181 +540,337 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
           </>
         )}
 
+        {/* Email Templates section */}
         <div
           className={`templates-sidebar-hdr${sideSection === 'email' ? ' active' : ''}`}
-          onClick={() => setSideSection('email')}
+          onClick={() => switchSection('email')}
         >
           Email Templates
         </div>
 
         {sideSection === 'email' && (
-          <div className="templates-coming-soon">Coming soon</div>
+          <>
+            {emailsLoading ? (
+              <div className="templates-coming-soon">Loading…</div>
+            ) : (
+              <div className="templates-list">
+                {emailTemplates.map(et => (
+                  <div
+                    key={et.id}
+                    className={`templates-list-item${editingEmail?.id === et.id ? ' active' : ''}`}
+                    onClick={() => selectEmail(et)}
+                  >
+                    <span className="templates-list-name">{et.name || '(Untitled)'}</span>
+                    <span className="et-list-badge">{et.applies_to}</span>
+                  </div>
+                ))}
+                {emailTemplates.length === 0 && (
+                  <div className="templates-coming-soon">No email templates yet</div>
+                )}
+              </div>
+            )}
+            <button className="templates-create-btn" onClick={newEmail}>
+              + New Template
+            </button>
+          </>
         )}
+
       </aside>
 
       {/* ── MAIN CONTENT ─────────────────────────────────────────────── */}
       <div className="templates-main">
-        {!selectedTemplate ? (
-          <div className="templates-placeholder">
-            Select a template from the sidebar to view and edit its tasks
-          </div>
-        ) : (
-          <>
-            {/* Header */}
-            <div className="templates-main-header">
-              <div>
-                <h2 className="templates-main-title">{selectedTemplate.name}</h2>
-                <div className="templates-main-meta">
-                  {selectedTemplate.stage} · {selectedTemplate.rep_type || 'Both'}
-                  {' · '}{taskRows.length} task{taskRows.length !== 1 ? 's' : ''}
+
+        {/* ── EMAIL TEMPLATE SECTION ── */}
+        {sideSection === 'email' ? (
+          !editingEmail ? (
+            <div className="templates-placeholder">
+              Select a template from the sidebar or click + New Template
+            </div>
+          ) : (
+            <div className="et-editor-wrap">
+
+              {/* ── Editor (left) ── */}
+              <div className="et-form">
+
+                {/* Header row */}
+                <div className="et-form-header">
+                  <h2 className="et-form-heading">
+                    {editingEmail.id ? editingEmail.name || '(Untitled)' : 'New Email Template'}
+                  </h2>
+                  <div className="et-form-header-actions">
+                    {editingEmail.id && (
+                      <>
+                        <button
+                          className="et-btn et-btn-outline"
+                          onClick={handleDuplicateEmail}
+                          disabled={emailSaving}
+                          title="Duplicate"
+                        >
+                          Duplicate
+                        </button>
+                        <button
+                          className="et-btn et-btn-danger"
+                          onClick={handleDeleteEmail}
+                          disabled={emailSaving}
+                          title="Delete"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                    <button
+                      className="et-btn et-btn-primary"
+                      onClick={handleSaveEmail}
+                      disabled={emailSaving || !editingEmail.name?.trim()}
+                    >
+                      {emailSaving ? 'Saving…' : 'Save'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Form fields */}
+                <div className="et-form-body">
+
+                  <div className="et-field">
+                    <label className="et-label">Template Name</label>
+                    <input
+                      className="et-input"
+                      type="text"
+                      placeholder="e.g. Listing Agreement Welcome"
+                      value={editingEmail.name}
+                      onChange={e => setEmailField('name', e.target.value)}
+                    />
+                    <span className="et-hint">Internal reference name — not visible to clients</span>
+                  </div>
+
+                  <div className="et-field">
+                    <label className="et-label">Subject Line</label>
+                    <input
+                      ref={subjectRef}
+                      className="et-input"
+                      type="text"
+                      placeholder="e.g. Your listing at {{property_address}} is live!"
+                      value={editingEmail.subject}
+                      onChange={e => setEmailField('subject', e.target.value)}
+                      onFocus={() => setLastFocused('subject')}
+                    />
+                    <span className="et-hint">Supports variables — click any variable on the right to insert</span>
+                  </div>
+
+                  <div className="et-field">
+                    <label className="et-label">Body</label>
+                    <textarea
+                      ref={bodyRef}
+                      className="et-textarea"
+                      placeholder={"Hi {{client_first_name}},\n\nYour transaction at {{property_address}} is underway…"}
+                      value={editingEmail.body}
+                      onChange={e => setEmailField('body', e.target.value)}
+                      onFocus={() => setLastFocused('body')}
+                      rows={16}
+                    />
+                    <span className="et-hint">Plain text or HTML. Click variables on the right to insert them.</span>
+                  </div>
+
+                  <div className="et-field-row">
+                    <div className="et-field">
+                      <label className="et-label">Trigger</label>
+                      <select
+                        className="et-select"
+                        value={editingEmail.trigger}
+                        onChange={e => setEmailField('trigger', e.target.value)}
+                      >
+                        {TRIGGER_OPTIONS.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="et-field">
+                      <label className="et-label">Applies To</label>
+                      <div className="et-toggle-group">
+                        {EMAIL_APPLIES_TO.map(v => (
+                          <button
+                            key={v}
+                            className={`et-toggle-btn${editingEmail.applies_to === v ? ' active' : ''}`}
+                            onClick={() => setEmailField('applies_to', v)}
+                            type="button"
+                          >
+                            {v}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
-              <div className="templates-header-actions">
-                {/* Export dropdown */}
-                <div className="tt-export-wrap" ref={exportRef}>
-                  <button
-                    className="tt-header-btn tt-export-btn"
-                    onClick={() => setExportOpen(o => !o)}
-                  >
-                    Export ▾
-                  </button>
-                  {exportOpen && (
-                    <div className="tt-export-menu">
-                      <button className="tt-export-item" onClick={handleExportPDF}>
-                        Export as PDF
-                      </button>
-                      <button className="tt-export-item" onClick={handleExportCSV}>
-                        Export as CSV
-                      </button>
+
+              {/* ── Variables panel (right) ── */}
+              <div className="et-vars">
+                <div className="et-vars-title">Variables</div>
+                <div className="et-vars-hint">
+                  Click to insert at cursor in Subject or Body
+                </div>
+                <div className="et-vars-scroll">
+                  {EMAIL_VARIABLES.map(group => (
+                    <div key={group.group} className="et-vars-group">
+                      <div className="et-vars-group-title">{group.group}</div>
+                      <div className="et-vars-list">
+                        {group.vars.map(v => (
+                          <button
+                            key={v}
+                            className="et-var-chip"
+                            type="button"
+                            onClick={() => insertVariable(v)}
+                            title={`Insert {{${v}}}`}
+                          >
+                            {`{{${v}}}`}
+                          </button>
+                        ))}
+                      </div>
                     </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          )
+        ) : (
+          /* ── TASK TEMPLATE SECTION ── */
+          !selectedTemplate ? (
+            <div className="templates-placeholder">
+              Select a template from the sidebar to view and edit its tasks
+            </div>
+          ) : (
+            <>
+              {/* Header */}
+              <div className="templates-main-header">
+                <div>
+                  <h2 className="templates-main-title">{selectedTemplate.name}</h2>
+                  <div className="templates-main-meta">
+                    {selectedTemplate.stage} · {selectedTemplate.rep_type || 'Both'}
+                    {' · '}{taskRows.length} task{taskRows.length !== 1 ? 's' : ''}
+                  </div>
+                </div>
+                <div className="templates-header-actions">
+                  <div className="tt-export-wrap" ref={exportRef}>
+                    <button
+                      className="tt-header-btn tt-export-btn"
+                      onClick={() => setExportOpen(o => !o)}
+                    >
+                      Export ▾
+                    </button>
+                    {exportOpen && (
+                      <div className="tt-export-menu">
+                        <button className="tt-export-item" onClick={handleExportPDF}>Export as PDF</button>
+                        <button className="tt-export-item" onClick={handleExportCSV}>Export as CSV</button>
+                      </div>
+                    )}
+                  </div>
+                  {bulkMode ? (
+                    <button className="tt-header-btn tt-bulk-cancel-btn" onClick={exitBulkMode}>Cancel</button>
+                  ) : (
+                    <button className="tt-header-btn tt-bulk-btn" onClick={enterBulkMode}>Bulk Edit</button>
+                  )}
+                  {!bulkMode && (
+                    <button
+                      className="templates-add-task-btn"
+                      onClick={() => setEditingTask({ ...EMPTY_TASK, template_id: selectedTemplateId })}
+                    >
+                      + Add Task
+                    </button>
                   )}
                 </div>
-
-                {/* Bulk edit toggle */}
-                {bulkMode ? (
-                  <button className="tt-header-btn tt-bulk-cancel-btn" onClick={exitBulkMode}>
-                    Cancel
-                  </button>
-                ) : (
-                  <button className="tt-header-btn tt-bulk-btn" onClick={enterBulkMode}>
-                    Bulk Edit
-                  </button>
-                )}
-
-                {!bulkMode && (
-                  <button
-                    className="templates-add-task-btn"
-                    onClick={() => setEditingTask({ ...EMPTY_TASK, template_id: selectedTemplateId })}
-                  >
-                    + Add Task
-                  </button>
-                )}
               </div>
-            </div>
 
-            {/* Bulk action bar */}
-            {bulkMode && (
-              <div className="tt-bulk-bar">
-                <label className="tt-bulk-selectall">
-                  <input
-                    type="checkbox"
-                    className="tt-checkbox"
-                    checked={allSelected}
-                    ref={el => { if (el) el.indeterminate = someSelected }}
-                    onChange={toggleAll}
-                  />
-                  <span>
-                    {selectedIds.size === 0
-                      ? 'Select all'
-                      : `${selectedIds.size} of ${taskRows.length} selected`}
-                  </span>
-                </label>
-
-                <div className="tt-bulk-fields">
-                  <select
-                    className="tt-bulk-select"
-                    value={bulkAssignTo}
-                    onChange={e => setBulkAssignTo(e.target.value)}
-                  >
-                    <option value="">Auto-Assign To…</option>
-                    {TC_ASSIGNEES.map(a => <option key={a} value={a}>{a}</option>)}
-                  </select>
-
-                  <select
-                    className="tt-bulk-select"
-                    value={bulkTaskType}
-                    onChange={e => setBulkTaskType(e.target.value)}
-                  >
-                    <option value="">Task Type…</option>
-                    {TASK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-
-                  <select
-                    className="tt-bulk-select"
-                    value={bulkAppliesTo}
-                    onChange={e => setBulkAppliesTo(e.target.value)}
-                  >
-                    <option value="">Applies To…</option>
-                    {APPLIES_TO.map(a => <option key={a} value={a}>{a}</option>)}
-                  </select>
-
-                  <button
-                    className="tt-bulk-apply-btn"
-                    onClick={handleBulkApply}
-                    disabled={bulkSaving || selectedIds.size === 0 || !hasChanges}
-                  >
-                    {bulkSaving ? 'Applying…' : 'Apply'}
-                  </button>
+              {/* Bulk action bar */}
+              {bulkMode && (
+                <div className="tt-bulk-bar">
+                  <label className="tt-bulk-selectall">
+                    <input
+                      type="checkbox"
+                      className="tt-checkbox"
+                      checked={allSelected}
+                      ref={el => { if (el) el.indeterminate = someSelected }}
+                      onChange={toggleAll}
+                    />
+                    <span>
+                      {selectedIds.size === 0
+                        ? 'Select all'
+                        : `${selectedIds.size} of ${taskRows.length} selected`}
+                    </span>
+                  </label>
+                  <div className="tt-bulk-fields">
+                    <select className="tt-bulk-select" value={bulkAssignTo} onChange={e => setBulkAssignTo(e.target.value)}>
+                      <option value="">Auto-Assign To…</option>
+                      {TC_ASSIGNEES.map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                    <select className="tt-bulk-select" value={bulkTaskType} onChange={e => setBulkTaskType(e.target.value)}>
+                      <option value="">Task Type…</option>
+                      {TASK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <select className="tt-bulk-select" value={bulkAppliesTo} onChange={e => setBulkAppliesTo(e.target.value)}>
+                      <option value="">Applies To…</option>
+                      {APPLIES_TO.map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                    <button
+                      className="tt-bulk-apply-btn"
+                      onClick={handleBulkApply}
+                      disabled={bulkSaving || selectedIds.size === 0 || !hasChanges}
+                    >
+                      {bulkSaving ? 'Applying…' : 'Apply'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Task table */}
-            <div className="templates-table-wrap">
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={taskRows.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                  <table className="templates-table">
-                    <thead>
-                      <tr>
-                        <th className={bulkMode ? 'tt-check-cell' : 'tt-drag-cell'}></th>
-                        <th className="tt-order-cell">#</th>
-                        <th>Task Name</th>
-                        <th className="tt-type-cell">Type</th>
-                        <th className="tt-timing-cell">Timing</th>
-                        <th className="tt-applies-cell">Applies To</th>
-                        <th className="tt-assign-cell">Auto-Assign To</th>
-                        {!bulkMode && <th className="tt-actions-cell">Actions</th>}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {taskRows.map(task => (
-                        <SortableRow
-                          key={task.id}
-                          task={task}
-                          onEdit={t => setEditingTask({ ...t })}
-                          onDelete={handleDeleteTask}
-                          bulkMode={bulkMode}
-                          isSelected={selectedIds.has(task.id)}
-                          onToggle={toggleId}
-                        />
-                      ))}
-                      {taskRows.length === 0 && (
+              {/* Task table */}
+              <div className="templates-table-wrap">
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={taskRows.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                    <table className="templates-table">
+                      <thead>
                         <tr>
-                          <td colSpan={bulkMode ? 7 : 8} className="tt-empty-row">
-                            No tasks yet — click + Add Task to get started
-                          </td>
+                          <th className={bulkMode ? 'tt-check-cell' : 'tt-drag-cell'}></th>
+                          <th className="tt-order-cell">#</th>
+                          <th>Task Name</th>
+                          <th className="tt-type-cell">Type</th>
+                          <th className="tt-timing-cell">Timing</th>
+                          <th className="tt-applies-cell">Applies To</th>
+                          <th className="tt-assign-cell">Auto-Assign To</th>
+                          {!bulkMode && <th className="tt-actions-cell">Actions</th>}
                         </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </SortableContext>
-              </DndContext>
-            </div>
-          </>
+                      </thead>
+                      <tbody>
+                        {taskRows.map(task => (
+                          <SortableRow
+                            key={task.id}
+                            task={task}
+                            onEdit={t => setEditingTask({ ...t })}
+                            onDelete={handleDeleteTask}
+                            bulkMode={bulkMode}
+                            isSelected={selectedIds.has(task.id)}
+                            onToggle={toggleId}
+                          />
+                        ))}
+                        {taskRows.length === 0 && (
+                          <tr>
+                            <td colSpan={bulkMode ? 7 : 8} className="tt-empty-row">
+                              No tasks yet — click + Add Task to get started
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </SortableContext>
+                </DndContext>
+              </div>
+            </>
+          )
         )}
       </div>
 
-      {/* ── EDIT MODAL ───────────────────────────────────────────────── */}
+      {/* ── TASK EDIT MODAL ───────────────────────────────────────────── */}
       {editingTask && (
         <div
           className="tt-modal-overlay"
@@ -551,7 +881,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
               <h3>{editingTask.id ? 'Edit Task' : 'New Task'}</h3>
               <button className="tt-modal-close" onClick={() => setEditingTask(null)}>✕</button>
             </div>
-
             <div className="tt-modal-body">
               <label className="tt-modal-label">Task Name</label>
               <input
@@ -561,7 +890,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
                 placeholder="Task name"
                 autoFocus
               />
-
               <label className="tt-modal-label">Task Type</label>
               <select
                 className="tt-modal-select"
@@ -570,7 +898,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
               >
                 {TASK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
-
               <label className="tt-modal-label">Timing</label>
               <div className="tt-timing-row">
                 {timingOption?.hasDays && (
@@ -592,7 +919,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
                   ))}
                 </select>
               </div>
-
               <label className="tt-modal-label">Applies To</label>
               <select
                 className="tt-modal-select"
@@ -601,7 +927,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
               >
                 {APPLIES_TO.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
-
               <label className="tt-modal-label">Auto-Assign To</label>
               <select
                 className="tt-modal-select"
@@ -611,7 +936,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
                 {TC_ASSIGNEES.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
             </div>
-
             <div className="tt-modal-actions">
               <button className="tt-modal-cancel" onClick={() => setEditingTask(null)}>Cancel</button>
               <button

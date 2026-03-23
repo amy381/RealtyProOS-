@@ -238,11 +238,10 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
         .sort((a, b) => a.sort_order - b.sort_order)
     : []
 
-  // ── Load email templates when switching to email section
+  // ── Load email templates on mount so they're always visible in the sidebar
   useEffect(() => {
-    if (sideSection !== 'email') return
     loadEmailTemplates()
-  }, [sideSection])
+  }, [])
 
   const loadEmailTemplates = async () => {
     setEmailsLoading(true)
@@ -264,6 +263,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
 
   // ── Reset task bulk state on template switch
   const selectTemplate = (id) => {
+    setSideSection('tasks')
     setSelectedTemplateId(id)
     setEditingTask(null)
     setBulkMode(false)
@@ -447,10 +447,12 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   // ══════════════════════════════════════════════════════════════
 
   const selectEmail = (et) => {
+    setSideSection('email')
     setEditingEmail({ ...et })
   }
 
   const newEmail = () => {
+    setSideSection('email')
     setEditingEmail({ ...EMPTY_EMAIL })
   }
 
@@ -590,72 +592,62 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────── */}
       <aside className="templates-sidebar">
 
-        {/* Task Templates section */}
+        {/* Task Templates section — always visible */}
         <div
           className={`templates-sidebar-hdr${sideSection === 'tasks' ? ' active' : ''}`}
           onClick={() => switchSection('tasks')}
         >
           Task Templates
         </div>
-
-        {sideSection === 'tasks' && (
-          <>
-            <div className="templates-list">
-              {templates.map(t => (
-                <div
-                  key={t.id}
-                  className={`templates-list-item${selectedTemplateId === t.id ? ' active' : ''}`}
-                  onClick={() => selectTemplate(t.id)}
-                >
-                  <span className="templates-list-name">{t.name}</span>
-                  <button
-                    className="templates-list-del"
-                    onClick={e => { e.stopPropagation(); handleDeleteTemplate(t.id) }}
-                    title="Delete template"
-                  >✕</button>
-                </div>
-              ))}
+        <div className="templates-list">
+          {templates.map(t => (
+            <div
+              key={t.id}
+              className={`templates-list-item${selectedTemplateId === t.id ? ' active' : ''}`}
+              onClick={() => selectTemplate(t.id)}
+            >
+              <span className="templates-list-name">{t.name}</span>
+              <button
+                className="templates-list-del"
+                onClick={e => { e.stopPropagation(); handleDeleteTemplate(t.id) }}
+                title="Delete template"
+              >✕</button>
             </div>
-            <button className="templates-create-btn" onClick={handleCreateTemplate}>
-              + Create New Template
-            </button>
-          </>
-        )}
+          ))}
+        </div>
+        <button className="templates-create-btn" onClick={handleCreateTemplate}>
+          + Create New Template
+        </button>
 
-        {/* Email Templates section */}
+        {/* Email Templates section — always visible */}
         <div
           className={`templates-sidebar-hdr${sideSection === 'email' ? ' active' : ''}`}
           onClick={() => switchSection('email')}
         >
           Email Templates
         </div>
-
-        {sideSection === 'email' && (
-          <>
-            {emailsLoading ? (
-              <div className="templates-coming-soon">Loading…</div>
-            ) : (
-              <div className="templates-list">
-                {emailTemplates.map(et => (
-                  <div
-                    key={et.id}
-                    className={`templates-list-item${editingEmail?.id === et.id ? ' active' : ''}`}
-                    onClick={() => selectEmail(et)}
-                  >
-                    <span className="templates-list-name">{et.name || '(Untitled)'}</span>
-                    <span className="et-list-badge">{et.applies_to}</span>
-                  </div>
-                ))}
-                {emailTemplates.length === 0 && (
-                  <div className="templates-coming-soon">No email templates yet</div>
-                )}
+        {emailsLoading ? (
+          <div className="templates-coming-soon">Loading…</div>
+        ) : (
+          <div className="templates-list">
+            {emailTemplates.map(et => (
+              <div
+                key={et.id}
+                className={`templates-list-item${editingEmail?.id === et.id ? ' active' : ''}`}
+                onClick={() => selectEmail(et)}
+              >
+                <span className="templates-list-name">{et.name || '(Untitled)'}</span>
+                <span className="et-list-badge">{et.applies_to}</span>
               </div>
+            ))}
+            {emailTemplates.length === 0 && (
+              <div className="templates-coming-soon">No email templates yet</div>
             )}
-            <button className="templates-create-btn" onClick={newEmail}>
-              + New Template
-            </button>
-          </>
+          </div>
         )}
+        <button className="templates-create-btn" onClick={newEmail}>
+          + New Email Template
+        </button>
 
       </aside>
 

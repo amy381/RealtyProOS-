@@ -73,7 +73,17 @@ const EMAIL_APPLIES_TO = ['Buyer', 'Seller', 'Both']
 
 const EMAIL_VARIABLES = [
   {
-    group: 'Client',
+    group: 'Client — Smart',
+    vars:  [
+      'client_greeting',
+      'client_full_name',
+      'client_full_names',
+      'client_last_name',
+      'client2_full_name',
+    ],
+  },
+  {
+    group: 'Client — Fields',
     vars:  [
       'client_first_name', 'client_last_name', 'client_phone', 'client_email',
       'client2_first_name', 'client2_last_name', 'client2_phone', 'client2_email',

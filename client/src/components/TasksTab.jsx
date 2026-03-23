@@ -111,39 +111,68 @@ function loadSavedViews() {
 }
 
 // ─── Variable resolver ────────────────────────────────────────────────────────
-function resolveVars(text, tx, tcSettings = []) {
+export function resolveVars(text, tx, tcSettings = []) {
   if (!text) return ''
-  if (!tx)   return text
+  if (!tx)   return text.replace(/\{\{(\w+)\}\}/g, '')  // no transaction → all blanks
+
   const tc = tcSettings.find(t => t.name === tx.assigned_tc)
   const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''
+
+  // Raw fields
+  const f1 = (tx.client_first_name  || '').trim()
+  const l1 = (tx.client_last_name   || '').trim()
+  const f2 = (tx.client2_first_name || '').trim()
+  const l2 = (tx.client2_last_name  || '').trim()
+
+  // Smart combo variables
+  const client_greeting   = f2 ? `${f1} and ${f2}` : f1
+  const client_full_name  = [f1, l1].filter(Boolean).join(' ')
+  const client2_full_name = f2 ? [f2, l2].filter(Boolean).join(' ') : ''
+  const client_full_names = client2_full_name
+    ? `${client_full_name} and ${client2_full_name}`
+    : client_full_name
+
   const map = {
-    client_first_name:    tx.client_first_name      || '',
-    client_last_name:     tx.client_last_name       || '',
-    client_phone:         tx.client_phone           || '',
-    client_email:         tx.client_email           || '',
-    client2_first_name:   tx.client2_first_name     || '',
-    client2_last_name:    tx.client2_last_name      || '',
-    client2_phone:        tx.client2_phone          || '',
-    client2_email:        tx.client2_email          || '',
-    property_address:     tx.property_address       || '',
-    city:                 tx.city                   || '',
-    zip:                  tx.zip                    || '',
-    list_price:           tx.price ? `$${Number(tx.price).toLocaleString()}` : '',
-    purchase_price:       tx.price ? `$${Number(tx.price).toLocaleString()}` : '',
-    listing_contract:     fmt(tx.listing_contract),
-    listing_expiration:   fmt(tx.listing_expiration_date),
-    target_live:          fmt(tx.target_live_date),
-    contract_acceptance:  fmt(tx.contract_acceptance_date),
+    // Smart combos
+    client_greeting,
+    client_full_name,
+    client_full_names,
+    client2_full_name,
+    // Individual client fields
+    client_first_name:     f1,
+    client_last_name:      l1,
+    client_phone:          tx.client_phone           || '',
+    client_email:          tx.client_email           || '',
+    client2_first_name:    f2,
+    client2_last_name:     l2,
+    client2_phone:         tx.client2_phone          || '',
+    client2_email:         tx.client2_email          || '',
+    // Property
+    property_address:      tx.property_address       || '',
+    city:                  tx.city                   || '',
+    zip:                   tx.zip                    || '',
+    // Price
+    list_price:            tx.price ? `$${Number(tx.price).toLocaleString()}` : '',
+    purchase_price:        tx.price ? `$${Number(tx.price).toLocaleString()}` : '',
+    // Listing dates
+    listing_contract:      fmt(tx.listing_contract),
+    listing_expiration:    fmt(tx.listing_expiration_date),
+    target_live:           fmt(tx.target_live_date),
+    // Contract dates
+    contract_acceptance:   fmt(tx.contract_acceptance_date),
     inspection_period_end: fmt(tx.ipe_date),
-    close_of_escrow:      fmt(tx.close_of_escrow),
-    lender_name:          tx.lender_name            || '',
-    title_company:        tx.title_company          || '',
-    escrow_officer:       tx.escrow_officer         || '',
-    tc_name:              tx.assigned_tc            || '',
-    tc_email:             tc?.email                 || '',
-    agent_name:           tx.agent_name             || '',
+    close_of_escrow:       fmt(tx.close_of_escrow),
+    // Parties
+    lender_name:           tx.lender_name            || '',
+    title_company:         tx.title_company          || '',
+    escrow_officer:        tx.escrow_officer         || '',
+    tc_name:               tx.assigned_tc            || '',
+    tc_email:              tc?.email                 || '',
+    agent_name:            tx.agent_name             || '',
   }
-  return text.replace(/\{\{(\w+)\}\}/g, (_, k) => map[k] !== undefined ? map[k] : `{{${k}}}`)
+
+  // Any unrecognised key resolves to '' — never shows raw {{variable}} text
+  return text.replace(/\{\{(\w+)\}\}/g, (_, k) => map[k] ?? '')
 }
 
 function fmtTs(ts) {

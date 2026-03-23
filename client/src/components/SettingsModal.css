@@ -132,6 +132,54 @@
   color: #1a1a1a;
 }
 
+/* ── Daily digest toggle ────────────────────────────────────────── */
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.settings-toggle input {
+  display: none;
+}
+
+.settings-toggle-track {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: #d0d0d0;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.settings-toggle input:checked + .settings-toggle-track {
+  background: #000000;
+}
+
+.settings-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.settings-toggle input:checked + .settings-toggle-track .settings-toggle-thumb {
+  transform: translateX(16px);
+}
+
+.settings-toggle-label {
+  font-size: 14px;
+  color: #666666;
+}
+
 .settings-actions {
   display: flex;
   align-items: center;

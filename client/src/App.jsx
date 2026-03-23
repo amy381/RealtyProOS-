@@ -59,6 +59,7 @@ export default function App() {
   const [commissions, setCommissions]           = useState({})
   const [tasks, setTasks]                       = useState([])
   const [tcSettings, setTcSettings]             = useState([])
+  const [userSettings, setUserSettings]         = useState({}) // keyed by email
   const [dbTemplates,      setDbTemplates]      = useState([])
   const [dbTemplateTasks,  setDbTemplateTasks]  = useState([])
   const [taskComments,     setTaskComments]     = useState([])
@@ -198,6 +199,16 @@ export default function App() {
         } else {
           setTcSettings(tcs)
         }
+      }
+
+      // Load digest preferences (keyed by email)
+      const { data: usData } = await supabase
+        .from('user_settings')
+        .select('email, daily_digest_enabled')
+      if (usData) {
+        const map = {}
+        for (const row of usData) map[row.email] = row
+        setUserSettings(map)
       }
 
       setLoading(false)
@@ -595,12 +606,25 @@ export default function App() {
   }, [])
 
   // ── TC Settings save ────────────────────────────────────────────────────────
-  const handleSaveTcSettings = useCallback(async (updated) => {
+  const handleSaveTcSettings = useCallback(async (updated, digestPrefs) => {
     setTcSettings(updated)
     for (const tc of updated) {
       await supabase.from('tc_settings')
         .upsert({ name: tc.name, email: tc.email }, { onConflict: 'name' })
     }
+
+    // Save digest preferences
+    if (digestPrefs) {
+      const newMap = {}
+      for (const pref of digestPrefs) {
+        if (!pref.email) continue
+        await supabase.from('user_settings')
+          .upsert({ email: pref.email, daily_digest_enabled: pref.daily_digest_enabled }, { onConflict: 'email' })
+        newMap[pref.email] = pref
+      }
+      setUserSettings(prev => ({ ...prev, ...newMap }))
+    }
+
     toast.success('Settings saved!')
   }, [])
 
@@ -798,6 +822,7 @@ export default function App() {
       {settingsOpen && (
         <SettingsModal
           tcSettings={tcSettings}
+          userSettings={userSettings}
           onSave={handleSaveTcSettings}
           onClose={() => setSettingsOpen(false)}
         />

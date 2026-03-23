@@ -58,6 +58,7 @@ const EMPTY_EMAIL = {
   name:       '',
   subject:    '',
   body:       '',
+  cc:         '',
   trigger:    'manual',
   applies_to: 'Both',
 }
@@ -72,7 +73,10 @@ const EMAIL_APPLIES_TO = ['Buyer', 'Seller', 'Both']
 const EMAIL_VARIABLES = [
   {
     group: 'Client',
-    vars:  ['client_first_name', 'client_last_name', 'client2_first_name', 'client2_last_name'],
+    vars:  [
+      'client_first_name', 'client_last_name', 'client_phone', 'client_email',
+      'client2_first_name', 'client2_last_name', 'client2_phone', 'client2_email',
+    ],
   },
   {
     group: 'Property',
@@ -92,11 +96,7 @@ const EMAIL_VARIABLES = [
   },
   {
     group: 'Parties',
-    vars:  ['lender_name', 'title_company', 'escrow_officer', 'tc_name', 'agent_name'],
-  },
-  {
-    group: 'BBA',
-    vars:  ['bba_contract', 'bba_expiration'],
+    vars:  ['lender_name', 'title_company', 'escrow_officer', 'tc_name', 'tc_email', 'agent_name'],
   },
 ]
 
@@ -153,7 +153,7 @@ function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle })
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function TemplatesTab({ templates, allTemplateTasks, onRefresh }) {
+export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, tcSettings = [] }) {
   // ── Sidebar section
   const [sideSection,        setSideSection]        = useState('tasks')
 
@@ -179,9 +179,10 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
   const [emailsLoading,   setEmailsLoading]   = useState(false)
   const [editingEmail,    setEditingEmail]    = useState(null)  // null = nothing selected
   const [emailSaving,     setEmailSaving]     = useState(false)
-  const [lastFocused,     setLastFocused]     = useState('body') // 'subject' | 'body'
+  const [lastFocused,     setLastFocused]     = useState('body') // 'subject' | 'cc' | 'body'
 
   const subjectRef = useRef(null)
+  const ccRef      = useRef(null)
   const bodyRef    = useRef(null)
 
   const sensors = useSensors(useSensor(PointerSensor))
@@ -424,6 +425,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
             name:       editingEmail.name.trim(),
             subject:    editingEmail.subject,
             body:       editingEmail.body,
+            cc:         editingEmail.cc || '',
             trigger:    editingEmail.trigger,
             applies_to: editingEmail.applies_to,
           })
@@ -472,21 +474,18 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
     setEditingEmail(e => ({ ...e, [key]: val }))
   }
 
-  // Insert variable at cursor in the currently focused field (subject or body)
+  // Insert variable at cursor in the last-focused field (subject, cc, or body)
   const insertVariable = (varName) => {
     const token = `{{${varName}}}`
-    const isSubject = lastFocused === 'subject'
-    const ref = isSubject ? subjectRef : bodyRef
-    const field = isSubject ? 'subject' : 'body'
+    const refMap   = { subject: subjectRef, cc: ccRef, body: bodyRef }
+    const ref   = refMap[lastFocused] ?? bodyRef
+    const field = lastFocused === 'subject' ? 'subject' : lastFocused === 'cc' ? 'cc' : 'body'
     const el = ref.current
     if (!el) return
-    const start = el.selectionStart ?? el.value.length
-    const end   = el.selectionEnd   ?? el.value.length
-    const before = el.value.substring(0, start)
-    const after  = el.value.substring(end)
-    const newVal = before + token + after
+    const start  = el.selectionStart ?? el.value.length
+    const end    = el.selectionEnd   ?? el.value.length
+    const newVal = el.value.substring(0, start) + token + el.value.substring(end)
     setEmailField(field, newVal)
-    // Restore cursor after state update
     setTimeout(() => {
       el.focus()
       el.setSelectionRange(start + token.length, start + token.length)
@@ -655,6 +654,20 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh })
                       onFocus={() => setLastFocused('subject')}
                     />
                     <span className="et-hint">Supports variables — click any variable on the right to insert</span>
+                  </div>
+
+                  <div className="et-field">
+                    <label className="et-label">CC</label>
+                    <input
+                      ref={ccRef}
+                      className="et-input"
+                      type="text"
+                      placeholder="e.g. {{tc_email}}, coordinator@example.com"
+                      value={editingEmail.cc}
+                      onChange={e => setEmailField('cc', e.target.value)}
+                      onFocus={() => setLastFocused('cc')}
+                    />
+                    <span className="et-hint">Comma-separated emails. Supports variables like <code>{'{{tc_email}}'}</code></span>
                   </div>
 
                   <div className="et-field">

@@ -729,6 +729,7 @@ export default function App() {
             templates={dbTemplates}
             allTemplateTasks={dbTemplateTasks}
             onRefresh={handleTemplatesRefresh}
+            tcSettings={tcSettings}
           />
         )}
       </main>

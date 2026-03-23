@@ -591,6 +591,16 @@
 
 /* ── EMAIL TEMPLATE EDITOR ────────────────────────────────────────────── */
 
+/* Inline code in hints */
+.et-hint code {
+  font-family: 'Courier New', monospace;
+  font-size: 0.72rem;
+  background: #f0f0f0;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: #444;
+}
+
 /* Applies-to badge in sidebar list */
 .et-list-badge {
   font-size: 0.65rem;

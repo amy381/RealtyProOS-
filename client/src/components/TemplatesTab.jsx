@@ -201,6 +201,9 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   // never on every keystroke, which is what caused the cursor-jump bug.
   useEffect(() => {
     if (!bodyRef.current) return
+    // Use <br> for line breaks instead of <div> wrappers — prevents cursor
+    // jumping across block-element boundaries on delete.
+    document.execCommand('defaultParagraphSeparator', false, 'br')
     const key = editingEmail?.id ?? 'new'
     if (key !== lastSyncedIdRef.current) {
       lastSyncedIdRef.current = key
@@ -546,6 +549,20 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     document.execCommand(cmd, false, value)
   }
 
+  // Intercept Backspace/Delete and route through execCommand so the browser
+  // properly maintains the selection through DOM mutations (fixes cursor-jump bug).
+  // Let modifier combos (Cmd/Ctrl/Alt+Delete) pass through natively.
+  const handleBodyKeyDown = (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return
+    if (e.key === 'Backspace') {
+      e.preventDefault()
+      document.execCommand('delete', false, null)
+    } else if (e.key === 'Delete') {
+      e.preventDefault()
+      document.execCommand('forwardDelete', false, null)
+    }
+  }
+
   const insertLink = () => {
     const url = window.prompt('Enter URL:', 'https://')
     if (!url?.trim()) return
@@ -773,12 +790,15 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                       {/* contentEditable body — fully uncontrolled.
                           React never writes innerHTML here during typing.
                           Content is synced in only on template switch (useEffect above).
-                          Body is read from DOM at save time via bodyRef.current.innerHTML. */}
+                          Body is read from DOM at save time via bodyRef.current.innerHTML.
+                          onKeyDown routes Backspace/Delete through execCommand to prevent
+                          the browser from losing the cursor position after DOM mutations. */}
                       <div
                         ref={bodyRef}
                         className="et-richbody"
                         contentEditable
                         suppressContentEditableWarning
+                        onKeyDown={handleBodyKeyDown}
                         onFocus={() => setLastFocused('body')}
                       />
                     </div>

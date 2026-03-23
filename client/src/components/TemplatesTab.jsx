@@ -36,7 +36,7 @@ const TIMING_OPTIONS = [
   { value: 'specific_date',               label: 'Specific date (manual)',                         hasDays: false },
 ]
 
-const TASK_TYPES = ['Task', 'Email', 'Notification']
+const TASK_TYPES = ['Task', 'Email', 'Notification', 'Due Date']
 const APPLIES_TO = ['Buyer', 'Seller', 'Both']
 
 function formatTiming(timingType, timingDays) {
@@ -166,7 +166,7 @@ function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle })
       <td className="tt-order-cell">{task.sort_order + 1}</td>
       <td className="tt-title-cell">{task.title}</td>
       <td className="tt-type-cell">
-        <span className={`tt-type-badge tt-type--${task.task_type.toLowerCase()}`}>
+        <span className={`tt-type-badge tt-type--${task.task_type.toLowerCase().replace(/\s+/g, '-')}`}>
           {task.task_type}
         </span>
       </td>
@@ -1107,14 +1107,16 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
               >
                 {APPLIES_TO.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
-              <label className="tt-modal-label">Auto-Assign To</label>
-              <select
-                className="tt-modal-select"
-                value={editingTask.auto_assign_to}
-                onChange={e => setEditingTask(p => ({ ...p, auto_assign_to: e.target.value }))}
-              >
-                {TC_ASSIGNEES.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
+              {editingTask.task_type !== 'Due Date' && (<>
+                <label className="tt-modal-label">Auto-Assign To</label>
+                <select
+                  className="tt-modal-select"
+                  value={editingTask.auto_assign_to}
+                  onChange={e => setEditingTask(p => ({ ...p, auto_assign_to: e.target.value }))}
+                >
+                  {TC_ASSIGNEES.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </>)}
             </div>
             <div className="tt-modal-actions">
               <button className="tt-modal-cancel" onClick={() => setEditingTask(null)}>Cancel</button>

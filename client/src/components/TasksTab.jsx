@@ -1209,6 +1209,7 @@ export default function TasksTab({
             {filtered.map(task => {
               const tx           = txMap[task.transaction_id]
               const done         = task.status === 'complete'
+              const isDueDate    = task.task_type === 'Due Date'
               const sel          = selectedIds.has(task.id)
               const ddl          = dueDateLabel(task.due_date, done, task.completed_at)
               const commentCount = taskComments.filter(c => c.task_id === task.id).length
@@ -1218,8 +1219,9 @@ export default function TasksTab({
                   key={task.id}
                   className={[
                     'gtd-row',
-                    done ? 'gtd-row-done' : '',
-                    sel  ? 'gtd-row-selected' : '',
+                    done      ? 'gtd-row-done'     : '',
+                    isDueDate ? 'gtd-row-due-date'  : '',
+                    sel       ? 'gtd-row-selected'  : '',
                   ].filter(Boolean).join(' ')}
                   onClick={() => !bulkMode && tx && onCardClick(tx)}
                   title={bulkMode ? undefined : 'Click to open transaction'}
@@ -1233,6 +1235,8 @@ export default function TasksTab({
                         onChange={() => toggleId(task.id)}
                         onClick={e => e.stopPropagation()}
                       />
+                    ) : isDueDate ? (
+                      <span className="gtd-cal-icon" title="Key date">📅</span>
                     ) : (
                       <button
                         className={`gtd-check${done ? ' gtd-checked' : ''}`}
@@ -1249,12 +1253,15 @@ export default function TasksTab({
                       ? <span className={`gtd-stage-badge gtd-stage--${tx.status}`}>{stageLabel(tx.status)}</span>
                       : '—'}
                   </td>
-                  <td className="gtd-assignee">{task.assigned_to}</td>
+                  <td className="gtd-assignee">{isDueDate ? '—' : task.assigned_to}</td>
                   <td className={`gtd-due gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</td>
                   <td>
-                    <span className={`gtd-status-badge${done ? ' gtd-status-done' : ' gtd-status-open'}`}>
-                      {done ? 'Done' : 'Open'}
-                    </span>
+                    {isDueDate
+                      ? <span className="gtd-status-badge gtd-status-key-date">Key Date</span>
+                      : <span className={`gtd-status-badge${done ? ' gtd-status-done' : ' gtd-status-open'}`}>
+                          {done ? 'Done' : 'Open'}
+                        </span>
+                    }
                   </td>
                   <td className="gtd-cmt-td" onClick={e => e.stopPropagation()}>
                     <button

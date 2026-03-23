@@ -572,8 +572,12 @@
   padding: 2px 8px;
   border-radius: 99px;
 }
-.gtd-status-open { background: #e8e8e8; color: #1a1a1a; }
-.gtd-status-done { background: #f0f0f0; color: #666666; }
+.gtd-status-open     { background: #e8e8e8; color: #1a1a1a; }
+.gtd-status-done     { background: #f0f0f0; color: #666666; }
+.gtd-status-key-date { background: #ede9fe; color: #6d28d9; }
+
+.gtd-row-due-date { border-left: 3px solid #c4b5fd; }
+.gtd-cal-icon     { font-size: 15px; display: flex; align-items: center; justify-content: center; }
 
 /* ── Bulk edit ─────────────────────────────────────────────────────────── */
 .gtd-bulk-toggle {

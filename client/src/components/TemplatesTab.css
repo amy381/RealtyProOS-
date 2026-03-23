@@ -426,6 +426,7 @@
 .tt-type--task         { background: #e8f0fe; color: #1a56db; }
 .tt-type--email        { background: #fff8e7; color: #b45309; }
 .tt-type--notification { background: #f0fdf4; color: #15803d; }
+.tt-type--due-date     { background: #f3f0ff; color: #6d28d9; }
 
 .tt-row-btn {
   background: none;

@@ -51,12 +51,13 @@ function formatTiming(timingType, timingDays) {
 }
 
 const EMPTY_TASK = {
-  title:          '',
-  task_type:      'Task',
-  timing_type:    'stage_pending',
-  timing_days:    0,
-  applies_to:     'Both',
-  auto_assign_to: 'Me',
+  title:             '',
+  task_type:         'Task',
+  timing_type:       'stage_pending',
+  timing_days:       0,
+  applies_to:        'Both',
+  auto_assign_to:    'Me',
+  email_template_id: null,
 }
 
 // ─── Email template constants ─────────────────────────────────────────────────
@@ -1058,10 +1059,25 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
               <select
                 className="tt-modal-select"
                 value={editingTask.task_type}
-                onChange={e => setEditingTask(p => ({ ...p, task_type: e.target.value }))}
+                onChange={e => setEditingTask(p => ({ ...p, task_type: e.target.value, email_template_id: null }))}
               >
                 {TASK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
+              {editingTask.task_type === 'Email' && (
+                <>
+                  <label className="tt-modal-label">Email Template</label>
+                  <select
+                    className="tt-modal-select"
+                    value={editingTask.email_template_id || ''}
+                    onChange={e => setEditingTask(p => ({ ...p, email_template_id: e.target.value || null }))}
+                  >
+                    <option value="">— None —</option>
+                    {emailTemplates.map(et => (
+                      <option key={et.id} value={et.id}>{et.name}</option>
+                    ))}
+                  </select>
+                </>
+              )}
               <label className="tt-modal-label">Timing</label>
               <div className="tt-timing-row">
                 {timingOption?.hasDays && (

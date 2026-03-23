@@ -192,9 +192,21 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   const [emailSaving,     setEmailSaving]     = useState(false)
   const [lastFocused,     setLastFocused]     = useState('body') // 'subject' | 'cc' | 'body'
 
-  const subjectRef = useRef(null)
-  const ccRef      = useRef(null)
-  const bodyRef    = useRef(null)
+  const subjectRef       = useRef(null)
+  const ccRef            = useRef(null)
+  const bodyRef          = useRef(null)
+  const lastSyncedIdRef  = useRef(null)   // tracks which template's HTML is in the editor
+
+  // Sync body HTML into the contentEditable only when the template changes —
+  // never on every keystroke, which is what caused the cursor-jump bug.
+  useEffect(() => {
+    if (!bodyRef.current) return
+    const key = editingEmail?.id ?? 'new'
+    if (key !== lastSyncedIdRef.current) {
+      lastSyncedIdRef.current = key
+      bodyRef.current.innerHTML = editingEmail?.body ?? ''
+    }
+  }, [editingEmail?.id])
 
   const sensors = useSensors(useSensor(PointerSensor))
 
@@ -756,14 +768,13 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                         >🔗</button>
                       </div>
 
-                      {/* contentEditable body */}
+                      {/* contentEditable body — uncontrolled after mount;
+                          content is set imperatively via useEffect above */}
                       <div
-                        key={editingEmail.id || 'new'}
                         ref={bodyRef}
                         className="et-richbody"
                         contentEditable
                         suppressContentEditableWarning
-                        dangerouslySetInnerHTML={{ __html: editingEmail.body || '' }}
                         onInput={() => setEmailField('body', bodyRef.current?.innerHTML || '')}
                         onFocus={() => setLastFocused('body')}
                       />

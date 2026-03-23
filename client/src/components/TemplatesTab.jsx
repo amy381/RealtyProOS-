@@ -549,17 +549,37 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     document.execCommand(cmd, false, value)
   }
 
-  // Intercept Backspace/Delete and route through execCommand so the browser
-  // properly maintains the selection through DOM mutations (fixes cursor-jump bug).
-  // Let modifier combos (Cmd/Ctrl/Alt+Delete) pass through natively.
+  // Handle Backspace/Delete manually using the Selection API so we control
+  // exactly where the cursor lands after the DOM mutation.
+  // execCommand has the same cursor-tracking bug as native key handling,
+  // so we use sel.modify() + range.deleteContents() instead.
+  // Modifier combos (Cmd/Ctrl/Alt+key) are let through natively.
   const handleBodyKeyDown = (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return
-    if (e.key === 'Backspace') {
-      e.preventDefault()
-      document.execCommand('delete', false, null)
-    } else if (e.key === 'Delete') {
-      e.preventDefault()
-      document.execCommand('forwardDelete', false, null)
+    if (e.key !== 'Backspace' && e.key !== 'Delete') return
+
+    e.preventDefault()
+
+    const sel = window.getSelection()
+    if (!sel || sel.rangeCount === 0) return
+
+    if (!sel.isCollapsed) {
+      // There's a selection — delete it and leave cursor at the deletion point
+      const range = sel.getRangeAt(0)
+      range.deleteContents()
+      sel.removeAllRanges()
+      sel.addRange(range)
+      return
+    }
+
+    // No selection — extend by one character in the appropriate direction, then delete
+    sel.modify('extend', e.key === 'Backspace' ? 'backward' : 'forward', 'character')
+
+    if (!sel.isCollapsed) {
+      const range = sel.getRangeAt(0)
+      range.deleteContents()  // range auto-collapses to deletion point
+      sel.removeAllRanges()
+      sel.addRange(range)
     }
   }
 

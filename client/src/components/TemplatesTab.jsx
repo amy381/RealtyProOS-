@@ -249,7 +249,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     const { data } = await supabase
       .from('email_templates')
       .select('*')
-      .order('created_at', { ascending: true })
+      .order('name', { ascending: true })
     setEmailTemplates(data || [])
     setEmailsLoading(false)
   }

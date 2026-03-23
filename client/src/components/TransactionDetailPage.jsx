@@ -1544,9 +1544,15 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                 value={transaction.lender_name || ''}
                 category="lenders"
                 onSave={save('lender_name')}
+                onSelect={c => {
+                  if (c.email) save('lender_email')(c.email)
+                  if (c.phone) save('lender_phone')(c.phone)
+                }}
                 placeholder="Lender name"
                 tabIndex={32}
               />
+              <TxField label="Lender Email" value={transaction.lender_email || ''} type="text" onSave={save('lender_email')} placeholder="lender@company.com" tabIndex={32} />
+              <TxField label="Lender Phone" value={transaction.lender_phone || ''} type="text" onSave={save('lender_phone')} placeholder="(555) 000-0000"    tabIndex={32} />
               <CollaboratorSearch
                 label="Title Company"
                 value={transaction.title_company || ''}

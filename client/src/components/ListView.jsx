@@ -55,6 +55,17 @@ const DEFAULT_FILTERS = {
   maxPrice:       '',
 }
 
+function serializeFilters(f) {
+  return { ...f, stageChecks: [...f.stageChecks] }
+}
+function deserializeFilters(raw) {
+  return {
+    ...DEFAULT_FILTERS,
+    ...raw,
+    stageChecks: new Set(raw.stageChecks ?? [...DEFAULT_STAGE_CHECKS]),
+  }
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function calcGCI(tx, commission) {
   if (!commission) return 0
@@ -432,8 +443,18 @@ function ListRow({ tx, stageLabel, onCardClick, onOpenSection }) {
 
 // ─── Main ListView ────────────────────────────────────────────────────────────
 export default function ListView({ transactions, commissions, columns, onCardClick, onOpenSection }) {
-  const [filters,      setFilters]      = useState(DEFAULT_FILTERS)
-  const [draft,        setDraft]        = useState(DEFAULT_FILTERS)
+  const [filters,      setFilters]      = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem('listViewFilters') || 'null')
+      return raw ? deserializeFilters(raw) : DEFAULT_FILTERS
+    } catch { return DEFAULT_FILTERS }
+  })
+  const [draft,        setDraft]        = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem('listViewFilters') || 'null')
+      return raw ? deserializeFilters(raw) : DEFAULT_FILTERS
+    } catch { return DEFAULT_FILTERS }
+  })
   const [panelOpen,    setPanelOpen]    = useState(false)
   const [sortCol,      setSortCol]      = useState('status')
   const [sortDir,      setSortDir]      = useState('asc')
@@ -459,6 +480,7 @@ export default function ListView({ transactions, commissions, columns, onCardCli
     setFilters(draft)
     setActiveViewId(null)
     setPanelOpen(false)
+    localStorage.setItem('listViewFilters', JSON.stringify(serializeFilters(draft)))
   }
 
   const clearAll = () => {
@@ -466,6 +488,7 @@ export default function ListView({ transactions, commissions, columns, onCardCli
     setFilters(DEFAULT_FILTERS)
     setActiveViewId(null)
     setPanelOpen(false)
+    localStorage.removeItem('listViewFilters')
   }
 
   const applyView = (view) => {

@@ -748,8 +748,18 @@ export default function TasksTab({
   }, [])
 
   // Filter state
-  const [filters,      setFilters]      = useState(DEFAULT_FILTERS)
-  const [draft,        setDraft]        = useState(DEFAULT_FILTERS)
+  const [filters,      setFilters]      = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem('taskFilters') || 'null')
+      return raw ? deserializeFilters(raw) : DEFAULT_FILTERS
+    } catch { return DEFAULT_FILTERS }
+  })
+  const [draft,        setDraft]        = useState(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem('taskFilters') || 'null')
+      return raw ? deserializeFilters(raw) : DEFAULT_FILTERS
+    } catch { return DEFAULT_FILTERS }
+  })
   const [panelOpen,    setPanelOpen]    = useState(false)
   const [savedViews,   setSavedViews]   = useState(loadSavedViews)
   const [activeViewId, setActiveViewId] = useState(null)
@@ -917,6 +927,7 @@ export default function TasksTab({
     setFilters(draft)
     setActiveViewId(null)
     setPanelOpen(false)
+    localStorage.setItem('taskFilters', JSON.stringify(serializeFilters(draft)))
   }
 
   const clearAll = () => {
@@ -924,6 +935,7 @@ export default function TasksTab({
     setFilters(DEFAULT_FILTERS)
     setActiveViewId(null)
     setPanelOpen(false)
+    localStorage.removeItem('taskFilters')
   }
 
   const saveView = () => {

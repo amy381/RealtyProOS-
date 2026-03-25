@@ -2379,14 +2379,20 @@ function fmtShowingDate(d) {
 const EMPTY_SHOWING = { agent_name: '', agent_email: '', showing_date: '', feedback: '' }
 
 function ShowingsSection({ transaction }) {
-  const [showings,   setShowings]   = useState([])
-  const [loading,    setLoading]    = useState(true)
-  const [formOpen,   setFormOpen]   = useState(false)
-  const [editing,    setEditing]    = useState(null)
-  const [saving,     setSaving]     = useState(false)
-  const [emailingId, setEmailingId] = useState(null)
+  const [showings,        setShowings]        = useState([])
+  const [loading,         setLoading]         = useState(true)
+  const [formOpen,        setFormOpen]        = useState(false)
+  const [editing,         setEditing]         = useState(null)
+  const [saving,          setSaving]          = useState(false)
+  const [emailingId,      setEmailingId]      = useState(null)
+  const [emailTemplates,  setEmailTemplates]  = useState([])
 
   useEffect(() => { loadShowings() }, [transaction.id])
+
+  useEffect(() => {
+    supabase.from('email_templates').select('*')
+      .then(({ data }) => setEmailTemplates(data || []))
+  }, [])
 
   const loadShowings = async () => {
     setLoading(true)
@@ -2479,14 +2485,24 @@ function ShowingsSection({ transaction }) {
   const handleRequestFeedback = (s) => {
     const toEmail = s.agent_email
     if (!toEmail) { toast.error('No agent email for this showing'); return }
-    const addr = transaction.property_address || 'our listing'
-    sendEmail({
-      toEmail,
-      toName:     s.agent_name || 'Agent',
-      subject:    `Feedback Request — ${addr}`,
-      body:       `Hi ${s.agent_name || 'there'},\n\nThank you for showing ${addr} on ${fmtShowingDate(s.showing_date)}. We'd love to hear your client's feedback about the property.\n\nPlease reply with any thoughts — it's greatly appreciated!\n\nThank you,\nLegacy Real Estate`,
-      emailingKey: `${s.id}_agent`,
-    })
+    const addr       = transaction.property_address || 'our listing'
+    const agentName  = s.agent_name || 'Agent'
+    const showingDate = fmtShowingDate(s.showing_date)
+
+    const template = emailTemplates.find(t => t.name === 'Showing Feedback')
+    const resolve  = (text) => (text || '')
+      .replace(/\{\{agent_name\}\}/g,       agentName)
+      .replace(/\{\{property_address\}\}/g, addr)
+      .replace(/\{\{showing_date\}\}/g,     showingDate)
+
+    const subject = template?.subject
+      ? resolve(template.subject)
+      : `Feedback Request — ${addr}`
+    const body = template
+      ? resolve(template.body)
+      : `Hi ${agentName},\n\nThank you for showing ${addr} on ${showingDate}. We'd love to hear your client's feedback about the property.\n\nPlease reply with any thoughts — it's greatly appreciated!\n\nThank you,\nLegacy Real Estate`
+
+    sendEmail({ toEmail, toName: agentName, subject, body, emailingKey: `${s.id}_agent` })
   }
 
   return (
@@ -2609,6 +2625,8 @@ function ShowingsSection({ transaction }) {
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function TransactionDetailPage({
   transaction,
+  transactions = [],
+  onNavigate,
   columns,
   commissions,
   tasks,
@@ -2633,6 +2651,10 @@ export default function TransactionDetailPage({
   const [activeSection, setActiveSection]   = useState(initialSection)
   const [sessionHistory, setSessionHistory] = useState([])
   const [sendOpen, setSendOpen]             = useState(false)
+
+  const currentIdx = transactions.findIndex(t => t.id === transaction.id)
+  const prevTx = currentIdx > 0 ? transactions[currentIdx - 1] : null
+  const nextTx = currentIdx < transactions.length - 1 ? transactions[currentIdx + 1] : null
 
   useKeyboardShortcuts({ Escape: onBack })
 
@@ -2743,7 +2765,26 @@ export default function TransactionDetailPage({
     <div className="txp-page">
       {/* Top Bar */}
       <div className="txp-topbar">
-        <button className="txp-back-btn" onClick={onBack} title="Back to The Board (Esc)">←</button>
+        <div className="txp-topbar-left">
+          <button className="txp-back-btn" onClick={onBack} title="Back to The Board (Esc)">←</button>
+          <button className="txp-back-label-btn" onClick={onBack}>Back to Board</button>
+          {transactions.length > 1 && (
+            <div className="txp-nav-arrows">
+              <button
+                className="txp-nav-arrow"
+                disabled={!prevTx}
+                onClick={() => prevTx && onNavigate?.(prevTx)}
+                title={prevTx ? prevTx.property_address : 'No previous transaction'}
+              >‹</button>
+              <button
+                className="txp-nav-arrow"
+                disabled={!nextTx}
+                onClick={() => nextTx && onNavigate?.(nextTx)}
+                title={nextTx ? nextTx.property_address : 'No next transaction'}
+              >›</button>
+            </div>
+          )}
+        </div>
         <div className="txp-topbar-right">
           <div className="txp-send-wrap">
             <button className="txp-share-btn" onClick={() => setSendOpen(o => !o)}>Send</button>

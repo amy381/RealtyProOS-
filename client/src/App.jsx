@@ -777,6 +777,8 @@ export default function App() {
         <TransactionDetailPage
           key={txOpenRevision}
           transaction={selectedTransaction}
+          transactions={transactions}
+          onNavigate={(tx) => { setSelectedTransaction(tx); setTxOpenRevision(r => r + 1) }}
           initialSection={selectedSection}
           columns={COLUMNS}
           commissions={commissions}

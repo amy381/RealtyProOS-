@@ -587,14 +587,29 @@ export default function App() {
     clearTimeout(saveTimers.current[txId])
     saveTimers.current[txId] = setTimeout(async () => {
       const cm = commissionsRef.current[txId] || {}
-      const { error } = await supabase.from('commissions').upsert({
-        transaction_id:    txId,
-        commission_rate:   cm.commission_rate   ?? null,
-        ref_percent:       cm.ref_percent !== '' && cm.ref_percent != null ? Number(cm.ref_percent) : null,
-        tc_fee:            cm.tc_fee      !== '' && cm.tc_fee      != null ? Number(cm.tc_fee)      : null,
-        commission_status: cm.commission_status || 'Pending',
-      }, { onConflict: 'transaction_id' })
-      if (error) console.error('Commission save error:', error)
+      const n = v => (v !== '' && v != null ? Number(v) : null)
+      const payload = {
+        transaction_id:              txId,
+        commission_rate:             cm.commission_rate   ?? null,
+        ref_percent:                 n(cm.ref_percent),
+        tc_fee:                      n(cm.tc_fee),
+        commission_status:           cm.commission_status || 'Pending',
+        seller_concession_percent:   n(cm.seller_concession_percent),
+        seller_concession_flat:      n(cm.seller_concession_flat),
+        buyer_contribution_percent:  n(cm.buyer_contribution_percent),
+        buyer_contribution_flat:     n(cm.buyer_contribution_flat),
+        cap_deduction:               cm.cap_deduction     ?? null,
+        royalty_deduction:           cm.royalty_deduction ?? null,
+        tc_fee_commission:           n(cm.tc_fee_commission),
+        concessions:                 n(cm.concessions),
+        buyer_broker_addendum:       cm.buyer_broker_addendum ?? null,
+      }
+      console.log('[Commission] saving payload:', payload)
+      const { error } = await supabase.from('commissions').upsert(payload, { onConflict: 'transaction_id' })
+      if (error) {
+        console.error('Commission save error:', error)
+        toast.error(`Commission save failed: ${error.message}`)
+      }
     }, 600)
   }, [])
 

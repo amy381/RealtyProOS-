@@ -56,19 +56,15 @@ const DEFAULT_FILTERS = {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function parseContrib(val, price) {
-  if (!val) return 0
-  const s = String(val).trim()
-  if (s.startsWith('$')) return Number(s.replace(/[$,\s]/g, '')) || 0
-  return (Number(s.replace(/[%\s]/g, '')) || 0) / 100 * price
-}
-
 function calcGCI(tx, commission) {
   if (!commission) return 0
-  const price = Number(tx.price) || 0
-  const s = parseContrib(commission.seller_concession, price)
-  const b = commission.buyer_contribution ? parseContrib(commission.buyer_contribution, price) : 0
-  return s + b
+  const price  = Number(tx.price) || 0
+  const scFlat = commission.seller_concession_flat    != null ? Number(commission.seller_concession_flat)    : null
+  const scPct  = Number(commission.seller_concession_percent)  || 0
+  const bcFlat = commission.buyer_contribution_flat   != null ? Number(commission.buyer_contribution_flat)   : null
+  const bcPct  = Number(commission.buyer_contribution_percent) || 0
+  return (scFlat != null ? scFlat : scPct / 100 * price)
+       + (bcFlat != null ? bcFlat : bcPct / 100 * price)
 }
 
 function fmtMoney(n) {

@@ -4,9 +4,15 @@ import { CSS } from '@dnd-kit/utilities'
 import { COLUMN_FIELDS, BUYER_DATE_FIELDS, SELLER_DATE_FIELDS } from '../lib/columnFields'
 import './TransactionCard.css'
 
-function formatDate(dateStr) {
+function formatDate(dateStr, compact = false) {
   if (!dateStr) return '—'
   const d = new Date(dateStr + 'T00:00:00')
+  if (compact) {
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    const yy = String(d.getFullYear()).slice(-2)
+    return `${mm}/${dd}/${yy}`
+  }
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
@@ -85,10 +91,11 @@ export default function TransactionCard({ transaction, onEdit, onDelete, isDragg
   }
 
   const fields = getCardFields(transaction)
-  const isClosed      = transaction.status === 'closed'
-  const isPending     = transaction.status === 'pending'
-  const isPreListing  = transaction.status === 'pre-listing'
+  const isClosed        = transaction.status === 'closed'
+  const isPending       = transaction.status === 'pending'
+  const isPreListing    = transaction.status === 'pre-listing'
   const isActiveListing = transaction.status === 'active-listing'
+  const isBuyerBroker   = transaction.status === 'buyer-broker'
   const showRepBadge = REP_BADGE_STATUSES.has(transaction.status) && transaction.rep_type
 
   return (
@@ -144,7 +151,7 @@ export default function TransactionCard({ transaction, onEdit, onDelete, isDragg
             <div key={field.key} className="card-field-row">
               <span className="card-field-label">{field.label}:</span>
               <span className={`card-field-value ${isUrgent ? 'urgent-text' : ''} ${isOverdue ? 'overdue-text' : ''}`}>
-                {formatDate(value)}
+                {formatDate(value, isBuyerBroker)}
                 {isUrgent && days === 0 && <span className="badge urgent-badge">Today</span>}
                 {isUrgent && days > 0  && <span className="badge urgent-badge">{days}d</span>}
                 {isOverdue             && <span className="badge overdue-badge">Overdue</span>}

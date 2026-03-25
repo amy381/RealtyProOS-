@@ -1338,7 +1338,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
     { key: 'bba_expiration',           label: 'BBA Expiration',        required: true  },
     { key: 'contract_acceptance_date', label: 'Contract Acceptance',   required: true  },
     { key: 'ipe_date',                 label: 'Inspection Period End', required: false },
-    { key: 'binsr_submitted_date',     label: 'BINSR Submitted',       required: false },
+    ...(isPendingOrBeyond ? [{ key: 'binsr_submitted_date', label: 'BINSR Submitted', required: false }] : []),
     { key: 'close_of_escrow',          label: 'Close of Escrow',       required: true  },
   ] : [
     { key: 'listing_contract',         label: 'Listing Contract',      required: true  },
@@ -1698,12 +1698,34 @@ function CommissionSection({ transaction, commissions, onCommissionChange, onAdd
   const commission = commissions?.[transaction.id] || {}
   const saveCm = field => value => onCommissionChange(transaction.id, field, value)
 
+  // Draft states live here so GCI can be computed from live-typed values
+  const [scPctDraft,  setScPctDraft]  = useState(commission.seller_concession_percent  != null ? String(commission.seller_concession_percent)  : '')
+  const [scFlatDraft, setScFlatDraft] = useState(commission.seller_concession_flat     != null ? String(commission.seller_concession_flat)     : '')
+  const [bcPctDraft,  setBcPctDraft]  = useState(commission.buyer_contribution_percent != null ? String(commission.buyer_contribution_percent) : '')
+  const [bcFlatDraft, setBcFlatDraft] = useState(commission.buyer_contribution_flat    != null ? String(commission.buyer_contribution_flat)    : '')
+
+  // Sync drafts when transaction changes (e.g. user opens a different transaction)
+  useEffect(() => {
+    setScPctDraft(commission.seller_concession_percent  != null ? String(commission.seller_concession_percent)  : '')
+    setScFlatDraft(commission.seller_concession_flat    != null ? String(commission.seller_concession_flat)     : '')
+    setBcPctDraft(commission.buyer_contribution_percent != null ? String(commission.buyer_contribution_percent) : '')
+    setBcFlatDraft(commission.buyer_contribution_flat   != null ? String(commission.buyer_contribution_flat)    : '')
+  }, [transaction.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const price = Number(transaction.price) || 0
   const referralPct = Number(transaction.referral_pct) || 0
 
-  const sellerAmt  = parseContrib(commission.seller_concession, price)
-  const buyerAmt   = commission.buyer_contribution ? parseContrib(commission.buyer_contribution, price) : 0
-  const gci        = sellerAmt + buyerAmt
+  // GCI computed from live draft values — updates as user types
+  const scPctLive  = Number(scPctDraft)  || 0
+  const scFlatLive = scFlatDraft.trim() !== '' ? Number(scFlatDraft) : null
+  const bcPctLive  = Number(bcPctDraft)  || 0
+  const bcFlatLive = bcFlatDraft.trim() !== '' ? Number(bcFlatDraft) : null
+
+  const sellerGCI = scFlatLive != null ? scFlatLive : scPctLive / 100 * price
+  const buyerGCI  = bcFlatLive != null ? bcFlatLive : bcPctLive  / 100 * price
+  const gci       = sellerGCI + buyerGCI
+
+  console.log('[Commission] scPct draft:', scPctDraft, '→ sellerGCI:', sellerGCI, '| price:', price, '| GCI:', gci)
 
   const referralAmt    = referralPct > 0 ? gci * referralPct / 100 : 0
   const capAmt         = commission.cap_deduction     ? gci * 0.30 : 0
@@ -1749,20 +1771,71 @@ function CommissionSection({ transaction, commissions, onCommissionChange, onAdd
 
       {/* ── Commission Source ── */}
       <Sub label="Commission Source" />
-      <TxField
-        label="Seller Concession"
-        value={commission.seller_concession || ''}
-        type="text"
-        onSave={saveCm('seller_concession')}
-        placeholder="3  or  $5000"
-      />
-      <TxField
-        label="Buyer Contribution"
-        value={commission.buyer_contribution || ''}
-        type="text"
-        onSave={saveCm('buyer_contribution')}
-        placeholder="2.5  or  $3000"
-      />
+
+      {/* Seller Concession */}
+      <div className="txp-field txp-cm-split-row">
+        <span className="txp-field-label">Seller Concession</span>
+        <div className="txp-cm-split-inputs">
+          <div className={`txp-cm-split-item${scFlatDraft.trim() !== '' ? ' txp-cm-split-item--dim' : ''}`}>
+            <input
+              className="txp-cm-num-input"
+              type="number" min="0" step="any" placeholder="0"
+              value={scPctDraft}
+              disabled={scFlatDraft.trim() !== ''}
+              onChange={e => setScPctDraft(e.target.value)}
+              onBlur={() => { const v = scPctDraft.trim() === '' ? null : Number(scPctDraft); saveCm('seller_concession_percent')(isNaN(v) ? null : v) }}
+              onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+            />
+            <span className="txp-cm-split-unit">%</span>
+          </div>
+          <span className="txp-cm-split-or">or</span>
+          <div className={`txp-cm-split-item${scPctDraft.trim() !== '' ? ' txp-cm-split-item--dim' : ''}`}>
+            <span className="txp-cm-split-unit txp-cm-split-unit--pre">$</span>
+            <input
+              className="txp-cm-num-input"
+              type="number" min="0" step="any" placeholder="0"
+              value={scFlatDraft}
+              disabled={scPctDraft.trim() !== ''}
+              onChange={e => setScFlatDraft(e.target.value)}
+              onBlur={() => { const v = scFlatDraft.trim() === '' ? null : Number(scFlatDraft); saveCm('seller_concession_flat')(isNaN(v) ? null : v) }}
+              onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Buyer Contribution */}
+      <div className="txp-field txp-cm-split-row">
+        <span className="txp-field-label">Buyer Contribution</span>
+        <div className="txp-cm-split-inputs">
+          <div className={`txp-cm-split-item${bcFlatDraft.trim() !== '' ? ' txp-cm-split-item--dim' : ''}`}>
+            <input
+              className="txp-cm-num-input"
+              type="number" min="0" step="any" placeholder="0"
+              value={bcPctDraft}
+              disabled={bcFlatDraft.trim() !== ''}
+              onChange={e => setBcPctDraft(e.target.value)}
+              onBlur={() => { const v = bcPctDraft.trim() === '' ? null : Number(bcPctDraft); saveCm('buyer_contribution_percent')(isNaN(v) ? null : v) }}
+              onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+            />
+            <span className="txp-cm-split-unit">%</span>
+          </div>
+          <span className="txp-cm-split-or">or</span>
+          <div className={`txp-cm-split-item${bcPctDraft.trim() !== '' ? ' txp-cm-split-item--dim' : ''}`}>
+            <span className="txp-cm-split-unit txp-cm-split-unit--pre">$</span>
+            <input
+              className="txp-cm-num-input"
+              type="number" min="0" step="any" placeholder="0"
+              value={bcFlatDraft}
+              disabled={bcPctDraft.trim() !== ''}
+              onChange={e => setBcFlatDraft(e.target.value)}
+              onBlur={() => { const v = bcFlatDraft.trim() === '' ? null : Number(bcFlatDraft); saveCm('buyer_contribution_flat')(isNaN(v) ? null : v) }}
+              onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="txp-field">
         <span className="txp-field-label">GCI</span>
         <span className="txp-field-readonly" style={{ fontWeight: 600 }}>{fmtCents(gci) || '—'}</span>
@@ -1818,10 +1891,10 @@ function CommissionSection({ transaction, commissions, onCommissionChange, onAdd
         <span className="txp-cm-net-value">{fmtCents(net) || '—'}</span>
       </div>
 
-      {/* ── Buyer Broker Addendum ── */}
-      <Sub label="Buyer Broker Addendum" />
+      {/* ── BBA Addendum ── */}
+      <Sub label="BBA Addendum" />
       <div className="txp-field">
-        <span className="txp-field-label">BBA Required</span>
+        <span className="txp-field-label">BBA Addendum Required</span>
         <label className="txp-checkbox-item">
           <input type="checkbox" checked={!!commission.buyer_broker_addendum} onChange={e => handleBba(e.target.checked)} />
           {commission.buyer_broker_addendum && <span className="txp-cm-check-hint">Task + doc added</span>}
@@ -1836,7 +1909,7 @@ function DocsRequiredSection({ transaction, commissions }) {
   const [docStatuses, setDocStatuses] = useState({})   // { docName: { checked, filename, drive_id, drive_link } }
   const [uploading,   setUploading]   = useState({})
   const [customDocs,  setCustomDocs]  = useState({ buyer: [], listing: [], pending: [] })
-  const [customInput, setCustomInput] = useState({ buyer: '', listing: '', pending: '' })
+  const customInputRefs = useRef({ buyer: null, listing: null, pending: null })
   const [folderIds,   setFolderIds]   = useState({
     drive_folder_id:         transaction.drive_folder_id         || null,
     drive_under_contract_id: transaction.drive_under_contract_id || null,
@@ -2014,7 +2087,8 @@ function DocsRequiredSection({ transaction, commissions }) {
 
   // ── Add custom doc ─────────────────────────────────────────────────────────
   const addCustomDoc = async (section) => {
-    const name = customInput[section]?.trim()
+    const el   = customInputRefs.current[section]
+    const name = el?.value?.trim()
     if (!name) return
     const record = {
       transaction_id: transaction.id, doc_name: name,
@@ -2024,7 +2098,7 @@ function DocsRequiredSection({ transaction, commissions }) {
       .upsert(record, { onConflict: 'transaction_id,doc_name' })
     if (error) { toast.error('Could not add document'); return }
     setCustomDocs(prev => ({ ...prev, [section]: [...prev[section], name] }))
-    setCustomInput(prev => ({ ...prev, [section]: '' }))
+    if (el) el.value = ''
   }
 
   // ── Render helpers ─────────────────────────────────────────────────────────
@@ -2087,8 +2161,7 @@ function DocsRequiredSection({ transaction, commissions }) {
               <input
                 className="txp-doc-custom-input"
                 placeholder="Additional document name…"
-                value={customInput[sectionKey]}
-                onChange={e => setCustomInput(prev => ({ ...prev, [sectionKey]: e.target.value }))}
+                ref={el => { customInputRefs.current[sectionKey] = el }}
                 onKeyDown={e => { if (e.key === 'Enter') addCustomDoc(sectionKey) }}
               />
             </td>
@@ -2096,7 +2169,6 @@ function DocsRequiredSection({ transaction, commissions }) {
             <td className="txp-doc-td-action">
               <button
                 className="txp-doc-upload-btn"
-                disabled={!customInput[sectionKey]?.trim()}
                 onClick={() => addCustomDoc(sectionKey)}
               >
                 Add

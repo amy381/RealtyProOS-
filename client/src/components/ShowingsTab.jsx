@@ -10,12 +10,17 @@ function fmtDate(d) {
 
 const CLOSED_STATUSES = new Set(['closed', 'cancelled-expired'])
 
+const EMPTY_SHOWING = { transaction_id: '', agent_name: '', agent_email: '', showing_date: '', feedback: '' }
+
 export default function ShowingsTab({ transactions }) {
   const [showings, setShowings]   = useState([])
   const [loading,  setLoading]    = useState(true)
   const [search,   setSearch]     = useState('')
   const [sortKey,  setSortKey]    = useState('showing_date')
   const [sortDir,  setSortDir]    = useState('desc')
+  const [addOpen,  setAddOpen]    = useState(false)
+  const [addForm,  setAddForm]    = useState(EMPTY_SHOWING)
+  const [adding,   setAdding]     = useState(false)
 
   // Map transaction id → transaction object for quick lookup
   const txById = useMemo(() => {
@@ -47,6 +52,24 @@ export default function ShowingsTab({ transactions }) {
     if (!window.confirm('Delete this showing?')) return
     const { error } = await supabase.from('showings').delete().eq('id', id)
     if (!error) setShowings(prev => prev.filter(s => s.id !== id))
+  }
+
+  const handleAddShowing = async (e) => {
+    e.preventDefault()
+    if (!addForm.transaction_id) return
+    setAdding(true)
+    const { data, error } = await supabase.from('showings').insert({
+      transaction_id: addForm.transaction_id,
+      agent_name:     addForm.agent_name  || null,
+      agent_email:    addForm.agent_email || null,
+      showing_date:   addForm.showing_date || null,
+      feedback:       addForm.feedback    || null,
+    }).select().single()
+    setAdding(false)
+    if (error) { alert('Could not save showing.'); return }
+    setShowings(prev => [data, ...prev])
+    setAddOpen(false)
+    setAddForm(EMPTY_SHOWING)
   }
 
   const handleSort = (key) => {
@@ -103,7 +126,78 @@ export default function ShowingsTab({ transactions }) {
           )}
         </div>
         <span className="sht-count">{filtered.length} showing{filtered.length !== 1 ? 's' : ''}</span>
+        <button className="sht-add-btn" onClick={() => setAddOpen(true)}>+ Add Showing</button>
       </div>
+
+      {addOpen && (
+        <div className="sht-modal-overlay" onClick={e => { if (e.target === e.currentTarget) setAddOpen(false) }}>
+          <div className="sht-modal">
+            <div className="sht-modal-header">
+              <span>Add Showing</span>
+              <button className="sht-modal-close" onClick={() => setAddOpen(false)}>✕</button>
+            </div>
+            <form className="sht-modal-body" onSubmit={handleAddShowing}>
+              <label className="sht-modal-label">Property *</label>
+              <select
+                className="sht-modal-select"
+                value={addForm.transaction_id}
+                onChange={e => setAddForm(p => ({ ...p, transaction_id: e.target.value }))}
+                required
+              >
+                <option value="">— Select property —</option>
+                {transactions
+                  .filter(t => t.rep_type === 'Seller' && !CLOSED_STATUSES.has(t.status))
+                  .sort((a, b) => (a.property_address || '').localeCompare(b.property_address || ''))
+                  .map(t => (
+                    <option key={t.id} value={t.id}>{t.property_address || t.id}</option>
+                  ))}
+              </select>
+
+              <label className="sht-modal-label">Showing Date</label>
+              <input
+                type="date"
+                className="sht-modal-input"
+                value={addForm.showing_date}
+                onChange={e => setAddForm(p => ({ ...p, showing_date: e.target.value }))}
+              />
+
+              <label className="sht-modal-label">Agent Name</label>
+              <input
+                type="text"
+                className="sht-modal-input"
+                placeholder="Buyer's agent name"
+                value={addForm.agent_name}
+                onChange={e => setAddForm(p => ({ ...p, agent_name: e.target.value }))}
+              />
+
+              <label className="sht-modal-label">Agent Email</label>
+              <input
+                type="email"
+                className="sht-modal-input"
+                placeholder="agent@email.com"
+                value={addForm.agent_email}
+                onChange={e => setAddForm(p => ({ ...p, agent_email: e.target.value }))}
+              />
+
+              <label className="sht-modal-label">Feedback</label>
+              <textarea
+                className="sht-modal-textarea"
+                placeholder="Buyer feedback…"
+                value={addForm.feedback}
+                onChange={e => setAddForm(p => ({ ...p, feedback: e.target.value }))}
+                rows={3}
+              />
+
+              <div className="sht-modal-actions">
+                <button type="button" className="sht-modal-cancel" onClick={() => setAddOpen(false)}>Cancel</button>
+                <button type="submit" className="sht-modal-save" disabled={adding || !addForm.transaction_id}>
+                  {adding ? 'Saving…' : 'Save Showing'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="sht-loading">Loading showings…</div>

@@ -132,13 +132,12 @@ export function resolveVars(text, tx, tcSettings = []) {
     ? `${client_full_name} and ${client2_full_name}`
     : client_full_name
 
-  // commission_rate: stored as "3" (→ "3%") or "$5000" (→ "$5,000")
-  const rawRate = (tx.seller_concession || tx.commission_rate || '').trim()
-  const commission_rate = rawRate
-    ? rawRate.startsWith('$')
-      ? `$${Number(rawRate.replace(/[^0-9.]/g, '')).toLocaleString()}`
-      : `${rawRate}%`
-    : ''
+  // commission_rate: derive from new split fields if present on tx (populated via joined query)
+  const commission_rate = tx.seller_concession_flat != null && tx.seller_concession_flat !== ''
+    ? `$${Number(tx.seller_concession_flat).toLocaleString()}`
+    : tx.seller_concession_percent != null && tx.seller_concession_percent !== ''
+      ? `${tx.seller_concession_percent}%`
+      : ''
 
   // Block variables — lines joined with <br> for HTML email bodies
   const titleParts  = [tx.title_company, tx.escrow_officer, tx.title_company_phone, tx.title_company_email].filter(Boolean)

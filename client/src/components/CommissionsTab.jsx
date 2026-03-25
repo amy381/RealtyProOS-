@@ -32,23 +32,21 @@ function fmtDate(d) {
   return `${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}/${dt.getFullYear()}`
 }
 
-// Mirrors parseContrib from TransactionDetailPage exactly:
-// $ prefix → flat dollar; bare number → % of price
-function parseContrib(val, price) {
-  if (!val) return 0
-  const s = String(val).trim()
-  if (s.startsWith('$')) return Number(s.replace(/[$,\s]/g, '')) || 0
-  return (Number(s.replace(/[%\s]/g, '')) || 0) / 100 * price
+function calcGCI(t, c) {
+  const price     = Number(t.price) || 0
+  const scFlat    = c.seller_concession_flat     != null ? Number(c.seller_concession_flat)     : null
+  const scPct     = Number(c.seller_concession_percent)  || 0
+  const bcFlat    = c.buyer_contribution_flat    != null ? Number(c.buyer_contribution_flat)    : null
+  const bcPct     = Number(c.buyer_contribution_percent) || 0
+  const sellerGCI = scFlat != null ? scFlat : scPct / 100 * price
+  const buyerGCI  = bcFlat != null ? bcFlat : bcPct / 100 * price
+  return sellerGCI + buyerGCI
 }
 
 // Mirrors CommissionSection calculation from TransactionDetailPage exactly
 function calcRow(t, c) {
-  const price       = Number(t.price) || 0
   const referralPct = Number(t.referral_pct) || 0
-
-  const sellerAmt = parseContrib(c.seller_concession, price)
-  const buyerAmt  = c.buyer_contribution ? parseContrib(c.buyer_contribution, price) : 0
-  const gci       = sellerAmt + buyerAmt
+  const gci         = calcGCI(t, c)
 
   const referralAmt    = referralPct > 0 ? gci * referralPct / 100 : 0
   const capAmt         = c.cap_deduction     ? gci * CAP_RATE    : 0

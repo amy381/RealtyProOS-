@@ -608,11 +608,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
               onClick={() => selectTemplate(t.id)}
             >
               <span className="templates-list-name">{t.name}</span>
-              <button
-                className="templates-list-del"
-                onClick={e => { e.stopPropagation(); handleDeleteTemplate(t.id) }}
-                title="Delete template"
-              >✕</button>
             </div>
           ))}
         </div>

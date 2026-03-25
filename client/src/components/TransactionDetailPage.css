@@ -1129,6 +1129,61 @@ select.txp-input { cursor: pointer; }
   padding: 6px 7px;
 }
 
+/* ─── Commission split % / $ inputs ─────────────────────────────────────────── */
+.txp-cm-split-row {
+  align-items: flex-start !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
+.txp-cm-split-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.txp-cm-split-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.15s;
+}
+
+.txp-cm-split-item--dim {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.txp-cm-num-input {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1a1a1a;
+  background: #fff;
+  outline: none;
+  -moz-appearance: textfield;
+}
+.txp-cm-num-input::-webkit-outer-spin-button,
+.txp-cm-num-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.txp-cm-num-input:focus { border-color: #111; }
+.txp-cm-num-input:disabled { background: #f5f5f5; color: #bbb; cursor: not-allowed; }
+
+.txp-cm-split-unit {
+  font-size: 13px;
+  font-weight: 600;
+  color: #888;
+}
+
+.txp-cm-split-or {
+  font-size: 12px;
+  color: #bbb;
+  padding: 0 2px;
+}
+
 /* ─── Commission type toggle (% / Flat $) ─────────────────────────────────────── */
 .txp-cm-type-toggle {
   display: flex;

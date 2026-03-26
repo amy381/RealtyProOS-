@@ -110,6 +110,235 @@ function loadSavedViews() {
   catch { return [] }
 }
 
+// ─── Critical Date Definitions ────────────────────────────────────────────────
+function addDaysToDate(dateStr, days) {
+  if (!dateStr) return null
+  const d = new Date(dateStr + 'T00:00:00')
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
+}
+
+const CRITICAL_DATE_DEFS = {
+  residential: [
+    { key: 'spds_due',                label: 'SPDS Due',                      anchor: 'contract_acceptance_date', offset: 3  },
+    { key: 'solar_docs',              label: 'Solar System Documents',         anchor: 'contract_acceptance_date', offset: 3  },
+    { key: 'ihr_due',                 label: 'IHR Due',                        anchor: 'contract_acceptance_date', offset: 5  },
+    { key: 'dwwa_spds',               label: 'DWWA SPDS',                      anchor: 'contract_acceptance_date', offset: 5  },
+    { key: 'well_reg',                label: 'Well Registration (ADWR)',       anchor: 'contract_acceptance_date', offset: 5,  requires: 'has_well'   },
+    { key: 'lbp',                     label: 'Lead Based Paint',                anchor: 'contract_acceptance_date', offset: 5,  requires: 'has_lbp'    },
+    { key: 'affidavit_disclosure',    label: 'Affidavit of Disclosure',         anchor: 'contract_acceptance_date', offset: 5  },
+    { key: 'loan_status_update',      label: 'Loan Status Update',              anchor: 'contract_acceptance_date', offset: 10 },
+    { key: 'hoa_disclosures',         label: 'HOA Disclosures',                 anchor: 'contract_acceptance_date', offset: 10, requires: 'has_hoa'    },
+    { key: 'septic_inspection',       label: 'Septic Inspection',               anchor: 'contract_acceptance_date', offset: 20, requires: 'has_septic' },
+    { key: 'binsr_response',          label: 'Seller Response to BINSR',       anchor: 'binsr_submitted_date',     offset: 5  },
+    { key: 'commission_instructions', label: 'Upload Commission Instructions', anchor: 'close_of_escrow',          offset: -10 },
+    { key: 'loan_approval',           label: 'Loan Approval',                   anchor: 'close_of_escrow',          offset: -3 },
+    { key: 'seller_repairs',          label: 'Seller Repairs Completed',       anchor: 'close_of_escrow',          offset: -3 },
+  ],
+  vacant_land: [
+    { key: 'vl_spds_due',             label: 'VL SPDS Due',                    anchor: 'contract_acceptance_date', offset: 5  },
+    { key: 'proof_of_funds',          label: 'Proof of Funds (Cash only)',      anchor: 'contract_acceptance_date', offset: 5,  requiresFinancing: 'Cash' },
+    { key: 'commission_instructions', label: 'Upload Commission Instructions', anchor: 'close_of_escrow',          offset: -10 },
+  ],
+}
+
+export const ALL_CRITICAL_DATE_OPTIONS = [
+  { value: 'spds_due',                label: 'SPDS Due' },
+  { value: 'solar_docs',              label: 'Solar System Documents' },
+  { value: 'ihr_due',                 label: 'IHR Due' },
+  { value: 'dwwa_spds',               label: 'DWWA SPDS' },
+  { value: 'well_reg',                label: 'Well Registration (ADWR)' },
+  { value: 'lbp',                     label: 'Lead Based Paint' },
+  { value: 'affidavit_disclosure',    label: 'Affidavit of Disclosure' },
+  { value: 'loan_status_update',      label: 'Loan Status Update' },
+  { value: 'hoa_disclosures',         label: 'HOA Disclosures' },
+  { value: 'septic_inspection',       label: 'Septic Inspection' },
+  { value: 'binsr_response',          label: 'Seller Response to BINSR' },
+  { value: 'commission_instructions', label: 'Upload Commission Instructions' },
+  { value: 'loan_approval',           label: 'Loan Approval' },
+  { value: 'seller_repairs',          label: 'Seller Repairs Completed' },
+  { value: 'vl_spds_due',             label: 'VL SPDS Due' },
+  { value: 'proof_of_funds',          label: 'Proof of Funds (Cash only)' },
+]
+
+function computeCriticalDates(tx, txTasks) {
+  const isVacantLand = (tx.property_type || '').toLowerCase().includes('vacant')
+  const defs = isVacantLand ? CRITICAL_DATE_DEFS.vacant_land : CRITICAL_DATE_DEFS.residential
+
+  const resolvedKeys = new Set(
+    (txTasks || [])
+      .filter(t => t.status === 'complete' && t.resolves_critical_date)
+      .map(t => t.resolves_critical_date)
+  )
+
+  const results = []
+  for (const def of defs) {
+    const anchorDate = tx[def.anchor]
+    if (!anchorDate) continue
+    if (def.requires && !tx[def.requires]) continue
+    if (def.requiresFinancing && tx.financing_type !== def.requiresFinancing) continue
+    if (resolvedKeys.has(def.key)) continue
+    const date = addDaysToDate(anchorDate, def.offset)
+    if (!date) continue
+    const today = new Date().toISOString().slice(0, 10)
+    if (date < today) continue
+    results.push({ type: 'critical_date', key: def.key, label: def.label, date })
+  }
+  return results
+}
+
+// ─── Sub-components for grouped view ─────────────────────────────────────────
+function CriticalDateRow({ item }) {
+  const ddl = dueDateLabel(item.date, false, null)
+  return (
+    <div className="gtd-cd-row">
+      <span className="gtd-cd-label">{item.label}</span>
+      <span className="gtd-cd-date">{item.date ? new Date(item.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</span>
+      <span className={`gtd-cd-countdown gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</span>
+    </div>
+  )
+}
+
+function GlobalTaskRow({ task, onUpdate, onDelete, onOpenEdit, onOpenComments, commentCount, bulkMode, selected, onToggleSelect }) {
+  const done    = task.status === 'complete'
+  const isDueDateType = task.task_type === 'Due Date'
+  const ddl     = dueDateLabel(task.due_date, done, task.completed_at)
+
+  return (
+    <div className={[
+      'gtd-grow',
+      done        ? 'gtd-grow-done'     : '',
+      isDueDateType ? 'gtd-grow-keydate' : '',
+      selected    ? 'gtd-grow-selected' : '',
+    ].filter(Boolean).join(' ')}>
+      <div className="gtd-grow-check">
+        {bulkMode ? (
+          <input
+            type="checkbox"
+            className="gtd-bulk-checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            onClick={e => e.stopPropagation()}
+          />
+        ) : isDueDateType ? (
+          <span className="gtd-cal-icon" title="Key date">📅</span>
+        ) : (
+          <button
+            className={`gtd-check${done ? ' gtd-checked' : ''}`}
+            onClick={() => onUpdate(task.id, { status: done ? 'open' : 'complete', completed_at: done ? null : new Date().toISOString() })}
+          >
+            {done ? '✓' : ''}
+          </button>
+        )}
+      </div>
+      <span className={`gtd-grow-title${done ? ' gtd-done-text' : ''}`}>{task.title}</span>
+      <span className="gtd-grow-assignee">{isDueDateType ? '' : (task.assigned_to || '')}</span>
+      <span className={`gtd-grow-due gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</span>
+      <span className="gtd-grow-status">
+        {isDueDateType
+          ? <span className="gtd-status-badge gtd-status-key-date">Key Date</span>
+          : <span className={`gtd-status-badge${done ? ' gtd-status-done' : ' gtd-status-open'}`}>{done ? 'Done' : 'Open'}</span>
+        }
+      </span>
+      <div className="gtd-grow-actions" onClick={e => e.stopPropagation()}>
+        <button className="gtd-grow-edit-btn" onClick={onOpenEdit} title="Edit task">✎</button>
+        <button
+          className={`gtd-cmt-btn${commentCount > 0 ? ' active' : ''}`}
+          onClick={onOpenComments}
+          title={commentCount > 0 ? `${commentCount} comment${commentCount !== 1 ? 's' : ''}` : 'Add comment'}
+        >
+          💬{commentCount > 0 && <span className="gtd-cmt-count">{commentCount}</span>}
+        </button>
+        <button className="gtd-grow-del-btn" onClick={() => onDelete(task.id)} title="Delete task">✕</button>
+      </div>
+    </div>
+  )
+}
+
+function TaskEditModal({ task, tx, onUpdate, onClose }) {
+  const [title,      setTitle]      = useState(task.title || '')
+  const [dueDate,    setDueDate]    = useState(task.due_date || '')
+  const [assigned,   setAssigned]   = useState(task.assigned_to || 'Me')
+  const [status,     setStatus]     = useState(task.status || 'open')
+  const [resolvesCd, setResolvesCd] = useState(!!task.resolves_critical_date)
+  const [cdKey,      setCdKey]      = useState(task.resolves_critical_date || '')
+
+  const handleSave = () => {
+    onUpdate(task.id, {
+      title:                  title.trim() || task.title,
+      due_date:               dueDate || null,
+      assigned_to:            assigned,
+      status,
+      completed_at:           status === 'complete' && task.status !== 'complete'
+                                ? new Date().toISOString()
+                                : status !== 'complete' ? null : task.completed_at,
+      resolves_critical_date: resolvesCd && cdKey ? cdKey : null,
+    })
+    onClose()
+  }
+
+  // Filter options to relevant type
+  const isVacantLand = (tx?.property_type || '').toLowerCase().includes('vacant')
+  const relevantKeys = isVacantLand
+    ? ['vl_spds_due', 'proof_of_funds', 'commission_instructions']
+    : ALL_CRITICAL_DATE_OPTIONS.filter(o => !['vl_spds_due', 'proof_of_funds'].includes(o.value)).map(o => o.value)
+  const cdOptions = ALL_CRITICAL_DATE_OPTIONS.filter(o => relevantKeys.includes(o.value))
+
+  return (
+    <div className="gtd-edit-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="gtd-edit-modal">
+        <div className="gtd-edit-header">
+          <span className="gtd-edit-title">Edit Task</span>
+          <button className="gtd-edit-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="gtd-edit-body">
+          <label className="gtd-edit-field">
+            <span className="gtd-edit-label">Title</span>
+            <input className="gtd-edit-input" value={title} onChange={e => setTitle(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSave() }} autoFocus />
+          </label>
+          <div className="gtd-edit-row">
+            <label className="gtd-edit-field">
+              <span className="gtd-edit-label">Due Date</span>
+              <input className="gtd-edit-input" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+            </label>
+            <label className="gtd-edit-field">
+              <span className="gtd-edit-label">Assigned To</span>
+              <select className="gtd-edit-input" value={assigned} onChange={e => setAssigned(e.target.value)}>
+                {ASSIGNEE_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </label>
+            <label className="gtd-edit-field">
+              <span className="gtd-edit-label">Status</span>
+              <select className="gtd-edit-input" value={status} onChange={e => setStatus(e.target.value)}>
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="complete">Done</option>
+              </select>
+            </label>
+          </div>
+          <div className="gtd-edit-cd-section">
+            <label className="gtd-edit-cd-toggle">
+              <input type="checkbox" checked={resolvesCd} onChange={e => { setResolvesCd(e.target.checked); if (!e.target.checked) setCdKey('') }} />
+              <span>Resolves a critical date</span>
+            </label>
+            {resolvesCd && (
+              <select className="gtd-edit-input gtd-edit-cd-select" value={cdKey} onChange={e => setCdKey(e.target.value)}>
+                <option value="">— Select critical date —</option>
+                {cdOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            )}
+          </div>
+        </div>
+        <div className="gtd-edit-footer">
+          <button className="gtd-edit-cancel" onClick={onClose}>Cancel</button>
+          <button className="gtd-edit-save" onClick={handleSave}>Save</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Variable resolver ────────────────────────────────────────────────────────
 export function resolveVars(text, tx, tcSettings = []) {
   if (!text) return ''
@@ -764,9 +993,10 @@ export default function TasksTab({
   const [savedViews,   setSavedViews]   = useState(loadSavedViews)
   const [activeViewId, setActiveViewId] = useState(null)
 
-  // Sort state
-  const [sortCol, setSortCol] = useState('due_date')
-  const [sortDir, setSortDir] = useState('asc')
+  // Grouped view state
+  const [collapsed,     setCollapsed]     = useState({})
+  const [showCompleted, setShowCompleted] = useState({})
+  const [editingTaskId, setEditingTaskId] = useState(null)
 
   // Bulk edit state
   const [bulkMode,     setBulkMode]     = useState(false)
@@ -788,65 +1018,87 @@ export default function TasksTab({
 
   const stageLabel = v => TASK_STAGES.find(s => s.value === v)?.label || v || '—'
 
-  // ── Filter + Sort ──────────────────────────────────────────────────────────
-  const filtered = useMemo(() => {
+  // ── Group + Sort ───────────────────────────────────────────────────────────
+  const groupedData = useMemo(() => {
     const today = new Date(); today.setHours(0,0,0,0)
     const eow   = endOfWeek()
 
-    const results = tasks.filter(task => {
+    // Filter tasks (include completed — per-group toggle controls their visibility)
+    const passedTasks = tasks.filter(task => {
       const tx = txMap[task.transaction_id]
-
-      // Stage (based on transaction stage)
-      const txStage = tx?.status
-      if (txStage && !filters.stageChecks.has(txStage)) return false
-
-      // Transaction Type
-      if (filters.typeFilter !== 'All' && tx?.rep_type !== filters.typeFilter) return false
-
-      // TC
-      if (filters.tcFilter !== 'All' && tx?.assigned_tc !== filters.tcFilter) return false
-
-      // Due Status checkboxes — hide task if its bucket is unchecked
-      // Completed tasks hidden by default (Completed not in DEFAULT_DUE_CHECKS)
-      if (!filters.dueChecks.has(dueBucket(task, today, eow))) return false
-
-      // Search (live, always applied)
+      if (!tx) return false
+      if (!filters.stageChecks.has(tx.status)) return false
+      if (filters.typeFilter !== 'All' && tx.rep_type !== filters.typeFilter) return false
+      if (filters.tcFilter   !== 'All' && tx.assigned_tc !== filters.tcFilter) return false
       if (filters.search.trim()) {
         const q = filters.search.toLowerCase()
         if (!(task.title || '').toLowerCase().includes(q) &&
-            !(tx?.property_address || '').toLowerCase().includes(q)) return false
+            !(tx.property_address || '').toLowerCase().includes(q)) return false
       }
-
+      // For due bucket filter, always include completed (handled per-group toggle)
+      if (task.status !== 'complete' && !filters.dueChecks.has(dueBucket(task, today, eow))) return false
       return true
     })
 
-    // Sort
-    return results.sort((a, b) => {
-      const dir  = sortDir === 'asc' ? 1 : -1
-      const txA  = txMap[a.transaction_id]
-      const txB  = txMap[b.transaction_id]
-      switch (sortCol) {
-        case 'title':
-          return dir * (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
-        case 'stage':
-          return dir * ((STAGE_ORDER[txA?.status] ?? 9) - (STAGE_ORDER[txB?.status] ?? 9))
-        case 'transaction':
-          return dir * (txA?.property_address || '').localeCompare(txB?.property_address || '', undefined, { sensitivity: 'base' })
-        case 'assigned':
-          return dir * (a.assigned_to || '').localeCompare(b.assigned_to || '', undefined, { sensitivity: 'base' })
-        case 'due_date':
-          return dir * ((a.due_date || 'zzzz').localeCompare(b.due_date || 'zzzz'))
-        case 'status':
-          return dir * ((STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0))
-        default:
-          return 0
-      }
+    // Group by transaction
+    const txGroupMap = new Map()
+    passedTasks.forEach(task => {
+      const tx = txMap[task.transaction_id]
+      if (!tx) return
+      if (!txGroupMap.has(tx.id)) txGroupMap.set(tx.id, { tx, tasks: [] })
+      txGroupMap.get(tx.id).tasks.push(task)
     })
-  }, [tasks, txMap, filters, sortCol, sortDir])
 
-  const openCount   = filtered.filter(t => t.status !== 'complete').length
-  const doneCount   = filtered.filter(t => t.status === 'complete').length
-  const filterCount = countFilters(filters)
+    // Build each group: merge tasks + critical dates, sort chronologically
+    const groups = [...txGroupMap.values()].map(({ tx, tasks: txTasks }) => {
+      const activeForCritDates = !['closed', 'cancelled-expired'].includes(tx.status)
+      const critDates = activeForCritDates
+        ? computeCriticalDates(tx, tasks.filter(t => t.transaction_id === tx.id))
+        : []
+
+      // Interleave: tasks + critical dates sorted by date
+      const sortKey = (item) => {
+        const d = item.type === 'critical_date' ? item.date : item.due_date
+        return d || 'zzzz'
+      }
+      const allItems = [...txTasks, ...critDates].sort((a, b) => {
+        // Completed tasks sink to bottom
+        const aDone = a.type !== 'critical_date' && a.status === 'complete'
+        const bDone = b.type !== 'critical_date' && b.status === 'complete'
+        if (aDone !== bDone) return aDone ? 1 : -1
+        return sortKey(a).localeCompare(sortKey(b))
+      })
+
+      const completedCount = txTasks.filter(t => t.status === 'complete').length
+      return { tx, items: allItems, completedCount }
+    })
+
+    // Sort groups: Pending first → active by soonest COE → Closed → Cancelled/Expired
+    const BOTTOM_STATUSES = new Set(['closed', 'cancelled-expired'])
+    groups.sort((a, b) => {
+      const aBottom = BOTTOM_STATUSES.has(a.tx.status)
+      const bBottom = BOTTOM_STATUSES.has(b.tx.status)
+      if (aBottom !== bBottom) return aBottom ? 1 : -1
+      if (aBottom && bBottom) {
+        if (a.tx.status !== b.tx.status) return a.tx.status === 'closed' ? -1 : 1
+        return 0
+      }
+      const aPending = a.tx.status === 'pending'
+      const bPending = b.tx.status === 'pending'
+      if (aPending !== bPending) return aPending ? -1 : 1
+      const aCoe = a.tx.close_of_escrow || '9999-12-31'
+      const bCoe = b.tx.close_of_escrow || '9999-12-31'
+      if (aCoe !== bCoe) return aCoe.localeCompare(bCoe)
+      return (STAGE_ORDER[a.tx.status] ?? 9) - (STAGE_ORDER[b.tx.status] ?? 9)
+    })
+
+    return groups
+  }, [tasks, txMap, filters])
+
+  const allFilteredTasks = groupedData.flatMap(g => g.items.filter(i => i.type !== 'critical_date'))
+  const openCount        = allFilteredTasks.filter(t => t.status !== 'complete').length
+  const doneCount        = allFilteredTasks.filter(t => t.status === 'complete').length
+  const filterCount      = countFilters(filters)
 
   // ── Active filter chips ────────────────────────────────────────────────────
   const activeChips = useMemo(() => {
@@ -965,17 +1217,6 @@ export default function TasksTab({
     if (activeViewId === id) setActiveViewId(null)
   }
 
-  // ── Sort helpers ───────────────────────────────────────────────────────────
-  const toggleSort = (col) => {
-    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    else { setSortCol(col); setSortDir('asc') }
-  }
-
-  const arrow = (col) => {
-    if (sortCol !== col) return <span className="gtd-th-arrow gtd-th-arrow--inactive">↕</span>
-    return <span className="gtd-th-arrow">{sortDir === 'asc' ? '↑' : '↓'}</span>
-  }
-
   // ── Bulk helpers ───────────────────────────────────────────────────────────
   const enterBulkMode = () => { setBulkMode(true); setSelectedIds(new Set()); setBulkAssignTo(''); setBulkStatus('') }
   const exitBulkMode  = () => { setBulkMode(false); setSelectedIds(new Set()) }
@@ -988,7 +1229,7 @@ export default function TasksTab({
     })
   }
 
-  const allSelected  = filtered.length > 0 && selectedIds.size === filtered.length
+  const allSelected  = allFilteredTasks.length > 0 && selectedIds.size === allFilteredTasks.length
   const someSelected = selectedIds.size > 0 && !allSelected
 
   const setSelectAllRef = (el) => {
@@ -998,7 +1239,7 @@ export default function TasksTab({
 
   const toggleAll = () => {
     if (allSelected) setSelectedIds(new Set())
-    else setSelectedIds(new Set(filtered.map(t => t.id)))
+    else setSelectedIds(new Set(allFilteredTasks.map(t => t.id)))
   }
 
   const handleBulkApply = async () => {
@@ -1179,117 +1420,99 @@ export default function TasksTab({
         </div>
       )}
 
-      {/* ── Table ───────────────────────────────────────────────────── */}
-      <div className="gtd-scroll">
-        <table className="gtd-table">
-          <thead>
-            <tr>
-              <th style={{ width: 36 }}></th>
-              <th className={`gtd-th${sortCol === 'title' ? ' gtd-th--sorted' : ''}`}
-                  onClick={() => toggleSort('title')}>
-                Task {arrow('title')}
-              </th>
-              <th className={`gtd-th${sortCol === 'transaction' ? ' gtd-th--sorted' : ''}`}
-                  onClick={() => toggleSort('transaction')}>
-                Transaction {arrow('transaction')}
-              </th>
-              <th className={`gtd-th${sortCol === 'stage' ? ' gtd-th--sorted' : ''}`}
-                  onClick={() => toggleSort('stage')}>
-                Stage {arrow('stage')}
-              </th>
-              <th className={`gtd-th${sortCol === 'assigned' ? ' gtd-th--sorted' : ''}`}
-                  onClick={() => toggleSort('assigned')}>
-                Assigned To {arrow('assigned')}
-              </th>
-              <th className={`gtd-th${sortCol === 'due_date' ? ' gtd-th--sorted' : ''}`}
-                  onClick={() => toggleSort('due_date')}>
-                Due Date {arrow('due_date')}
-              </th>
-              <th className={`gtd-th${sortCol === 'status' ? ' gtd-th--sorted' : ''}`}
-                  onClick={() => toggleSort('status')}>
-                Status {arrow('status')}
-              </th>
-              <th style={{ width: 36 }}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={8} className="gtd-empty">No tasks match these filters</td>
-              </tr>
-            )}
-            {filtered.map(task => {
-              const tx           = txMap[task.transaction_id]
-              const done         = task.status === 'complete'
-              const isDueDate    = task.task_type === 'Due Date'
-              const sel          = selectedIds.has(task.id)
-              const ddl          = dueDateLabel(task.due_date, done, task.completed_at)
-              const commentCount = taskComments.filter(c => c.task_id === task.id).length
+      {/* ── Grouped accordion list ──────────────────────────────────── */}
+      <div className="gtd-grouped-list">
+        {groupedData.length === 0 && (
+          <div className="gtd-empty">No tasks match these filters</div>
+        )}
 
-              return (
-                <tr
-                  key={task.id}
-                  className={[
-                    'gtd-row',
-                    done      ? 'gtd-row-done'     : '',
-                    isDueDate ? 'gtd-row-due-date'  : '',
-                    sel       ? 'gtd-row-selected'  : '',
-                  ].filter(Boolean).join(' ')}
-                  onClick={() => !bulkMode && tx && onCardClick(tx)}
-                  title={bulkMode ? undefined : 'Click to open transaction'}
+        {groupedData.map(({ tx, items, completedCount }) => {
+          const isCollapsed = !!collapsed[tx.id]
+          const showDone    = !!showCompleted[tx.id]
+
+          const visibleItems = isCollapsed ? [] : items.filter(item =>
+            item.type === 'critical_date' || item.status !== 'complete' || showDone
+          )
+
+          return (
+            <div key={tx.id} className="gtd-tx-group">
+              {/* Transaction header */}
+              <div
+                className="gtd-tx-header"
+                onClick={() => setCollapsed(p => ({ ...p, [tx.id]: !isCollapsed }))}
+              >
+                <span className={`gtd-tx-collapse${isCollapsed ? ' collapsed' : ''}`}>
+                  {isCollapsed ? '▶' : '▼'}
+                </span>
+                <span
+                  className="gtd-tx-addr"
+                  onClick={e => { e.stopPropagation(); onCardClick(tx) }}
+                  title="Open transaction"
                 >
-                  <td onClick={e => { if (bulkMode) { e.stopPropagation(); toggleId(task.id) } }}>
-                    {bulkMode ? (
-                      <input
-                        type="checkbox"
-                        className="gtd-bulk-checkbox"
-                        checked={sel}
-                        onChange={() => toggleId(task.id)}
-                        onClick={e => e.stopPropagation()}
-                      />
-                    ) : isDueDate ? (
-                      <span className="gtd-cal-icon" title="Key date">📅</span>
-                    ) : (
-                      <button
-                        className={`gtd-check${done ? ' gtd-checked' : ''}`}
-                        onClick={e => { e.stopPropagation(); onTaskUpdate(task.id, { status: done ? 'open' : 'complete' }) }}
-                      >
-                        {done ? '✓' : ''}
-                      </button>
-                    )}
-                  </td>
-                  <td className={`gtd-task-title${done ? ' gtd-done-text' : ''}`}>{task.title}</td>
-                  <td className="gtd-addr">{tx?.property_address?.split(',')[0] || '—'}</td>
-                  <td className="gtd-stage-cell">
-                    {tx?.status
-                      ? <span className={`gtd-stage-badge gtd-stage--${tx.status}`}>{stageLabel(tx.status)}</span>
-                      : '—'}
-                  </td>
-                  <td className="gtd-assignee">{isDueDate ? '—' : task.assigned_to}</td>
-                  <td className={`gtd-due gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</td>
-                  <td>
-                    {isDueDate
-                      ? <span className="gtd-status-badge gtd-status-key-date">Key Date</span>
-                      : <span className={`gtd-status-badge${done ? ' gtd-status-done' : ' gtd-status-open'}`}>
-                          {done ? 'Done' : 'Open'}
-                        </span>
-                    }
-                  </td>
-                  <td className="gtd-cmt-td" onClick={e => e.stopPropagation()}>
-                    <button
-                      className={`gtd-cmt-btn${commentCount > 0 ? ' active' : ''}`}
-                      onClick={e => { e.stopPropagation(); setCommentTaskId(task.id) }}
-                      title={commentCount > 0 ? `${commentCount} comment${commentCount !== 1 ? 's' : ''}` : 'Add comment'}
-                    >
-                      💬{commentCount > 0 && <span className="gtd-cmt-count">{commentCount}</span>}
-                    </button>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                  {tx.property_address?.split(',')[0] || '(No address)'}
+                </span>
+                <span className={`gtd-stage-badge gtd-stage--${tx.status}`}>
+                  {stageLabel(tx.status)}
+                </span>
+                {tx.close_of_escrow && (
+                  <span className="gtd-tx-coe">
+                    COE: {new Date(tx.close_of_escrow + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                )}
+                <span className="gtd-tx-header-spacer" />
+                {!isCollapsed && completedCount > 0 && (
+                  <button
+                    className="gtd-show-completed-btn"
+                    onClick={e => { e.stopPropagation(); setShowCompleted(p => ({ ...p, [tx.id]: !showDone })) }}
+                  >
+                    {showDone ? 'Hide' : 'Show'} {completedCount} completed
+                  </button>
+                )}
+                <button
+                  className="gtd-tx-open-btn"
+                  onClick={e => { e.stopPropagation(); onCardClick(tx) }}
+                >
+                  Open →
+                </button>
+              </div>
+
+              {/* Task / critical date rows */}
+              {!isCollapsed && visibleItems.map(item =>
+                item.type === 'critical_date' ? (
+                  <CriticalDateRow key={`cd-${item.key}`} item={item} />
+                ) : (
+                  <GlobalTaskRow
+                    key={item.id}
+                    task={item}
+                    onUpdate={onTaskUpdate}
+                    onDelete={onDeleteTask}
+                    onOpenEdit={() => setEditingTaskId(item.id)}
+                    onOpenComments={() => setCommentTaskId(item.id)}
+                    commentCount={taskComments.filter(c => c.task_id === item.id).length}
+                    bulkMode={bulkMode}
+                    selected={selectedIds.has(item.id)}
+                    onToggleSelect={() => toggleId(item.id)}
+                  />
+                )
+              )}
+            </div>
+          )
+        })}
       </div>
+
+      {/* ── Task edit modal ─────────────────────────────────────────── */}
+      {editingTaskId && (() => {
+        const et = tasks.find(t => t.id === editingTaskId)
+        const etx = et ? txMap[et.transaction_id] : null
+        return et ? (
+          <TaskEditModal
+            task={et}
+            tx={etx}
+            onUpdate={onTaskUpdate}
+            onClose={() => setEditingTaskId(null)}
+          />
+        ) : null
+      })()}
 
       {/* ── Comment panel ───────────────────────────────────────────── */}
       {commentTaskId && (() => {

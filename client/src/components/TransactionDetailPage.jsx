@@ -56,6 +56,65 @@ const FIELD_LABELS = {
   additional_parcels: 'Additional Parcel(s)',
 }
 
+const DIFF_FIELDS = {
+  property_address:          'Street Address',
+  city:                      'City',
+  state:                     'State',
+  zip:                       'ZIP',
+  price:                     'Price',
+  rep_type:                  'Transaction Type',
+  status:                    'Stage',
+  assigned_tc:               'TC',
+  property_type:             'Property Type',
+  apn:                       'APN',
+  mls_number:                'MLS Number',
+  vacant_or_occupied:        'Vacant or Occupied',
+  occupancy:                 'Occupancy',
+  bedrooms:                  'Bedrooms',
+  square_ft:                 'Square Ft',
+  year_built:                'Year Built',
+  new_construction:          'New Construction',
+  access:                    'Access',
+  client_first_name:         'Client 1 First Name',
+  client_last_name:          'Client 1 Last Name',
+  client2_first_name:        'Client 2 First Name',
+  client2_last_name:         'Client 2 Last Name',
+  opposite_party_name:       'Opposite Party',
+  opposite_party_agent:      'Opposite Party Agent',
+  listing_contract:          'Listing Contract',
+  listing_expiration_date:   'Listing Expiration',
+  target_live_date:          'Target Live',
+  contract_acceptance_date:  'Contract Acceptance',
+  ipe_date:                  'Inspection Period End',
+  binsr_submitted_date:      'BINSR Submitted',
+  close_of_escrow:           'Close of Escrow',
+  bba_contract:              'BBA Contract',
+  bba_expiration:            'BBA Expiration',
+  has_contingency:           'Contingency',
+  contingency_fulfilled_date:'Contingency Fulfilled',
+  lender_name:               'Lender',
+  title_company:             'Title Company',
+  title_company_email:       'Title Co. Email',
+  title_company_phone:       'Title Co. Phone',
+  co_op_agent:               'Co-op Agent',
+  home_inspector:            'Home Inspector',
+  home_inspection_date:      'Home Inspection Date',
+  has_septic:                'Septic',
+  has_solar:                 'Solar',
+  has_well:                  'Well',
+  has_hoa:                   'HOA',
+  has_lbp:                   'LBP',
+  lockbox:                   'Lockbox',
+  has_sign:                  'Sign',
+  referring_agent:           'Referring Agent',
+  referring_agent_email:     'Referring Agent Email',
+  referring_agent_phone:     'Referring Agent Phone',
+  referral_pct:              'Referral %',
+  financing_type:            'Financing Type',
+  additional_terms:          'Additional Terms',
+  additional_parcels:        'Additional Parcel(s)',
+}
+
 const FINANCING_TYPE_OPTIONS = [
   { value: '',               label: '—'             },
   { value: 'Conventional',   label: 'Conventional'  },
@@ -1118,57 +1177,205 @@ function buildTransactionSummary(transaction, column, fullAddress) {
   return lines.join('\n')
 }
 
-// ─── Send Dropdown ────────────────────────────────────────────────────────────
-function SendDropdown({ tcSettings, onSend, onClose }) {
-  const sendable = (tcSettings || []).filter(tc => tc.name !== 'Me' && tc.email)
-  const [selected, setSelected] = useState(() => sendable.map(tc => tc.name))
-  const [sending, setSending]   = useState(false)
-  const ref = useRef(null)
+// ─── Notify Modal ─────────────────────────────────────────────────────────────
+function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) {
+  const isBuyer  = transaction.rep_type === 'Buyer'
+  const justina  = (tcSettings || []).find(t => t.name === 'Justina Morris') || { name: 'Justina Morris', email: '' }
+  const victoria = (tcSettings || []).find(t => t.name === 'Victoria Lareau') || { name: 'Victoria Lareau', email: '' }
+  const amy      = { name: 'Amy', email: 'amy@desert-legacy.com' }
+
+  const [checked,     setChecked]     = useState({ justina: !isBuyer, victoria: !!isBuyer, amy: false })
+  const [subject,     setSubject]     = useState(`${transaction.property_address || 'Property'} — Update`)
+  const [note,        setNote]        = useState('')
+  const [changes,     setChanges]     = useState([])
+  const [loadingDiff, setLoadingDiff] = useState(true)
+  const [sending,     setSending]     = useState(false)
 
   useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose() }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [onClose])
+    let active = true
+    ;(async () => {
+      const { data } = await supabase
+        .from('notify_snapshots')
+        .select('snapshot')
+        .eq('transaction_id', transaction.id)
+        .order('sent_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (!active) return
+      const baseline = data?.snapshot || {}
+      const diffs = Object.entries(DIFF_FIELDS)
+        .filter(([field]) => String(baseline[field] ?? '') !== String(transaction[field] ?? ''))
+        .map(([field, label]) => ({
+          key:    field,
+          label,
+          oldVal: String(baseline[field] ?? ''),
+          newVal: String(transaction[field] ?? ''),
+          checked: true,
+        }))
+      setChanges(diffs)
+      setLoadingDiff(false)
+    })()
+    return () => { active = false }
+  }, [transaction.id])
 
-  const toggle = (name) =>
-    setSelected(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name])
+  const toggleChange = (key) =>
+    setChanges(prev => prev.map(c => c.key === key ? { ...c, checked: !c.checked } : c))
 
   const handleSend = async () => {
-    console.log('[Send] Send button clicked — selected:', selected, '| sendable:', sendable)
-    if (!selected.length || sending) return
+    const recipients = [
+      checked.justina  && justina,
+      checked.victoria && victoria,
+      checked.amy      && amy,
+    ].filter(r => r && r.email)
+    if (!recipients.length) { toast.error('No recipients with a configured email'); return }
+
     setSending(true)
-    await onSend(sendable.filter(tc => selected.includes(tc.name)))
-    setSending(false)
-    onClose()
+    const summary = buildTransactionSummary(transaction, column, fullAddress)
+    const checkedChanges = changes.filter(c => c.checked)
+
+    let changeBlock = ''
+    if (checkedChanges.length) {
+      changeBlock = 'CHANGES\n' + '─'.repeat(44) + '\n'
+        + checkedChanges.map(c =>
+            c.oldVal ? `${c.label}: "${c.oldVal}" → "${c.newVal}"` : `${c.label}: "${c.newVal}"`
+          ).join('\n')
+        + '\n\n'
+    }
+
+    let noteBlock = ''
+    if (note.trim()) noteBlock = 'NOTE\n' + '─'.repeat(44) + '\n' + note.trim() + '\n\n'
+
+    const body = `${changeBlock}${noteBlock}${summary}`
+
+    const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
+    const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+    const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+
+    try {
+      const { default: emailjs } = await import('@emailjs/browser')
+      for (const r of recipients) {
+        await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+          to_email:         r.email,
+          to_name:          r.name,
+          subject,
+          mention_notes:    body,
+          transaction_addr: fullAddress || '',
+        }, PUBLIC_KEY)
+      }
+      await supabase.from('notify_snapshots').insert({
+        transaction_id: transaction.id,
+        sent_at:        new Date().toISOString(),
+        snapshot:       { ...transaction },
+      })
+      toast.success(`Notified ${recipients.map(r => r.name).join(' & ')}`)
+      onClose()
+    } catch (err) {
+      console.error('[Notify] email error:', err)
+      toast.error('Failed to send — check EmailJS settings')
+      setSending(false)
+    }
   }
 
+  const summary  = buildTransactionSummary(transaction, column, fullAddress)
+  const anyChecked = checked.justina || checked.victoria || checked.amy
+
   return (
-    <div className="txp-send-dropdown" ref={ref}>
-      <div className="txp-send-dropdown-title">Send summary to</div>
-      {sendable.length === 0 ? (
-        <div className="txp-send-no-emails">No TC emails configured.<br />Add emails in Settings.</div>
-      ) : (
-        sendable.map(tc => (
-          <label key={tc.name} className="txp-send-recipient">
+    <div className="notify-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="notify-modal">
+        <div className="notify-header">
+          <h2 className="notify-title">Notify</h2>
+          <button className="notify-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="notify-body">
+          {/* RECIPIENTS */}
+          <section className="notify-section">
+            <div className="notify-section-label">RECIPIENTS</div>
+            {[
+              { key: 'justina',  person: justina  },
+              { key: 'victoria', person: victoria },
+              { key: 'amy',      person: amy      },
+            ].map(({ key, person }) => (
+              <label key={key} className="notify-recipient">
+                <input
+                  type="checkbox"
+                  checked={checked[key]}
+                  onChange={() => setChecked(p => ({ ...p, [key]: !p[key] }))}
+                />
+                <span className="notify-recipient-name">{person.name}</span>
+                {!person.email && <span className="notify-no-email">(no email configured)</span>}
+              </label>
+            ))}
+          </section>
+
+          {/* SUBJECT */}
+          <section className="notify-section">
+            <div className="notify-section-label">SUBJECT</div>
             <input
-              type="checkbox"
-              checked={selected.includes(tc.name)}
-              onChange={() => toggle(tc.name)}
+              className="notify-input"
+              type="text"
+              value={subject}
+              onChange={e => setSubject(e.target.value)}
             />
-            <span>{tc.name}</span>
-          </label>
-        ))
-      )}
-      <div className="txp-send-dropdown-actions">
-        <button className="txp-send-cancel-btn" onClick={onClose}>Cancel</button>
-        <button
-          className="txp-send-confirm-btn"
-          disabled={!selected.length || sending || sendable.length === 0}
-          onClick={handleSend}
-        >
-          {sending ? 'Sending…' : 'Send'}
-        </button>
+          </section>
+
+          {/* NOTE */}
+          <section className="notify-section">
+            <div className="notify-section-label">
+              NOTE <span className="notify-optional">(optional)</span>
+            </div>
+            <textarea
+              className="notify-textarea"
+              placeholder="Add a personal message…"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              rows={3}
+            />
+          </section>
+
+          {/* CHANGES */}
+          <section className="notify-section">
+            <div className="notify-section-label">CHANGES</div>
+            {loadingDiff ? (
+              <div className="notify-dim">Detecting changes…</div>
+            ) : changes.length === 0 ? (
+              <div className="notify-dim">No changes detected since last notification.</div>
+            ) : (
+              <div className="notify-changes-list">
+                {changes.map(c => (
+                  <label key={c.key} className="notify-change-item">
+                    <input
+                      type="checkbox"
+                      checked={c.checked}
+                      onChange={() => toggleChange(c.key)}
+                    />
+                    <span className="notify-change-field">{c.label}:</span>
+                    <span className="notify-change-val">
+                      {c.oldVal ? <><s className="notify-change-old">{c.oldVal}</s>{' → '}</> : ''}
+                      <strong>{c.newVal || '(empty)'}</strong>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* TRANSACTION SUMMARY */}
+          <section className="notify-section">
+            <div className="notify-section-label">TRANSACTION SUMMARY</div>
+            <pre className="notify-summary">{summary}</pre>
+          </section>
+        </div>
+
+        <div className="notify-footer">
+          <button
+            className="notify-send-btn"
+            onClick={handleSend}
+            disabled={sending || !anyChecked}
+          >
+            {sending ? 'Sending…' : 'Send'}
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -2627,6 +2834,7 @@ export default function TransactionDetailPage({
   transaction,
   transactions = [],
   onNavigate,
+  from = 'board',
   columns,
   commissions,
   tasks,
@@ -2650,7 +2858,7 @@ export default function TransactionDetailPage({
 }) {
   const [activeSection, setActiveSection]   = useState(initialSection)
   const [sessionHistory, setSessionHistory] = useState([])
-  const [sendOpen, setSendOpen]             = useState(false)
+  const [notifyOpen, setNotifyOpen]         = useState(false)
 
   const currentIdx = transactions.findIndex(t => t.id === transaction.id)
   const prevTx = currentIdx > 0 ? transactions[currentIdx - 1] : null
@@ -2711,49 +2919,6 @@ export default function TransactionDetailPage({
       .then(({ error }) => { if (error) console.warn('history save:', error.message) })
   }, [transaction, columns, onStatusChange])
 
-  // Send: show recipient picker, then email formatted summary via EmailJS
-  const handleSendConfirm = async (recipients) => {
-    const summary = buildTransactionSummary(transaction, column, fullAddress)
-    const subject = `Transaction Summary — ${fullAddress || 'Transaction'}`
-
-    const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
-    const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-    const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-
-    console.log('[Send] handleSendConfirm fired')
-    console.log('[Send] recipients:', recipients.map(r => ({ name: r.name, email: r.email })))
-    console.log('[Send] SERVICE_ID:', SERVICE_ID, '| TEMPLATE_ID:', TEMPLATE_ID, '| PUBLIC_KEY:', PUBLIC_KEY ? '(set)' : '(missing)')
-
-    if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
-      console.warn('[Send] EmailJS env vars missing — falling back to clipboard copy')
-      try { await navigator.clipboard.writeText(summary); toast.success('Summary copied to clipboard!') }
-      catch { toast.error('Configure EmailJS to send directly') }
-      return
-    }
-
-    try {
-      const { default: emailjs } = await import('@emailjs/browser')
-      for (const tc of recipients) {
-        const payload = {
-          to_email:         tc.email,
-          to_name:          tc.name,
-          subject,
-          body:             summary,
-          task_title:       subject,
-          mention_notes:    summary,
-          transaction_addr: fullAddress || '(No address)',
-        }
-        console.log('[Send] Calling emailjs.send with payload:', payload)
-        const result = await emailjs.send(SERVICE_ID, TEMPLATE_ID, payload, PUBLIC_KEY)
-        console.log('[Send] EmailJS result for', tc.email, ':', result)
-      }
-      toast.success(`Sent to ${recipients.map(r => r.name).join(' & ')}`)
-    } catch (err) {
-      console.error('[Send] email error:', err)
-      toast.error('Failed to send — check EmailJS settings')
-    }
-  }
-
   const handleDelete = () => {
     if (window.confirm('Delete this transaction? This cannot be undone.')) {
       onDelete(transaction.id)
@@ -2766,8 +2931,7 @@ export default function TransactionDetailPage({
       {/* Top Bar */}
       <div className="txp-topbar">
         <div className="txp-topbar-left">
-          <button className="txp-back-btn" onClick={onBack} title="Back to The Board (Esc)">←</button>
-          <button className="txp-back-label-btn" onClick={onBack}>Back to Board</button>
+          <button className="txp-back-btn" onClick={onBack} title={from === 'tasks' ? 'Back to Tasks (Esc)' : 'Back to The Board (Esc)'}>←</button>
           {transactions.length > 1 && (
             <div className="txp-nav-arrows">
               <button
@@ -2786,16 +2950,7 @@ export default function TransactionDetailPage({
           )}
         </div>
         <div className="txp-topbar-right">
-          <div className="txp-send-wrap">
-            <button className="txp-share-btn" onClick={() => setSendOpen(o => !o)}>Send</button>
-            {sendOpen && (
-              <SendDropdown
-                tcSettings={tcSettings}
-                onSend={handleSendConfirm}
-                onClose={() => setSendOpen(false)}
-              />
-            )}
-          </div>
+          <button className="txp-share-btn" onClick={() => setNotifyOpen(true)}>Notify</button>
           <button className="txp-topbar-delete-btn" onClick={handleDelete}>Delete</button>
         </div>
       </div>
@@ -2882,6 +3037,16 @@ export default function TransactionDetailPage({
           )}
         </main>
       </div>
+
+      {notifyOpen && (
+        <NotifyModal
+          transaction={transaction}
+          tcSettings={tcSettings}
+          column={column}
+          fullAddress={fullAddress}
+          onClose={() => setNotifyOpen(false)}
+        />
+      )}
     </div>
   )
 }

@@ -72,6 +72,7 @@ export default function App() {
   const [selectedTransaction, setSelectedTransaction] = useState(null)
   const [selectedSection,     setSelectedSection]     = useState('details')
   const [txOpenRevision,      setTxOpenRevision]      = useState(0)
+  const [txFrom,              setTxFrom]              = useState('board')
   const [activeTab,  setActiveTab]  = useState('board')
   const [boardView,  setBoardView]  = useState(() => localStorage.getItem('boardView') || 'board')
 
@@ -107,10 +108,12 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  const openTransaction = (tx, section = 'details') => {
+  const openTransaction = (tx, section = 'details', from = 'board') => {
     setSelectedSection(section)
     setSelectedTransaction(tx)
     setTxOpenRevision(r => r + 1)
+    setTxFrom(from)
+    window.history.pushState({}, '', `?from=${from}`)
   }
 
   // Show a toast when returning from Google OAuth
@@ -751,10 +754,7 @@ export default function App() {
             onAddTaskComment={handleAddTaskComment}
             onDeleteTaskComment={handleDeleteTaskComment}
             tcSettings={tcSettings}
-            onCardClick={(tx) => {
-              setSelectedTransaction(tx)
-              setActiveTab('board')
-            }}
+            onCardClick={(tx) => openTransaction(tx, 'details', 'tasks')}
           />
         )}
         {activeTab === 'collaborators' && (
@@ -778,7 +778,8 @@ export default function App() {
           key={txOpenRevision}
           transaction={selectedTransaction}
           transactions={transactions}
-          onNavigate={(tx) => { setSelectedTransaction(tx); setTxOpenRevision(r => r + 1) }}
+          onNavigate={(tx) => { setSelectedTransaction(tx); setTxOpenRevision(r => r + 1); window.history.replaceState({}, '', `?from=${txFrom}`) }}
+          from={txFrom}
           initialSection={selectedSection}
           columns={COLUMNS}
           commissions={commissions}
@@ -786,7 +787,12 @@ export default function App() {
           tcSettings={tcSettings}
           dbTemplates={dbTemplates}
           dbTemplateTasks={dbTemplateTasks}
-          onBack={() => setSelectedTransaction(null)}
+          onBack={() => {
+            const from = new URLSearchParams(window.location.search).get('from')
+            window.history.replaceState({}, '', window.location.pathname)
+            setSelectedTransaction(null)
+            if (from === 'tasks') setActiveTab('tasks')
+          }}
           onFieldSave={handleFieldSave}
           onCommissionChange={handleCommissionChange}
           onDelete={handleDelete}

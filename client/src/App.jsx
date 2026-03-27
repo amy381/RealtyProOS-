@@ -398,6 +398,14 @@ export default function App() {
     }
   }
 
+  // ── Generic transaction field update (used by global Tasks tab date sync) ───
+  const handleUpdateTransactionField = async (txId, field, value) => {
+    setTransactions(prev => prev.map(t => t.id === txId ? { ...t, [field]: value } : t))
+    if (selectedTransaction?.id === txId) setSelectedTransaction(prev => ({ ...prev, [field]: value }))
+    const { error } = await supabase.from('transactions').update({ [field]: value }).eq('id', txId)
+    if (error) toast.error(`Failed to save: ${error.message}`)
+  }
+
   // ── Inline field save ───────────────────────────────────────────────────────
   const handleFieldSave = async (field, value) => {
     if (!selectedTransaction) return
@@ -750,6 +758,8 @@ export default function App() {
             transactions={transactions}
             onTaskUpdate={handleUpdateTask}
             onDeleteTask={handleDeleteTask}
+            onAddTask={handleAddTask}
+            onUpdateTransaction={handleUpdateTransactionField}
             taskComments={taskComments}
             onAddTaskComment={handleAddTaskComment}
             onDeleteTaskComment={handleDeleteTaskComment}

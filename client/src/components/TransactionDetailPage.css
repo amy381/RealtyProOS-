@@ -420,6 +420,17 @@
   background: #fafafa;
 }
 
+/* ─── Pending Contract Dates section ────────────────────────────────────────── */
+.txp-pending-dates-section {
+  border: 2px solid #ddeaff;
+}
+
+.txp-pending-dates-title {
+  color: #2c5aa0 !important;
+  background: #eef4ff !important;
+  border-bottom-color: #c8dbf8 !important;
+}
+
 /* ─── Field row ──────────────────────────────────────────────────────────────── */
 .txp-field {
   display: flex;

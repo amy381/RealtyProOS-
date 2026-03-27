@@ -39,6 +39,29 @@ const TC_NAMES         = ['Justina Morris', 'Victoria Lareau']
 const ASSIGNEE_OPTIONS = ['Me', 'Justina Morris', 'Victoria Lareau']
 const STATUS_OPTIONS   = [{ value: 'open', label: 'Open' }, { value: 'complete', label: 'Done' }]
 
+// Category 1: task title substring → { field on transaction, label }
+const CAT1_TASK_MAP = [
+  { match: 'Appraisal Ordered',         field: 'appraisal_date',       label: 'Appraisal Date'      },
+  { match: 'BINSR Submitted',           field: 'binsr_submitted_date',  label: 'BINSR Submitted'     },
+  { match: 'Home Inspection Scheduled', field: 'home_inspection_date',  label: 'Home Inspection Date' },
+]
+
+// Category 2: task title substring → label (stored on task.row_date)
+const CAT2_TASK_MAP = [
+  { match: 'Septic Inspection Ordered', label: 'Scheduled Date' },
+  { match: 'Water Test Ordered',        label: 'Scheduled Date' },
+  { match: 'Tiedowns Ordered',          label: 'Install Date'   },
+  { match: 'Engineering Cert Ordered',  label: 'Scheduled Date' },
+]
+
+function getTaskDateConfig(title = '') {
+  const cat1 = CAT1_TASK_MAP.find(m => title.includes(m.match))
+  if (cat1) return { category: 1, ...cat1 }
+  const cat2 = CAT2_TASK_MAP.find(m => title.includes(m.match))
+  if (cat2) return { category: 2, ...cat2 }
+  return null
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatLocalDate(isoStr) {
   if (!isoStr) return ''
@@ -199,10 +222,25 @@ function CriticalDateRow({ item }) {
   )
 }
 
-function GlobalTaskRow({ task, onUpdate, onDelete, onOpenEdit, onOpenComments, commentCount, bulkMode, selected, onToggleSelect }) {
-  const done    = task.status === 'complete'
+function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, onOpenComments, commentCount, bulkMode, selected, onToggleSelect }) {
+  const done        = task.status === 'complete'
   const isDueDateType = task.task_type === 'Due Date'
-  const ddl     = dueDateLabel(task.due_date, done, task.completed_at)
+  const ddl         = dueDateLabel(task.due_date, done, task.completed_at)
+  const dateCfg     = getTaskDateConfig(task.title)
+
+  // For Cat1 the displayed date value comes from the transaction; for Cat2 from task.row_date
+  const rowDateValue = dateCfg?.category === 1
+    ? (tx?.[dateCfg.field] || '')
+    : (task.row_date || '')
+
+  const handleRowDateChange = (e) => {
+    const val = e.target.value || null
+    if (dateCfg.category === 1) {
+      onUpdateTx?.(tx.id, dateCfg.field, val)
+    } else {
+      onUpdate(task.id, { row_date: val })
+    }
+  }
 
   return (
     <div className={[
@@ -231,15 +269,30 @@ function GlobalTaskRow({ task, onUpdate, onDelete, onOpenEdit, onOpenComments, c
           </button>
         )}
       </div>
-      <span className={`gtd-grow-title${done ? ' gtd-done-text' : ''}`}>{task.title}</span>
+      <div className="gtd-grow-title-col">
+        <span className={`gtd-grow-title${done ? ' gtd-done-text' : ''}`}>{task.title}</span>
+        {dateCfg && (
+          <div className="gtd-row-date-field" onClick={e => e.stopPropagation()}>
+            <span className="gtd-row-date-label">{dateCfg.label}</span>
+            <input
+              type="date"
+              className="gtd-row-date-input"
+              value={rowDateValue}
+              onChange={handleRowDateChange}
+            />
+          </div>
+        )}
+      </div>
       <span className="gtd-grow-assignee">{isDueDateType ? '' : (task.assigned_to || '')}</span>
       <span className={`gtd-grow-due gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</span>
-      <span className="gtd-grow-status">
-        {isDueDateType
-          ? <span className="gtd-status-badge gtd-status-key-date">Key Date</span>
-          : <span className={`gtd-status-badge${done ? ' gtd-status-done' : ' gtd-status-open'}`}>{done ? 'Done' : 'Open'}</span>
-        }
-      </span>
+      {(isDueDateType || done) && (
+        <span className="gtd-grow-status">
+          {isDueDateType
+            ? <span className="gtd-status-badge gtd-status-key-date">Key Date</span>
+            : <span className="gtd-status-badge gtd-status-done">Done</span>
+          }
+        </span>
+      )}
       <div className="gtd-grow-actions" onClick={e => e.stopPropagation()}>
         <button className="gtd-grow-edit-btn" onClick={onOpenEdit} title="Edit task">✎</button>
         <button
@@ -255,8 +308,11 @@ function GlobalTaskRow({ task, onUpdate, onDelete, onOpenEdit, onOpenComments, c
   )
 }
 
+const TASK_TYPE_OPTIONS = ['Task', 'Email', 'Notification', 'Due Date']
+
 function TaskEditModal({ task, tx, onUpdate, onClose }) {
   const [title,      setTitle]      = useState(task.title || '')
+  const [taskType,   setTaskType]   = useState(task.task_type || 'Task')
   const [dueDate,    setDueDate]    = useState(task.due_date || '')
   const [assigned,   setAssigned]   = useState(task.assigned_to || 'Me')
   const [status,     setStatus]     = useState(task.status || 'open')
@@ -266,6 +322,7 @@ function TaskEditModal({ task, tx, onUpdate, onClose }) {
   const handleSave = () => {
     onUpdate(task.id, {
       title:                  title.trim() || task.title,
+      task_type:              taskType,
       due_date:               dueDate || null,
       assigned_to:            assigned,
       status,
@@ -299,9 +356,17 @@ function TaskEditModal({ task, tx, onUpdate, onClose }) {
           </label>
           <div className="gtd-edit-row">
             <label className="gtd-edit-field">
+              <span className="gtd-edit-label">Task Type</span>
+              <select className="gtd-edit-input" value={taskType} onChange={e => setTaskType(e.target.value)}>
+                {TASK_TYPE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </label>
+            <label className="gtd-edit-field">
               <span className="gtd-edit-label">Due Date</span>
               <input className="gtd-edit-input" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
             </label>
+          </div>
+          <div className="gtd-edit-row">
             <label className="gtd-edit-field">
               <span className="gtd-edit-label">Assigned To</span>
               <select className="gtd-edit-input" value={assigned} onChange={e => setAssigned(e.target.value)}>
@@ -333,6 +398,71 @@ function TaskEditModal({ task, tx, onUpdate, onClose }) {
         <div className="gtd-edit-footer">
           <button className="gtd-edit-cancel" onClick={onClose}>Cancel</button>
           <button className="gtd-edit-save" onClick={handleSave}>Save</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AddTaskModal({ tx, onAdd, onClose }) {
+  const [title,    setTitle]    = useState('')
+  const [taskType, setTaskType] = useState('Task')
+  const [dueDate,  setDueDate]  = useState('')
+  const [assigned, setAssigned] = useState('Me')
+  const inputRef = useRef(null)
+  useEffect(() => { inputRef.current?.focus() }, [])
+
+  const handleSave = () => {
+    if (!title.trim()) return
+    onAdd({
+      title:          title.trim(),
+      task_type:      taskType,
+      due_date:       dueDate || null,
+      assigned_to:    assigned,
+      status:         'open',
+      notes:          '',
+      transaction_id: tx.id,
+    })
+    onClose()
+  }
+
+  return (
+    <div className="gtd-edit-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="gtd-edit-modal">
+        <div className="gtd-edit-header">
+          <span className="gtd-edit-title">Add Task — {tx.property_address?.split(',')[0] || 'Transaction'}</span>
+          <button className="gtd-edit-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="gtd-edit-body">
+          <label className="gtd-edit-field">
+            <span className="gtd-edit-label">Title</span>
+            <input ref={inputRef} className="gtd-edit-input" value={title} onChange={e => setTitle(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSave() }} placeholder="Task title…" />
+          </label>
+          <div className="gtd-edit-row">
+            <label className="gtd-edit-field">
+              <span className="gtd-edit-label">Task Type</span>
+              <select className="gtd-edit-input" value={taskType} onChange={e => setTaskType(e.target.value)}>
+                {TASK_TYPE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </label>
+            <label className="gtd-edit-field">
+              <span className="gtd-edit-label">Due Date</span>
+              <input className="gtd-edit-input" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+            </label>
+          </div>
+          <div className="gtd-edit-row">
+            <label className="gtd-edit-field">
+              <span className="gtd-edit-label">Assigned To</span>
+              <select className="gtd-edit-input" value={assigned} onChange={e => setAssigned(e.target.value)}>
+                {ASSIGNEE_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </label>
+          </div>
+        </div>
+        <div className="gtd-edit-footer">
+          <button className="gtd-edit-cancel" onClick={onClose}>Cancel</button>
+          <button className="gtd-edit-save" onClick={handleSave} disabled={!title.trim()}>Add Task</button>
         </div>
       </div>
     </div>
@@ -960,7 +1090,7 @@ function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, 
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function TasksTab({
-  tasks, transactions, onTaskUpdate, onDeleteTask,
+  tasks, transactions, onTaskUpdate, onDeleteTask, onAddTask, onUpdateTransaction,
   taskComments = [], onAddTaskComment, onDeleteTaskComment,
   tcSettings = [], onCardClick,
 }) {
@@ -997,6 +1127,7 @@ export default function TasksTab({
   const [collapsed,     setCollapsed]     = useState({})
   const [showCompleted, setShowCompleted] = useState({})
   const [editingTaskId, setEditingTaskId] = useState(null)
+  const [addingForTx,   setAddingForTx]   = useState(null)
 
   // Bulk edit state
   const [bulkMode,     setBulkMode]     = useState(false)
@@ -1484,7 +1615,9 @@ export default function TasksTab({
                   <GlobalTaskRow
                     key={item.id}
                     task={item}
+                    tx={tx}
                     onUpdate={onTaskUpdate}
+                    onUpdateTx={onUpdateTransaction}
                     onDelete={onDeleteTask}
                     onOpenEdit={() => setEditingTaskId(item.id)}
                     onOpenComments={() => setCommentTaskId(item.id)}
@@ -1495,10 +1628,26 @@ export default function TasksTab({
                   />
                 )
               )}
+              {!isCollapsed && onAddTask && (
+                <div className="gtd-add-task-row">
+                  <button className="gtd-add-task-btn" onClick={() => setAddingForTx(tx)}>
+                    + Add Task
+                  </button>
+                </div>
+              )}
             </div>
           )
         })}
       </div>
+
+      {/* ── Add task modal ──────────────────────────────────────────── */}
+      {addingForTx && (
+        <AddTaskModal
+          tx={addingForTx}
+          onAdd={onAddTask}
+          onClose={() => setAddingForTx(null)}
+        />
+      )}
 
       {/* ── Task edit modal ─────────────────────────────────────────── */}
       {editingTaskId && (() => {

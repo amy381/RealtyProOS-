@@ -48,6 +48,7 @@ const FIELD_LABELS = {
   title_company_email: 'Title Company Email', title_company_phone: 'Title Company Phone',
   co_op_agent: 'Co-op Agent',
   home_inspector: 'Home Inspector', home_inspection_date: 'Home Inspection Date',
+  appraisal_date: 'Appraisal Date',
   has_septic: 'Septic', has_solar: 'Solar', has_well: 'Well', has_hoa: 'HOA', has_lbp: 'LBP',
   lockbox: 'Lockbox', has_sign: 'Sign',
   referring_agent: 'Referring Agent', referring_agent_email: 'Referring Agent Email',
@@ -99,6 +100,7 @@ const DIFF_FIELDS = {
   co_op_agent:               'Co-op Agent',
   home_inspector:            'Home Inspector',
   home_inspection_date:      'Home Inspection Date',
+  appraisal_date:            'Appraisal Date',
   has_septic:                'Septic',
   has_solar:                 'Solar',
   has_well:                  'Well',
@@ -1540,20 +1542,24 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
   const isPendingOrBeyond = BUYER_PENDING_STAGES.includes(transaction.status)
   const isVacantLand      = transaction.property_type === 'Vacant Land'
 
+  const isPending = transaction.status === 'pending'
+
   const dateFields = isBuyer ? [
     { key: 'bba_contract',             label: 'BBA Contract',          required: true  },
     { key: 'bba_expiration',           label: 'BBA Expiration',        required: true  },
-    { key: 'contract_acceptance_date', label: 'Contract Acceptance',   required: true  },
-    { key: 'ipe_date',                 label: 'Inspection Period End', required: false },
-    ...(isPendingOrBeyond ? [{ key: 'binsr_submitted_date', label: 'BINSR Submitted', required: false }] : []),
-    { key: 'close_of_escrow',          label: 'Close of Escrow',       required: true  },
   ] : [
     { key: 'listing_contract',         label: 'Listing Contract',      required: true  },
     { key: 'listing_expiration_date',  label: 'Listing Expiration',    required: true  },
     { key: 'target_live_date',         label: 'Target Live',           required: false },
-    { key: 'contract_acceptance_date', label: 'Contract Acceptance',   required: true  },
-    { key: 'ipe_date',                 label: 'Inspection Period End', required: false },
-    { key: 'close_of_escrow',          label: 'Close of Escrow',       required: true  },
+  ]
+
+  const pendingContractFields = [
+    { key: 'contract_acceptance_date', label: 'Contract Acceptance'   },
+    { key: 'home_inspection_date',     label: 'Home Inspection Date'   },
+    { key: 'appraisal_date',           label: 'Appraisal Date'         },
+    { key: 'binsr_submitted_date',     label: 'BINSR Submitted'        },
+    { key: 'ipe_date',                 label: 'Inspection Period End'  },
+    { key: 'close_of_escrow',          label: 'Close of Escrow'        },
   ]
 
   return (
@@ -1853,28 +1859,46 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                 tabIndex={40 + i}
               />
             ))}
-            <div className="txp-field">
-              <span className="txp-field-label">Contingency</span>
-              <label className="txp-checkbox-item">
-                <input
-                  type="checkbox"
-                  tabIndex={46}
-                  checked={!!transaction.has_contingency}
-                  onChange={e => save('has_contingency')(e.target.checked)}
-                />
-              </label>
-            </div>
-            {transaction.has_contingency && (
-              <TxField
-                label="Contingency Fulfilled"
-                value={transaction.contingency_fulfilled_date || ''}
-                displayValue={formatDate(transaction.contingency_fulfilled_date)}
-                type="date"
-                onSave={save('contingency_fulfilled_date')}
-                tabIndex={47}
-              />
-            )}
           </div>
+
+          {/* PENDING CONTRACT DATES */}
+          {isPending && (
+            <div className="txp-section txp-pending-dates-section">
+              <div className="txp-section-title txp-pending-dates-title">Pending Contract Dates</div>
+              {pendingContractFields.map(({ key, label }, i) => (
+                <TxField
+                  key={key}
+                  label={label}
+                  value={transaction[key] || ''}
+                  displayValue={formatDate(transaction[key])}
+                  type="date"
+                  onSave={save(key)}
+                  tabIndex={50 + i}
+                />
+              ))}
+              <div className="txp-field">
+                <span className="txp-field-label">Contingency</span>
+                <label className="txp-checkbox-item">
+                  <input
+                    type="checkbox"
+                    tabIndex={60}
+                    checked={!!transaction.has_contingency}
+                    onChange={e => save('has_contingency')(e.target.checked)}
+                  />
+                </label>
+              </div>
+              {transaction.has_contingency && (
+                <TxField
+                  label="Contingency Fulfilled"
+                  value={transaction.contingency_fulfilled_date || ''}
+                  displayValue={formatDate(transaction.contingency_fulfilled_date)}
+                  type="date"
+                  onSave={save('contingency_fulfilled_date')}
+                  tabIndex={61}
+                />
+              )}
+            </div>
+          )}
 
           {/* NOTES (right column, below Key Dates) */}
           <NotesSection

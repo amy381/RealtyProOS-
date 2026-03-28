@@ -133,99 +133,26 @@ function loadSavedViews() {
   catch { return [] }
 }
 
-// ─── Critical Date Definitions ────────────────────────────────────────────────
-function addDaysToDate(dateStr, days) {
-  if (!dateStr) return null
-  const d = new Date(dateStr + 'T00:00:00')
-  d.setDate(d.getDate() + days)
-  return d.toISOString().split('T')[0]
-}
-
-const CRITICAL_DATE_DEFS = {
-  residential: [
-    { key: 'spds_due',                label: 'SPDS Due',                      anchor: 'contract_acceptance_date', offset: 3  },
-    { key: 'solar_docs',              label: 'Solar System Documents',         anchor: 'contract_acceptance_date', offset: 3  },
-    { key: 'ihr_due',                 label: 'IHR Due',                        anchor: 'contract_acceptance_date', offset: 5  },
-    { key: 'dwwa_spds',               label: 'DWWA SPDS',                      anchor: 'contract_acceptance_date', offset: 5  },
-    { key: 'well_reg',                label: 'Well Registration (ADWR)',       anchor: 'contract_acceptance_date', offset: 5,  requires: 'has_well'   },
-    { key: 'lbp',                     label: 'Lead Based Paint',                anchor: 'contract_acceptance_date', offset: 5,  requires: 'has_lbp'    },
-    { key: 'affidavit_disclosure',    label: 'Affidavit of Disclosure',         anchor: 'contract_acceptance_date', offset: 5  },
-    { key: 'loan_status_update',      label: 'Loan Status Update',              anchor: 'contract_acceptance_date', offset: 10 },
-    { key: 'hoa_disclosures',         label: 'HOA Disclosures',                 anchor: 'contract_acceptance_date', offset: 10, requires: 'has_hoa'    },
-    { key: 'septic_inspection',       label: 'Septic Inspection',               anchor: 'contract_acceptance_date', offset: 20, requires: 'has_septic' },
-    { key: 'binsr_response',          label: 'Seller Response to BINSR',       anchor: 'binsr_submitted_date',     offset: 5  },
-    { key: 'commission_instructions', label: 'Upload Commission Instructions', anchor: 'close_of_escrow',          offset: -10 },
-    { key: 'loan_approval',           label: 'Loan Approval',                   anchor: 'close_of_escrow',          offset: -3 },
-    { key: 'seller_repairs',          label: 'Seller Repairs Completed',       anchor: 'close_of_escrow',          offset: -3 },
-  ],
-  vacant_land: [
-    { key: 'vl_spds_due',             label: 'VL SPDS Due',                    anchor: 'contract_acceptance_date', offset: 5  },
-    { key: 'proof_of_funds',          label: 'Proof of Funds (Cash only)',      anchor: 'contract_acceptance_date', offset: 5,  requiresFinancing: 'Cash' },
-    { key: 'commission_instructions', label: 'Upload Commission Instructions', anchor: 'close_of_escrow',          offset: -10 },
-  ],
-}
-
-export const ALL_CRITICAL_DATE_OPTIONS = [
-  { value: 'spds_due',                label: 'SPDS Due' },
-  { value: 'solar_docs',              label: 'Solar System Documents' },
-  { value: 'ihr_due',                 label: 'IHR Due' },
-  { value: 'dwwa_spds',               label: 'DWWA SPDS' },
-  { value: 'well_reg',                label: 'Well Registration (ADWR)' },
-  { value: 'lbp',                     label: 'Lead Based Paint' },
-  { value: 'affidavit_disclosure',    label: 'Affidavit of Disclosure' },
-  { value: 'loan_status_update',      label: 'Loan Status Update' },
-  { value: 'hoa_disclosures',         label: 'HOA Disclosures' },
-  { value: 'septic_inspection',       label: 'Septic Inspection' },
-  { value: 'binsr_response',          label: 'Seller Response to BINSR' },
-  { value: 'commission_instructions', label: 'Upload Commission Instructions' },
-  { value: 'loan_approval',           label: 'Loan Approval' },
-  { value: 'seller_repairs',          label: 'Seller Repairs Completed' },
-  { value: 'vl_spds_due',             label: 'VL SPDS Due' },
-  { value: 'proof_of_funds',          label: 'Proof of Funds (Cash only)' },
-]
-
-function computeCriticalDates(tx, txTasks) {
-  const isVacantLand = (tx.property_type || '').toLowerCase().includes('vacant')
-  const defs = isVacantLand ? CRITICAL_DATE_DEFS.vacant_land : CRITICAL_DATE_DEFS.residential
-
-  const resolvedKeys = new Set(
-    (txTasks || [])
-      .filter(t => t.status === 'complete' && t.resolves_critical_date)
-      .map(t => t.resolves_critical_date)
-  )
-
-  const results = []
-  for (const def of defs) {
-    const anchorDate = tx[def.anchor]
-    if (!anchorDate) continue
-    if (def.requires && !tx[def.requires]) continue
-    if (def.requiresFinancing && tx.financing_type !== def.requiresFinancing) continue
-    if (resolvedKeys.has(def.key)) continue
-    const date = addDaysToDate(anchorDate, def.offset)
-    if (!date) continue
-    const today = new Date().toISOString().slice(0, 10)
-    if (date < today) continue
-    results.push({ type: 'critical_date', key: def.key, label: def.label, date })
-  }
-  return results
-}
 
 // ─── Sub-components for grouped view ─────────────────────────────────────────
-function CriticalDateRow({ item }) {
-  const ddl = dueDateLabel(item.date, false, null)
+function CriticalDateRow({ task }) {
+  const ddl = dueDateLabel(task.due_date, false, null)
   return (
     <div className="gtd-cd-row">
-      <span className="gtd-cd-label">{item.label}</span>
-      <span className="gtd-cd-date">{item.date ? new Date(item.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</span>
+      <span className="gtd-cd-label">{task.title}</span>
+      <span className="gtd-cd-date">
+        {task.due_date
+          ? new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : '—'}
+      </span>
       <span className={`gtd-cd-countdown gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</span>
     </div>
   )
 }
 
 function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, onOpenComments, commentCount, bulkMode, selected, onToggleSelect }) {
-  const done        = task.status === 'complete'
-  const isDueDateType = task.task_type === 'Due Date'
-  const ddl         = dueDateLabel(task.due_date, done, task.completed_at)
+  const done = task.status === 'complete'
+  const ddl  = dueDateLabel(task.due_date, done, task.completed_at)
   const dateCfg     = getTaskDateConfig(task.title)
 
   // For Cat1 the displayed date value comes from the transaction; for Cat2 from task.row_date
@@ -245,9 +172,8 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
   return (
     <div className={[
       'gtd-grow',
-      done        ? 'gtd-grow-done'     : '',
-      isDueDateType ? 'gtd-grow-keydate' : '',
-      selected    ? 'gtd-grow-selected' : '',
+      done     ? 'gtd-grow-done'     : '',
+      selected ? 'gtd-grow-selected' : '',
     ].filter(Boolean).join(' ')}>
       <div className="gtd-grow-check">
         {bulkMode ? (
@@ -258,8 +184,6 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
             onChange={onToggleSelect}
             onClick={e => e.stopPropagation()}
           />
-        ) : isDueDateType ? (
-          <span className="gtd-cal-icon" title="Key date">📅</span>
         ) : (
           <button
             className={`gtd-check${done ? ' gtd-checked' : ''}`}
@@ -283,14 +207,11 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
           </div>
         )}
       </div>
-      <span className="gtd-grow-assignee">{isDueDateType ? '' : (task.assigned_to || '')}</span>
+      <span className="gtd-grow-assignee">{task.assigned_to || ''}</span>
       <span className={`gtd-grow-due gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</span>
-      {(isDueDateType || done) && (
+      {done && (
         <span className="gtd-grow-status">
-          {isDueDateType
-            ? <span className="gtd-status-badge gtd-status-key-date">Key Date</span>
-            : <span className="gtd-status-badge gtd-status-done">Done</span>
-          }
+          <span className="gtd-status-badge gtd-status-done">Done</span>
         </span>
       )}
       <div className="gtd-grow-actions" onClick={e => e.stopPropagation()}>
@@ -308,9 +229,9 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
   )
 }
 
-const TASK_TYPE_OPTIONS = ['Task', 'Email', 'Notification', 'Due Date']
+const TASK_TYPE_OPTIONS = ['Task', 'Email', 'Notification', 'Critical Date']
 
-function TaskEditModal({ task, tx, onUpdate, onClose }) {
+function TaskEditModal({ task, tx, critDateTasks = [], onUpdate, onClose }) {
   const [title,      setTitle]      = useState(task.title || '')
   const [taskType,   setTaskType]   = useState(task.task_type || 'Task')
   const [dueDate,    setDueDate]    = useState(task.due_date || '')
@@ -333,13 +254,6 @@ function TaskEditModal({ task, tx, onUpdate, onClose }) {
     })
     onClose()
   }
-
-  // Filter options to relevant type
-  const isVacantLand = (tx?.property_type || '').toLowerCase().includes('vacant')
-  const relevantKeys = isVacantLand
-    ? ['vl_spds_due', 'proof_of_funds', 'commission_instructions']
-    : ALL_CRITICAL_DATE_OPTIONS.filter(o => !['vl_spds_due', 'proof_of_funds'].includes(o.value)).map(o => o.value)
-  const cdOptions = ALL_CRITICAL_DATE_OPTIONS.filter(o => relevantKeys.includes(o.value))
 
   return (
     <div className="gtd-edit-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
@@ -382,18 +296,20 @@ function TaskEditModal({ task, tx, onUpdate, onClose }) {
               </select>
             </label>
           </div>
-          <div className="gtd-edit-cd-section">
-            <label className="gtd-edit-cd-toggle">
-              <input type="checkbox" checked={resolvesCd} onChange={e => { setResolvesCd(e.target.checked); if (!e.target.checked) setCdKey('') }} />
-              <span>Resolves a critical date</span>
-            </label>
-            {resolvesCd && (
-              <select className="gtd-edit-input gtd-edit-cd-select" value={cdKey} onChange={e => setCdKey(e.target.value)}>
-                <option value="">— Select critical date —</option>
-                {cdOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            )}
-          </div>
+          {taskType !== 'Critical Date' && (
+            <div className="gtd-edit-cd-section">
+              <label className="gtd-edit-cd-toggle">
+                <input type="checkbox" checked={resolvesCd} onChange={e => { setResolvesCd(e.target.checked); if (!e.target.checked) setCdKey('') }} />
+                <span>Resolves a critical date</span>
+              </label>
+              {resolvesCd && (
+                <select className="gtd-edit-input gtd-edit-cd-select" value={cdKey} onChange={e => setCdKey(e.target.value)}>
+                  <option value="">— Select critical date —</option>
+                  {critDateTasks.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+                </select>
+              )}
+            </div>
+          )}
         </div>
         <div className="gtd-edit-footer">
           <button className="gtd-edit-cancel" onClick={onClose}>Cancel</button>
@@ -404,24 +320,27 @@ function TaskEditModal({ task, tx, onUpdate, onClose }) {
   )
 }
 
-function AddTaskModal({ tx, onAdd, onClose }) {
-  const [title,    setTitle]    = useState('')
-  const [taskType, setTaskType] = useState('Task')
-  const [dueDate,  setDueDate]  = useState('')
-  const [assigned, setAssigned] = useState('Me')
+function AddTaskModal({ tx, critDateTasks = [], onAdd, onClose }) {
+  const [title,      setTitle]      = useState('')
+  const [taskType,   setTaskType]   = useState('Task')
+  const [dueDate,    setDueDate]    = useState('')
+  const [assigned,   setAssigned]   = useState('Me')
+  const [resolvesCd, setResolvesCd] = useState(false)
+  const [cdKey,      setCdKey]      = useState('')
   const inputRef = useRef(null)
   useEffect(() => { inputRef.current?.focus() }, [])
 
   const handleSave = () => {
     if (!title.trim()) return
     onAdd({
-      title:          title.trim(),
-      task_type:      taskType,
-      due_date:       dueDate || null,
-      assigned_to:    assigned,
-      status:         'open',
-      notes:          '',
-      transaction_id: tx.id,
+      title:                  title.trim(),
+      task_type:              taskType,
+      due_date:               dueDate || null,
+      assigned_to:            assigned,
+      status:                 'open',
+      notes:                  '',
+      transaction_id:         tx.id,
+      resolves_critical_date: resolvesCd && cdKey ? cdKey : null,
     })
     onClose()
   }
@@ -459,6 +378,20 @@ function AddTaskModal({ tx, onAdd, onClose }) {
               </select>
             </label>
           </div>
+          {taskType !== 'Critical Date' && (
+            <div className="gtd-edit-cd-section">
+              <label className="gtd-edit-cd-toggle">
+                <input type="checkbox" checked={resolvesCd} onChange={e => { setResolvesCd(e.target.checked); if (!e.target.checked) setCdKey('') }} />
+                <span>Resolves a critical date</span>
+              </label>
+              {resolvesCd && (
+                <select className="gtd-edit-input gtd-edit-cd-select" value={cdKey} onChange={e => setCdKey(e.target.value)}>
+                  <option value="">— Select critical date —</option>
+                  {critDateTasks.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+                </select>
+              )}
+            </div>
+          )}
         </div>
         <div className="gtd-edit-footer">
           <button className="gtd-edit-cancel" onClick={onClose}>Cancel</button>
@@ -1167,7 +1100,10 @@ export default function TasksTab({
             !(tx.property_address || '').toLowerCase().includes(q)) return false
       }
       // For due bucket filter, always include completed (handled per-group toggle)
-      if (task.status !== 'complete' && !filters.dueChecks.has(dueBucket(task, today, eow))) return false
+      // Critical Date tasks bypass the due-bucket filter — they always show
+      if (task.task_type !== 'Critical Date') {
+        if (task.status !== 'complete' && !filters.dueChecks.has(dueBucket(task, today, eow))) return false
+      }
       return true
     })
 
@@ -1180,27 +1116,34 @@ export default function TasksTab({
       txGroupMap.get(tx.id).tasks.push(task)
     })
 
-    // Build each group: merge tasks + critical dates, sort chronologically
-    const groups = [...txGroupMap.values()].map(({ tx, tasks: txTasks }) => {
-      const activeForCritDates = !['closed', 'cancelled-expired'].includes(tx.status)
-      const critDates = activeForCritDates
-        ? computeCriticalDates(tx, tasks.filter(t => t.transaction_id === tx.id))
-        : []
+    const todayStr = new Date().toISOString().slice(0, 10)
 
-      // Interleave: tasks + critical dates sorted by date
-      const sortKey = (item) => {
-        const d = item.type === 'critical_date' ? item.date : item.due_date
-        return d || 'zzzz'
-      }
-      const allItems = [...txTasks, ...critDates].sort((a, b) => {
-        // Completed tasks sink to bottom
-        const aDone = a.type !== 'critical_date' && a.status === 'complete'
-        const bDone = b.type !== 'critical_date' && b.status === 'complete'
-        if (aDone !== bDone) return aDone ? 1 : -1
-        return sortKey(a).localeCompare(sortKey(b))
+    // Build each group, filtering Critical Date tasks that are resolved/past
+    const groups = [...txGroupMap.values()].map(({ tx, tasks: txTasks }) => {
+      // IDs of critical date tasks resolved by a completed regular task
+      const resolvedCritIds = new Set(
+        txTasks.filter(t => t.status === 'complete' && t.resolves_critical_date)
+          .map(t => t.resolves_critical_date)
+      )
+
+      const visibleTasks = txTasks.filter(t => {
+        if (t.task_type === 'Critical Date') {
+          if (t.status === 'complete') return false
+          if (resolvedCritIds.has(t.id)) return false
+          if (t.due_date && t.due_date < todayStr) return false
+        }
+        return true
       })
 
-      const completedCount = txTasks.filter(t => t.status === 'complete').length
+      // Sort: completed tasks sink to bottom, then by due_date ascending
+      const allItems = visibleTasks.sort((a, b) => {
+        const aDone = a.task_type !== 'Critical Date' && a.status === 'complete'
+        const bDone = b.task_type !== 'Critical Date' && b.status === 'complete'
+        if (aDone !== bDone) return aDone ? 1 : -1
+        return (a.due_date || 'zzzz').localeCompare(b.due_date || 'zzzz')
+      })
+
+      const completedCount = txTasks.filter(t => t.task_type !== 'Critical Date' && t.status === 'complete').length
       return { tx, items: allItems, completedCount }
     })
 
@@ -1226,7 +1169,7 @@ export default function TasksTab({
     return groups
   }, [tasks, txMap, filters])
 
-  const allFilteredTasks = groupedData.flatMap(g => g.items.filter(i => i.type !== 'critical_date'))
+  const allFilteredTasks = groupedData.flatMap(g => g.items.filter(i => i.task_type !== 'Critical Date'))
   const openCount        = allFilteredTasks.filter(t => t.status !== 'complete').length
   const doneCount        = allFilteredTasks.filter(t => t.status === 'complete').length
   const filterCount      = countFilters(filters)
@@ -1562,7 +1505,7 @@ export default function TasksTab({
           const showDone    = !!showCompleted[tx.id]
 
           const visibleItems = isCollapsed ? [] : items.filter(item =>
-            item.type === 'critical_date' || item.status !== 'complete' || showDone
+            item.task_type === 'Critical Date' || item.status !== 'complete' || showDone
           )
 
           return (
@@ -1609,8 +1552,8 @@ export default function TasksTab({
 
               {/* Task / critical date rows */}
               {!isCollapsed && visibleItems.map(item =>
-                item.type === 'critical_date' ? (
-                  <CriticalDateRow key={`cd-${item.key}`} item={item} />
+                item.task_type === 'Critical Date' ? (
+                  <CriticalDateRow key={item.id} task={item} />
                 ) : (
                   <GlobalTaskRow
                     key={item.id}
@@ -1644,6 +1587,7 @@ export default function TasksTab({
       {addingForTx && (
         <AddTaskModal
           tx={addingForTx}
+          critDateTasks={tasks.filter(t => t.transaction_id === addingForTx.id && t.task_type === 'Critical Date')}
           onAdd={onAddTask}
           onClose={() => setAddingForTx(null)}
         />
@@ -1653,10 +1597,14 @@ export default function TasksTab({
       {editingTaskId && (() => {
         const et = tasks.find(t => t.id === editingTaskId)
         const etx = et ? txMap[et.transaction_id] : null
+        const etCritDateTasks = et
+          ? tasks.filter(t => t.transaction_id === et.transaction_id && t.task_type === 'Critical Date' && t.id !== et.id)
+          : []
         return et ? (
           <TaskEditModal
             task={et}
             tx={etx}
+            critDateTasks={etCritDateTasks}
             onUpdate={onTaskUpdate}
             onClose={() => setEditingTaskId(null)}
           />

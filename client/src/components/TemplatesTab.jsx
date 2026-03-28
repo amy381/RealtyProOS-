@@ -36,7 +36,7 @@ const TIMING_OPTIONS = [
   { value: 'specific_date',               label: 'Specific date (manual)',                         hasDays: false },
 ]
 
-const TASK_TYPES = ['Task', 'Email', 'Notification', 'Due Date']
+const TASK_TYPES = ['Task', 'Email', 'Notification', 'Critical Date']
 const APPLIES_TO = ['Buyer', 'Seller', 'Both']
 
 function formatTiming(timingType, timingDays) {
@@ -1102,7 +1102,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
               >
                 {APPLIES_TO.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
-              {editingTask.task_type !== 'Due Date' && (<>
+              {editingTask.task_type !== 'Critical Date' && (<>
                 <label className="tt-modal-label">Auto-Assign To</label>
                 <select
                   className="tt-modal-select"

@@ -841,6 +841,7 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
   const newInputRef                 = useRef(null)
   const [tplDropOpen,    setTplDropOpen]    = useState(false)
   const [previewTpl,     setPreviewTpl]     = useState(null)
+  const [excludedTplIds, setExcludedTplIds] = useState(new Set())
   const [applying,       setApplying]       = useState(false)
   const [commentTaskId,  setCommentTaskId]  = useState(null)
   const tplDropRef = useRef(null)
@@ -853,7 +854,7 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
   }, [tplDropOpen])
 
   const previewTasks = previewTpl
-    ? (dbTemplateTasks || []).filter(t => t.template_id === previewTpl.id)
+    ? (dbTemplateTasks || []).filter(t => t.template_id === previewTpl.id && !excludedTplIds.has(t.id))
         .sort((a, b) => a.sort_order - b.sort_order)
     : []
 
@@ -926,7 +927,7 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
                     <button
                       key={tpl.id}
                       className="txp-tpl-item"
-                      onClick={() => { setPreviewTpl(tpl); setTplDropOpen(false) }}
+                      onClick={() => { setPreviewTpl(tpl); setExcludedTplIds(new Set()); setTplDropOpen(false) }}
                     >
                       {tpl.name}
                     </button>
@@ -1013,14 +1014,14 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
 
       {/* Apply Template preview modal */}
       {previewTpl && (
-        <div className="txp-tpl-overlay" onClick={e => { if (e.target === e.currentTarget) setPreviewTpl(null) }}>
+        <div className="txp-tpl-overlay" onClick={e => { if (e.target === e.currentTarget) { setPreviewTpl(null); setExcludedTplIds(new Set()) } }}>
           <div className="txp-tpl-modal">
             <div className="txp-tpl-modal-header">
               <div>
                 <div className="txp-tpl-modal-title">Apply Template</div>
                 <div className="txp-tpl-modal-sub">{previewTpl.name} — {previewTasks.length} tasks</div>
               </div>
-              <button className="txp-tpl-modal-close" onClick={() => setPreviewTpl(null)}>✕</button>
+              <button className="txp-tpl-modal-close" onClick={() => { setPreviewTpl(null); setExcludedTplIds(new Set()) }}>✕</button>
             </div>
             <div className="txp-tpl-modal-body">
               <table className="txp-tpl-preview-table">
@@ -1030,6 +1031,7 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
                     <th>Task Name</th>
                     <th>Timing</th>
                     <th>Assign To</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1039,17 +1041,24 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
                       <td>{t.title}</td>
                       <td className="txp-tpl-preview-timing">{fmtTemplateTiming(t.timing_type, t.timing_days)}</td>
                       <td className="txp-tpl-preview-assign">{t.auto_assign_to}</td>
+                      <td className="txp-tpl-preview-remove">
+                        <button
+                          className="txp-tpl-preview-remove-btn"
+                          title="Remove from this apply"
+                          onClick={() => setExcludedTplIds(prev => new Set([...prev, t.id]))}
+                        >✕</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <div className="txp-tpl-modal-actions">
-              <button className="txp-tpl-cancel" onClick={() => setPreviewTpl(null)}>Cancel</button>
+              <button className="txp-tpl-cancel" onClick={() => { setPreviewTpl(null); setExcludedTplIds(new Set()) }}>Cancel</button>
               <button
                 className="txp-tpl-confirm"
                 onClick={handleConfirmApply}
-                disabled={applying}
+                disabled={applying || previewTasks.length === 0}
               >
                 {applying ? 'Adding…' : `Add ${previewTasks.length} Tasks`}
               </button>
@@ -1534,6 +1543,7 @@ function CollaboratorSearch({ label, value, category, onSave, onSelect, placehol
 function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onNoteAdded, transactionAddr, tcSettings }) {
   const save   = (field) => (value) => onFieldSave(field, value)
   const column = columns.find(c => c.id === transaction.status)
+  const [parcelsText, setParcelsText] = useState('')
 
   const priceLabel = column?.priceLabel ||
     (transaction.rep_type === 'Buyer' ? 'Purchase Price' : 'List Price')
@@ -1555,7 +1565,6 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
 
   const pendingContractFields = [
     { key: 'contract_acceptance_date', label: 'Contract Acceptance'   },
-    { key: 'home_inspection_date',     label: 'Home Inspection Date'   },
     { key: 'appraisal_date',           label: 'Appraisal Date'         },
     { key: 'binsr_submitted_date',     label: 'BINSR Submitted'        },
     { key: 'ipe_date',                 label: 'Inspection Period End'  },
@@ -1753,20 +1762,6 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
             <div className="txp-section">
               <div className="txp-section-title">Contract Details</div>
               <CollaboratorSearch
-                label="Lender"
-                value={transaction.lender_name || ''}
-                category="lenders"
-                onSave={save('lender_name')}
-                onSelect={c => {
-                  if (c.email) save('lender_email')(c.email)
-                  if (c.phone) save('lender_phone')(c.phone)
-                }}
-                placeholder="Lender name"
-                tabIndex={32}
-              />
-              <TxField label="Lender Email" value={transaction.lender_email || ''} type="text" onSave={save('lender_email')} placeholder="lender@company.com" tabIndex={32} />
-              <TxField label="Lender Phone" value={transaction.lender_phone || ''} type="text" onSave={save('lender_phone')} placeholder="(555) 000-0000"    tabIndex={32} />
-              <CollaboratorSearch
                 label="Title Company"
                 value={transaction.title_company || ''}
                 category="title-escrow"
@@ -1776,57 +1771,72 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                   if (c.phone) save('title_company_phone')(c.phone)
                 }}
                 placeholder="Title company"
-                tabIndex={33}
+                tabIndex={32}
               />
-              <TxField label="Title Email" value={transaction.title_company_email || ''} type="text" onSave={save('title_company_email')} placeholder="title@company.com" tabIndex={34} />
-              <TxField label="Title Phone" value={transaction.title_company_phone || ''} type="text" onSave={save('title_company_phone')} placeholder="(555) 000-0000"    tabIndex={35} />
-              <TxField
-                label={isBuyer ? 'Seller Name' : 'Buyer Name'}
-                value={transaction.opposite_party_name || ''}
-                type="text"
-                onSave={save('opposite_party_name')}
-                placeholder={isBuyer ? 'Seller name' : 'Buyer name'}
-                tabIndex={36}
-              />
+              <TxField label="Title Email" value={transaction.title_company_email || ''} type="text" onSave={save('title_company_email')} placeholder="title@company.com" tabIndex={33} />
+              <TxField label="Title Phone" value={transaction.title_company_phone || ''} type="text" onSave={save('title_company_phone')} placeholder="(555) 000-0000"    tabIndex={34} />
               <CollaboratorSearch
                 label="Co-op Agent"
                 value={transaction.co_op_agent || ''}
                 category="coop-agents"
                 onSave={save('co_op_agent')}
                 placeholder="Agent name"
-                tabIndex={37}
+                tabIndex={35}
               />
-              {!isVacantLand && (<>
-                <CollaboratorSearch
-                  label="Home Inspector"
-                  value={transaction.home_inspector || ''}
-                  category="home-inspectors"
-                  onSave={save('home_inspector')}
-                  placeholder="Inspector name"
-                  tabIndex={38}
-                />
-                <TxField
-                  label="Inspection Date"
-                  value={transaction.home_inspection_date || ''}
-                  displayValue={formatDate(transaction.home_inspection_date)}
-                  type="date"
-                  onSave={save('home_inspection_date')}
-                  tabIndex={39}
-                />
-              </>)}
+              <TxField
+                label={isBuyer ? "Seller's Name" : "Buyer's Name"}
+                value={transaction.opposite_party_name || ''}
+                type="text"
+                onSave={save('opposite_party_name')}
+                placeholder={isBuyer ? 'Seller name' : 'Buyer name'}
+                tabIndex={36}
+              />
               <TxField
                 label="Financing Type"
                 value={transaction.financing_type || ''}
                 type="select"
                 options={FINANCING_TYPE_OPTIONS}
                 onSave={save('financing_type')}
-                tabIndex={40}
+                tabIndex={37}
               />
-              <div className="txp-field">
-                <span className="txp-field-label">Additional Parcel(s)</span>
-                <label className="txp-checkbox-item">
-                  <input type="checkbox" tabIndex={41} checked={!!transaction.additional_parcels} onChange={e => save('additional_parcels')(e.target.checked)} />
-                </label>
+              {transaction.financing_type !== 'Cash' && (<>
+                <CollaboratorSearch
+                  label="Lender"
+                  value={transaction.lender_name || ''}
+                  category="lenders"
+                  onSave={save('lender_name')}
+                  onSelect={c => {
+                    if (c.email) save('lender_email')(c.email)
+                    if (c.phone) save('lender_phone')(c.phone)
+                  }}
+                  placeholder="Lender name"
+                  tabIndex={38}
+                />
+                <TxField label="Lender Email" value={transaction.lender_email || ''} type="text" onSave={save('lender_email')} placeholder="lender@company.com" tabIndex={39} />
+                <TxField label="Lender Phone" value={transaction.lender_phone || ''} type="text" onSave={save('lender_phone')} placeholder="(555) 000-0000"    tabIndex={40} />
+              </>)}
+              <div className="txp-field txp-additional-parcel-row">
+                <span className="txp-field-label">Additional Parcel</span>
+                <div className="txp-additional-parcel-inner">
+                  <input
+                    type="checkbox"
+                    className="txp-additional-parcel-check"
+                    tabIndex={41}
+                    checked={!!transaction.additional_parcels}
+                    onChange={e => save('additional_parcels')(e.target.checked)}
+                  />
+                  {!!transaction.additional_parcels && (
+                    <input
+                      type="text"
+                      className="txp-additional-parcel-text"
+                      value={parcelsText}
+                      placeholder="Parcel APN(s)…"
+                      tabIndex={42}
+                      onChange={e => setParcelsText(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+                    />
+                  )}
+                </div>
               </div>
               <TxField
                 label="Additional Terms & Conditions"
@@ -1834,7 +1844,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                 type="textarea"
                 onSave={save('additional_terms')}
                 placeholder="Enter any additional terms or conditions…"
-                tabIndex={42}
+                tabIndex={43}
               />
             </div>
           )}
@@ -2003,9 +2013,9 @@ function CommissionSection({ transaction, commissions, onCommissionChange, onAdd
       {/* ── Commission Source ── */}
       <Sub label="Commission Source" />
 
-      {/* Seller Concession */}
+      {/* Seller Compensation */}
       <div className="txp-field txp-cm-split-row">
-        <span className="txp-field-label">Seller Concession</span>
+        <span className="txp-field-label">Seller Compensation</span>
         <div className="txp-cm-split-inputs">
           <div className={`txp-cm-split-item${scFlatDraft.trim() !== '' ? ' txp-cm-split-item--dim' : ''}`}>
             <input
@@ -2884,9 +2894,17 @@ export default function TransactionDetailPage({
   const [sessionHistory, setSessionHistory] = useState([])
   const [notifyOpen, setNotifyOpen]         = useState(false)
 
-  const currentIdx = transactions.findIndex(t => t.id === transaction.id)
-  const prevTx = currentIdx > 0 ? transactions[currentIdx - 1] : null
-  const nextTx = currentIdx < transactions.length - 1 ? transactions[currentIdx + 1] : null
+  // Navigate only within the same stage, sorted by close_of_escrow (soonest first, nulls last)
+  const sameStage = [...transactions.filter(t => t.status === transaction.status)]
+    .sort((a, b) => {
+      if (!a.close_of_escrow && !b.close_of_escrow) return 0
+      if (!a.close_of_escrow) return 1
+      if (!b.close_of_escrow) return -1
+      return a.close_of_escrow.localeCompare(b.close_of_escrow)
+    })
+  const currentIdx = sameStage.findIndex(t => t.id === transaction.id)
+  const prevTx = currentIdx > 0 ? sameStage[currentIdx - 1] : null
+  const nextTx = currentIdx < sameStage.length - 1 ? sameStage[currentIdx + 1] : null
 
   useKeyboardShortcuts({ Escape: onBack })
 
@@ -2956,7 +2974,7 @@ export default function TransactionDetailPage({
       <div className="txp-topbar">
         <div className="txp-topbar-left">
           <button className="txp-back-btn" onClick={onBack} title={from === 'tasks' ? 'Back to Tasks (Esc)' : 'Back to The Board (Esc)'}>←</button>
-          {transactions.length > 1 && (
+          {sameStage.length > 1 && (
             <div className="txp-nav-arrows">
               <button
                 className="txp-nav-arrow"

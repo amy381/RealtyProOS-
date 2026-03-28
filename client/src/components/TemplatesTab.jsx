@@ -32,7 +32,8 @@ const TIMING_OPTIONS = [
   { value: 'days_after_bba',             label: 'days after BBA Contract',                        hasDays: true  },
   { value: 'days_before_ipe',             label: 'days before Inspection Period End / BINSR Due',  hasDays: true  },
   { value: 'days_after_ipe',             label: 'days after Inspection Period End / BINSR Due',   hasDays: true  },
-  { value: 'days_after_binsr',           label: 'days after BINSR Submitted',                     hasDays: true  },
+  { value: 'days_after_binsr',              label: 'days after BINSR Submitted',                     hasDays: true  },
+  { value: 'days_after_home_inspection',   label: 'When Home Inspection is Scheduled',              hasDays: false },
   { value: 'specific_date',               label: 'Specific date (manual)',                         hasDays: false },
 ]
 
@@ -132,7 +133,7 @@ const EMAIL_VARIABLES = [
 ]
 
 // ─── Sortable task row ────────────────────────────────────────────────────────
-function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle }) {
+function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle, emailTemplates = [] }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id, disabled: bulkMode })
 
@@ -173,6 +174,11 @@ function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle })
       <td className="tt-timing-cell">{formatTiming(task.timing_type, task.timing_days)}</td>
       <td className="tt-applies-cell">{task.applies_to}</td>
       <td className="tt-assign-cell">{task.auto_assign_to}</td>
+      <td className="tt-email-tpl-cell">
+        {task.task_type === 'Email' && task.email_template_id
+          ? (emailTemplates.find(e => e.id === task.email_template_id)?.name || '—')
+          : ''}
+      </td>
       {!bulkMode && (
         <td className="tt-actions-cell">
           <button className="tt-row-btn" onClick={() => onEdit(task)} title="Edit">✏️</button>
@@ -192,6 +198,8 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   const [selectedTemplateId, setSelectedTemplateId] = useState(null)
   const [editingTask,        setEditingTask]        = useState(null)
   const [saving,             setSaving]             = useState(false)
+  const [renamingId,         setRenamingId]         = useState(null)
+  const [renameValue,        setRenameValue]        = useState('')
 
   // ── Task template export
   const [exportOpen, setExportOpen] = useState(false)
@@ -403,6 +411,22 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     await supabase.from('task_templates').delete().eq('id', id)
     await onRefresh()
     if (selectedTemplateId === id) setSelectedTemplateId(null)
+  }
+
+  const startRename = (tpl) => {
+    setRenamingId(tpl.id)
+    setRenameValue(tpl.name)
+  }
+
+  const commitRename = async () => {
+    if (!renamingId) return
+    const trimmed = renameValue.trim()
+    if (trimmed) {
+      await supabase.from('task_templates').update({ name: trimmed }).eq('id', renamingId)
+      await onRefresh()
+    }
+    setRenamingId(null)
+    setRenameValue('')
   }
 
   const handleDragEnd = async ({ active, over }) => {
@@ -905,11 +929,26 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
             <>
               {/* Header */}
               <div className="templates-main-header">
-                <div>
-                  <h2 className="templates-main-title">{selectedTemplate.name}</h2>
-                  <div className="templates-main-meta">
-                    {selectedTemplate.stage} · {selectedTemplate.rep_type || 'Both'}
-                    {' · '}{taskRows.length} task{taskRows.length !== 1 ? 's' : ''}
+                <div className="templates-main-title-row">
+                  {renamingId === selectedTemplate.id ? (
+                    <input
+                      className="tt-rename-input"
+                      value={renameValue}
+                      autoFocus
+                      onChange={e => setRenameValue(e.target.value)}
+                      onBlur={commitRename}
+                      onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') { setRenamingId(null); setRenameValue('') } }}
+                    />
+                  ) : (
+                    <h2 className="templates-main-title">{selectedTemplate.name}</h2>
+                  )}
+                  <div className="tt-template-meta-actions">
+                    <div className="templates-main-meta">
+                      {selectedTemplate.stage} · {selectedTemplate.rep_type || 'Both'}
+                      {' · '}{taskRows.length} task{taskRows.length !== 1 ? 's' : ''}
+                    </div>
+                    <button className="tt-tpl-edit-btn" onClick={() => startRename(selectedTemplate)} title="Rename template">✏ Rename</button>
+                    <button className="tt-tpl-delete-btn" onClick={() => handleDeleteTemplate(selectedTemplate.id)} title="Delete template">✕ Delete</button>
                   </div>
                 </div>
                 <div className="templates-header-actions">
@@ -998,6 +1037,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                           <th className="tt-timing-cell">Timing</th>
                           <th className="tt-applies-cell">Applies To</th>
                           <th className="tt-assign-cell">Auto-Assign To</th>
+                          <th className="tt-email-tpl-cell">Email Template</th>
                           {!bulkMode && <th className="tt-actions-cell">Actions</th>}
                         </tr>
                       </thead>
@@ -1011,11 +1051,12 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                             bulkMode={bulkMode}
                             isSelected={selectedIds.has(task.id)}
                             onToggle={toggleId}
+                            emailTemplates={emailTemplates}
                           />
                         ))}
                         {taskRows.length === 0 && (
                           <tr>
-                            <td colSpan={bulkMode ? 7 : 8} className="tt-empty-row">
+                            <td colSpan={bulkMode ? 8 : 9} className="tt-empty-row">
                               No tasks yet — click + Add Task to get started
                             </td>
                           </tr>

@@ -18,7 +18,14 @@ const STAGE_ORDER = {
   'pre-listing': 0, 'active-listing': 1, 'buyer-broker': 2,
   'pending': 3, 'closed': 4, 'cancelled-expired': 5,
 }
-const STATUS_ORDER = { open: 0, in_progress: 1, complete: 2 }
+const STATUS_ORDER  = { open: 0, in_progress: 1, complete: 2 }
+const STATUS_LABELS = { open: 'To Do', in_progress: 'In Progress', complete: 'Completed' }
+const STATUS_NEXT   = { open: 'in_progress', in_progress: 'complete', complete: 'open' }
+const STATUS_STYLE  = {
+  open:        { bg: '#f0f0f0', color: '#555555' },
+  in_progress: { bg: '#dbeafe', color: '#1d4ed8' },
+  complete:    { bg: '#d1fae5', color: '#065f46' },
+}
 
 const DEFAULT_STAGE_CHECKS = new Set([
   'buyer-broker', 'pre-listing', 'active-listing', 'pending', 'closed',
@@ -151,8 +158,17 @@ function CriticalDateRow({ task }) {
 }
 
 function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, onOpenComments, commentCount, bulkMode, selected, onToggleSelect }) {
-  const done = task.status === 'complete'
-  const ddl  = dueDateLabel(task.due_date, done, task.completed_at)
+  const done      = task.status === 'complete'
+  const statusKey = task.status || 'open'
+  const ddl       = dueDateLabel(task.due_date, done, task.completed_at)
+
+  const cycleStatus = () => {
+    const next = STATUS_NEXT[statusKey] || 'open'
+    const extra = next === 'complete'
+      ? { completed_at: new Date().toISOString() }
+      : statusKey === 'complete' ? { completed_at: null } : {}
+    onUpdate(task.id, { status: next, ...extra })
+  }
   const dateCfg     = getTaskDateConfig(task.title)
 
   // For Cat1 the displayed date value comes from the transaction; for Cat2 from task.row_date
@@ -209,11 +225,16 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
       </div>
       <span className="gtd-grow-assignee">{task.assigned_to || ''}</span>
       <span className={`gtd-grow-due gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</span>
-      {done && (
-        <span className="gtd-grow-status">
-          <span className="gtd-status-badge gtd-status-done">Done</span>
-        </span>
-      )}
+      <span className="gtd-grow-status">
+        <button
+          className="gtd-status-cycle-btn"
+          style={{ background: STATUS_STYLE[statusKey].bg, color: STATUS_STYLE[statusKey].color }}
+          onClick={e => { e.stopPropagation(); cycleStatus() }}
+          title="Click to advance status"
+        >
+          {STATUS_LABELS[statusKey]}
+        </button>
+      </span>
       <div className="gtd-grow-actions" onClick={e => e.stopPropagation()}>
         <button className="gtd-grow-edit-btn" onClick={onOpenEdit} title="Edit task">✎</button>
         <button

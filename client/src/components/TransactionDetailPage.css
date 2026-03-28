@@ -637,6 +637,38 @@ select.txp-input { cursor: pointer; }
   accent-color: #1a1a1a;
 }
 
+/* ─── Additional Parcel inline row ───────────────────────────────────────────── */
+.txp-additional-parcel-row { align-items: center; }
+
+.txp-additional-parcel-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.txp-additional-parcel-check {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: #1a1a1a;
+  flex-shrink: 0;
+}
+
+.txp-additional-parcel-text {
+  flex: 1;
+  border: none;
+  border-bottom: 1px solid #ddd;
+  outline: none;
+  font-size: 13px;
+  padding: 2px 4px;
+  background: transparent;
+  height: 22px;
+  line-height: 1;
+}
+
+.txp-additional-parcel-text:focus { border-bottom-color: #3b82f6; }
+
 /* ─── Notes ──────────────────────────────────────────────────────────────────── */
 .txp-note-compose-row { padding: 12px 18px 8px; position: relative; }
 
@@ -1737,6 +1769,26 @@ select.txp-input { cursor: pointer; }
 
 .txp-tpl-preview-assign {
   color: #555;
+}
+
+.txp-tpl-preview-remove {
+  width: 28px;
+  text-align: center;
+}
+
+.txp-tpl-preview-remove-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.txp-tpl-preview-remove-btn:hover {
+  color: #e53e3e;
+  background: #fff0f0;
 }
 
 .txp-tpl-modal-actions {

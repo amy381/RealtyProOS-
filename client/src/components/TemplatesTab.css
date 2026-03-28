@@ -307,6 +307,19 @@
   background: #f0f4ff !important;
 }
 
+.templates-main-title-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tt-template-meta-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .templates-main-title {
   font-size: 1rem;
   font-weight: 700;
@@ -319,6 +332,41 @@
   color: #888;
   text-transform: capitalize;
 }
+
+.tt-rename-input {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111;
+  border: 1px solid #3b82f6;
+  border-radius: 4px;
+  padding: 2px 6px;
+  outline: none;
+  width: 280px;
+}
+
+.tt-tpl-edit-btn,
+.tt-tpl-delete-btn {
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 3px 8px;
+  font-weight: 500;
+}
+
+.tt-tpl-edit-btn {
+  background: #f0f4ff;
+  color: #3b5fc0;
+}
+
+.tt-tpl-edit-btn:hover { background: #dbeafe; }
+
+.tt-tpl-delete-btn {
+  background: #fff0f0;
+  color: #c0392b;
+}
+
+.tt-tpl-delete-btn:hover { background: #fde8e8; }
 
 .templates-add-task-btn {
   background: #111;
@@ -404,8 +452,9 @@
 .tt-type-cell  { width: 100px; }
 .tt-timing-cell { min-width: 200px; color: #555; }
 .tt-applies-cell { width: 90px; color: #555; }
-.tt-assign-cell  { width: 140px; color: #555; }
-.tt-actions-cell { width: 80px; white-space: nowrap; }
+.tt-assign-cell     { width: 140px; color: #555; }
+.tt-email-tpl-cell  { width: 160px; color: #555; font-size: 12px; }
+.tt-actions-cell    { width: 80px; white-space: nowrap; }
 
 .tt-empty-row {
   text-align: center;

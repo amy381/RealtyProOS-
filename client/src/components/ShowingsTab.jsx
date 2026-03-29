@@ -63,7 +63,7 @@ export default function ShowingsTab({ transactions }) {
       agent_name:     addForm.agent_name  || null,
       agent_email:    addForm.agent_email || null,
       showing_date:   addForm.showing_date || null,
-      feedback:       addForm.feedback    || null,
+      feedback:       addForm.feedback    || '',
     }).select().single()
     setAdding(false)
     if (error) { alert('Could not save showing.'); return }

@@ -33,7 +33,7 @@ const FIELD_LABELS = {
   property_type: 'Property Type',
   apn: 'APN', mls_number: 'MLS Number',
   vacant_or_occupied: 'Vacant or Occupied', occupancy: 'Occupancy',
-  bedrooms: 'Bedrooms', square_ft: 'Square Ft', year_built: 'Year Built',
+  bedrooms: 'Bedrooms', bathrooms: 'Bathrooms', square_ft: 'Square Ft', year_built: 'Year Built',
   new_construction: 'New Construction',
   access: 'Access',
   client_first_name: 'Client 1', client_last_name: 'Client 1',
@@ -95,6 +95,8 @@ const DIFF_FIELDS = {
   contingency_fulfilled_date:'Contingency Fulfilled',
   lender_name:               'Lender',
   title_company:             'Title Company',
+  bathrooms:                 'Bathrooms',
+  escrow_number:             'Escrow Number',
   title_company_email:       'Title Co. Email',
   title_company_phone:       'Title Co. Phone',
   co_op_agent:               'Co-op Agent',
@@ -1565,6 +1567,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
 
   const pendingContractFields = [
     { key: 'contract_acceptance_date', label: 'Contract Acceptance'   },
+    { key: 'home_inspection_date',     label: 'Inspection Date'        },
     { key: 'appraisal_date',           label: 'Appraisal Date'         },
     { key: 'binsr_submitted_date',     label: 'BINSR Submitted'        },
     { key: 'ipe_date',                 label: 'Inspection Period End'  },
@@ -1725,8 +1728,9 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               {/* Seller numeric fields */}
               {!isBuyer && !isVacantLand && (<>
                 <TxField label="Bedrooms"   value={String(transaction.bedrooms   ?? '')} type="text" onSave={save('bedrooms')}   placeholder="e.g. 3"    tabIndex={19} />
-                <TxField label="Square Ft"  value={String(transaction.square_ft  ?? '')} type="text" onSave={save('square_ft')}  placeholder="e.g. 1800" tabIndex={20} />
-                <TxField label="Year Built" value={String(transaction.year_built  ?? '')} type="text" onSave={save('year_built')} placeholder="e.g. 1998" tabIndex={21} />
+                <TxField label="Bathrooms"  value={String(transaction.bathrooms  ?? '')} type="text" onSave={save('bathrooms')}  placeholder="e.g. 2"    tabIndex={20} />
+                <TxField label="Square Ft"  value={String(transaction.square_ft  ?? '')} type="text" onSave={save('square_ft')}  placeholder="e.g. 1800" tabIndex={21} />
+                <TxField label="Year Built" value={String(transaction.year_built  ?? '')} type="text" onSave={save('year_built')} placeholder="e.g. 1998" tabIndex={22} />
               </>)}
               <div className="txp-checks-row">
                 <label className="txp-checkbox-item">
@@ -1773,8 +1777,9 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                 placeholder="Title company"
                 tabIndex={32}
               />
-              <TxField label="Title Email" value={transaction.title_company_email || ''} type="text" onSave={save('title_company_email')} placeholder="title@company.com" tabIndex={33} />
-              <TxField label="Title Phone" value={transaction.title_company_phone || ''} type="text" onSave={save('title_company_phone')} placeholder="(555) 000-0000"    tabIndex={34} />
+              <TxField label="Title Email"    value={transaction.title_company_email || ''} type="text" onSave={save('title_company_email')} placeholder="title@company.com" tabIndex={33} />
+              <TxField label="Title Phone"    value={transaction.title_company_phone || ''} type="text" onSave={save('title_company_phone')} placeholder="(555) 000-0000"    tabIndex={34} />
+              <TxField label="Escrow Number"  value={transaction.escrow_number       || ''} type="text" onSave={save('escrow_number')}       placeholder="Escrow #"         tabIndex={35} />
               <CollaboratorSearch
                 label="Co-op Agent"
                 value={transaction.co_op_agent || ''}
@@ -2646,8 +2651,8 @@ function ShowingsSection({ transaction }) {
     setLoading(false)
   }
 
-  const openAdd   = () => { setEditing({ ...EMPTY_SHOWING }); setFormOpen(true) }
-  const openEdit  = (s) => { setEditing({ ...s });            setFormOpen(true) }
+  const openAdd   = () => { setEditing({ ...EMPTY_SHOWING });                         setFormOpen(true) }
+  const openEdit  = (s) => { setEditing({ ...s, feedback: s.feedback ?? '' });        setFormOpen(true) }
   const closeForm = () => { setFormOpen(false); setEditing(null) }
 
   const handleSave = async () => {
@@ -2656,13 +2661,14 @@ function ShowingsSection({ transaction }) {
     try {
       if (editing.id) {
         const { id, created_at, transaction_id, ...updates } = editing
-        const { error } = await supabase.from('showings').update(updates).eq('id', id)
+        const payload = { ...updates, feedback: updates.feedback || '' }
+        const { error } = await supabase.from('showings').update(payload).eq('id', id)
         if (error) throw error
-        setShowings(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s))
+        setShowings(prev => prev.map(s => s.id === id ? { ...s, ...payload } : s))
       } else {
         const { data, error } = await supabase
           .from('showings')
-          .insert({ ...editing, transaction_id: transaction.id })
+          .insert({ ...editing, feedback: editing.feedback || '', transaction_id: transaction.id })
           .select().single()
         if (error) throw error
         setShowings(prev => [data, ...prev])

@@ -132,6 +132,118 @@ const EMAIL_VARIABLES = [
   },
 ]
 
+// ─── Vendor constants ─────────────────────────────────────────────────────────
+const VENDOR_TYPES    = ['Home Inspector', 'Septic', 'Permits', 'Tiedowns', 'Home Warranty']
+const CONTACT_METHODS = ['PDF Form + Email', 'Email Only', 'Website', 'Text']
+
+const FIELD_MAPPING_OPTIONS = [
+  { key: 'realtor_name',        label: 'Realtor Name',         source: 'Settings'    },
+  { key: 'company',             label: 'Company',              source: 'Settings'    },
+  { key: 'realtor_phone',       label: 'Realtor Phone',        source: 'Settings'    },
+  { key: 'realtor_email',       label: 'Realtor Email',        source: 'Settings'    },
+  { key: 'property_address',    label: 'Property Address',     source: 'Transaction' },
+  { key: 'apn',                 label: 'APN / Parcel Number',  source: 'Transaction' },
+  { key: 'bedrooms',            label: 'Number of Bedrooms',   source: 'Transaction' },
+  { key: 'bathrooms',           label: 'Number of Bathrooms',  source: 'Transaction' },
+  { key: 'vacant_or_occupied',  label: 'Vacant or Occupied',   source: 'Transaction' },
+  { key: 'year_built',          label: 'Year Built',           source: 'Transaction' },
+  { key: 'title_company',       label: 'Title Company',        source: 'Transaction' },
+  { key: 'title_contact_name',  label: 'Title Contact Name',   source: 'Transaction' },
+  { key: 'title_email',         label: 'Title Email',          source: 'Transaction' },
+  { key: 'title_phone',         label: 'Title Phone',          source: 'Transaction' },
+  { key: 'escrow_number',       label: 'Escrow Number',        source: 'Transaction' },
+  { key: 'seller_name',         label: 'Seller Name',          source: 'Transaction' },
+  { key: 'buyer_name',          label: 'Buyer Name',           source: 'Transaction' },
+  { key: 'close_of_escrow',     label: 'Close of Escrow Date', source: 'Transaction' },
+]
+
+// ─── Vendor helper components ──────────────────────────────────────────────────
+function VdTextField({ label, value, onSave, placeholder }) {
+  const [draft, setDraft] = useState(value)
+  useEffect(() => setDraft(value), [value])
+  return (
+    <div className="vd-field">
+      <span className="vd-label">{label}</span>
+      <input
+        className="vd-input"
+        value={draft}
+        placeholder={placeholder}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={() => onSave(draft)}
+        onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+      />
+    </div>
+  )
+}
+
+function VendorDetail({ vendor, onSave, onDelete }) {
+  const showEmail   = vendor.contact_method === 'PDF Form + Email' || vendor.contact_method === 'Email Only'
+  const showPhone   = vendor.contact_method === 'Text'
+  const showWebsite = vendor.contact_method === 'Website' || vendor.vendor_type === 'Tiedowns'
+  const showPdf     = vendor.contact_method === 'PDF Form + Email'
+  const showMapping = vendor.contact_method === 'PDF Form + Email'
+
+  const fieldMappings = Array.isArray(vendor.field_mappings) ? vendor.field_mappings : []
+
+  const toggleMapping = (key) => {
+    const next = fieldMappings.includes(key)
+      ? fieldMappings.filter(k => k !== key)
+      : [...fieldMappings, key]
+    onSave('field_mappings', next)
+  }
+
+  return (
+    <div className="vd-wrap">
+      <div className="vd-header">
+        <div className="vd-header-title">Vendor Details</div>
+        <button className="vd-delete-btn" onClick={onDelete}>✕ Delete Vendor</button>
+      </div>
+
+      <div className="vd-fields">
+        <VdTextField label="Vendor Name" value={vendor.name || ''} onSave={v => onSave('name', v || vendor.name)} placeholder="Vendor name" />
+        <div className="vd-field">
+          <span className="vd-label">Vendor Type</span>
+          <select className="vd-select" value={vendor.vendor_type || ''} onChange={e => onSave('vendor_type', e.target.value)}>
+            <option value="">— Select —</option>
+            {VENDOR_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div className="vd-field">
+          <span className="vd-label">Contact Method</span>
+          <select className="vd-select" value={vendor.contact_method || ''} onChange={e => onSave('contact_method', e.target.value)}>
+            <option value="">— Select —</option>
+            {CONTACT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+        {showEmail   && <VdTextField key="email"   label="Email Address" value={vendor.email        || ''} onSave={v => onSave('email', v)}        placeholder="vendor@example.com" />}
+        {showPhone   && <VdTextField key="phone"   label="Phone Number"  value={vendor.phone        || ''} onSave={v => onSave('phone', v)}        placeholder="(555) 000-0000"     />}
+        {showWebsite && <VdTextField key="website" label="Website URL"   value={vendor.website_url  || ''} onSave={v => onSave('website_url', v)}  placeholder="https://..."        />}
+        {showPdf     && <VdTextField key="pdf"     label="PDF Form URL"  value={vendor.pdf_form_url || ''} onSave={v => onSave('pdf_form_url', v)} placeholder="https://..."        />}
+      </div>
+
+      {showMapping && (
+        <div className="vd-mapping-section">
+          <div className="vd-mapping-title">Field Mapping</div>
+          <p className="vd-mapping-desc">Select the fields to include when filling out this vendor's form:</p>
+          <div className="vd-mapping-list">
+            {FIELD_MAPPING_OPTIONS.map(opt => (
+              <label key={opt.key} className="vd-mapping-item">
+                <input
+                  type="checkbox"
+                  checked={fieldMappings.includes(opt.key)}
+                  onChange={() => toggleMapping(opt.key)}
+                />
+                <span className="vd-mapping-label">{opt.label}</span>
+                <span className={`vd-mapping-source vd-source--${opt.source.toLowerCase()}`}>{opt.source}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Sortable task row ────────────────────────────────────────────────────────
 function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle, emailTemplates = [] }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -213,6 +325,11 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   const [bulkAppliesTo, setBulkAppliesTo] = useState('')
   const [bulkSaving,    setBulkSaving]    = useState(false)
 
+  // ── Vendor state
+  const [vendors,          setVendors]          = useState([])
+  const [vendorsLoading,   setVendorsLoading]   = useState(false)
+  const [selectedVendorId, setSelectedVendorId] = useState(null)
+
   // ── Email template state
   const [emailTemplates,  setEmailTemplates]  = useState([])
   const [emailsLoading,   setEmailsLoading]   = useState(false)
@@ -242,14 +359,16 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   const sensors = useSensors(useSensor(PointerSensor))
 
   const selectedTemplate = templates.find(t => t.id === selectedTemplateId) || null
+  const selectedVendor   = vendors.find(v => v.id === selectedVendorId)    || null
   const taskRows = selectedTemplateId
     ? [...allTemplateTasks.filter(t => t.template_id === selectedTemplateId)]
         .sort((a, b) => a.sort_order - b.sort_order)
     : []
 
-  // ── Load email templates on mount so they're always visible in the sidebar
+  // ── Load email templates and vendors on mount
   useEffect(() => {
     loadEmailTemplates()
+    loadVendors()
   }, [])
 
   const loadEmailTemplates = async () => {
@@ -260,6 +379,36 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
       .order('name', { ascending: true })
     setEmailTemplates(data || [])
     setEmailsLoading(false)
+  }
+
+  const loadVendors = async () => {
+    setVendorsLoading(true)
+    const { data } = await supabase.from('vendors').select('*').order('name', { ascending: true })
+    setVendors(data || [])
+    setVendorsLoading(false)
+  }
+
+  const handleCreateVendor = async () => {
+    const { data, error } = await supabase
+      .from('vendors')
+      .insert({ name: 'New Vendor', vendor_type: '', contact_method: '', field_mappings: [] })
+      .select().single()
+    if (error || !data) { alert('Failed to create vendor: ' + error?.message); return }
+    setVendors(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
+    setSelectedVendorId(data.id)
+    setSideSection('vendors')
+  }
+
+  const handleDeleteVendor = async (id) => {
+    if (!window.confirm('Delete this vendor?')) return
+    await supabase.from('vendors').delete().eq('id', id)
+    setVendors(prev => prev.filter(v => v.id !== id))
+    if (selectedVendorId === id) setSelectedVendorId(null)
+  }
+
+  const handleSaveVendorField = async (id, field, value) => {
+    const { error } = await supabase.from('vendors').update({ [field]: value }).eq('id', id)
+    if (!error) setVendors(prev => prev.map(v => v.id === id ? { ...v, [field]: value } : v))
   }
 
   // ── Close export dropdown on outside click
@@ -669,13 +818,55 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
           + New Email Template
         </button>
 
+        {/* Vendor Templates section */}
+        <div
+          className={`templates-sidebar-hdr${sideSection === 'vendors' ? ' active' : ''}`}
+          onClick={() => switchSection('vendors')}
+        >
+          Vendor Templates
+        </div>
+        {vendorsLoading ? (
+          <div className="templates-coming-soon">Loading…</div>
+        ) : (
+          <div className="templates-list">
+            {vendors.map(v => (
+              <div
+                key={v.id}
+                className={`templates-list-item${selectedVendorId === v.id ? ' active' : ''}`}
+                onClick={() => { setSelectedVendorId(v.id); setSideSection('vendors') }}
+              >
+                <span className="templates-list-name">{v.name}</span>
+              </div>
+            ))}
+            {vendors.length === 0 && (
+              <div className="templates-coming-soon">No vendors yet</div>
+            )}
+          </div>
+        )}
+        <button className="templates-create-btn" onClick={handleCreateVendor}>
+          + Add Vendor
+        </button>
+
       </aside>
 
       {/* ── MAIN CONTENT ─────────────────────────────────────────────── */}
       <div className="templates-main">
 
-        {/* ── EMAIL TEMPLATE SECTION ── */}
-        {sideSection === 'email' ? (
+        {/* ── VENDOR TEMPLATE SECTION ── */}
+        {sideSection === 'vendors' ? (
+          !selectedVendor ? (
+            <div className="templates-placeholder">
+              Select a vendor from the sidebar or click + Add Vendor
+            </div>
+          ) : (
+            <VendorDetail
+              key={selectedVendor.id}
+              vendor={selectedVendor}
+              onSave={(field, value) => handleSaveVendorField(selectedVendorId, field, value)}
+              onDelete={() => handleDeleteVendor(selectedVendorId)}
+            />
+          )
+        ) : sideSection === 'email' ? (
           !editingEmail ? (
             <div className="templates-placeholder">
               Select a template from the sidebar or click + New Template

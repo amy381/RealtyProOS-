@@ -1039,3 +1039,161 @@
   border-color: #111;
   color: #fff;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   VENDOR DETAIL
+   ══════════════════════════════════════════════════════════════ */
+.vd-wrap {
+  padding: 24px 28px;
+  overflow-y: auto;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.vd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.vd-header-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #999;
+}
+
+.vd-delete-btn {
+  background: #fff0f0;
+  border: 1px solid #f8c8c8;
+  border-radius: 5px;
+  color: #c0392b;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vd-delete-btn:hover { background: #ffe0e0; }
+
+/* ── Fields ── */
+.vd-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 520px;
+  margin-bottom: 28px;
+}
+
+.vd-field {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 12px;
+}
+
+.vd-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  width: 140px;
+  flex-shrink: 0;
+}
+
+.vd-select {
+  flex: 1;
+  border: none;
+  border-bottom: 1px solid #ddd;
+  background: transparent;
+  font-size: 13px;
+  padding: 3px 0;
+  outline: none;
+  cursor: pointer;
+  color: #111;
+}
+
+.vd-select:focus { border-bottom-color: #3b82f6; }
+
+.vd-input {
+  flex: 1;
+  border: none;
+  border-bottom: 1px solid #ddd;
+  background: transparent;
+  font-size: 13px;
+  padding: 3px 4px;
+  outline: none;
+  color: #111;
+}
+
+.vd-input:focus { border-bottom-color: #3b82f6; }
+
+/* ── Field Mapping ── */
+.vd-mapping-section {
+  max-width: 580px;
+  border-top: 2px solid #e8e8e8;
+  padding-top: 20px;
+}
+
+.vd-mapping-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.vd-mapping-desc {
+  font-size: 12px;
+  color: #888;
+  margin: 0 0 14px;
+}
+
+.vd-mapping-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vd-mapping-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.vd-mapping-item:hover { background: #f5f5f5; }
+
+.vd-mapping-item input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #3b5fc0;
+  flex-shrink: 0;
+}
+
+.vd-mapping-label {
+  flex: 1;
+  color: #1a1a1a;
+}
+
+.vd-mapping-source {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.vd-source--settings    { background: #ede9fe; color: #6d28d9; }
+.vd-source--transaction { background: #dbeafe; color: #1d4ed8; }

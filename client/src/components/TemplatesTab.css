@@ -599,6 +599,28 @@
 
 .tt-timing-select { flex: 1; }
 
+.tt-modal-cd-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f8f8f8;
+  border-radius: 8px;
+  border: 1px solid #ebebeb;
+  margin-top: 4px;
+}
+
+.tt-modal-cd-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  color: #333;
+}
+.tt-modal-cd-toggle input { accent-color: #1a1a1a; cursor: pointer; }
+
 .tt-modal-actions {
   display: flex;
   justify-content: flex-end;

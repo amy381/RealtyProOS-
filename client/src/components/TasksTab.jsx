@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
+import { mouseDownIsInside } from '../lib/dragGuard'
 import TaskCommentPanel from './TaskCommentPanel'
 import './TasksTab.css'
 
@@ -162,6 +163,11 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
   const statusKey = task.status || 'open'
   const ddl       = dueDateLabel(task.due_date, done, task.completed_at)
 
+  // Inline editing state
+  const [editingField, setEditingField] = useState(null) // 'title' | 'due' | 'assignee'
+  const [titleDraft,   setTitleDraft]   = useState(task.title || '')
+  useEffect(() => { setTitleDraft(task.title || '') }, [task.title])
+
   const cycleStatus = () => {
     const next = STATUS_NEXT[statusKey] || 'open'
     const extra = next === 'complete'
@@ -183,6 +189,13 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
     } else {
       onUpdate(task.id, { row_date: val })
     }
+  }
+
+  const commitTitle = () => {
+    const val = titleDraft.trim()
+    if (val && val !== task.title) onUpdate(task.id, { title: val })
+    else setTitleDraft(task.title || '')
+    setEditingField(null)
   }
 
   return (
@@ -210,7 +223,29 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
         )}
       </div>
       <div className="gtd-grow-title-col">
-        <span className={`gtd-grow-title${done ? ' gtd-done-text' : ''}`}>{task.title}</span>
+        {editingField === 'title' ? (
+          <input
+            autoFocus
+            className="gtd-inline-title-input"
+            value={titleDraft}
+            onChange={e => setTitleDraft(e.target.value)}
+            onFocus={e => e.target.select()}
+            onBlur={e => { if (!mouseDownIsInside(e.currentTarget)) commitTitle() }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') e.target.blur()
+              if (e.key === 'Escape') { setTitleDraft(task.title || ''); setEditingField(null) }
+            }}
+            onClick={e => e.stopPropagation()}
+          />
+        ) : (
+          <span
+            className={`gtd-grow-title gtd-inline-editable${done ? ' gtd-done-text' : ''}`}
+            onClick={e => { e.stopPropagation(); setEditingField('title') }}
+            title="Click to edit"
+          >
+            {task.title}
+          </span>
+        )}
         {dateCfg && (
           <div className="gtd-row-date-field" onClick={e => e.stopPropagation()}>
             <span className="gtd-row-date-label">{dateCfg.label}</span>
@@ -223,8 +258,46 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
           </div>
         )}
       </div>
-      <span className="gtd-grow-assignee">{task.assigned_to || ''}</span>
-      <span className={`gtd-grow-due gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</span>
+      {editingField === 'assignee' ? (
+        <select
+          autoFocus
+          className="gtd-inline-select"
+          value={task.assigned_to || ''}
+          onChange={e => { onUpdate(task.id, { assigned_to: e.target.value || null }); setEditingField(null) }}
+          onBlur={e => { if (!mouseDownIsInside(e.currentTarget)) setEditingField(null) }}
+          onClick={e => e.stopPropagation()}
+        >
+          <option value="">— unassigned —</option>
+          {ASSIGNEE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+        </select>
+      ) : (
+        <span
+          className="gtd-grow-assignee gtd-inline-editable"
+          onClick={e => { e.stopPropagation(); setEditingField('assignee') }}
+          title="Click to edit"
+        >
+          {task.assigned_to || <span className="gtd-inline-placeholder">+ assign</span>}
+        </span>
+      )}
+      {!done && editingField === 'due' ? (
+        <input
+          autoFocus
+          type="date"
+          className="gtd-inline-due-input"
+          defaultValue={task.due_date || ''}
+          onChange={e => { onUpdate(task.id, { due_date: e.target.value || null }); setEditingField(null) }}
+          onBlur={e => { if (!mouseDownIsInside(e.currentTarget)) setEditingField(null) }}
+          onClick={e => e.stopPropagation()}
+        />
+      ) : (
+        <span
+          className={`gtd-grow-due gtd-due--${ddl.cls || 'none'}${!done ? ' gtd-inline-editable' : ''}`}
+          onClick={e => { if (!done) { e.stopPropagation(); setEditingField('due') } }}
+          title={!done ? 'Click to edit due date' : undefined}
+        >
+          {!done && !task.due_date ? <span className="gtd-inline-placeholder">+ date</span> : ddl.text}
+        </span>
+      )}
       <span className="gtd-grow-status">
         <button
           className="gtd-status-cycle-btn"
@@ -277,7 +350,7 @@ function TaskEditModal({ task, tx, critDateTasks = [], onUpdate, onClose }) {
   }
 
   return (
-    <div className="gtd-edit-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="gtd-edit-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="gtd-edit-modal">
         <div className="gtd-edit-header">
           <span className="gtd-edit-title">Edit Task</span>
@@ -367,7 +440,7 @@ function AddTaskModal({ tx, critDateTasks = [], onAdd, onClose }) {
   }
 
   return (
-    <div className="gtd-edit-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="gtd-edit-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="gtd-edit-modal">
         <div className="gtd-edit-header">
           <span className="gtd-edit-title">Add Task — {tx.property_address?.split(',')[0] || 'Transaction'}</span>
@@ -589,7 +662,7 @@ function ComposeModal({ row, transactions, tcSettings, onSave, onClose }) {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   return (
-    <div className="sq-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="sq-modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="sq-modal sq-modal--compose">
         <div className="sq-modal-header">
           <h3 className="sq-modal-title">{form.id ? 'Edit Email' : 'Compose Email'}</h3>
@@ -812,7 +885,7 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
 
       {/* Preview modal */}
       {previewing && (
-        <div className="sq-modal-overlay" onClick={e => { if (e.target === e.currentTarget) setPreviewing(null) }}>
+        <div className="sq-modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) setPreviewing(null) }}>
           <div className="sq-modal sq-modal--preview">
             <div className="sq-modal-header">
               <h3 className="sq-modal-title">Email Preview</h3>

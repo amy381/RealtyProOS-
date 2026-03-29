@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { TC_ASSIGNEES } from '../lib/taskTemplates'
+import { mouseDownIsInside } from '../lib/dragGuard'
 import './TaskSection.css'
 
 function fmtDue(dateStr) {
@@ -146,7 +147,8 @@ function DueDateRow({ task, onUpdate, onDelete }) {
   const [editDate, setEditDate]     = useState(false)
   const dc = dueCls(task.due_date)
 
-  const saveTitle = () => {
+  const saveTitle = (e) => {
+    if (e?.type === 'blur' && mouseDownIsInside(e.currentTarget)) return
     if (titleDraft.trim() && titleDraft !== task.title) onUpdate('title', titleDraft.trim())
     else setTitleDraft(task.title)
     setEditTitle(false)
@@ -166,7 +168,7 @@ function DueDateRow({ task, onUpdate, onDelete }) {
           <div className="ts-meta">
             {editDate
               ? <input type="date" className="ts-meta-input" value={task.due_date || ''} autoFocus
-                  onChange={e => onUpdate('due_date', e.target.value)} onBlur={() => setEditDate(false)} />
+                  onChange={e => onUpdate('due_date', e.target.value)} onBlur={e => { if (!mouseDownIsInside(e.currentTarget)) setEditDate(false) }} />
               : <span className={`ts-due ts-${dc}`} onClick={() => setEditDate(true)}>
                   {task.due_date ? fmtDue(task.due_date) : '+ date'}
                 </span>
@@ -189,13 +191,15 @@ function TaskRow({ task, isDone, isExpanded, isEditingNotes, onToggle, onToggleE
   const [editAssign, setEditAssign]   = useState(false)
   const dc = dueCls(task.due_date)
 
-  const saveTitle = () => {
+  const saveTitle = (e) => {
+    if (e?.type === 'blur' && mouseDownIsInside(e.currentTarget)) return
     if (titleDraft.trim() && titleDraft !== task.title) onUpdate('title', titleDraft.trim())
     else setTitleDraft(task.title)
     setEditTitle(false)
   }
 
-  const saveNotes = () => {
+  const saveNotes = (e) => {
+    if (e?.type === 'blur' && mouseDownIsInside(e.currentTarget)) return
     if (notesDraft !== (task.notes || '')) onUpdate('notes', notesDraft)
     onStopEditNotes()
   }
@@ -219,7 +223,7 @@ function TaskRow({ task, isDone, isExpanded, isEditingNotes, onToggle, onToggleE
           <div className="ts-meta">
             {editDate
               ? <input type="date" className="ts-meta-input" value={task.due_date || ''} autoFocus
-                  onChange={e => onUpdate('due_date', e.target.value)} onBlur={() => setEditDate(false)} />
+                  onChange={e => onUpdate('due_date', e.target.value)} onBlur={e => { if (!mouseDownIsInside(e.currentTarget)) setEditDate(false) }} />
               : <span className={`ts-due ts-${dc}`} onClick={() => setEditDate(true)}>
                   {task.due_date ? fmtDue(task.due_date) : '+ date'}
                 </span>

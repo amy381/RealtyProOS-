@@ -150,7 +150,7 @@ export default function CollaboratorsTab() {
 
       {/* Add / Edit modal */}
       {modalOpen && (
-        <div className="collab-overlay" onClick={e => { if (e.target === e.currentTarget) setModalOpen(false) }}>
+        <div className="collab-overlay" onMouseDown={e => { if (e.target === e.currentTarget) setModalOpen(false) }}>
           <div className="collab-modal">
             <div className="collab-modal-header">
               <h2>{editing ? 'Edit' : 'Add'} {cat.label}</h2>

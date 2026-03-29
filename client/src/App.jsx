@@ -558,11 +558,37 @@ export default function App() {
     const tplTaskRows = dbTemplateTasks.filter(t => t.template_id === templateId)
     const builtTasks  = buildTemplateTasksFromDB(tplTaskRows, transaction)
     if (!builtTasks.length) return
-    const toInsert = builtTasks.map(t => ({ ...t, transaction_id: transactionId, template_key: templateId }))
+    // Strip internal mapping fields before inserting into tasks table
+    const toInsert = builtTasks.map(({ _template_task_id, resolves_critical_date, ...rest }) => ({
+      ...rest, transaction_id: transactionId, template_key: templateId,
+    }))
     const { data: inserted, error } = await supabase.from('tasks').insert(toInsert).select()
     if (error) { toast.error('Failed to apply template'); return }
     if (inserted) {
-      setTasks(prev => [...prev, ...inserted])
+      // Build map: template_task_id → actual inserted task id
+      const tplToActual = {}
+      builtTasks.forEach((bt, i) => {
+        if (bt._template_task_id) tplToActual[bt._template_task_id] = inserted[i].id
+      })
+      // Resolve resolves_critical_date from template task ids → actual task ids
+      const linkUpdates = builtTasks
+        .map((bt, i) => ({ bt, actual: inserted[i] }))
+        .filter(({ bt }) => bt.resolves_critical_date && tplToActual[bt.resolves_critical_date])
+      if (linkUpdates.length) {
+        await Promise.all(linkUpdates.map(({ bt, actual }) =>
+          supabase.from('tasks')
+            .update({ resolves_critical_date: tplToActual[bt.resolves_critical_date] })
+            .eq('id', actual.id)
+        ))
+        // Reflect the resolved links in local state
+        const finalInserted = inserted.map((task, i) => {
+          const rcd = builtTasks[i].resolves_critical_date
+          return rcd && tplToActual[rcd] ? { ...task, resolves_critical_date: tplToActual[rcd] } : task
+        })
+        setTasks(prev => [...prev, ...finalInserted])
+      } else {
+        setTasks(prev => [...prev, ...inserted])
+      }
       toast.success(`${inserted.length} tasks added`, { duration: 2000 })
     }
   }, [dbTemplateTasks])

@@ -42,15 +42,20 @@ export function buildTemplateTasksFromDB(templateTaskRows, transaction) {
   return [...templateTaskRows]
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((t, i) => ({
-      title:             t.title,
-      task_type:         t.task_type || 'Task',
-      due_date:          calcDueDate(t.timing_type, t.timing_days, transaction),
-      assigned_to:       t.auto_assign_to || 'Me',
-      status:            'open',
-      notes:             '',
-      sort_order:        i,
-      template_key:      t.template_id,
-      notified_mentions: [],
+      title:                  t.title,
+      task_type:              t.task_type || 'Task',
+      due_date:               calcDueDate(t.timing_type, t.timing_days, transaction),
+      assigned_to:            t.auto_assign_to || 'Me',
+      status:                 'open',
+      notes:                  '',
+      sort_order:             i,
+      template_key:           t.template_id,
+      notified_mentions:      [],
+      // resolves_critical_date holds the template_task id at build time;
+      // App.jsx resolves it to the actual task id after insert.
+      resolves_critical_date: t.resolves_critical_date || null,
+      // Internal mapping field — stripped before DB insert.
+      _template_task_id:      t.id,
     }))
 }
 

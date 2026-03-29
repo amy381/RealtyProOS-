@@ -14,6 +14,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../lib/supabase'
+import { mouseDownIsInside } from '../lib/dragGuard'
 import { TC_ASSIGNEES } from '../lib/taskTemplates'
 import './TemplatesTab.css'
 
@@ -52,13 +53,14 @@ function formatTiming(timingType, timingDays) {
 }
 
 const EMPTY_TASK = {
-  title:             '',
-  task_type:         'Task',
-  timing_type:       'stage_pending',
-  timing_days:       0,
-  applies_to:        'Both',
-  auto_assign_to:    'Me',
-  email_template_id: null,
+  title:                  '',
+  task_type:              'Task',
+  timing_type:            'stage_pending',
+  timing_days:            0,
+  applies_to:             'Both',
+  auto_assign_to:         'Me',
+  email_template_id:      null,
+  resolves_critical_date: null,
 }
 
 // ─── Email template constants ─────────────────────────────────────────────────
@@ -598,14 +600,19 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   const handleSaveTask = async () => {
     if (!editingTask.title?.trim()) return
     setSaving(true)
+    // Normalize resolves_critical_date — treat empty string as null
+    const taskToSave = {
+      ...editingTask,
+      resolves_critical_date: editingTask.resolves_critical_date || null,
+    }
     try {
-      if (editingTask.id) {
-        const { id, created_at, template_id, sort_order, ...updates } = editingTask
+      if (taskToSave.id) {
+        const { id, created_at, template_id, sort_order, ...updates } = taskToSave
         const { error } = await supabase.from('template_tasks').update(updates).eq('id', id)
         if (error) throw error
       } else {
         const { error } = await supabase.from('template_tasks').insert({
-          ...editingTask, sort_order: taskRows.length,
+          ...taskToSave, sort_order: taskRows.length,
         })
         if (error) throw error
       }
@@ -1127,7 +1134,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                       value={renameValue}
                       autoFocus
                       onChange={e => setRenameValue(e.target.value)}
-                      onBlur={commitRename}
+                      onBlur={e => { if (!mouseDownIsInside(e.currentTarget)) commitRename() }}
                       onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') { setRenamingId(null); setRenameValue('') } }}
                     />
                   ) : (
@@ -1266,7 +1273,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
       {editingTask && (
         <div
           className="tt-modal-overlay"
-          onClick={e => { if (e.target === e.currentTarget) setEditingTask(null) }}
+          onMouseDown={e => { if (e.target === e.currentTarget) setEditingTask(null) }}
         >
           <div className="tt-modal">
             <div className="tt-modal-header">
@@ -1286,7 +1293,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
               <select
                 className="tt-modal-select"
                 value={editingTask.task_type}
-                onChange={e => setEditingTask(p => ({ ...p, task_type: e.target.value, email_template_id: null }))}
+                onChange={e => setEditingTask(p => ({ ...p, task_type: e.target.value, email_template_id: null, resolves_critical_date: e.target.value === 'Critical Date' ? null : p.resolves_critical_date }))}
               >
                 {TASK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -1343,6 +1350,29 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                 >
                   {TC_ASSIGNEES.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
+                <div className="tt-modal-cd-section">
+                  <label className="tt-modal-cd-toggle">
+                    <input
+                      type="checkbox"
+                      checked={editingTask.resolves_critical_date != null}
+                      onChange={e => setEditingTask(p => ({ ...p, resolves_critical_date: e.target.checked ? '' : null }))}
+                    />
+                    <span>Resolves a critical date</span>
+                  </label>
+                  {editingTask.resolves_critical_date != null && (
+                    <select
+                      className="tt-modal-select"
+                      value={editingTask.resolves_critical_date || ''}
+                      onChange={e => setEditingTask(p => ({ ...p, resolves_critical_date: e.target.value || null }))}
+                    >
+                      <option value="">— Select critical date —</option>
+                      {taskRows
+                        .filter(t => t.task_type === 'Critical Date' && t.id !== editingTask.id)
+                        .map(t => <option key={t.id} value={t.id}>{t.title}</option>)
+                      }
+                    </select>
+                  )}
+                </div>
               </>)}
             </div>
             <div className="tt-modal-actions">

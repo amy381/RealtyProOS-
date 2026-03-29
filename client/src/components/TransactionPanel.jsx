@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { BUYER_DATE_FIELDS, SELLER_DATE_FIELDS, TC_OPTIONS } from '../lib/columnFields'
+import { mouseDownIsInside } from '../lib/dragGuard'
 import TaskSection from './TaskSection'
 import './TransactionPanel.css'
 
@@ -52,6 +53,7 @@ function EditableField({ label, value, displayValue, type, options, onSave, plac
   }
 
   const commit = () => {
+    if (mouseDownIsInside(inputRef.current)) return
     setEditing(false)
     const next = typeof draft === 'string' ? draft.trim() : draft
     const prev = typeof value === 'string' ? value.trim() : (value ?? '')
@@ -73,7 +75,7 @@ function EditableField({ label, value, displayValue, type, options, onSave, plac
             className="panel-input"
             value={draft}
             onChange={e => { onSave(e.target.value || null); setEditing(false) }}
-            onBlur={() => setEditing(false)}
+            onBlur={e => { if (!mouseDownIsInside(e.currentTarget)) setEditing(false) }}
           >
             {options.map(o => <option key={o} value={o}>{o || '—'}</option>)}
           </select>
@@ -169,7 +171,7 @@ export default function TransactionPanel({ transaction, columns, commissions, ta
   ].filter(Boolean).join(', ')
 
   return (
-    <div className="panel-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="panel-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="side-panel">
 
         <div className="panel-header">

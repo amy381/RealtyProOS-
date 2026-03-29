@@ -1,5 +1,7 @@
+console.log('[ShowingsTab] VITE_EMAILJS_FEEDBACK_TEMPLATE_ID:', import.meta.env.VITE_EMAILJS_FEEDBACK_TEMPLATE_ID)
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
+import { toast } from 'react-hot-toast'
 import './ShowingsTab.css'
 
 function fmtDate(d) {
@@ -8,19 +10,31 @@ function fmtDate(d) {
   return `${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}/${dt.getFullYear()}`
 }
 
+function fmtRequestDate(ts) {
+  if (!ts) return ''
+  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
 const CLOSED_STATUSES = new Set(['closed', 'cancelled-expired'])
 
 const EMPTY_SHOWING = { transaction_id: '', agent_name: '', agent_email: '', showing_date: '', feedback: '' }
 
 export default function ShowingsTab({ transactions }) {
-  const [showings, setShowings]   = useState([])
-  const [loading,  setLoading]    = useState(true)
-  const [search,   setSearch]     = useState('')
-  const [sortKey,  setSortKey]    = useState('showing_date')
-  const [sortDir,  setSortDir]    = useState('desc')
-  const [addOpen,  setAddOpen]    = useState(false)
-  const [addForm,  setAddForm]    = useState(EMPTY_SHOWING)
-  const [adding,   setAdding]     = useState(false)
+  const [showings,       setShowings]       = useState([])
+  const [loading,        setLoading]        = useState(true)
+  const [search,         setSearch]         = useState('')
+  const [sortKey,        setSortKey]        = useState('showing_date')
+  const [sortDir,        setSortDir]        = useState('desc')
+  const [addOpen,        setAddOpen]        = useState(false)
+  const [addForm,        setAddForm]        = useState(EMPTY_SHOWING)
+  const [adding,         setAdding]         = useState(false)
+  const [emailingId,     setEmailingId]     = useState(null)
+  const [emailTemplates, setEmailTemplates] = useState([])
+
+  useEffect(() => {
+    supabase.from('email_templates').select('*')
+      .then(({ data }) => setEmailTemplates(data || []))
+  }, [])
 
   // Map transaction id → transaction object for quick lookup
   const txById = useMemo(() => {
@@ -70,6 +84,94 @@ export default function ShowingsTab({ transactions }) {
     setShowings(prev => [data, ...prev])
     setAddOpen(false)
     setAddForm(EMPTY_SHOWING)
+  }
+
+  const sendEmail = async ({ toEmail, toName, subject, body, emailingKey, txAddr, templateId }) => {
+    const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
+    const TEMPLATE_ID = templateId || import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+    const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+    console.log('[sendEmail] templateId param:', templateId)
+    console.log('[sendEmail] VITE_EMAILJS_FEEDBACK_TEMPLATE_ID:', import.meta.env.VITE_EMAILJS_FEEDBACK_TEMPLATE_ID)
+    console.log('[sendEmail] resolved TEMPLATE_ID:', TEMPLATE_ID)
+    console.log('[sendEmail] subject:', subject)
+    setEmailingId(emailingKey)
+    try {
+      if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
+        toast.success(`[Demo] Would email "${toName}" at ${toEmail}`)
+        return true
+      }
+      const { default: emailjs } = await import('@emailjs/browser')
+      await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+        to_email:         toEmail,
+        to_name:          toName,
+        subject,
+        task_title:       subject,
+        mention_notes:    body,
+        message:          body,
+        address:          txAddr || '',
+        transaction_addr: txAddr || '',
+      }, PUBLIC_KEY)
+      toast.success('Email sent')
+      return true
+    } catch (err) {
+      toast.error('Email failed: ' + (err?.text || err?.message || 'Unknown error'))
+      return false
+    } finally {
+      setEmailingId(null)
+    }
+  }
+
+  const htmlToText = (html) => {
+    if (!html) return ''
+    return html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+  }
+
+  const handleRequestFeedback = async (s) => {
+    const toEmail = s.agent_email
+    if (!toEmail) { toast.error('No agent email for this showing'); return }
+    const tx         = txById[s.transaction_id]
+    const addr       = tx?.property_address || 'our listing'
+    const agentName  = s.agent_name || 'Agent'
+    const showingDate = fmtDate(s.showing_date)
+
+    const template = emailTemplates.find(t => t.name === 'Showing Feedback')
+    const resolve  = (text) => (text || '')
+      .replace(/\{\{agent_name\}\}/g,       agentName)
+      .replace(/\{\{property_address\}\}/g, addr)
+      .replace(/\{\{showing_date\}\}/g,     showingDate)
+
+    const subject = template?.subject
+      ? resolve(template.subject)
+      : `Thank you for showing ${addr}`
+    const rawBody = template
+      ? htmlToText(resolve(template.body))
+      : `Thank you for showing ${addr} on ${showingDate}. We'd love to hear your client's feedback about the property.\n\nPlease reply with any thoughts — it's greatly appreciated!\n\nThank you,\nLegacy Real Estate`
+    const bodyNoGreeting = rawBody.replace(/^Hi\s+[^,\n]*,?\s*\n+/i, '')
+    const body = `Hi ${agentName},\n\n${bodyNoGreeting}`
+
+    const sent = await sendEmail({ toEmail, toName: agentName, subject, body, emailingKey: `${s.id}_agent`, txAddr: addr, templateId: import.meta.env.VITE_EMAILJS_FEEDBACK_TEMPLATE_ID })
+    if (sent) {
+      const now = new Date().toISOString()
+      const { error } = await supabase
+        .from('showings')
+        .update({ feedback_requested: true, feedback_requested_at: now })
+        .eq('id', s.id)
+      if (error) { toast.error('Could not save feedback request status'); return }
+      setShowings(prev => prev.map(sh => sh.id === s.id ? { ...sh, feedback_requested: true, feedback_requested_at: now } : sh))
+    }
   }
 
   const handleSort = (key) => {
@@ -130,7 +232,7 @@ export default function ShowingsTab({ transactions }) {
       </div>
 
       {addOpen && (
-        <div className="sht-modal-overlay" onClick={e => { if (e.target === e.currentTarget) setAddOpen(false) }}>
+        <div className="sht-modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) setAddOpen(false) }}>
           <div className="sht-modal">
             <div className="sht-modal-header">
               <span>Add Showing</span>
@@ -221,7 +323,7 @@ export default function ShowingsTab({ transactions }) {
                   Date <SortIcon k="showing_date" />
                 </th>
                 <th>Feedback</th>
-                <th className="sht-th-del"></th>
+                <th className="sht-th-actions"></th>
               </tr>
             </thead>
             <tbody>
@@ -238,7 +340,22 @@ export default function ShowingsTab({ transactions }) {
                   <td className="sht-email">{s.agent_email || '—'}</td>
                   <td className="sht-date">{fmtDate(s.showing_date)}</td>
                   <td className="sht-feedback">{s.feedback || '—'}</td>
-                  <td className="sht-del-cell">
+                  <td className="sht-actions-cell">
+                    <div className="sht-req-wrap">
+                      <button
+                        className="sht-req-btn"
+                        onClick={() => handleRequestFeedback(s)}
+                        disabled={!!emailingId}
+                        title="Request feedback from showing agent"
+                      >
+                        {emailingId === `${s.id}_agent` ? '…' : 'Req. Feedback'}
+                      </button>
+                      {(s.feedback_requested || s.feedback_requested_at) && (
+                        <span className="sht-feedback-badge">
+                          ✓ Requested {fmtRequestDate(s.feedback_requested_at)}
+                        </span>
+                      )}
+                    </div>
                     <button
                       className="sht-del-btn"
                       onClick={() => handleDelete(s.id)}

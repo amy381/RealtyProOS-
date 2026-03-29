@@ -1289,6 +1289,62 @@
   text-decoration: line-through;
 }
 
+/* ── Inline editing ─────────────────────────────────────────────────────── */
+.gtd-inline-editable {
+  cursor: text;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+.gtd-inline-editable:hover {
+  background: #f0f4ff;
+}
+
+.gtd-inline-placeholder {
+  color: #bbb;
+  font-style: italic;
+}
+
+.gtd-inline-title-input {
+  font-size: 14px;
+  font-family: inherit;
+  color: #1a1a1a;
+  border: 1px solid #4a7fd4;
+  border-radius: 4px;
+  padding: 1px 6px;
+  width: 100%;
+  outline: none;
+  background: #f5f8ff;
+  box-sizing: border-box;
+}
+
+.gtd-inline-select {
+  font-size: 12px;
+  font-family: inherit;
+  color: #333;
+  border: 1px solid #4a7fd4;
+  border-radius: 4px;
+  padding: 1px 4px;
+  background: #f5f8ff;
+  outline: none;
+  flex-shrink: 0;
+  width: 110px;
+  cursor: pointer;
+}
+
+.gtd-inline-due-input {
+  font-size: 12px;
+  font-family: inherit;
+  color: #333;
+  border: 1px solid #4a7fd4;
+  border-radius: 4px;
+  padding: 1px 4px;
+  background: #f5f8ff;
+  outline: none;
+  flex-shrink: 0;
+  width: 130px;
+  cursor: pointer;
+}
+
 .gtd-grow-assignee {
   font-size: 12px;
   color: #999;

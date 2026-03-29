@@ -1638,15 +1638,13 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-tpl-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
+  /* position/top/right set via inline style (position:fixed) to escape overflow:hidden ancestors */
   background: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.12);
   min-width: 200px;
-  z-index: 200;
+  z-index: 9999;
   overflow: hidden;
 }
 
@@ -2011,6 +2009,24 @@ select.txp-input { cursor: pointer; }
 .sh-sec-btn--delete:hover {
   color: #c0392b;
   background: #fdf2f2;
+}
+
+.sh-sec-req-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.sh-sec-feedback-badge {
+  font-size: 0.67rem;
+  font-weight: 600;
+  color: #15803d;
+  background: #dcfce7;
+  border-radius: 8px;
+  padding: 1px 7px;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
 }
 
 /* ── Add/Edit Showing modal ── */

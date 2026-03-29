@@ -338,7 +338,7 @@ export default function IntakeModal({ onSave, onClose }) {
   }
 
   return (
-    <div className="intake-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="intake-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="intake-modal">
 
         <div className="intake-header">

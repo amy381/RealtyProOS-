@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { mouseDownIsInside } from '../lib/dragGuard'
 import TaskCommentPanel from './TaskCommentPanel'
 import { syncDriveFolder, uploadToDrive, getDriveUrl, CONTRACT_DOCS } from '../lib/googleDrive'
 import { TC_OPTIONS } from '../lib/columnFields'
@@ -261,6 +262,7 @@ async function sendMentionEmails(mentions, noteText, transactionAddr, tcSettings
         const result = await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
           to_email:         person.email,
           to_name:          person.name,
+          subject:          `You were mentioned in ${transactionAddr || '(No address)'}`,
           transaction_addr: transactionAddr || '(No address)',
           mention_notes:    noteText,
           task_title:       'You were mentioned in a note',
@@ -439,6 +441,7 @@ function TxField({ label, value, displayValue, type, options, onSave, placeholde
   }
 
   const commit = () => {
+    if (mouseDownIsInside(inputRef.current)) return
     setEditing(false)
     const next = typeof draft === 'string' ? draft.trim() : draft
     const prev = typeof value === 'string' ? value.trim() : (value ?? '')
@@ -465,7 +468,7 @@ function TxField({ label, value, displayValue, type, options, onSave, placeholde
             tabIndex={tabIndex}
             value={draft}
             onChange={e => { onSave(e.target.value || null); setEditing(false) }}
-            onBlur={() => setEditing(false)}
+            onBlur={e => { if (!mouseDownIsInside(e.currentTarget)) setEditing(false) }}
           >
             {(options || []).map(o => (
               <option key={typeof o === 'object' ? o.value : o} value={typeof o === 'object' ? o.value : o}>
@@ -705,7 +708,8 @@ function TaskRow({ task, onUpdate, onDelete, commentCount = 0, onOpenComments })
   const statusLabel = STATUS_LABELS[statusKey] || 'To Do'
   const statusStyle = STATUS_STYLE[statusKey] || STATUS_STYLE.open
 
-  const saveTitle = () => {
+  const saveTitle = (e) => {
+    if (e?.type === 'blur' && mouseDownIsInside(e.currentTarget)) return
     setEditTitle(false)
     if (titleDraft.trim() && titleDraft !== task.title) onUpdate(task.id, { title: titleDraft.trim() })
     else setTitle(task.title)
@@ -842,17 +846,24 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
   const [newTitle, setNewTitle]     = useState('')
   const newInputRef                 = useRef(null)
   const [tplDropOpen,    setTplDropOpen]    = useState(false)
+  const [tplMenuPos,     setTplMenuPos]     = useState({ top: 0, right: 0 })
   const [previewTpl,     setPreviewTpl]     = useState(null)
   const [excludedTplIds, setExcludedTplIds] = useState(new Set())
   const [applying,       setApplying]       = useState(false)
   const [commentTaskId,  setCommentTaskId]  = useState(null)
   const tplDropRef = useRef(null)
+  const tplBtnRef  = useRef(null)
 
   useEffect(() => {
     if (!tplDropOpen) return
     const handler = (e) => { if (!tplDropRef.current?.contains(e.target)) setTplDropOpen(false) }
+    const scrollClose = () => setTplDropOpen(false)
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    window.addEventListener('scroll', scrollClose, true)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      window.removeEventListener('scroll', scrollClose, true)
+    }
   }, [tplDropOpen])
 
   const previewTasks = previewTpl
@@ -920,11 +931,24 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
           </button>
           {dbTemplates?.length > 0 && (
             <div className="txp-tpl-wrap" ref={tplDropRef}>
-              <button className="txp-tpl-btn" onClick={() => setTplDropOpen(o => !o)}>
+              <button
+                ref={tplBtnRef}
+                className="txp-tpl-btn"
+                onClick={() => {
+                  if (!tplDropOpen && tplBtnRef.current) {
+                    const r = tplBtnRef.current.getBoundingClientRect()
+                    setTplMenuPos({ top: r.bottom + 4, right: window.innerWidth - r.right })
+                  }
+                  setTplDropOpen(o => !o)
+                }}
+              >
                 Apply Template ▾
               </button>
               {tplDropOpen && (
-                <div className="txp-tpl-menu">
+                <div
+                  className="txp-tpl-menu"
+                  style={{ position: 'fixed', top: tplMenuPos.top, right: tplMenuPos.right, left: 'auto' }}
+                >
                   {dbTemplates.map(tpl => (
                     <button
                       key={tpl.id}
@@ -1016,7 +1040,7 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
 
       {/* Apply Template preview modal */}
       {previewTpl && (
-        <div className="txp-tpl-overlay" onClick={e => { if (e.target === e.currentTarget) { setPreviewTpl(null); setExcludedTplIds(new Set()) } }}>
+        <div className="txp-tpl-overlay" onMouseDown={e => { if (e.target === e.currentTarget) { setPreviewTpl(null); setExcludedTplIds(new Set()) } }}>
           <div className="txp-tpl-modal">
             <div className="txp-tpl-modal-header">
               <div>
@@ -1083,6 +1107,7 @@ function CszField({ value, onSave, placeholder, style, tabIndex }) {
   }, [editing])
 
   const commit = () => {
+    if (mouseDownIsInside(ref.current)) return
     setEditing(false)
     const next = draft.trim()
     if (next !== (value ?? '').trim()) onSave(next || null)
@@ -1293,7 +1318,7 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
   const anyChecked = checked.justina || checked.victoria || checked.amy
 
   return (
-    <div className="notify-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="notify-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="notify-modal">
         <div className="notify-header">
           <h2 className="notify-title">Notify</h2>
@@ -1430,7 +1455,7 @@ function CollaboratorAddModal({ category, initialName = '', onSaved, onClose }) 
   }
 
   return (
-    <div className="collab-add-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="collab-add-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="collab-add-modal">
         <div className="collab-add-header">
           <span>Add {meta.label}</span>
@@ -2688,15 +2713,19 @@ function ShowingsSection({ transaction }) {
     setShowings(prev => prev.filter(s => s.id !== id))
   }
 
-  const sendEmail = async ({ toEmail, toName, subject, body, emailingKey }) => {
+  const sendEmail = async ({ toEmail, toName, subject, body, emailingKey, templateId }) => {
     const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
-    const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+    const TEMPLATE_ID = templateId || import.meta.env.VITE_EMAILJS_TEMPLATE_ID
     const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+    console.log('[sendEmail] templateId param:', templateId)
+    console.log('[sendEmail] VITE_EMAILJS_FEEDBACK_TEMPLATE_ID:', import.meta.env.VITE_EMAILJS_FEEDBACK_TEMPLATE_ID)
+    console.log('[sendEmail] resolved TEMPLATE_ID:', TEMPLATE_ID)
+    console.log('[sendEmail] subject:', subject)
     setEmailingId(emailingKey)
     try {
       if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
         toast.success(`[Demo] Would email "${toName}" at ${toEmail}`)
-        return
+        return true
       }
       const { default: emailjs } = await import('@emailjs/browser')
       await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
@@ -2705,11 +2734,15 @@ function ShowingsSection({ transaction }) {
         subject,
         task_title:       subject,
         mention_notes:    body,
+        message:          body,
+        address:          transaction.property_address || '',
         transaction_addr: transaction.property_address || '',
       }, PUBLIC_KEY)
       toast.success('Email sent')
+      return true
     } catch (err) {
       toast.error('Email failed: ' + (err?.text || err?.message || 'Unknown error'))
+      return false
     } finally {
       setEmailingId(null)
     }
@@ -2729,7 +2762,30 @@ function ShowingsSection({ transaction }) {
     })
   }
 
-  const handleRequestFeedback = (s) => {
+  const fmtRequestDate = (ts) => {
+    if (!ts) return ''
+    return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  const htmlToText = (html) => {
+    if (!html) return ''
+    return html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+  }
+
+  const handleRequestFeedback = async (s) => {
     const toEmail = s.agent_email
     if (!toEmail) { toast.error('No agent email for this showing'); return }
     const addr       = transaction.property_address || 'our listing'
@@ -2744,12 +2800,23 @@ function ShowingsSection({ transaction }) {
 
     const subject = template?.subject
       ? resolve(template.subject)
-      : `Feedback Request — ${addr}`
-    const body = template
-      ? resolve(template.body)
-      : `Hi ${agentName},\n\nThank you for showing ${addr} on ${showingDate}. We'd love to hear your client's feedback about the property.\n\nPlease reply with any thoughts — it's greatly appreciated!\n\nThank you,\nLegacy Real Estate`
+      : `Thank you for showing ${addr}`
+    const rawBody = template
+      ? htmlToText(resolve(template.body))
+      : `Thank you for showing ${addr} on ${showingDate}. We'd love to hear your client's feedback about the property.\n\nPlease reply with any thoughts — it's greatly appreciated!\n\nThank you,\nLegacy Real Estate`
+    const bodyNoGreeting = rawBody.replace(/^Hi\s+[^,\n]*,?\s*\n+/i, '')
+    const body = `Hi ${agentName},\n\n${bodyNoGreeting}`
 
-    sendEmail({ toEmail, toName: agentName, subject, body, emailingKey: `${s.id}_agent` })
+    const sent = await sendEmail({ toEmail, toName: agentName, subject, body, emailingKey: `${s.id}_agent`, templateId: import.meta.env.VITE_EMAILJS_FEEDBACK_TEMPLATE_ID })
+    if (sent) {
+      const now = new Date().toISOString()
+      const { error } = await supabase
+        .from('showings')
+        .update({ feedback_requested: true, feedback_requested_at: now })
+        .eq('id', s.id)
+      if (error) { toast.error('Could not save feedback request status'); return }
+      setShowings(prev => prev.map(sh => sh.id === s.id ? { ...sh, feedback_requested: true, feedback_requested_at: now } : sh))
+    }
   }
 
   return (
@@ -2794,14 +2861,21 @@ function ShowingsSection({ transaction }) {
                     >
                       {emailingId === `${s.id}_seller` ? '…' : 'Send to Seller'}
                     </button>
-                    <button
-                      className="sh-sec-btn sh-sec-btn--action"
-                      onClick={() => handleRequestFeedback(s)}
-                      disabled={!!emailingId}
-                      title="Request feedback from showing agent"
-                    >
-                      {emailingId === `${s.id}_agent` ? '…' : 'Req. Feedback'}
-                    </button>
+                    <div className="sh-sec-req-wrap">
+                      <button
+                        className="sh-sec-btn sh-sec-btn--action"
+                        onClick={() => handleRequestFeedback(s)}
+                        disabled={!!emailingId}
+                        title="Request feedback from showing agent"
+                      >
+                        {emailingId === `${s.id}_agent` ? '…' : 'Req. Feedback'}
+                      </button>
+                      {(s.feedback_requested || s.feedback_requested_at) && (
+                        <span className="sh-sec-feedback-badge">
+                          ✓ Requested {fmtRequestDate(s.feedback_requested_at)}
+                        </span>
+                      )}
+                    </div>
                     <button
                       className="sh-sec-btn sh-sec-btn--delete"
                       onClick={() => handleDelete(s.id)}
@@ -2816,7 +2890,7 @@ function ShowingsSection({ transaction }) {
       )}
 
       {formOpen && editing && (
-        <div className="sh-modal-overlay" onClick={e => { if (e.target === e.currentTarget) closeForm() }}>
+        <div className="sh-modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) closeForm() }}>
           <div className="sh-modal">
             <div className="sh-modal-header">
               <h3 className="sh-modal-title">{editing.id ? 'Edit Showing' : 'Add Showing'}</h3>

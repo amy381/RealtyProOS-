@@ -29,7 +29,7 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
   }
 
   return (
-    <div className="settings-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="settings-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="settings-modal">
         <div className="settings-header">
           <h2>Settings</h2>

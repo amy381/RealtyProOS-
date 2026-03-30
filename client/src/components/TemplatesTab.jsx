@@ -178,7 +178,87 @@ function VdTextField({ label, value, onSave, placeholder }) {
   )
 }
 
-function VendorDetail({ vendor, onSave, onDelete }) {
+function VendorPdfUpload({ vendorId, currentUrl, onSave }) {
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef(null)
+
+  // Derive a display name from the stored URL
+  const fileName = currentUrl
+    ? decodeURIComponent(currentUrl.split('/').pop().split('?')[0])
+    : null
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.type !== 'application/pdf') { alert('Please select a PDF file.'); return }
+    setUploading(true)
+    try {
+      const path = `${vendorId}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+      const { error: upErr } = await supabase.storage
+        .from('vendor-pdfs')
+        .upload(path, file, { upsert: true })
+      if (upErr) throw upErr
+      const { data: { publicUrl } } = supabase.storage
+        .from('vendor-pdfs')
+        .getPublicUrl(path)
+      onSave(publicUrl)
+    } catch (err) {
+      alert('Upload failed: ' + (err.message || 'Unknown error'))
+    } finally {
+      setUploading(false)
+      // Reset so the same file can be re-selected after a remove
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  return (
+    <div className="vd-field vd-field--pdf">
+      <span className="vd-label">PDF Form</span>
+      <div className="vd-pdf-row">
+        {fileName && (
+          <a
+            className="vd-pdf-filename"
+            href={currentUrl}
+            target="_blank"
+            rel="noreferrer"
+            title="Open PDF"
+          >
+            📄 {fileName}
+          </a>
+        )}
+        <div className="vd-pdf-actions">
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".pdf"
+            style={{ display: 'none' }}
+            onChange={handleFile}
+          />
+          <button
+            className="vd-pdf-upload-btn"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            type="button"
+          >
+            {uploading ? 'Uploading…' : fileName ? 'Replace PDF' : 'Upload PDF'}
+          </button>
+          {fileName && (
+            <button
+              className="vd-pdf-remove-btn"
+              onClick={() => onSave('')}
+              title="Remove PDF"
+              type="button"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function VendorDetail({ vendor, onSave, onDelete, emailTemplates = [] }) {
   const showEmail   = vendor.contact_method === 'PDF Form + Email' || vendor.contact_method === 'Email Only'
   const showPhone   = vendor.contact_method === 'Text'
   const showWebsite = vendor.contact_method === 'Website' || vendor.vendor_type === 'Tiedowns'
@@ -220,7 +300,26 @@ function VendorDetail({ vendor, onSave, onDelete }) {
         {showEmail   && <VdTextField key="email"   label="Email Address" value={vendor.email        || ''} onSave={v => onSave('email', v)}        placeholder="vendor@example.com" />}
         {showPhone   && <VdTextField key="phone"   label="Phone Number"  value={vendor.phone        || ''} onSave={v => onSave('phone', v)}        placeholder="(555) 000-0000"     />}
         {showWebsite && <VdTextField key="website" label="Website URL"   value={vendor.website_url  || ''} onSave={v => onSave('website_url', v)}  placeholder="https://..."        />}
-        {showPdf     && <VdTextField key="pdf"     label="PDF Form URL"  value={vendor.pdf_form_url || ''} onSave={v => onSave('pdf_form_url', v)} placeholder="https://..."        />}
+        {showPdf && (
+          <VendorPdfUpload
+            vendorId={vendor.id}
+            currentUrl={vendor.pdf_form_url || ''}
+            onSave={url => onSave('pdf_form_url', url)}
+          />
+        )}
+        {vendor.contact_method === 'Email Only' && (
+          <div className="vd-field">
+            <span className="vd-label">Email Template</span>
+            <select
+              className="vd-select"
+              value={vendor.email_template_id || ''}
+              onChange={e => onSave('email_template_id', e.target.value || null)}
+            >
+              <option value="">— None —</option>
+              {emailTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
+        )}
       </div>
 
       {showMapping && (
@@ -247,7 +346,7 @@ function VendorDetail({ vendor, onSave, onDelete }) {
 }
 
 // ─── Sortable task row ────────────────────────────────────────────────────────
-function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle, emailTemplates = [] }) {
+function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle, emailTemplates = [], taskRows = [] }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: task.id, disabled: bulkMode })
 
@@ -279,18 +378,24 @@ function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle, e
         <td className="tt-drag-cell" {...attributes} {...listeners}>⠿</td>
       )}
       <td className="tt-order-cell">{task.sort_order + 1}</td>
-      <td className="tt-title-cell">{task.title}</td>
+      <td className="tt-title-cell"><span className="tt-title-link" onClick={() => onEdit(task)}>{task.title}</span></td>
       <td className="tt-type-cell">
         <span className={`tt-type-badge tt-type--${task.task_type.toLowerCase().replace(/\s+/g, '-')}`}>
           {task.task_type}
         </span>
       </td>
-      <td className="tt-timing-cell">{formatTiming(task.timing_type, task.timing_days)}</td>
-      <td className="tt-applies-cell">{task.applies_to}</td>
-      <td className="tt-assign-cell">{task.auto_assign_to}</td>
       <td className="tt-email-tpl-cell">
         {task.task_type === 'Email' && task.email_template_id
           ? (emailTemplates.find(e => e.id === task.email_template_id)?.name || '—')
+          : ''}
+      </td>
+      <td className="tt-timing-cell">{formatTiming(task.timing_type, task.timing_days)}</td>
+      <td className="tt-assign-cell">
+        {task.task_type !== 'Critical Date' ? task.auto_assign_to : ''}
+      </td>
+      <td className="tt-critical-link-cell">
+        {task.resolves_critical_date
+          ? (taskRows.find(t => t.id === task.resolves_critical_date)?.title || task.resolves_critical_date)
           : ''}
       </td>
       {!bulkMode && (
@@ -871,6 +976,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
               vendor={selectedVendor}
               onSave={(field, value) => handleSaveVendorField(selectedVendorId, field, value)}
               onDelete={() => handleDeleteVendor(selectedVendorId)}
+              emailTemplates={emailTemplates}
             />
           )
         ) : sideSection === 'email' ? (
@@ -1232,10 +1338,10 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                           <th className="tt-order-cell">#</th>
                           <th>Task Name</th>
                           <th className="tt-type-cell">Type</th>
-                          <th className="tt-timing-cell">Timing</th>
-                          <th className="tt-applies-cell">Applies To</th>
-                          <th className="tt-assign-cell">Auto-Assign To</th>
                           <th className="tt-email-tpl-cell">Email Template</th>
+                          <th className="tt-timing-cell">Timing</th>
+                          <th className="tt-assign-cell">Auto-Assign To</th>
+                          <th className="tt-critical-link-cell">Critical Date Link</th>
                           {!bulkMode && <th className="tt-actions-cell">Actions</th>}
                         </tr>
                       </thead>
@@ -1250,6 +1356,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                             isSelected={selectedIds.has(task.id)}
                             onToggle={toggleId}
                             emailTemplates={emailTemplates}
+                            taskRows={taskRows}
                           />
                         ))}
                         {taskRows.length === 0 && (
@@ -1333,14 +1440,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                   ))}
                 </select>
               </div>
-              <label className="tt-modal-label">Applies To</label>
-              <select
-                className="tt-modal-select"
-                value={editingTask.applies_to}
-                onChange={e => setEditingTask(p => ({ ...p, applies_to: e.target.value }))}
-              >
-                {APPLIES_TO.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
               {editingTask.task_type !== 'Critical Date' && (<>
                 <label className="tt-modal-label">Auto-Assign To</label>
                 <select

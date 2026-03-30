@@ -142,6 +142,253 @@ function loadSavedViews() {
 }
 
 
+// ─── Vendor task mapping ──────────────────────────────────────────────────────
+const VENDOR_TASK_KEYWORDS = [
+  { keyword: 'Septic Inspection', vendorType: 'Septic' },
+  { keyword: 'Order Permits',     vendorType: 'Permits' },
+  { keyword: 'Tiedowns',          vendorType: 'Tiedowns' },
+  { keyword: 'Home Warranty',     vendorType: 'Home Warranty' },
+  { keyword: 'Home Inspection',   vendorType: 'Home Inspector' },
+]
+
+function getVendorTypeForTask(title) {
+  const t = (title || '').toLowerCase()
+  for (const m of VENDOR_TASK_KEYWORDS) {
+    if (t.includes(m.keyword.toLowerCase())) return m.vendorType
+  }
+  return null
+}
+
+const VENDOR_FIELD_LABELS = {
+  realtor_name:       'Realtor Name',
+  company:            'Company',
+  realtor_phone:      'Realtor Phone',
+  realtor_email:      'Realtor Email',
+  property_address:   'Property Address',
+  apn:                'APN / Parcel Number',
+  bedrooms:           'Number of Bedrooms',
+  bathrooms:          'Number of Bathrooms',
+  vacant_or_occupied: 'Vacant or Occupied',
+  year_built:         'Year Built',
+  title_company:      'Title Company',
+  title_contact_name: 'Title Contact Name',
+  title_email:        'Title Email',
+  title_phone:        'Title Phone',
+  escrow_number:      'Escrow Number',
+  seller_name:        'Seller Name',
+  buyer_name:         'Buyer Name',
+  close_of_escrow:    'Close of Escrow Date',
+}
+
+function buildFormFields(vendor, tx, tcSettings) {
+  const me = tcSettings?.find(t => t.name === 'Me')
+  const clientName = [tx?.client_first_name, tx?.client_last_name].filter(Boolean).join(' ')
+  const valueMap = {
+    realtor_name:       'Amy Casanova',
+    company:            'Keller Williams',
+    realtor_phone:      me?.phone || '',
+    realtor_email:      me?.email || '',
+    property_address:   tx?.property_address || '',
+    apn:                tx?.apn || '',
+    bedrooms:           tx?.bedrooms || '',
+    bathrooms:          tx?.bathrooms || '',
+    vacant_or_occupied: tx?.vacant_or_occupied || '',
+    year_built:         tx?.year_built || '',
+    title_company:      tx?.title_company || '',
+    title_contact_name: '',
+    title_email:        tx?.title_company_email || '',
+    title_phone:        tx?.title_company_phone || '',
+    escrow_number:      tx?.escrow_number || '',
+    seller_name:        clientName,
+    buyer_name:         clientName,
+    close_of_escrow:    tx?.close_of_escrow || '',
+  }
+  return (vendor.field_mappings || []).map(key => ({
+    key,
+    label: VENDOR_FIELD_LABELS[key] || key,
+    value: valueMap[key] ?? '',
+  }))
+}
+
+// ─── Vendor Email Preview Modal (Email Only vendors) ─────────────────────────
+function VendorEmailModal({ vendor, tx, onClose }) {
+  const [subject, setSubject] = useState('')
+  const [body,    setBody]    = useState('')
+  const [loading, setLoading] = useState(!!vendor.email_template_id)
+  const [sending, setSending] = useState(false)
+
+  useEffect(() => {
+    if (!vendor.email_template_id) return
+    supabase.from('email_templates').select('subject,body').eq('id', vendor.email_template_id).single()
+      .then(({ data }) => {
+        if (data) { setSubject(data.subject || ''); setBody(data.body || '') }
+        setLoading(false)
+      })
+  }, [vendor.email_template_id])
+
+  const handleSend = async () => {
+    if (!vendor.email) { toast.error('No email address for this vendor'); return }
+    setSending(true)
+    try {
+      const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
+      const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+      const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      if (SERVICE_ID && TEMPLATE_ID && PUBLIC_KEY) {
+        const { default: emailjs } = await import('@emailjs/browser')
+        await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+          to_email: vendor.email, to_name: vendor.name,
+          subject, task_title: subject, mention_notes: body, message: body,
+          address: tx?.property_address || '', transaction_addr: tx?.property_address || '',
+        }, PUBLIC_KEY)
+        toast.success(`Sent to ${vendor.name}`)
+      } else {
+        toast.success(`[Demo] Would send to ${vendor.email}`)
+      }
+      onClose()
+    } catch (err) {
+      toast.error('Send failed: ' + (err?.text || err?.message || 'Unknown error'))
+    } finally { setSending(false) }
+  }
+
+  const handleQueue = async () => {
+    const { error } = await supabase.from('email_queue').insert({
+      transaction_id: tx?.id || null, to_email: vendor.email, to_name: vendor.name,
+      subject, body, status: 'pending', prepared_by: 'Me',
+    })
+    if (error) { toast.error('Failed to add to queue'); return }
+    toast.success('Added to Send Queue')
+    onClose()
+  }
+
+  return (
+    <div className="vf-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="vf-modal vf-modal--email">
+        <div className="vf-header">
+          <div className="vf-header-info">
+            <span className="vf-vendor-name">{vendor.name}</span>
+            {vendor.email && <span className="vf-vendor-email">To: {vendor.email}</span>}
+          </div>
+          <button className="vf-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="vf-action-bar">
+          <button className="vf-send-btn" onClick={handleSend} disabled={sending || loading}>
+            {sending ? 'Sending…' : '✓ Send Email'}
+          </button>
+          <button className="vf-queue-btn" onClick={handleQueue} disabled={loading}>Send to Queue</button>
+        </div>
+        {loading ? (
+          <div className="vf-body vf-loading">Loading template…</div>
+        ) : (
+          <div className="vf-body vf-body--email">
+            <div className="vf-field vf-field--full">
+              <label className="vf-label">Subject</label>
+              <input className="vf-input" value={subject} onChange={e => setSubject(e.target.value)} />
+            </div>
+            <div className="vf-field vf-field--full">
+              <label className="vf-label">Body</label>
+              <textarea className="vf-textarea" rows={10} value={body} onChange={e => setBody(e.target.value)} />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Vendor Form Preview Modal ────────────────────────────────────────────────
+function VendorFormModal({ vendor, tx, task, tcSettings, onClose, onTaskUpdate }) {
+  const [formFields, setFormFields] = useState(() => buildFormFields(vendor, tx, tcSettings))
+  const [sending,    setSending]    = useState(false)
+
+  const setFieldValue = (idx, val) =>
+    setFormFields(prev => prev.map((f, i) => i === idx ? { ...f, value: val } : f))
+
+  const buildBody = () =>
+    formFields.map(f => `${f.label}: ${f.value || '(blank)'}`).join('\n')
+
+  const handleSend = async () => {
+    if (!vendor.email) { toast.error('No email address on file for this vendor'); return }
+    setSending(true)
+    try {
+      const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
+      const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+      const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      const subject = `${vendor.name} — ${tx?.property_address || 'Property'}`
+      const body    = buildBody()
+      if (SERVICE_ID && TEMPLATE_ID && PUBLIC_KEY) {
+        const { default: emailjs } = await import('@emailjs/browser')
+        await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+          to_email:         vendor.email,
+          to_name:          vendor.name,
+          subject,
+          task_title:       subject,
+          mention_notes:    body,
+          message:          body,
+          address:          tx?.property_address || '',
+          transaction_addr: tx?.property_address || '',
+        }, PUBLIC_KEY)
+        toast.success(`Sent to ${vendor.name}`)
+      } else {
+        toast.success(`[Demo] Would send to ${vendor.email}`)
+      }
+      onTaskUpdate?.(task.id, { status: 'in-progress' })
+      onClose()
+    } catch (err) {
+      toast.error('Send failed: ' + (err?.text || err?.message || 'Unknown error'))
+    } finally { setSending(false) }
+  }
+
+  const handleQueue = async () => {
+    const subject = `${vendor.name} — ${tx?.property_address || 'Property'}`
+    const { error } = await supabase.from('email_queue').insert({
+      transaction_id: tx?.id || null,
+      to_email:       vendor.email,
+      to_name:        vendor.name,
+      subject,
+      body:           buildBody(),
+      status:         'pending',
+      prepared_by:    'Me',
+    })
+    if (error) { toast.error('Failed to add to queue'); return }
+    toast.success('Added to Send Queue')
+    onClose()
+  }
+
+  return (
+    <div className="vf-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="vf-modal">
+        <div className="vf-header">
+          <div className="vf-header-info">
+            <span className="vf-vendor-name">{vendor.name}</span>
+            {vendor.email && <span className="vf-vendor-email">{vendor.email}</span>}
+          </div>
+          <button className="vf-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="vf-action-bar">
+          <button className="vf-send-btn" onClick={handleSend} disabled={sending}>
+            {sending ? 'Sending…' : '✓ Approve & Send'}
+          </button>
+          <button className="vf-queue-btn" onClick={handleQueue}>Send to Queue</button>
+        </div>
+        <div className="vf-body">
+          {formFields.length === 0 ? (
+            <div className="vf-empty">No form fields configured for this vendor.</div>
+          ) : formFields.map((f, i) => (
+            <div className="vf-field" key={f.key}>
+              <label className="vf-label">{f.label}</label>
+              <input
+                className="vf-input"
+                value={f.value}
+                onChange={e => setFieldValue(i, e.target.value)}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Sub-components for grouped view ─────────────────────────────────────────
 function CriticalDateRow({ task }) {
   const ddl = dueDateLabel(task.due_date, false, null)
@@ -158,15 +405,21 @@ function CriticalDateRow({ task }) {
   )
 }
 
-function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, onOpenComments, commentCount, bulkMode, selected, onToggleSelect }) {
+function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, onOpenComments, commentCount, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [] }) {
   const done      = task.status === 'complete'
   const statusKey = task.status || 'open'
   const ddl       = dueDateLabel(task.due_date, done, task.completed_at)
 
   // Inline editing state
-  const [editingField, setEditingField] = useState(null) // 'title' | 'due' | 'assignee'
-  const [titleDraft,   setTitleDraft]   = useState(task.title || '')
+  const [editingField,    setEditingField]    = useState(null) // 'title' | 'due' | 'assignee'
+  const [titleDraft,      setTitleDraft]      = useState(task.title || '')
+  const [vendorFormOpen,  setVendorFormOpen]  = useState(false)
+  const [vendorEmailOpen, setVendorEmailOpen] = useState(false)
   useEffect(() => { setTitleDraft(task.title || '') }, [task.title])
+
+  const vendorType     = getVendorTypeForTask(task.title)
+  const matchedVendors = vendorType ? vendors.filter(v => v.vendor_type === vendorType) : []
+  const selectedVendor = matchedVendors.find(v => v.id === task.selected_vendor_id) || null
 
   const cycleStatus = () => {
     const next = STATUS_NEXT[statusKey] || 'open'
@@ -258,6 +511,45 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
           </div>
         )}
       </div>
+      {matchedVendors.length > 0 && (
+        <div className="gtd-vendor-inline" onClick={e => e.stopPropagation()}>
+          <select
+            className="gtd-vendor-select"
+            value={task.selected_vendor_id || ''}
+            onChange={e => onUpdate(task.id, { selected_vendor_id: e.target.value || null })}
+          >
+            <option value="">— vendor —</option>
+            {matchedVendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+          </select>
+          {selectedVendor && (
+            <>
+              {selectedVendor.contact_method === 'PDF Form + Email' && (
+                <button className="gtd-vendor-action" onClick={() => setVendorFormOpen(true)}>
+                  Preview Form ↗
+                </button>
+              )}
+              {selectedVendor.contact_method === 'Website' && selectedVendor.website_url && (
+                <a className="gtd-vendor-action" href={selectedVendor.website_url} target="_blank" rel="noreferrer">
+                  Open Website ↗
+                </a>
+              )}
+              {selectedVendor.contact_method === 'Text' && selectedVendor.phone && (
+                <a
+                  className="gtd-vendor-action"
+                  href={`sms:${selectedVendor.phone}?body=${encodeURIComponent(`Hi, I'd like to schedule for ${tx?.property_address || 'the property'}. Please let me know your availability.`)}`}
+                >
+                  Send Text ↗
+                </a>
+              )}
+              {selectedVendor.contact_method === 'Email Only' && (
+                <button className="gtd-vendor-action" onClick={() => setVendorEmailOpen(true)}>
+                  Preview Email ↗
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
       {editingField === 'assignee' ? (
         <select
           autoFocus
@@ -319,6 +611,23 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
         </button>
         <button className="gtd-grow-del-btn" onClick={() => onDelete(task.id)} title="Delete task">✕</button>
       </div>
+      {vendorFormOpen && selectedVendor && (
+        <VendorFormModal
+          vendor={selectedVendor}
+          tx={tx}
+          task={task}
+          tcSettings={tcSettings}
+          onClose={() => setVendorFormOpen(false)}
+          onTaskUpdate={onUpdate}
+        />
+      )}
+      {vendorEmailOpen && selectedVendor && (
+        <VendorEmailModal
+          vendor={selectedVendor}
+          tx={tx}
+          onClose={() => setVendorEmailOpen(false)}
+        />
+      )}
     </div>
   )
 }
@@ -1124,6 +1433,14 @@ export default function TasksTab({
   // Sub-tab
   const [activeSubTab,  setActiveSubTab]  = useState('tasks')
   const [queueCount,    setQueueCount]    = useState(0)
+  const tasksScrollRef  = useRef(null)
+  const savedScrollTop  = useRef(0)
+
+  useEffect(() => {
+    if (activeSubTab === 'tasks' && tasksScrollRef.current) {
+      tasksScrollRef.current.scrollTop = savedScrollTop.current
+    }
+  }, [activeSubTab])
 
   useEffect(() => {
     supabase
@@ -1165,6 +1482,12 @@ export default function TasksTab({
 
   // Comment panel
   const [commentTaskId, setCommentTaskId] = useState(null)
+
+  // Vendors
+  const [vendors, setVendors] = useState([])
+  useEffect(() => {
+    supabase.from('vendors').select('*').order('name').then(({ data }) => setVendors(data || []))
+  }, [])
 
   const selectAllRef = useRef(null)
 
@@ -1453,14 +1776,14 @@ export default function TasksTab({
         >Tasks</button>
         <button
           className={`gtd-subtab${activeSubTab === 'queue' ? ' active' : ''}`}
-          onClick={() => setActiveSubTab('queue')}
+          onClick={() => { if (tasksScrollRef.current) savedScrollTop.current = tasksScrollRef.current.scrollTop; setActiveSubTab('queue') }}
         >
           Send Queue
           {queueCount > 0 && <span className="gtd-subtab-badge">{queueCount}</span>}
         </button>
         <button
           className={`gtd-subtab${activeSubTab === 'log' ? ' active' : ''}`}
-          onClick={() => setActiveSubTab('log')}
+          onClick={() => { if (tasksScrollRef.current) savedScrollTop.current = tasksScrollRef.current.scrollTop; setActiveSubTab('log') }}
         >Sent Log</button>
       </div>
 
@@ -1589,7 +1912,7 @@ export default function TasksTab({
       )}
 
       {/* ── Grouped accordion list ──────────────────────────────────── */}
-      <div className="gtd-grouped-list">
+      <div className="gtd-grouped-list" ref={tasksScrollRef}>
         {groupedData.length === 0 && (
           <div className="gtd-empty">No tasks match these filters</div>
         )}
@@ -1662,6 +1985,8 @@ export default function TasksTab({
                     bulkMode={bulkMode}
                     selected={selectedIds.has(item.id)}
                     onToggleSelect={() => toggleId(item.id)}
+                    vendors={vendors}
+                    tcSettings={tcSettings}
                   />
                 )
               )}

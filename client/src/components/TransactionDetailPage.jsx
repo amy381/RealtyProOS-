@@ -392,7 +392,7 @@ function FubInlineSearch({ onSelect, onClose }) {
 }
 
 // ─── Client Row ────────────────────────────────────────────────────────────────
-function ClientRow({ label, first, last, onFubSelect, tabIndex }) {
+function ClientRow({ label, first, last, email, phone, onFubSelect, tabIndex }) {
   const [searching, setSearching] = useState(false)
   const name = [first, last].filter(Boolean).join(' ')
 
@@ -400,7 +400,15 @@ function ClientRow({ label, first, last, onFubSelect, tabIndex }) {
     <div className="txp-client-row">
       <span className="txp-field-label">{label}</span>
       <div className="txp-client-row-right">
-        {name && <span className="txp-client-linked-name">{name}</span>}
+        <div className="txp-client-row-info">
+          {name && <span className="txp-client-linked-name">{name}</span>}
+          {(email || phone) && (
+            <span className="txp-client-contact">
+              {email && <span className="txp-client-contact-item">{email}</span>}
+              {phone && <span className="txp-client-contact-item">{phone}</span>}
+            </span>
+          )}
+        </div>
         {searching ? (
           <FubInlineSearch
             onSelect={(r) => { onFubSelect(r); setSearching(false) }}
@@ -1674,6 +1682,8 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               label="Client 1"
               first={transaction.client_first_name || ''}
               last={transaction.client_last_name   || ''}
+              email={transaction.client_email || ''}
+              phone={transaction.client_phone || ''}
               tabIndex={16}
               onFubSelect={(result) => {
                 const p = result?.client1
@@ -1695,6 +1705,8 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               label="Client 2"
               first={transaction.client2_first_name || ''}
               last={transaction.client2_last_name   || ''}
+              email={transaction.client2_email || ''}
+              phone={transaction.client2_phone || ''}
               tabIndex={17}
               onFubSelect={(result) => {
                 const p = result?.client1

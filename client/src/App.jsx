@@ -73,7 +73,12 @@ export default function App() {
   const [selectedSection,     setSelectedSection]     = useState('details')
   const [txOpenRevision,      setTxOpenRevision]      = useState(0)
   const [txFrom,              setTxFrom]              = useState('board')
-  const [activeTab,  setActiveTab]  = useState('board')
+  const [activeTab,  setActiveTab]  = useState(() => {
+    const p = new URLSearchParams(window.location.search)
+    const VALID_TABS = ['board','tasks','commissions','collaborators','templates','showings']
+    const t = p.get('tab')
+    return VALID_TABS.includes(t) ? t : 'board'
+  })
   const [boardView,  setBoardView]  = useState(() => localStorage.getItem('boardView') || 'board')
 
   const commissionsRef = useRef({})
@@ -113,7 +118,7 @@ export default function App() {
     setSelectedTransaction(tx)
     setTxOpenRevision(r => r + 1)
     setTxFrom(from)
-    window.history.pushState({}, '', `?from=${from}`)
+    window.history.pushState({}, '', `?tab=${activeTab}&tx=${tx.id}&from=${from}`)
   }
 
   // Show a toast when returning from Google OAuth
@@ -215,6 +220,20 @@ export default function App() {
       }
 
       setLoading(false)
+
+      // Restore open transaction from URL on refresh
+      const params = new URLSearchParams(window.location.search)
+      const txId   = params.get('tx')
+      const from   = params.get('from') || 'board'
+      if (txId && txData) {
+        const tx = txData.find(t => t.id === txId)
+        if (tx) {
+          setSelectedSection('details')
+          setSelectedTransaction(tx)
+          setTxOpenRevision(r => r + 1)
+          setTxFrom(from)
+        }
+      }
     }
     load()
   }, [])
@@ -726,7 +745,7 @@ export default function App() {
           ].map(tab => (
             <button key={tab.id}
               className={`tab-btn${activeTab === tab.id ? ' active' : ''}`}
-              onClick={() => { setActiveTab(tab.id); setSelectedTransaction(null) }}>
+              onClick={() => { setActiveTab(tab.id); setSelectedTransaction(null); window.history.replaceState({}, '', `?tab=${tab.id}`) }}>
               {tab.label}
             </button>
           ))}
@@ -814,7 +833,7 @@ export default function App() {
           key={txOpenRevision}
           transaction={selectedTransaction}
           transactions={transactions}
-          onNavigate={(tx) => { setSelectedTransaction(tx); setTxOpenRevision(r => r + 1); window.history.replaceState({}, '', `?from=${txFrom}`) }}
+          onNavigate={(tx) => { setSelectedTransaction(tx); setTxOpenRevision(r => r + 1); window.history.replaceState({}, '', `?tab=${activeTab}&tx=${tx.id}&from=${txFrom}`) }}
           from={txFrom}
           initialSection={selectedSection}
           columns={COLUMNS}
@@ -825,7 +844,8 @@ export default function App() {
           dbTemplateTasks={dbTemplateTasks}
           onBack={() => {
             const from = new URLSearchParams(window.location.search).get('from')
-            window.history.replaceState({}, '', window.location.pathname)
+            const backTab = from === 'tasks' ? 'tasks' : activeTab
+            window.history.replaceState({}, '', `?tab=${backTab}`)
             setSelectedTransaction(null)
             if (from === 'tasks') setActiveTab('tasks')
           }}

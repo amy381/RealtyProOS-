@@ -1632,3 +1632,202 @@
   transition: background 0.1s;
 }
 .gtd-edit-save:hover { background: #333; }
+
+/* ── Vendor inline on task rows ──────────────────────────────────────────── */
+.gtd-vendor-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.gtd-vendor-select {
+  font-size: 12px;
+  font-family: inherit;
+  padding: 3px 6px;
+  border: 1px solid #d0d0d0;
+  border-radius: 5px;
+  background: #fafafa;
+  color: #333;
+  cursor: pointer;
+  max-width: 200px;
+}
+.gtd-vendor-select:hover { border-color: #999; }
+
+.gtd-vendor-action {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1a6fb5;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gtd-vendor-action:hover { text-decoration: underline; color: #0e4d82; }
+
+.vf-loading { color: #999; font-size: 13px; padding: 20px; }
+
+/* ── Vendor Form Preview Modal ───────────────────────────────────────────── */
+.vf-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.vf-modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+  width: 540px;
+  max-width: 95vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.vf-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+.vf-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vf-vendor-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.vf-vendor-email {
+  font-size: 12px;
+  color: #777;
+}
+
+.vf-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #888;
+  padding: 0 0 0 12px;
+  line-height: 1;
+}
+.vf-close:hover { color: #333; }
+
+.vf-action-bar {
+  display: flex;
+  gap: 10px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
+}
+
+.vf-send-btn {
+  background: #1e8a4a;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.vf-send-btn:hover:not(:disabled) { background: #166b39; }
+.vf-send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.vf-queue-btn {
+  background: #fff;
+  color: #333;
+  border: 1.5px solid #ccc;
+  border-radius: 7px;
+  font-size: 14px;
+  font-family: inherit;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.vf-queue-btn:hover { border-color: #888; }
+
+.vf-body {
+  padding: 16px 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  align-content: start;
+}
+
+.vf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vf-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.vf-input {
+  font-size: 13px;
+  font-family: inherit;
+  padding: 6px 8px;
+  border: 1px solid #d5d5d5;
+  border-radius: 5px;
+  background: #fafafa;
+  color: #1a1a1a;
+  transition: border-color 0.1s;
+}
+.vf-input:focus { outline: none; border-color: #888; background: #fff; }
+
+.vf-empty {
+  grid-column: 1 / -1;
+  color: #999;
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+.vf-modal--email { width: 560px; }
+.vf-body--email {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+.vf-field--full { display: flex; flex-direction: column; gap: 4px; }
+.vf-textarea {
+  font-size: 13px;
+  font-family: inherit;
+  padding: 8px;
+  border: 1px solid #d5d5d5;
+  border-radius: 5px;
+  background: #fafafa;
+  color: #1a1a1a;
+  resize: vertical;
+  transition: border-color 0.1s;
+}
+.vf-textarea:focus { outline: none; border-color: #888; background: #fff; }

@@ -16,6 +16,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { supabase } from '../lib/supabase'
 import { mouseDownIsInside } from '../lib/dragGuard'
 import { TC_ASSIGNEES } from '../lib/taskTemplates'
+import { formatPhone } from '../lib/formatters'
 import './TemplatesTab.css'
 
 // ─── Task template constants ───────────────────────────────────────────────────
@@ -69,7 +70,6 @@ const EMPTY_EMAIL = {
   subject:    '',
   body:       '',
   cc:         '',
-  auto_send:  false,
   trigger:    'manual',
   applies_to: 'Both',
 }
@@ -298,7 +298,7 @@ function VendorDetail({ vendor, onSave, onDelete, emailTemplates = [] }) {
           </select>
         </div>
         {showEmail   && <VdTextField key="email"   label="Email Address" value={vendor.email        || ''} onSave={v => onSave('email', v)}        placeholder="vendor@example.com" />}
-        {showPhone   && <VdTextField key="phone"   label="Phone Number"  value={vendor.phone        || ''} onSave={v => onSave('phone', v)}        placeholder="(555) 000-0000"     />}
+        {showPhone   && <VdTextField key="phone"   label="Phone Number"  value={vendor.phone        || ''} onSave={v => onSave('phone', formatPhone(v))}        placeholder="(555) 000-0000"     />}
         {showWebsite && <VdTextField key="website" label="Website URL"   value={vendor.website_url  || ''} onSave={v => onSave('website_url', v)}  placeholder="https://..."        />}
         {showPdf && (
           <VendorPdfUpload
@@ -749,7 +749,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     setEmailSaving(true)
     try {
       if (editingEmail.id) {
-        const { id, created_at, ...updates } = editingEmail
+        const { id, created_at, auto_send, ...updates } = editingEmail
         const payload = { ...updates, body: currentBody }
         const { error } = await supabase.from('email_templates').update(payload).eq('id', id)
         if (error) throw error
@@ -762,7 +762,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
             subject:    editingEmail.subject,
             body:       currentBody,
             cc:         editingEmail.cc || '',
-            auto_send:  editingEmail.auto_send ?? false,
             trigger:    editingEmail.trigger,
             applies_to: editingEmail.applies_to,
           })
@@ -1140,26 +1139,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                   </div>
 
                   <div className="et-field-row">
-                    <div className="et-field">
-                      <label className="et-label">Send Mode</label>
-                      <div className="et-toggle-group">
-                        <button
-                          type="button"
-                          className={`et-toggle-btn${!editingEmail.auto_send ? ' active' : ''}`}
-                          onClick={() => setEmailField('auto_send', false)}
-                        >Send Queue</button>
-                        <button
-                          type="button"
-                          className={`et-toggle-btn${editingEmail.auto_send ? ' active' : ''}`}
-                          onClick={() => setEmailField('auto_send', true)}
-                        >Auto-Send</button>
-                      </div>
-                      <span className="et-hint">
-                        {editingEmail.auto_send
-                          ? 'Sends immediately when triggered by a task.'
-                          : 'Held for review in the Send Queue before sending.'}
-                      </span>
-                    </div>
                     <div className="et-field">
                       <label className="et-label">Trigger</label>
                       <select

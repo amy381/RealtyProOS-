@@ -331,6 +331,7 @@ function VendorFormModal({ vendor, tx, task, tcSettings, onClose, onTaskUpdate }
       } else {
         toast.success(`[Demo] Would send to ${vendor.email}`)
       }
+      await supabase.from('tasks').update({ status: 'in-progress' }).eq('id', task.id)
       onTaskUpdate?.(task.id, { status: 'in-progress' })
       onClose()
     } catch (err) {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
+import { formatPhone } from '../lib/formatters'
 import './CollaboratorsTab.css'
 
 const CATEGORIES = [
@@ -185,7 +186,7 @@ export default function CollaboratorsTab() {
 
               <div className="collab-form-row">
                 <label>Phone
-                  <input value={form.phone} onChange={set('phone')} placeholder="(555) 000-0000" type="tel" />
+                  <input value={form.phone} onChange={set('phone')} onBlur={() => setForm(p => ({ ...p, phone: formatPhone(p.phone) }))} placeholder="(555) 000-0000" type="tel" />
                 </label>
                 <label>Email
                   <input value={form.email} onChange={set('email')} placeholder="email@example.com" type="email" />

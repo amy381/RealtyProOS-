@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { formatPhone, formatApn } from '../lib/formatters'
 import { mouseDownIsInside } from '../lib/dragGuard'
 import TaskCommentPanel from './TaskCommentPanel'
 import { syncDriveFolder, uploadToDrive, getDriveUrl, CONTRACT_DOCS } from '../lib/googleDrive'
@@ -1477,7 +1478,7 @@ function CollaboratorAddModal({ category, initialName = '', onSaved, onClose }) 
           <label>{meta.companyLabel}<input value={form.company} onChange={set('company')} placeholder={meta.companyLabel} /></label>
           {meta.hasType && <label>Type<input value={form.type} onChange={set('type')} placeholder="e.g. Photographer" /></label>}
           <div className="collab-add-row">
-            <label>Phone<input value={form.phone} onChange={set('phone')} type="tel"   placeholder="(555) 000-0000" /></label>
+            <label>Phone<input value={form.phone} onChange={set('phone')} onBlur={() => setForm(p => ({ ...p, phone: formatPhone(p.phone) }))} type="tel" placeholder="(555) 000-0000" /></label>
             <label>Email<input value={form.email} onChange={set('email')} type="email" placeholder="email@example.com" /></label>
           </div>
         </div>
@@ -1637,7 +1638,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
 
             {/* Seller: APN always visible */}
             {!isBuyer && (
-              <TxField label="APN" value={transaction.apn || ''} type="text" onSave={save('apn')} placeholder="000-000-000" tabIndex={5} />
+              <TxField label="APN" value={transaction.apn || ''} type="text" onSave={v => save('apn')(formatApn(v))} placeholder="000-000-000" tabIndex={5} />
             )}
 
             {/* Buyer pending+ property fields */}
@@ -1651,7 +1652,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                 placeholder="$0"
                 tabIndex={5}
               />
-              <TxField label="APN"    value={transaction.apn    || ''} type="text" onSave={save('apn')}    placeholder="000-000-000" tabIndex={6} />
+              <TxField label="APN"    value={transaction.apn    || ''} type="text" onSave={v => save('apn')(formatApn(v))}    placeholder="000-000-000" tabIndex={6} />
               <TxField label="Access" value={transaction.access || ''} type="text" onSave={save('access')} placeholder="e.g. lockbox code, call agent" tabIndex={7} />
             </>)}
 
@@ -1815,7 +1816,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                 tabIndex={32}
               />
               <TxField label="Title Email"    value={transaction.title_company_email || ''} type="text" onSave={save('title_company_email')} placeholder="title@company.com" tabIndex={33} />
-              <TxField label="Title Phone"    value={transaction.title_company_phone || ''} type="text" onSave={save('title_company_phone')} placeholder="(555) 000-0000"    tabIndex={34} />
+              <TxField label="Title Phone"    value={transaction.title_company_phone || ''} type="text" onSave={v => save('title_company_phone')(formatPhone(v))} placeholder="(555) 000-0000"    tabIndex={34} />
               <TxField label="Escrow Number"  value={transaction.escrow_number       || ''} type="text" onSave={save('escrow_number')}       placeholder="Escrow #"         tabIndex={35} />
               <CollaboratorSearch
                 label="Co-op Agent"
@@ -1855,7 +1856,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                   tabIndex={38}
                 />
                 <TxField label="Lender Email" value={transaction.lender_email || ''} type="text" onSave={save('lender_email')} placeholder="lender@company.com" tabIndex={39} />
-                <TxField label="Lender Phone" value={transaction.lender_phone || ''} type="text" onSave={save('lender_phone')} placeholder="(555) 000-0000"    tabIndex={40} />
+                <TxField label="Lender Phone" value={transaction.lender_phone || ''} type="text" onSave={v => save('lender_phone')(formatPhone(v))} placeholder="(555) 000-0000"    tabIndex={40} />
               </>)}
               <div className="txp-field txp-additional-parcel-row">
                 <span className="txp-field-label">Additional Parcel</span>
@@ -1965,7 +1966,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
             <div className="txp-section-title">Referrals</div>
             <TxField label="Referring Agent"       value={transaction.referring_agent       || ''} type="text" onSave={save('referring_agent')}       placeholder="Agent name"        tabIndex={43} />
             <TxField label="Referring Agent Email" value={transaction.referring_agent_email || ''} type="text" onSave={save('referring_agent_email')} placeholder="email@example.com" tabIndex={44} />
-            <TxField label="Referring Agent Phone" value={transaction.referring_agent_phone || ''} type="text" onSave={save('referring_agent_phone')} placeholder="(555) 000-0000"   tabIndex={45} />
+            <TxField label="Referring Agent Phone" value={transaction.referring_agent_phone || ''} type="text" onSave={v => save('referring_agent_phone')(formatPhone(v))} placeholder="(555) 000-0000"   tabIndex={45} />
             <TxField label="Referral %"            value={String(transaction.referral_pct   ?? '')} type="text" onSave={save('referral_pct')}         placeholder="e.g. 25"           tabIndex={46} />
           </div>
 

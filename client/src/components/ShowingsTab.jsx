@@ -1,4 +1,3 @@
-console.log('[ShowingsTab] VITE_EMAILJS_FEEDBACK_TEMPLATE_ID:', import.meta.env.VITE_EMAILJS_FEEDBACK_TEMPLATE_ID)
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { toast } from 'react-hot-toast'

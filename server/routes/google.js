@@ -156,7 +156,7 @@ router.get('/auth', (req, res) => {
     client_id:     clientId,
     redirect_uri:  redirectUri,
     response_type: 'code',
-    scope:         'https://www.googleapis.com/auth/drive',
+    scope:         'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/gmail.send',
     access_type:   'offline',
     prompt:        'consent',
   })
@@ -196,6 +196,7 @@ router.get('/callback', async (req, res) => {
       access_token:  tokens.access_token,
       refresh_token: tokens.refresh_token,
       expiry_date:   tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
+      scopes:        tokens.scope ?? null,
     })
     if (insertErr) {
       console.error('[Drive] Failed to store tokens in Supabase:', insertErr.message)

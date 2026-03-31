@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
 import { mouseDownIsInside } from '../lib/dragGuard'
 import TaskCommentPanel from './TaskCommentPanel'
+import { useGmailStatus } from '../lib/useGmailStatus'
 import './TasksTab.css'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -1050,7 +1051,9 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
   const [loading,    setLoading]    = useState(true)
   const [previewing, setPreviewing] = useState(null)
   const [composing,  setComposing]  = useState(null)   // null | 'new' | row
-  const [sending,    setSending]    = useState(null)   // row.id
+  const [sending,    setSending]    = useState(null)   // row.id being sent
+  const [rowErrors,  setRowErrors]  = useState({})     // { [row.id]: errorMessage }
+  const gmailStatus = useGmailStatus()
 
   const txById = useMemo(() => {
     const m = {}; for (const t of transactions) m[t.id] = t; return m
@@ -1063,58 +1066,63 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
     const { data } = await supabase
       .from('email_queue')
       .select('*')
-      .eq('status', 'pending')
+      .in('status', ['pending', 'failed'])
       .order('prepared_at', { ascending: false })
     const rows = data || []
     setQueue(rows)
-    onQueueCountChange?.(rows.length)
+    onQueueCountChange?.(rows.filter(r => r.status === 'pending').length)
     setLoading(false)
   }
 
-  const logSent = async (row) => {
-    await supabase.from('email_sent_log').insert({
-      transaction_id: row.transaction_id || null,
-      to_email:       row.to_email,
-      to_name:        row.to_name        || '',
-      subject:        row.subject,
-      body:           row.body           || '',
-      cc:             row.cc             || '',
-      sent_by:        'Me',
-      template_name:  row.template_name  || '',
-    })
-  }
+  const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
 
   const handleSend = async (row) => {
     setSending(row.id)
-    try {
-      const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
-      const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-      const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+    setRowErrors(prev => { const n = { ...prev }; delete n[row.id]; return n })
 
-      if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
-        toast.success(`[Demo] Would send "${row.subject}" to ${row.to_email}`)
-      } else {
-        const { default: emailjs } = await import('@emailjs/browser')
-        await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-          to_email:         row.to_email,
-          to_name:          row.to_name  || '',
-          subject:          row.subject,
-          task_title:       row.subject,
-          mention_notes:    row.body     || '',
-          transaction_addr: txById[row.transaction_id]?.property_address || '',
-        }, PUBLIC_KEY)
-        toast.success('Email sent')
+    const htmlBody = `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${(row.body || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
+
+    try {
+      const gmailRes = await fetch(`${API_BASE}/api/google/gmail-send`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to:            row.to_email,
+          cc:            row.cc     || undefined,
+          subject:       row.subject,
+          body:          htmlBody,
+          transactionId: row.transaction_id || undefined,
+        }),
+      })
+
+      const result = await gmailRes.json()
+
+      if (!gmailRes.ok) {
+        await supabase.from('email_queue').update({ status: 'failed' }).eq('id', row.id)
+        setQueue(prev => prev.map(q => q.id === row.id ? { ...q, status: 'failed' } : q))
+        setRowErrors(prev => ({ ...prev, [row.id]: result.error || 'Send failed' }))
+        return
       }
 
-      await logSent(row)
+      // Success: mark sent then remove — gmail-send.js already writes the sent log server-side
+      await supabase.from('email_queue').update({ status: 'sent' }).eq('id', row.id)
       await supabase.from('email_queue').delete().eq('id', row.id)
       const next = queue.filter(q => q.id !== row.id)
       setQueue(next)
-      onQueueCountChange?.(next.length)
+      onQueueCountChange?.(next.filter(r => r.status === 'pending').length)
       setPreviewing(null)
+      toast.success('Email sent')
     } catch (err) {
-      toast.error('Send failed: ' + (err?.text || err?.message || 'Unknown error'))
-    } finally { setSending(null) }
+      await supabase.from('email_queue').update({ status: 'failed' }).eq('id', row.id)
+      setQueue(prev => prev.map(q => q.id === row.id ? { ...q, status: 'failed' } : q))
+      setRowErrors(prev => ({ ...prev, [row.id]: err.message || 'Send failed' }))
+    } finally {
+      setSending(null)
+    }
+
+    // ── EMAILJS LEGACY — unreachable, kept for reference until migration is verified ──
+    // const { default: emailjs } = await import('@emailjs/browser')
+    // await emailjs.send(SERVICE_ID, TEMPLATE_ID, { to_email, to_name, subject, ... }, PUBLIC_KEY)
   }
 
   const handleDiscard = async (id) => {
@@ -1145,14 +1153,31 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
     toast.success('Added to Send Queue')
   }
 
+  const gmailReady = !gmailStatus.loading && gmailStatus.connected && gmailStatus.hasGmailScope
+  const pendingCount = queue.filter(r => r.status === 'pending').length
+  const failedCount  = queue.filter(r => r.status === 'failed').length
+
   return (
     <div className="sq-view">
       <div className="sq-topbar">
         <span className="sq-count">
-          {loading ? '…' : `${queue.length} email${queue.length !== 1 ? 's' : ''} waiting`}
+          {loading ? '…' : (
+            <>
+              {pendingCount} email{pendingCount !== 1 ? 's' : ''} waiting
+              {failedCount > 0 && <span className="sq-failed-badge">{failedCount} failed</span>}
+            </>
+          )}
         </span>
         <button className="sq-compose-btn" onClick={() => setComposing('new')}>+ Compose Email</button>
       </div>
+
+      {!gmailStatus.loading && (!gmailStatus.connected || !gmailStatus.hasGmailScope) && (
+        <div className="sq-reconnect-banner">
+          Gmail not connected —{' '}
+          <a href="/api/google/auth" className="sq-reconnect-link">Reconnect Google</a>
+          {' '}to send emails from the queue.
+        </div>
+      )}
 
       {loading ? (
         <div className="sq-loading">Loading queue…</div>
@@ -1172,22 +1197,34 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
               </tr>
             </thead>
             <tbody>
-              {queue.map(row => (
-                <tr key={row.id} className="sq-row" onClick={() => setPreviewing(row)} title="Click to preview">
-                  <td className="sq-col-to">{row.to_name ? `${row.to_name}` : row.to_email}<span className="sq-email-small"> {row.to_name ? `<${row.to_email}>` : ''}</span></td>
-                  <td className="sq-col-subject">{row.subject}</td>
-                  <td className="sq-col-tx">{txById[row.transaction_id]?.property_address?.split(',')[0] || '—'}</td>
-                  <td className="sq-col-tmpl">{row.template_name || '—'}</td>
-                  <td className="sq-col-date">{fmtTs(row.prepared_at)}</td>
-                  <td className="sq-col-actions" onClick={e => e.stopPropagation()}>
-                    <button className="sq-btn sq-btn--send" onClick={() => handleSend(row)} disabled={!!sending}>
-                      {sending === row.id ? '…' : 'Send'}
-                    </button>
-                    <button className="sq-btn sq-btn--edit" onClick={() => setComposing(row)} disabled={!!sending}>Edit</button>
-                    <button className="sq-btn sq-btn--discard" onClick={() => handleDiscard(row.id)} disabled={!!sending}>Discard</button>
-                  </td>
-                </tr>
-              ))}
+              {queue.map(row => {
+                const isFailed = row.status === 'failed'
+                const rowError = rowErrors[row.id]
+                return (
+                  <tr key={row.id} className={`sq-row${isFailed ? ' sq-row--failed' : ''}`} onClick={() => setPreviewing(row)} title="Click to preview">
+                    <td className="sq-col-to">{row.to_name ? `${row.to_name}` : row.to_email}<span className="sq-email-small"> {row.to_name ? `<${row.to_email}>` : ''}</span></td>
+                    <td className="sq-col-subject">{row.subject}</td>
+                    <td className="sq-col-tx">{txById[row.transaction_id]?.property_address?.split(',')[0] || '—'}</td>
+                    <td className="sq-col-tmpl">{row.template_name || '—'}</td>
+                    <td className="sq-col-date">{fmtTs(row.prepared_at)}</td>
+                    <td className="sq-col-actions" onClick={e => e.stopPropagation()}>
+                      {isFailed && rowError && (
+                        <span className="sq-row-error" title={rowError}>⚠ {rowError}</span>
+                      )}
+                      <button
+                        className="sq-btn sq-btn--send"
+                        onClick={() => handleSend(row)}
+                        disabled={!!sending || !gmailReady}
+                        title={!gmailReady ? 'Reconnect Google to send' : isFailed ? 'Retry send' : 'Send'}
+                      >
+                        {sending === row.id ? '…' : isFailed ? 'Retry' : 'Send'}
+                      </button>
+                      <button className="sq-btn sq-btn--edit" onClick={() => setComposing(row)} disabled={!!sending}>Edit</button>
+                      <button className="sq-btn sq-btn--discard" onClick={() => handleDiscard(row.id)} disabled={!!sending}>Discard</button>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -1212,9 +1249,15 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
             </div>
             <div className="sq-modal-footer">
               <button className="sq-modal-cancel" onClick={() => setPreviewing(null)}>Close</button>
-              <button className="sq-modal-save" onClick={() => handleSend(previewing)} disabled={!!sending}>
-                {sending === previewing.id ? 'Sending…' : 'Send Now'}
-              </button>
+              {gmailReady ? (
+                <button className="sq-modal-save" onClick={() => handleSend(previewing)} disabled={!!sending}>
+                  {sending === previewing.id ? 'Sending…' : previewing.status === 'failed' ? 'Retry Send' : 'Send Now'}
+                </button>
+              ) : (
+                <a href="/api/google/auth" className="sq-reconnect-link sq-reconnect-link--btn">
+                  Reconnect Google to Send
+                </a>
+              )}
             </div>
           </div>
         </div>

@@ -917,6 +917,61 @@
 .sq-btn--discard { background: #fff; color: #c0392b; border-color: #f5c6c2; }
 .sq-btn--discard:not(:disabled):hover { background: #fdf2f2; border-color: #c0392b; }
 
+/* ── Failed rows ─────────────────────────────────────────────────────────── */
+.sq-row--failed td { background: #fff8f8; }
+.sq-row--failed:hover td { background: #fdf2f2; }
+
+.sq-failed-badge {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #c0392b;
+  background: #fdf2f2;
+  border: 1px solid #f5c6c2;
+  border-radius: 10px;
+  padding: 1px 7px;
+  vertical-align: middle;
+}
+
+.sq-row-error {
+  display: block;
+  font-size: 11px;
+  color: #c0392b;
+  margin-bottom: 4px;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Reconnect banner ────────────────────────────────────────────────────── */
+.sq-reconnect-banner {
+  margin: 0 0 12px;
+  padding: 10px 16px;
+  background: #fff8f0;
+  border: 1px solid #f5dfc2;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #7a5200;
+}
+.sq-reconnect-link {
+  color: #1a1a1a;
+  font-weight: 600;
+  text-decoration: underline;
+}
+.sq-reconnect-link--btn {
+  display: inline-block;
+  background: #1a1a1a;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 14px;
+}
+.sq-reconnect-link--btn:hover { background: #333; }
+
 /* ── Modals ──────────────────────────────────────────────────────────────── */
 .sq-modal-overlay {
   position: fixed;

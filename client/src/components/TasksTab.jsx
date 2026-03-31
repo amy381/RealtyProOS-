@@ -230,25 +230,29 @@ function VendorEmailModal({ vendor, tx, onClose }) {
   const handleSend = async () => {
     if (!vendor.email) { toast.error('No email address for this vendor'); return }
     setSending(true)
+    const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
+    const htmlBody = `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${body.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
     try {
-      const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
-      const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-      const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-      if (SERVICE_ID && TEMPLATE_ID && PUBLIC_KEY) {
-        const { default: emailjs } = await import('@emailjs/browser')
-        await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-          to_email: vendor.email, to_name: vendor.name,
-          subject, task_title: subject, mention_notes: body, message: body,
-          address: tx?.property_address || '', transaction_addr: tx?.property_address || '',
-        }, PUBLIC_KEY)
-        toast.success(`Sent to ${vendor.name}`)
-      } else {
-        toast.success(`[Demo] Would send to ${vendor.email}`)
-      }
+      const res    = await fetch(`${API_BASE}/api/google/gmail-send`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to:            vendor.email,
+          subject,
+          body:          htmlBody,
+          transactionId: tx?.id || undefined,
+        }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || 'Send failed')
+      toast.success(`Sent to ${vendor.name}`)
       onClose()
     } catch (err) {
-      toast.error('Send failed: ' + (err?.text || err?.message || 'Unknown error'))
+      toast.error('Send failed: ' + err.message)
     } finally { setSending(false) }
+
+    // ── EMAILJS LEGACY — unreachable, kept for reference until migration is verified ──
+    // await emailjs.send(SERVICE_ID, TEMPLATE_ID, { to_email: vendor.email, ... }, PUBLIC_KEY)
   }
 
   const handleQueue = async () => {
@@ -310,34 +314,33 @@ function VendorFormModal({ vendor, tx, task, tcSettings, onClose, onTaskUpdate }
   const handleSend = async () => {
     if (!vendor.email) { toast.error('No email address on file for this vendor'); return }
     setSending(true)
+    const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
+    const subject  = `${vendor.name} — ${tx?.property_address || 'Property'}`
+    const plain    = buildBody()
+    const htmlBody = `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${plain.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
     try {
-      const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
-      const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-      const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-      const subject = `${vendor.name} — ${tx?.property_address || 'Property'}`
-      const body    = buildBody()
-      if (SERVICE_ID && TEMPLATE_ID && PUBLIC_KEY) {
-        const { default: emailjs } = await import('@emailjs/browser')
-        await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-          to_email:         vendor.email,
-          to_name:          vendor.name,
+      const res    = await fetch(`${API_BASE}/api/google/gmail-send`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to:            vendor.email,
           subject,
-          task_title:       subject,
-          mention_notes:    body,
-          message:          body,
-          address:          tx?.property_address || '',
-          transaction_addr: tx?.property_address || '',
-        }, PUBLIC_KEY)
-        toast.success(`Sent to ${vendor.name}`)
-      } else {
-        toast.success(`[Demo] Would send to ${vendor.email}`)
-      }
+          body:          htmlBody,
+          transactionId: tx?.id || undefined,
+        }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || 'Send failed')
+      toast.success(`Sent to ${vendor.name}`)
       await supabase.from('tasks').update({ status: 'in-progress' }).eq('id', task.id)
       onTaskUpdate?.(task.id, { status: 'in-progress' })
       onClose()
     } catch (err) {
-      toast.error('Send failed: ' + (err?.text || err?.message || 'Unknown error'))
+      toast.error('Send failed: ' + err.message)
     } finally { setSending(false) }
+
+    // ── EMAILJS LEGACY — unreachable, kept for reference until migration is verified ──
+    // await emailjs.send(SERVICE_ID, TEMPLATE_ID, { to_email: vendor.email, ... }, PUBLIC_KEY)
   }
 
   const handleQueue = async () => {
@@ -1245,7 +1248,10 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
                 <div className="sq-preview-row"><span className="sq-preview-label">Subject</span><strong>{previewing.subject}</strong></div>
               </div>
               <div className="sq-preview-divider" />
-              <pre className="sq-preview-body">{previewing.body}</pre>
+              <div
+                className="sq-preview-body"
+                dangerouslySetInnerHTML={{ __html: previewing.body || '' }}
+              />
             </div>
             <div className="sq-modal-footer">
               <button className="sq-modal-cancel" onClick={() => setPreviewing(null)}>Close</button>

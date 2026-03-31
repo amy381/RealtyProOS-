@@ -222,6 +222,139 @@ router.get('/status', async (req, res) => {
   }
 })
 
+// GET /api/google/gmail-status — is Gmail send scope authorized?
+router.get('/gmail-status', async (req, res) => {
+  try {
+    const { data } = await getSupabase()
+      .from('google_auth').select('refresh_token, scopes').limit(1).single()
+    const connected     = !!data?.refresh_token
+    const hasGmailScope = connected && typeof data.scopes === 'string'
+      ? data.scopes.split(' ').includes('https://www.googleapis.com/auth/gmail.send')
+      : false
+    res.json({ connected, hasGmailScope })
+  } catch {
+    res.json({ connected: false, hasGmailScope: false })
+  }
+})
+
+// ─── Gmail send helpers ───────────────────────────────────────────────────────
+
+function toBase64Url(input) {
+  const buf = typeof input === 'string' ? Buffer.from(input) : input
+  return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function encodeSubject(text) {
+  return `=?UTF-8?B?${Buffer.from(text).toString('base64')}?=`
+}
+
+function chunkBase64(b64) {
+  return b64.replace(/(.{76})/g, '$1\r\n').replace(/\r\n$/, '')
+}
+
+function buildMimeMessage({ to, cc, bcc, subject, body, replyTo, attachments }) {
+  const toStr  = [].concat(to  || []).join(', ')
+  const ccStr  = [].concat(cc  || []).join(', ')
+  const bccStr = [].concat(bcc || []).join(', ')
+
+  const headers = [
+    `To: ${toStr}`,
+    ccStr   ? `Cc: ${ccStr}`         : null,
+    bccStr  ? `Bcc: ${bccStr}`       : null,
+    replyTo ? `Reply-To: ${replyTo}` : null,
+    `Subject: ${encodeSubject(subject)}`,
+    'MIME-Version: 1.0',
+  ].filter(Boolean)
+
+  const bodyB64 = chunkBase64(Buffer.from(body).toString('base64'))
+
+  if (!attachments || attachments.length === 0) {
+    return [
+      ...headers,
+      'Content-Type: text/html; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      bodyB64,
+    ].join('\r\n')
+  }
+
+  const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).slice(2)}`
+  const lines = [
+    ...headers,
+    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    '',
+    `--${boundary}`,
+    'Content-Type: text/html; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    bodyB64,
+  ]
+  for (const att of attachments) {
+    lines.push(
+      `--${boundary}`,
+      `Content-Type: ${att.contentType}; name="${att.filename}"`,
+      `Content-Disposition: attachment; filename="${att.filename}"`,
+      'Content-Transfer-Encoding: base64',
+      '',
+      chunkBase64(att.data),
+    )
+  }
+  lines.push(`--${boundary}--`)
+  return lines.join('\r\n')
+}
+
+// POST /api/google/gmail-send — send email via Gmail API
+router.post('/gmail-send', async (req, res) => {
+  const { to, cc, bcc, subject, body, replyTo, attachments = [], transactionId = null } = req.body
+  if (!to || !subject || !body) {
+    return res.status(400).json({ error: 'Missing required fields: to, subject, body' })
+  }
+
+  try {
+    let accessToken = await getValidAccessToken()
+
+    const rawMessage = buildMimeMessage({ to, cc, bcc, subject, body, replyTo, attachments })
+    const encoded    = toBase64Url(rawMessage)
+
+    let gmailRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw: encoded }),
+    })
+
+    if (!gmailRes.ok) {
+      const errBody = await gmailRes.json()
+      return res.status(gmailRes.status).json({
+        error:   errBody.error?.message || `Gmail API error ${gmailRes.status}`,
+        details: errBody.error ?? null,
+      })
+    }
+
+    const gmailData = await gmailRes.json()
+    const supabase  = getSupabase()
+    const toStr     = [].concat(to).join(', ')
+    const ccStr2    = [].concat(cc || []).join(', ')
+
+    const { error: logErr } = await supabase.from('email_sent_log').insert({
+      to_email:         toStr,
+      to_name:          '',
+      subject,
+      body,
+      cc:               ccStr2,
+      sent_by:          'Me',
+      sent_via:         'gmail',
+      gmail_message_id: gmailData.id,
+      ...(transactionId ? { transaction_id: transactionId } : {}),
+    })
+    if (logErr) console.error('[gmail-send] Failed to write sent log:', logErr.message)
+
+    return res.status(200).json({ messageId: gmailData.id, threadId: gmailData.threadId })
+  } catch (err) {
+    console.error('[gmail-send]', err)
+    return res.status(500).json({ error: err.message })
+  }
+})
+
 // GET /api/google/token — short-lived access token for client-side Drive uploads
 router.get('/token', async (req, res) => {
   try {

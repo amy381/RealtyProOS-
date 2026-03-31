@@ -7,6 +7,7 @@ import { syncDriveFolder, uploadToDrive, getDriveUrl, CONTRACT_DOCS } from '../l
 import { TC_OPTIONS } from '../lib/columnFields'
 import { toast } from 'react-hot-toast'
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts'
+import { useGmailStatus } from '../lib/useGmailStatus'
 import './TransactionDetailPage.css'
 
 const SECTIONS = [
@@ -1237,6 +1238,8 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
   const [changes,     setChanges]     = useState([])
   const [loadingDiff, setLoadingDiff] = useState(true)
   const [sending,     setSending]     = useState(false)
+  const [sendError,   setSendError]   = useState(null)
+  const gmailStatus = useGmailStatus()
 
   useEffect(() => {
     let active = true
@@ -1277,7 +1280,9 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
     if (!recipients.length) { toast.error('No recipients with a configured email'); return }
 
     setSending(true)
-    const summary = buildTransactionSummary(transaction, column, fullAddress)
+    setSendError(null)
+
+    const summary        = buildTransactionSummary(transaction, column, fullAddress)
     const checkedChanges = changes.filter(c => c.checked)
 
     let changeBlock = ''
@@ -1292,23 +1297,29 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
     let noteBlock = ''
     if (note.trim()) noteBlock = 'NOTE\n' + '─'.repeat(44) + '\n' + note.trim() + '\n\n'
 
-    const body = `${changeBlock}${noteBlock}${summary}`
+    const plainBody = `${changeBlock}${noteBlock}${summary}`
+    const htmlBody  = `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${plainBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
 
-    const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
-    const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-    const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-
+    const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
     try {
-      const { default: emailjs } = await import('@emailjs/browser')
-      for (const r of recipients) {
-        await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-          to_email:         r.email,
-          to_name:          r.name,
+      const gmailRes = await fetch(`${API_BASE}/api/google/gmail-send`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to:            recipients.map(r => r.email),
           subject,
-          mention_notes:    body,
-          transaction_addr: fullAddress || '',
-        }, PUBLIC_KEY)
+          body:          htmlBody,
+          transactionId: transaction.id,
+        }),
+      })
+
+      const result = await gmailRes.json()
+      if (!gmailRes.ok) {
+        setSendError(result.error || 'Failed to send email')
+        setSending(false)
+        return
       }
+
       await supabase.from('notify_snapshots').insert({
         transaction_id: transaction.id,
         sent_at:        new Date().toISOString(),
@@ -1317,10 +1328,25 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
       toast.success(`Notified ${recipients.map(r => r.name).join(' & ')}`)
       onClose()
     } catch (err) {
-      console.error('[Notify] email error:', err)
-      toast.error('Failed to send — check EmailJS settings')
+      console.error('[Notify] Gmail send error:', err)
+      setSendError(err.message || 'Failed to send email')
       setSending(false)
     }
+
+    // ── EMAILJS LEGACY — unreachable, kept for reference until migration is verified ──
+    // const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
+    // const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+    // const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+    // const { default: emailjs } = await import('@emailjs/browser')
+    // for (const r of recipients) {
+    //   await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+    //     to_email:         r.email,
+    //     to_name:          r.name,
+    //     subject,
+    //     mention_notes:    plainBody,
+    //     transaction_addr: fullAddress || '',
+    //   }, PUBLIC_KEY)
+    // }
   }
 
   const summary  = buildTransactionSummary(transaction, column, fullAddress)
@@ -1415,13 +1441,23 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
         </div>
 
         <div className="notify-footer">
-          <button
-            className="notify-send-btn"
-            onClick={handleSend}
-            disabled={sending || !anyChecked}
-          >
-            {sending ? 'Sending…' : 'Send'}
-          </button>
+          {sendError && (
+            <div className="notify-send-error">{sendError}</div>
+          )}
+          {!gmailStatus.loading && (!gmailStatus.connected || !gmailStatus.hasGmailScope) ? (
+            <div className="notify-reconnect">
+              <span className="notify-reconnect-text">Gmail not connected —</span>
+              <a href="/api/google/auth" className="notify-reconnect-link">Reconnect Google</a>
+            </div>
+          ) : (
+            <button
+              className="notify-send-btn"
+              onClick={handleSend}
+              disabled={sending || !anyChecked || gmailStatus.loading}
+            >
+              {gmailStatus.loading ? 'Checking…' : sending ? 'Sending…' : 'Send'}
+            </button>
+          )}
         </div>
       </div>
     </div>

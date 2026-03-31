@@ -14,8 +14,9 @@ module.exports = async function handler(req, res) {
     client_id:     clientId,
     redirect_uri:  redirectUri,
     response_type: 'code',
-    // drive scope allows moving files across any folder in the user's Drive / Shared Drive
-    scope:         'https://www.googleapis.com/auth/drive',
+    // drive — move files across any folder in the user's Drive / Shared Drive
+    // gmail.send — send email as the authenticated user via Gmail API
+    scope:         'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/gmail.send',
     access_type:   'offline',
     prompt:        'consent', // force refresh_token to be returned every time
   })

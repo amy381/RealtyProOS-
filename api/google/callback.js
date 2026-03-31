@@ -37,6 +37,7 @@ module.exports = async function handler(req, res) {
       access_token:  tokens.access_token,
       refresh_token: tokens.refresh_token,
       expiry_date:   tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
+      scopes:        tokens.scope ?? null,
     })
     if (dbErr) throw new Error('Failed to save tokens: ' + dbErr.message)
 

@@ -9,6 +9,8 @@
     { "src": "/api/google/token",            "dest": "/api/google/token" },
     { "src": "/api/google/move-folder",      "dest": "/api/google/move-folder" },
     { "src": "/api/google/create-folder",    "dest": "/api/google/create-folder" },
+    { "src": "/api/google/gmail-send",       "dest": "/api/google/gmail-send" },
+    { "src": "/api/google/gmail-status",     "dest": "/api/google/gmail-status" },
     { "src": "/api/(.*)",                    "dest": "/api/$1" },
     { "handle": "filesystem" },
     { "src": "/(.*)",                        "dest": "/index.html" }

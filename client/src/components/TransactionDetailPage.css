@@ -287,8 +287,30 @@
   padding: 16px 24px 20px;
   border-top: 1px solid #f0f0f0;
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
   flex-shrink: 0;
+}
+.notify-send-error {
+  font-size: 13px;
+  color: #c0392b;
+  text-align: right;
+}
+.notify-reconnect {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+.notify-reconnect-text {
+  color: #666;
+}
+.notify-reconnect-link {
+  color: #1a1a1a;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .notify-send-btn {

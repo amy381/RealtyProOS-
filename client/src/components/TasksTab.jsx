@@ -963,13 +963,23 @@ function ComposeModal({ row, transactions, tcSettings, onSave, onClose }) {
     setForm(f => ({ ...f, to_email: selectedTx.client_email || '', to_name: name }))
   }
 
+  // If a CC entry matches a tcSettings display name, swap it for their email address.
+  const resolveCc = (ccStr) => {
+    if (!ccStr.trim()) return ccStr
+    return ccStr.split(',').map(part => {
+      const trimmed = part.trim()
+      const match   = (tcSettings || []).find(s => s.name === trimmed)
+      return match?.email || trimmed
+    }).join(', ')
+  }
+
   const handleSave = async () => {
     if (!form.to_email.trim() || !form.subject.trim()) {
       toast.error('To email and subject are required')
       return
     }
     setSaving(true)
-    try { await onSave(form) }
+    try { await onSave({ ...form, cc: resolveCc(form.cc) }) }
     finally { setSaving(false) }
   }
 

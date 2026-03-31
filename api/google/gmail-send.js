@@ -37,14 +37,16 @@ function buildMimeMessage({ to, cc, bcc, subject, body, replyTo, attachments }) 
     'MIME-Version: 1.0',
   ].filter(Boolean)
 
+  const bodyB64 = chunkBase64(Buffer.from(body).toString('base64'))
+
   // ── Simple text/html — no attachments ────────────────────────────────────
   if (!attachments || attachments.length === 0) {
     return [
       ...headers,
       'Content-Type: text/html; charset=UTF-8',
-      'Content-Transfer-Encoding: quoted-printable',
+      'Content-Transfer-Encoding: base64',
       '',
-      body,
+      bodyB64,
     ].join('\r\n')
   }
 
@@ -57,9 +59,9 @@ function buildMimeMessage({ to, cc, bcc, subject, body, replyTo, attachments }) 
     '',
     `--${boundary}`,
     'Content-Type: text/html; charset=UTF-8',
-    'Content-Transfer-Encoding: quoted-printable',
+    'Content-Transfer-Encoding: base64',
     '',
-    body,
+    bodyB64,
   ]
 
   for (const att of attachments) {

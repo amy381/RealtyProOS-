@@ -1177,6 +1177,28 @@
 
 .sq-textarea:focus { outline: none; border-color: #111; }
 
+.sq-body-editor {
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: #111;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+  line-height: 1.55;
+  transition: border-color 0.15s;
+  min-height: 240px;
+  overflow-y: auto;
+}
+.sq-body-editor:focus { outline: none; border-color: #111; }
+.sq-body-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #aaa;
+  pointer-events: none;
+}
+
 /* ── Grouped list ────────────────────────────────────────────────────────── */
 .gtd-grouped-list {
   flex: 1;

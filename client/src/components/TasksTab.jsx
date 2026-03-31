@@ -231,7 +231,9 @@ function VendorEmailModal({ vendor, tx, onClose }) {
     if (!vendor.email) { toast.error('No email address for this vendor'); return }
     setSending(true)
     const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
-    const htmlBody = `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${body.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
+    const htmlBody = body.trimStart().startsWith('<')
+      ? body
+      : `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${body.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
     try {
       const res    = await fetch(`${API_BASE}/api/google/gmail-send`, {
         method:  'POST',
@@ -920,11 +922,23 @@ function ComposeModal({ row, transactions, tcSettings, onSave, onClose }) {
     ...(row?.id ? { id: row.id, created_at: row.created_at } : {}),
   })
   const [saving, setSaving] = useState(false)
+  const bodyRef = useRef(null)
 
   useEffect(() => {
     supabase.from('email_templates').select('*').order('name')
       .then(({ data }) => setEmailTemplates(data || []))
   }, [])
+
+  // Sync form.body → DOM when template or transaction changes (external update)
+  useEffect(() => {
+    if (bodyRef.current && bodyRef.current.innerHTML !== form.body) {
+      bodyRef.current.innerHTML = form.body
+    }
+  }, [form.body])
+
+  const handleBodyInput = () => {
+    set('body', bodyRef.current.innerHTML)
+  }
 
   const selectedTx = transactions.find(t => t.id === form.transaction_id) || null
 
@@ -1043,7 +1057,14 @@ function ComposeModal({ row, transactions, tcSettings, onSave, onClose }) {
 
           <div className="sq-field">
             <label className="sq-label">Body</label>
-            <textarea className="sq-textarea" value={form.body} onChange={e => set('body', e.target.value)} rows={12} placeholder="Email body…" />
+            <div
+              ref={bodyRef}
+              className="sq-body-editor"
+              contentEditable
+              suppressContentEditableWarning
+              onInput={handleBodyInput}
+              data-placeholder="Email body…"
+            />
           </div>
 
         </div>
@@ -1093,7 +1114,10 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
     setSending(row.id)
     setRowErrors(prev => { const n = { ...prev }; delete n[row.id]; return n })
 
-    const htmlBody = `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${(row.body || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
+    const raw = row.body || ''
+    const htmlBody = raw.trimStart().startsWith('<')
+      ? raw
+      : `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
 
     try {
       const gmailRes = await fetch(`${API_BASE}/api/google/gmail-send`, {

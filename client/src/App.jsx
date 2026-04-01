@@ -833,7 +833,7 @@ export default function App() {
           key={txOpenRevision}
           transaction={selectedTransaction}
           transactions={transactions}
-          onNavigate={(tx) => { setSelectedTransaction(tx); setTxOpenRevision(r => r + 1); window.history.replaceState({}, '', `?tab=${activeTab}&tx=${tx.id}&from=${txFrom}`) }}
+          onNavigate={(tx, section) => { setSelectedSection(section ?? 'details'); setSelectedTransaction(tx); setTxOpenRevision(r => r + 1); window.history.replaceState({}, '', `?tab=${activeTab}&tx=${tx.id}&from=${txFrom}`) }}
           from={txFrom}
           initialSection={selectedSection}
           columns={COLUMNS}

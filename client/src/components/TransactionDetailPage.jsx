@@ -3129,17 +3129,20 @@ export default function TransactionDetailPage({
               <button
                 className="txp-nav-arrow"
                 disabled={!prevTx}
-                onClick={() => prevTx && onNavigate?.(prevTx)}
+                onClick={() => prevTx && onNavigate?.(prevTx, activeSection)}
                 title={prevTx ? prevTx.property_address : 'No previous transaction'}
               >‹</button>
               <button
                 className="txp-nav-arrow"
                 disabled={!nextTx}
-                onClick={() => nextTx && onNavigate?.(nextTx)}
+                onClick={() => nextTx && onNavigate?.(nextTx, activeSection)}
                 title={nextTx ? nextTx.property_address : 'No next transaction'}
               >›</button>
             </div>
           )}
+        </div>
+        <div className="txp-topbar-center">
+          <span className="txp-topbar-address">{fullAddress || '—'}</span>
         </div>
         <div className="txp-topbar-right">
           <button className="txp-share-btn" onClick={() => setNotifyOpen(true)}>Notify</button>

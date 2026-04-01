@@ -885,8 +885,9 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
     if (!previewTpl || !onApplyTemplate) return
     setApplying(true)
     try {
-      await onApplyTemplate(transactionId, previewTpl.id, transaction)
+      await onApplyTemplate(transactionId, previewTpl.id, transaction, excludedTplIds)
       setPreviewTpl(null)
+      setExcludedTplIds(new Set())
     } finally {
       setApplying(false)
     }
@@ -1065,27 +1066,36 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
                   <tr>
                     <th>#</th>
                     <th>Task Name</th>
+                    <th>Type</th>
                     <th>Timing</th>
                     <th>Assign To</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {previewTasks.map((t, i) => (
-                    <tr key={t.id}>
-                      <td className="txp-tpl-preview-num">{i + 1}</td>
-                      <td>{t.title}</td>
-                      <td className="txp-tpl-preview-timing">{fmtTemplateTiming(t.timing_type, t.timing_days)}</td>
-                      <td className="txp-tpl-preview-assign">{t.auto_assign_to}</td>
-                      <td className="txp-tpl-preview-remove">
-                        <button
-                          className="txp-tpl-preview-remove-btn"
-                          title="Remove from this apply"
-                          onClick={() => setExcludedTplIds(prev => new Set([...prev, t.id]))}
-                        >✕</button>
-                      </td>
-                    </tr>
-                  ))}
+                  {previewTasks.map((t, i) => {
+                    const isCritical = t.task_type === 'Critical Date'
+                    return (
+                      <tr key={t.id} className={isCritical ? 'txp-tpl-preview-critical' : ''}>
+                        <td className="txp-tpl-preview-num">{i + 1}</td>
+                        <td>{t.title}</td>
+                        <td className="txp-tpl-preview-type">
+                          {isCritical
+                            ? <span className="txp-tpl-critical-badge">Critical Date</span>
+                            : <span className="txp-tpl-type-label">{t.task_type || 'Task'}</span>}
+                        </td>
+                        <td className="txp-tpl-preview-timing">{fmtTemplateTiming(t.timing_type, t.timing_days)}</td>
+                        <td className="txp-tpl-preview-assign">{t.auto_assign_to}</td>
+                        <td className="txp-tpl-preview-remove">
+                          <button
+                            className="txp-tpl-preview-remove-btn"
+                            title="Remove from this apply"
+                            onClick={() => setExcludedTplIds(prev => new Set([...prev, t.id]))}
+                          >✕</button>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

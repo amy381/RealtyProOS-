@@ -573,8 +573,8 @@ export default function App() {
   }, [])
 
   // ── Apply template manually ─────────────────────────────────────────────────
-  const handleApplyTemplate = useCallback(async (transactionId, templateId, transaction) => {
-    const tplTaskRows = dbTemplateTasks.filter(t => t.template_id === templateId)
+  const handleApplyTemplate = useCallback(async (transactionId, templateId, transaction, excludedTplIds = new Set()) => {
+    const tplTaskRows = dbTemplateTasks.filter(t => t.template_id === templateId && !excludedTplIds.has(t.id))
     const builtTasks  = buildTemplateTasksFromDB(tplTaskRows, transaction)
     if (!builtTasks.length) return
     // Strip internal mapping fields before inserting into tasks table

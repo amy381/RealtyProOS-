@@ -467,6 +467,9 @@
 .gtd-stage--closed            { background: #1a1a1a; color: #fff; }
 .gtd-stage--cancelled-expired { background: #f5f5f5; color: #999; }
 
+.gtd-rep-type--buyer  { background: #dbeafe; color: #1d4ed8; }
+.gtd-rep-type--seller { background: #fef3c7; color: #92400e; }
+
 /* ── Scroll container + table ────────────────────────────────────────────── */
 .gtd-scroll {
   flex: 1;
@@ -1387,7 +1390,7 @@
   border: 1px solid #4a7fd4;
   border-radius: 4px;
   padding: 1px 6px;
-  width: 100%;
+  width: 35%;
   outline: none;
   background: #f5f8ff;
   box-sizing: border-box;
@@ -1533,6 +1536,14 @@
   width: 110px;
   text-align: right;
 }
+
+.gtd-cd-del-btn {
+  flex-shrink: 0;
+  margin-left: 4px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.gtd-cd-row:hover .gtd-cd-del-btn { opacity: 1; }
 
 /* ── Add task row ───────────────────────────────────────────────────────── */
 .gtd-add-task-row {

@@ -397,7 +397,7 @@ function VendorFormModal({ vendor, tx, task, tcSettings, onClose, onTaskUpdate }
 }
 
 // ─── Sub-components for grouped view ─────────────────────────────────────────
-function CriticalDateRow({ task }) {
+function CriticalDateRow({ task, onDelete }) {
   const ddl = dueDateLabel(task.due_date, false, null)
   return (
     <div className="gtd-cd-row">
@@ -408,6 +408,9 @@ function CriticalDateRow({ task }) {
           : '—'}
       </span>
       <span className={`gtd-cd-countdown gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</span>
+      {onDelete && (
+        <button className="gtd-grow-del-btn gtd-cd-del-btn" onClick={() => onDelete(task.id)} title="Delete critical date">✕</button>
+      )}
     </div>
   )
 }
@@ -1691,15 +1694,16 @@ export default function TasksTab({
     const stageDiffers = DEFAULT_STAGE_CHECKS.size !== filters.stageChecks.size ||
       [...DEFAULT_STAGE_CHECKS].some(s => !filters.stageChecks.has(s))
     if (stageDiffers) {
-      const labels = TASK_STAGES.filter(s => filters.stageChecks.has(s.value)).map(s => s.label)
-      chips.push({
-        key: 'stage',
-        label: `Stage: ${labels.length <= 2 ? labels.join(', ') : `${labels.length} stages`}`,
-        onRemove: () => {
-          setFilters(f => ({ ...f, stageChecks: DEFAULT_STAGE_CHECKS }))
-          setDraft(d => ({ ...d, stageChecks: DEFAULT_STAGE_CHECKS }))
-          setActiveViewId(null)
-        }
+      TASK_STAGES.filter(s => filters.stageChecks.has(s.value)).forEach(s => {
+        chips.push({
+          key: `stage-${s.value}`,
+          label: `Stage: ${s.label}`,
+          onRemove: () => {
+            setFilters(f => { const next = new Set(f.stageChecks); next.delete(s.value); return { ...f, stageChecks: next } })
+            setDraft(d => { const next = new Set(d.stageChecks); next.delete(s.value); return { ...d, stageChecks: next } })
+            setActiveViewId(null)
+          }
+        })
       })
     }
 
@@ -1964,7 +1968,7 @@ export default function TasksTab({
               onChange={toggleAll}
             />
             <span>
-              {selectedIds.size === 0 ? 'Select all' : `${selectedIds.size} of ${filtered.length} selected`}
+              {selectedIds.size === 0 ? 'Select all' : `${selectedIds.size} of ${allFilteredTasks.length} selected`}
             </span>
           </label>
           <div className="gtd-bulk-actions">
@@ -2029,6 +2033,11 @@ export default function TasksTab({
                 <span className={`gtd-stage-badge gtd-stage--${tx.status}`}>
                   {stageLabel(tx.status)}
                 </span>
+                {tx.rep_type && (
+                  <span className={`gtd-stage-badge gtd-rep-type--${(tx.rep_type || '').toLowerCase()}`}>
+                    {tx.rep_type}
+                  </span>
+                )}
                 {tx.close_of_escrow && (
                   <span className="gtd-tx-coe">
                     COE: {new Date(tx.close_of_escrow + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -2054,7 +2063,7 @@ export default function TasksTab({
               {/* Task / critical date rows */}
               {!isCollapsed && visibleItems.map(item =>
                 item.task_type === 'Critical Date' ? (
-                  <CriticalDateRow key={item.id} task={item} />
+                  <CriticalDateRow key={item.id} task={item} onDelete={onDeleteTask} />
                 ) : (
                   <GlobalTaskRow
                     key={item.id}

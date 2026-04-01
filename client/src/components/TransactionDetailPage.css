@@ -1720,11 +1720,12 @@ select.txp-input { cursor: pointer; }
 .txp-tpl-modal {
   background: #fff;
   border-radius: 12px;
-  width: 560px;
+  width: 660px;
   max-width: 95vw;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   box-shadow: 0 20px 60px rgba(0,0,0,0.18);
 }
 
@@ -1802,7 +1803,6 @@ select.txp-input { cursor: pointer; }
 
 .txp-tpl-preview-timing {
   color: #555;
-  white-space: nowrap;
 }
 
 .txp-tpl-preview-assign {
@@ -1830,7 +1830,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-tpl-preview-type {
-  white-space: nowrap;
+  min-width: 72px;
 }
 
 .txp-tpl-critical-badge {

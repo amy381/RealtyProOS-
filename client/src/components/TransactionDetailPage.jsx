@@ -829,22 +829,33 @@ function TaskRow({ task, onUpdate, onDelete, commentCount = 0, onOpenComments })
   )
 }
 
+const TIMING_OPTS = {
+  stage_pre_listing:           { label: 'When moved to Pre-Listing',                      hasDays: false },
+  stage_active_listing:        { label: 'When moved to Active Listing',                   hasDays: false },
+  stage_buyer_broker:          { label: 'When moved to Buyer-Broker',                     hasDays: false },
+  stage_pending:               { label: 'When moved to Pending',                          hasDays: false },
+  stage_closed:                { label: 'When moved to Closed',                           hasDays: false },
+  stage_cancelled_expired:     { label: 'When moved to Cancelled/Expired',                hasDays: false },
+  days_after_contract:         { label: 'days after Contract Acceptance',                 hasDays: true  },
+  days_before_coe:             { label: 'days before Close of Escrow',                    hasDays: true  },
+  days_after_coe:              { label: 'days after Close of Escrow',                     hasDays: true  },
+  days_after_listing_contract: { label: 'days after Listing Contract',                    hasDays: true  },
+  days_after_bba:              { label: 'days after BBA Contract',                        hasDays: true  },
+  days_before_ipe:             { label: 'days before Inspection Period End / BINSR Due',  hasDays: true  },
+  days_after_ipe:              { label: 'days after Inspection Period End / BINSR Due',   hasDays: true  },
+  days_after_binsr:            { label: 'days after BINSR Submitted',                     hasDays: true  },
+  days_after_home_inspection:  { label: 'When Home Inspection is Scheduled',              hasDays: false },
+}
+
 function fmtTemplateTiming(timingType, timingDays) {
-  if (timingType === 'at_stage_change') return 'At stage change'
   if (timingType === 'specific_date')   return 'Specific date'
-  const days = Number(timingDays) || 0
-  const labels = {
-    days_after_contract:         'd after Contract Acceptance',
-    days_before_coe:             'd before COE',
-    days_after_coe:              'd after COE',
-    days_after_listing_contract: 'd after Listing Contract',
-    days_after_bba:              'd after BBA',
-    days_before_ipe:             'd before IPE',
-    days_after_ipe:              'd after IPE',
-    days_after_binsr:            'd after BINSR Submitted',
-  }
-  if (timingType === 'days_before_ipe' && days === 0) return 'At IPE'
-  return `${days}${labels[timingType] || timingType}`
+  if (timingType === 'at_stage_change') return 'At stage change'
+  const opt = TIMING_OPTS[timingType]
+  if (!opt) return timingType
+  if (!opt.hasDays) return opt.label
+  const d = Number(timingDays) || 0
+  if (timingType === 'days_before_ipe' && d === 0) return 'At Inspection Period End'
+  return `${d} ${opt.label}`
 }
 
 function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, onDelete, dbTemplates, dbTemplateTasks, onApplyTemplate, taskComments = [], onAddTaskComment, onDeleteTaskComment, tcSettings = [], transactionAddr = '' }) {

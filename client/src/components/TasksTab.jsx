@@ -1729,11 +1729,8 @@ export default function TasksTab({
         return true
       })
 
-      // Sort — Critical Date tasks always float to top; others sort by selected column
+      // Sort — all tasks (Critical Date and regular) sort by selected column
       const allItems = visibleTasks.slice().sort((a, b) => {
-        const aCD = a.task_type === 'Critical Date'
-        const bCD = b.task_type === 'Critical Date'
-        if (aCD !== bCD) return aCD ? -1 : 1
         let cmp = 0
         switch (sortField) {
           case 'status':      cmp = (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0); break
@@ -1782,9 +1779,6 @@ export default function TasksTab({
       items.map(item => ({ ...item, _tx: tx }))
     )
     return all.slice().sort((a, b) => {
-      const aCD = a.task_type === 'Critical Date'
-      const bCD = b.task_type === 'Critical Date'
-      if (aCD !== bCD) return aCD ? -1 : 1
       let cmp = 0
       switch (sortField) {
         case 'status':      cmp = (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0); break

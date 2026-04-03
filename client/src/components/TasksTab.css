@@ -763,7 +763,7 @@
   border-radius: 5px;
   cursor: pointer;
   color: #d0d0d0;
-  font-size: 21px;
+  font-size: 24px;
   line-height: 1;
   transition: color 0.1s, background 0.1s;
 }
@@ -1363,7 +1363,7 @@
 
 /* Width mirrors for each column — must match gtd-grow column widths exactly */
 .gtd-col-hdr--status    { width: 144px; text-align: left; }
-.gtd-col-hdr--task      { flex: 1; text-align: left; }
+.gtd-col-hdr--task      { flex: 1; text-align: left; max-width: 450px; }
 .gtd-col-hdr--action    { width: 200px; }
 .gtd-col-hdr--addr      { width: 160px; }
 .gtd-col-hdr--cmt       { width: 36px; flex-shrink: 0; }
@@ -1402,7 +1402,7 @@
   flex-direction: column;
   gap: 5px;
   min-width: 0;
-  max-width: calc(100% - 660px);
+  max-width: 450px;
 }
 
 .gtd-grow-title {
@@ -1527,23 +1527,22 @@
   padding-top: 1px;
 }
 
-/* ── Due Status urgency column — plain text, colored left-border divider ─── */
+/* ── Due Status urgency column — full colored block spanning row height ─── */
 .gtd-due-status-bar {
   flex-shrink: 0;
   width: 68px;
   font-size: 13px;
   font-weight: 600;
-  padding: 2px 0 2px 8px;
-  border-left: 3px solid transparent;
+  padding: 4px 6px;
   white-space: nowrap;
   align-self: stretch;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
 }
-.gtd-due-status--none    { border-left-color: transparent; color: transparent; }
-.gtd-due-status--overdue { border-left-color: #dc2626; color: #dc2626; }
-.gtd-due-status--soon    { border-left-color: #2563eb; color: #2563eb; }
-.gtd-due-status--future  { border-left-color: #aaaaaa; color: #888888; }
+.gtd-due-status--none    { background: transparent; color: transparent; }
+.gtd-due-status--overdue { background: #dc2626; color: #fff; }
+.gtd-due-status--soon    { background: #2563eb; color: #fff; }
+.gtd-due-status--future  { background: #e8e8e8; color: #666; }
 
 .gtd-status-rect-btn {
   border: none;
@@ -1643,9 +1642,10 @@
   color: #2c5aa0;
   font-weight: 600;
   flex-shrink: 0;
-  margin-left: auto;
+  width: 100px;
   text-align: right;
   white-space: nowrap;
+  margin-right: 214px;
 }
 
 .gtd-cd-del-btn {

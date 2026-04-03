@@ -62,6 +62,7 @@ const EMPTY_TASK = {
   auto_assign_to:         'Me',
   email_template_id:      null,
   resolves_critical_date: null,
+  has_progress_tracking:  false,
 }
 
 // ─── Email template constants ─────────────────────────────────────────────────
@@ -1451,6 +1452,14 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                     </select>
                   )}
                 </div>
+                <label className="tt-modal-cd-toggle">
+                  <input
+                    type="checkbox"
+                    checked={!!editingTask.has_progress_tracking}
+                    onChange={e => setEditingTask(p => ({ ...p, has_progress_tracking: e.target.checked }))}
+                  />
+                  <span>Track Progress Dates (Ordered / Scheduled)</span>
+                </label>
               </>)}
             </div>
             <div className="tt-modal-actions">

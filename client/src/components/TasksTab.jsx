@@ -418,7 +418,6 @@ function CriticalDateRow({ task, onDelete }) {
 function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, onOpenComments, commentCount, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [] }) {
   const done      = task.status === 'complete'
   const statusKey = task.status || 'open'
-  const ddl       = dueDateLabel(task.due_date, done, task.completed_at)
 
   // Inline editing state
   const [editingField,    setEditingField]    = useState(null) // 'title' | 'due' | 'assignee'
@@ -438,7 +437,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
       : statusKey === 'complete' ? { completed_at: null } : {}
     onUpdate(task.id, { status: next, ...extra })
   }
-  const dateCfg     = getTaskDateConfig(task.title)
+  const dateCfg = getTaskDateConfig(task.title)
 
   // For Cat1 the displayed date value comes from the transaction; for Cat2 from task.row_date
   const rowDateValue = dateCfg?.category === 1
@@ -461,13 +460,41 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
     setEditingField(null)
   }
 
+  // Progress Date: ordered_date / scheduled_date with Option A one-way sync to transaction fields
+  const handleProgressDateChange = (field, val) => {
+    onUpdate(task.id, { [field]: val || null })
+    const title = (task.title || '').toLowerCase()
+    if (field === 'ordered_date') {
+      if (title.includes('appraisal'))     onUpdateTx?.(tx?.id, 'appraisal_date',       val || null)
+      else if (title.includes('binsr'))    onUpdateTx?.(tx?.id, 'binsr_submitted_date', val || null)
+    } else if (field === 'scheduled_date') {
+      if (title.includes('home inspection')) onUpdateTx?.(tx?.id, 'home_inspection_date', val || null)
+    }
+  }
+
+  // Resolve "Me" to display name
+  const assigneeDisplay = task.assigned_to === 'Me' ? 'Amy Casanova' : (task.assigned_to || '')
+
+  // Due Status urgency indicator
+  const dueStatusInfo = (() => {
+    if (done || !task.due_date) return null
+    const today = new Date(); today.setHours(0,0,0,0)
+    const diff  = Math.ceil((new Date(task.due_date + 'T00:00:00') - today) / 86400000)
+    if (diff < 0)   return { label: 'Overdue',        cls: 'overdue' }
+    if (diff === 0) return { label: 'Due Today',      cls: 'today'   }
+    if (diff <= 3)  return { label: `Due in ${diff}`, cls: 'soon'    }
+    return           { label: `In ${diff} days`,      cls: 'future'  }
+  })()
+
   return (
     <div className={[
       'gtd-grow',
       done     ? 'gtd-grow-done'     : '',
       selected ? 'gtd-grow-selected' : '',
     ].filter(Boolean).join(' ')}>
-      <div className="gtd-grow-check">
+
+      {/* 1. Status cell — rectangular block; checkbox in bulk mode */}
+      <div className="gtd-grow-status-cell" onClick={e => e.stopPropagation()}>
         {bulkMode ? (
           <input
             type="checkbox"
@@ -478,13 +505,19 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
           />
         ) : (
           <button
-            className={`gtd-check${done ? ' gtd-checked' : ''}`}
-            onClick={() => onUpdate(task.id, { status: done ? 'open' : 'complete', completed_at: done ? null : new Date().toISOString() })}
+            className={`gtd-status-rect-btn gtd-status-rect--${statusKey}`}
+            onClick={e => { e.stopPropagation(); cycleStatus() }}
+            title="Click to advance status"
           >
-            {done ? '✓' : ''}
+            <span className="gtd-status-rect-label">{STATUS_LABELS[statusKey]}</span>
+            {done && task.completed_at && (
+              <span className="gtd-status-rect-date">{formatLocalDate(task.completed_at)}</span>
+            )}
           </button>
         )}
       </div>
+
+      {/* 2. Task title + row_date field */}
       <div className="gtd-grow-title-col">
         {editingField === 'title' ? (
           <input
@@ -521,45 +554,115 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
           </div>
         )}
       </div>
-      {matchedVendors.length > 0 && (
-        <div className="gtd-vendor-inline" onClick={e => e.stopPropagation()}>
-          <select
-            className="gtd-vendor-select"
-            value={task.selected_vendor_id || ''}
-            onChange={e => onUpdate(task.id, { selected_vendor_id: e.target.value || null })}
-          >
-            <option value="">— vendor —</option>
-            {matchedVendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-          </select>
-          {selectedVendor && (
-            <>
-              {selectedVendor.contact_method === 'PDF Form + Email' && (
-                <button className="gtd-vendor-action" onClick={() => setVendorFormOpen(true)}>
-                  Preview Form ↗
-                </button>
-              )}
-              {selectedVendor.contact_method === 'Website' && selectedVendor.website_url && (
-                <a className="gtd-vendor-action" href={selectedVendor.website_url} target="_blank" rel="noreferrer">
-                  Open Website ↗
-                </a>
-              )}
-              {selectedVendor.contact_method === 'Text' && selectedVendor.phone && (
-                <a
-                  className="gtd-vendor-action"
-                  href={`sms:${selectedVendor.phone}?body=${encodeURIComponent(`Hi, I'd like to schedule for ${tx?.property_address || 'the property'}. Please let me know your availability.`)}`}
-                >
-                  Send Text ↗
-                </a>
-              )}
-              {selectedVendor.contact_method === 'Email Only' && (
-                <button className="gtd-vendor-action" onClick={() => setVendorEmailOpen(true)}>
-                  Preview Email ↗
-                </button>
-              )}
-            </>
-          )}
+
+      {/* 3. Action — vendor dropdown + preview links */}
+      <div className="gtd-grow-action-col" onClick={e => e.stopPropagation()}>
+        {matchedVendors.length > 0 && (
+          <>
+            <select
+              className="gtd-vendor-select"
+              value={task.selected_vendor_id || ''}
+              onChange={e => onUpdate(task.id, { selected_vendor_id: e.target.value || null })}
+            >
+              <option value="">— vendor —</option>
+              {matchedVendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+            </select>
+            {selectedVendor && (
+              <>
+                {selectedVendor.contact_method === 'PDF Form + Email' && (
+                  <button className="gtd-vendor-action" onClick={() => setVendorFormOpen(true)}>
+                    Preview Form ↗
+                  </button>
+                )}
+                {selectedVendor.contact_method === 'Website' && selectedVendor.website_url && (
+                  <a className="gtd-vendor-action" href={selectedVendor.website_url} target="_blank" rel="noreferrer">
+                    Open Website ↗
+                  </a>
+                )}
+                {selectedVendor.contact_method === 'Text' && selectedVendor.phone && (
+                  <a
+                    className="gtd-vendor-action"
+                    href={`sms:${selectedVendor.phone}?body=${encodeURIComponent(`Hi, I'd like to schedule for ${tx?.property_address || 'the property'}. Please let me know your availability.`)}`}
+                  >
+                    Send Text ↗
+                  </a>
+                )}
+                {selectedVendor.contact_method === 'Email Only' && (
+                  <button className="gtd-vendor-action" onClick={() => setVendorEmailOpen(true)}>
+                    Preview Email ↗
+                  </button>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* 4. Progress Date — ordered_date / scheduled_date (only when has_progress_tracking) */}
+      {task.has_progress_tracking && (
+        <div className="gtd-progress-date-col" onClick={e => e.stopPropagation()}>
+          <div className="gtd-progress-date-row">
+            <span className="gtd-progress-date-label">Ordered</span>
+            <input
+              type="date"
+              className="gtd-progress-date-input"
+              value={task.ordered_date || ''}
+              onChange={e => handleProgressDateChange('ordered_date', e.target.value)}
+            />
+          </div>
+          <div className="gtd-progress-date-row">
+            <span className="gtd-progress-date-label">Scheduled</span>
+            <input
+              type="date"
+              className="gtd-progress-date-input"
+              value={task.scheduled_date || ''}
+              onChange={e => handleProgressDateChange('scheduled_date', e.target.value)}
+            />
+          </div>
         </div>
       )}
+
+      {/* 5. Comments */}
+      <button
+        className={`gtd-cmt-btn${commentCount > 0 ? ' active' : ''}`}
+        onClick={e => { e.stopPropagation(); onOpenComments() }}
+        title={commentCount > 0 ? `${commentCount} comment${commentCount !== 1 ? 's' : ''}` : 'Add comment'}
+      >
+        💬{commentCount > 0 && <span className="gtd-cmt-count">{commentCount}</span>}
+      </button>
+
+      {/* 6. Due date (inline editable) */}
+      {!done && editingField === 'due' ? (
+        <input
+          autoFocus
+          type="date"
+          className="gtd-inline-due-input"
+          defaultValue={task.due_date || ''}
+          onChange={e => { onUpdate(task.id, { due_date: e.target.value || null }); setEditingField(null) }}
+          onBlur={e => { if (!mouseDownIsInside(e.currentTarget)) setEditingField(null) }}
+          onClick={e => e.stopPropagation()}
+        />
+      ) : (
+        <span
+          className={`gtd-grow-due${!done ? ' gtd-inline-editable' : ''}`}
+          onClick={e => { if (!done) { e.stopPropagation(); setEditingField('due') } }}
+          title={!done ? 'Click to edit due date' : undefined}
+        >
+          {done
+            ? <span className="gtd-inline-placeholder">—</span>
+            : task.due_date
+              ? new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              : <span className="gtd-inline-placeholder">+ date</span>
+          }
+        </span>
+      )}
+
+      {/* 7. Due Status — colored urgency bar */}
+      <span className={`gtd-due-status-bar${dueStatusInfo ? ` gtd-due-status--${dueStatusInfo.cls}` : ' gtd-due-status--none'}`}>
+        {dueStatusInfo?.label || ''}
+      </span>
+
+      {/* 8. Assigned To */}
       {editingField === 'assignee' ? (
         <select
           autoFocus
@@ -578,49 +681,19 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
           onClick={e => { e.stopPropagation(); setEditingField('assignee') }}
           title="Click to edit"
         >
-          {task.assigned_to || <span className="gtd-inline-placeholder">+ assign</span>}
+          {task.assigned_to
+            ? assigneeDisplay
+            : <span className="gtd-inline-placeholder">+ assign</span>
+          }
         </span>
       )}
-      {!done && editingField === 'due' ? (
-        <input
-          autoFocus
-          type="date"
-          className="gtd-inline-due-input"
-          defaultValue={task.due_date || ''}
-          onChange={e => { onUpdate(task.id, { due_date: e.target.value || null }); setEditingField(null) }}
-          onBlur={e => { if (!mouseDownIsInside(e.currentTarget)) setEditingField(null) }}
-          onClick={e => e.stopPropagation()}
-        />
-      ) : (
-        <span
-          className={`gtd-grow-due gtd-due--${ddl.cls || 'none'}${!done ? ' gtd-inline-editable' : ''}`}
-          onClick={e => { if (!done) { e.stopPropagation(); setEditingField('due') } }}
-          title={!done ? 'Click to edit due date' : undefined}
-        >
-          {!done && !task.due_date ? <span className="gtd-inline-placeholder">+ date</span> : ddl.text}
-        </span>
-      )}
-      <span className="gtd-grow-status">
-        <button
-          className="gtd-status-cycle-btn"
-          style={{ background: STATUS_STYLE[statusKey].bg, color: STATUS_STYLE[statusKey].color }}
-          onClick={e => { e.stopPropagation(); cycleStatus() }}
-          title="Click to advance status"
-        >
-          {STATUS_LABELS[statusKey]}
-        </button>
-      </span>
-      <div className="gtd-grow-actions" onClick={e => e.stopPropagation()}>
-        <button className="gtd-grow-edit-btn" onClick={onOpenEdit} title="Edit task">✎</button>
-        <button
-          className={`gtd-cmt-btn${commentCount > 0 ? ' active' : ''}`}
-          onClick={onOpenComments}
-          title={commentCount > 0 ? `${commentCount} comment${commentCount !== 1 ? 's' : ''}` : 'Add comment'}
-        >
-          💬{commentCount > 0 && <span className="gtd-cmt-count">{commentCount}</span>}
-        </button>
-        <button className="gtd-grow-del-btn" onClick={() => onDelete(task.id)} title="Delete task">✕</button>
-      </div>
+
+      {/* 9. Edit */}
+      <button className="gtd-grow-edit-btn" onClick={e => { e.stopPropagation(); onOpenEdit() }} title="Edit task">✎</button>
+
+      {/* 10. Remove */}
+      <button className="gtd-grow-del-btn" onClick={e => { e.stopPropagation(); onDelete(task.id) }} title="Delete task">✕</button>
+
       {vendorFormOpen && selectedVendor && (
         <VendorFormModal
           vendor={selectedVendor}
@@ -1639,13 +1712,10 @@ export default function TasksTab({
         return true
       })
 
-      // Sort: completed tasks sink to bottom, then by due_date ascending
-      const allItems = visibleTasks.sort((a, b) => {
-        const aDone = a.task_type !== 'Critical Date' && a.status === 'complete'
-        const bDone = b.task_type !== 'Critical Date' && b.status === 'complete'
-        if (aDone !== bDone) return aDone ? 1 : -1
-        return (a.due_date || 'zzzz').localeCompare(b.due_date || 'zzzz')
-      })
+      // Sort by due_date ascending (no sink-to-bottom for completed tasks)
+      const allItems = visibleTasks.sort((a, b) =>
+        (a.due_date || 'zzzz').localeCompare(b.due_date || 'zzzz')
+      )
 
       const completedCount = txTasks.filter(t => t.task_type !== 'Critical Date' && t.status === 'complete').length
       return { tx, items: allItems, completedCount }

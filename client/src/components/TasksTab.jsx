@@ -402,12 +402,12 @@ function CriticalDateRow({ task, onDelete }) {
   return (
     <div className="gtd-cd-row">
       <span className="gtd-cd-label">{task.title}</span>
+      <span className={`gtd-cd-countdown gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</span>
       <span className="gtd-cd-date">
         {task.due_date
           ? new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
           : '—'}
       </span>
-      <span className={`gtd-cd-countdown gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</span>
       {onDelete && (
         <button className="gtd-grow-del-btn gtd-cd-del-btn" onClick={() => onDelete(task.id)} title="Delete critical date">✕</button>
       )}
@@ -415,7 +415,7 @@ function CriticalDateRow({ task, onDelete }) {
   )
 }
 
-function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, onOpenComments, commentCount, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [] }) {
+function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, onOpenComments, commentCount, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [], isEven = false }) {
   const done      = task.status === 'complete'
   const statusKey = task.status || 'open'
 
@@ -475,20 +475,21 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
   // Resolve "Me" to display name
   const assigneeDisplay = task.assigned_to === 'Me' ? 'Amy Casanova' : (task.assigned_to || '')
 
-  // Due Status urgency indicator
+  // Due Status urgency indicator — plain text with colored left-border divider
   const dueStatusInfo = (() => {
     if (done || !task.due_date) return null
     const today = new Date(); today.setHours(0,0,0,0)
     const diff  = Math.ceil((new Date(task.due_date + 'T00:00:00') - today) / 86400000)
-    if (diff < 0)   return { label: 'Overdue',        cls: 'overdue' }
-    if (diff === 0) return { label: 'Due Today',      cls: 'today'   }
-    if (diff <= 3)  return { label: `Due in ${diff}`, cls: 'soon'    }
-    return           { label: `In ${diff} days`,      cls: 'future'  }
+    if (diff < 0)   return { label: 'Overdue',                              cls: 'overdue' }
+    if (diff === 0) return { label: 'Today',                                cls: 'soon'    }
+    if (diff <= 3)  return { label: `${diff} day${diff !== 1 ? 's' : ''}`, cls: 'soon'    }
+    return           { label: `${diff} days`,                               cls: 'future'  }
   })()
 
   return (
     <div className={[
       'gtd-grow',
+      isEven   ? 'gtd-grow-even'     : '',
       done     ? 'gtd-grow-done'     : '',
       selected ? 'gtd-grow-selected' : '',
     ].filter(Boolean).join(' ')}>
@@ -511,7 +512,9 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
           >
             <span className="gtd-status-rect-label">{STATUS_LABELS[statusKey]}</span>
             {done && task.completed_at && (
-              <span className="gtd-status-rect-date">{formatLocalDate(task.completed_at)}</span>
+              <span className="gtd-status-rect-date">
+                {new Date(task.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
             )}
           </button>
         )}
@@ -2131,28 +2134,32 @@ export default function TasksTab({
               </div>
 
               {/* Task / critical date rows */}
-              {!isCollapsed && visibleItems.map(item =>
-                item.task_type === 'Critical Date' ? (
-                  <CriticalDateRow key={item.id} task={item} onDelete={onDeleteTask} />
-                ) : (
-                  <GlobalTaskRow
-                    key={item.id}
-                    task={item}
-                    tx={tx}
-                    onUpdate={onTaskUpdate}
-                    onUpdateTx={onUpdateTransaction}
-                    onDelete={onDeleteTask}
-                    onOpenEdit={() => setEditingTaskId(item.id)}
-                    onOpenComments={() => setCommentTaskId(item.id)}
-                    commentCount={taskComments.filter(c => c.task_id === item.id).length}
-                    bulkMode={bulkMode}
-                    selected={selectedIds.has(item.id)}
-                    onToggleSelect={() => toggleId(item.id)}
-                    vendors={vendors}
-                    tcSettings={tcSettings}
-                  />
+              {!isCollapsed && (() => {
+                let taskRowIdx = 0
+                return visibleItems.map(item =>
+                  item.task_type === 'Critical Date' ? (
+                    <CriticalDateRow key={item.id} task={item} onDelete={onDeleteTask} />
+                  ) : (
+                    <GlobalTaskRow
+                      key={item.id}
+                      task={item}
+                      tx={tx}
+                      onUpdate={onTaskUpdate}
+                      onUpdateTx={onUpdateTransaction}
+                      onDelete={onDeleteTask}
+                      onOpenEdit={() => setEditingTaskId(item.id)}
+                      onOpenComments={() => setCommentTaskId(item.id)}
+                      commentCount={taskComments.filter(c => c.task_id === item.id).length}
+                      bulkMode={bulkMode}
+                      selected={selectedIds.has(item.id)}
+                      onToggleSelect={() => toggleId(item.id)}
+                      vendors={vendors}
+                      tcSettings={tcSettings}
+                      isEven={taskRowIdx++ % 2 === 1}
+                    />
+                  )
                 )
-              )}
+              })()}
               {!isCollapsed && onAddTask && (
                 <div className="gtd-add-task-row">
                   <button className="gtd-add-task-btn" onClick={() => setAddingForTx(tx)}>

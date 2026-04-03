@@ -1302,14 +1302,15 @@
   transition: background 0.08s;
 }
 .gtd-grow:last-child { border-bottom: none; }
-.gtd-grow:hover { background: #fafafa; }
-.gtd-grow-done { background: #fafafa; }
-.gtd-grow-selected { background: #f0f6ff; }
+.gtd-grow:hover { background: #f0f4ff !important; }
+.gtd-grow-even { background: #f9f9f9; }
+.gtd-grow-done { opacity: 0.7; }
+.gtd-grow-selected { background: #e8f0ff !important; }
 .gtd-grow-keydate { background: #fffdf4; }
 
 .gtd-grow-status-cell {
   flex-shrink: 0;
-  width: 96px;
+  width: 120px;
   display: flex;
   align-items: flex-start;
 }
@@ -1444,22 +1445,21 @@
   padding-top: 1px;
 }
 
-/* ── Due Status urgency bar ──────────────────────────────────────────────── */
+/* ── Due Status urgency column — plain text, colored left-border divider ─── */
 .gtd-due-status-bar {
   flex-shrink: 0;
-  width: 80px;
+  width: 68px;
   font-size: 11px;
   font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 3px;
-  text-align: center;
+  padding: 2px 0 2px 8px;
+  border-left: 3px solid transparent;
   white-space: nowrap;
+  align-self: center;
 }
-.gtd-due-status--none    { background: transparent; color: transparent; }
-.gtd-due-status--overdue { background: #fee2e2; color: #b91c1c; }
-.gtd-due-status--today   { background: #fef3c7; color: #92400e; }
-.gtd-due-status--soon    { background: #dbeafe; color: #1d4ed8; }
-.gtd-due-status--future  { background: #f0f0f0; color: #777777; }
+.gtd-due-status--none    { border-left-color: transparent; color: transparent; }
+.gtd-due-status--overdue { border-left-color: #dc2626; color: #dc2626; }
+.gtd-due-status--soon    { border-left-color: #2563eb; color: #2563eb; }
+.gtd-due-status--future  { border-left-color: #aaaaaa; color: #888888; }
 
 .gtd-status-rect-btn {
   border: none;
@@ -1468,20 +1468,23 @@
   font-size: 11px;
   font-weight: 600;
   padding: 4px 8px;
-  width: 96px;
+  width: 120px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 2px;
-  line-height: 1.2;
+  justify-content: center;
+  gap: 5px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
   transition: filter 0.1s;
 }
 .gtd-status-rect-btn:hover { filter: brightness(0.93); }
 .gtd-status-rect--open        { background: #f0f0f0; color: #555555; }
 .gtd-status-rect--in_progress { background: #dbeafe; color: #1d4ed8; }
 .gtd-status-rect--complete    { background: #d1fae5; color: #065f46; }
-.gtd-status-rect-label { white-space: nowrap; }
-.gtd-status-rect-date  { font-size: 10px; font-weight: 400; opacity: 0.8; white-space: nowrap; }
+.gtd-status-rect-label { flex-shrink: 0; }
+.gtd-status-rect-date  { font-size: 10px; font-weight: 400; opacity: 0.75; overflow: hidden; text-overflow: ellipsis; }
 
 .gtd-grow-actions {
   display: flex;
@@ -1522,40 +1525,41 @@
 .gtd-cd-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 9px 14px 9px 18px;
-  background: #ddeaff;
-  border-top: 1px solid #b8d0f8;
-  border-bottom: 1px solid #b8d0f8;
+  gap: 9px;
+  padding: 7px 11px 7px 14px;
+  background: rgba(221, 234, 255, 0.75);
+  border-top: 1px solid rgba(184, 208, 248, 0.75);
+  border-bottom: 1px solid rgba(184, 208, 248, 0.75);
+  width: 100%;
+  box-sizing: border-box;
 }
 .gtd-cd-row + .gtd-cd-row { border-top: none; }
 .gtd-cd-row:last-child { border-bottom: none; }
 
 .gtd-cd-label {
   flex: 1;
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 700;
   color: #1a3d82;
   white-space: normal;
   word-break: break-word;
 }
 
-.gtd-cd-date {
-  font-size: 12px;
-  color: #2c5aa0;
-  font-weight: 600;
-  flex-shrink: 0;
-  width: 110px;
-  text-align: right;
-}
-
 .gtd-cd-countdown {
-  font-size: 12px;
+  font-size: 9px;
   font-weight: 700;
   color: #1a3d82;
   flex-shrink: 0;
-  width: 110px;
+  white-space: nowrap;
+}
+
+.gtd-cd-date {
+  font-size: 9px;
+  color: #2c5aa0;
+  font-weight: 600;
+  flex-shrink: 0;
   text-align: right;
+  white-space: nowrap;
 }
 
 .gtd-cd-del-btn {
@@ -1744,11 +1748,12 @@
 /* ── Action column (vendor dropdown + links) ─────────────────────────────── */
 .gtd-grow-action-col {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
   min-width: 0;
-  width: 180px;
+  width: 210px;
 }
 
 /* ── Progress Date column ────────────────────────────────────────────────── */

@@ -1798,6 +1798,7 @@ export default function TasksTab({
         case 'status':      cmp = (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0); break
         case 'title':       cmp = (a.title || '').localeCompare(b.title || ''); break
         case 'assigned_to': cmp = (a.assigned_to || '').localeCompare(b.assigned_to || ''); break
+        case 'tx_address':  cmp = (a._tx?.property_address || '').localeCompare(b._tx?.property_address || ''); break
         default:            cmp = (a.due_date || 'zzzz').localeCompare(b.due_date || 'zzzz')
       }
       return sortDir === 'asc' ? cmp : -cmp
@@ -2043,12 +2044,16 @@ export default function TasksTab({
         ) : (
           <button className="gtd-bulk-toggle" onClick={enterBulkMode}>Bulk Edit</button>
         )}
-        <button
-          className={`gtd-view-toggle${viewMode === 'flat' ? ' gtd-view-toggle--active' : ''}`}
-          onClick={() => setViewMode(m => m === 'grouped' ? 'flat' : 'grouped')}
-        >
-          {viewMode === 'grouped' ? 'List View' : 'Grouped View'}
-        </button>
+        <div className="gtd-view-toggle-group">
+          <button
+            className={`gtd-vt-btn${viewMode === 'grouped' ? ' active' : ''}`}
+            onClick={() => setViewMode('grouped')}
+          >Grouped</button>
+          <button
+            className={`gtd-vt-btn${viewMode === 'flat' ? ' active' : ''}`}
+            onClick={() => setViewMode('flat')}
+          >Flat</button>
+        </div>
         {filterCount > 0 && (
           <button className="gtd-fp-clear-inline" onClick={clearAll}>Clear Filters</button>
         )}
@@ -2154,7 +2159,7 @@ export default function TasksTab({
               {hdr('status',      'Status',      'status')}
               {hdr('title',       'Task',        'task')}
               <div className="gtd-col-hdr gtd-col-hdr--action">Action</div>
-              {viewMode === 'flat' && <div className="gtd-col-hdr gtd-col-hdr--addr">Address</div>}
+              {viewMode === 'flat' && hdr('tx_address', 'Address', 'addr')}
               <div className="gtd-col-hdr gtd-col-hdr--cmt" />
               {hdr('due_date',    'Due',         'due')}
               <div className="gtd-col-hdr gtd-col-hdr--due-status">Due Status</div>

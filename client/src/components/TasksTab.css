@@ -101,23 +101,32 @@
   color: #666666;
 }
 
-.gtd-view-toggle {
+.gtd-view-toggle-group {
   margin-left: auto;
-  border: 1.5px solid #ddd;
+  display: flex;
+  align-items: center;
+  background: #e8e8e8;
   border-radius: 8px;
-  background: #fff;
-  padding: 7px 14px;
+  padding: 3px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.gtd-vt-btn {
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 13px;
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
-  color: #555;
+  color: #888;
   cursor: pointer;
-  transition: border-color 0.12s, background 0.12s, color 0.12s;
+  transition: background 0.12s, color 0.12s;
   white-space: nowrap;
 }
-.gtd-view-toggle:hover { border-color: #999; background: #fafafa; }
-.gtd-view-toggle--active { border-color: #4a7fd4; color: #1d4ed8; background: #eff6ff; }
-.gtd-view-toggle--active:hover { background: #dbeafe; border-color: #2563eb; }
+.gtd-vt-btn:hover { color: #333; background: rgba(0,0,0,0.06); }
+.gtd-vt-btn.active { background: #ffffff; color: #1a1a1a; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
 
 .gtd-filters-btn {
   border: 1.5px solid #ddd;

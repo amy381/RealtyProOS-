@@ -1646,6 +1646,19 @@ export default function TasksTab({
   // Comment panel
   const [commentTaskId, setCommentTaskId] = useState(null)
 
+  // Column sort
+  const [sortField, setSortField] = useState('due_date')
+  const [sortDir,   setSortDir]   = useState('asc')
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir('asc')
+    }
+  }
+
   // Vendors
   const [vendors, setVendors] = useState([])
   useEffect(() => {
@@ -1715,10 +1728,20 @@ export default function TasksTab({
         return true
       })
 
-      // Sort by due_date ascending (no sink-to-bottom for completed tasks)
-      const allItems = visibleTasks.sort((a, b) =>
-        (a.due_date || 'zzzz').localeCompare(b.due_date || 'zzzz')
-      )
+      // Sort — Critical Date tasks always float to top; others sort by selected column
+      const allItems = visibleTasks.slice().sort((a, b) => {
+        const aCD = a.task_type === 'Critical Date'
+        const bCD = b.task_type === 'Critical Date'
+        if (aCD !== bCD) return aCD ? -1 : 1
+        let cmp = 0
+        switch (sortField) {
+          case 'status':      cmp = (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0); break
+          case 'title':       cmp = (a.title || '').localeCompare(b.title || ''); break
+          case 'assigned_to': cmp = (a.assigned_to || '').localeCompare(b.assigned_to || ''); break
+          default:            cmp = (a.due_date || 'zzzz').localeCompare(b.due_date || 'zzzz')
+        }
+        return sortDir === 'asc' ? cmp : -cmp
+      })
 
       const completedCount = txTasks.filter(t => t.task_type !== 'Critical Date' && t.status === 'complete').length
       return { tx, items: allItems, completedCount }
@@ -1744,7 +1767,7 @@ export default function TasksTab({
     })
 
     return groups
-  }, [tasks, txMap, filters])
+  }, [tasks, txMap, filters, sortField, sortDir])
 
   const allFilteredTasks = groupedData.flatMap(g => g.items.filter(i => i.task_type !== 'Critical Date'))
   const openCount        = allFilteredTasks.filter(t => t.status !== 'complete').length
@@ -2074,6 +2097,36 @@ export default function TasksTab({
 
       {/* ── Grouped accordion list ──────────────────────────────────── */}
       <div className="gtd-grouped-list" ref={tasksScrollRef}>
+
+        {/* ── Column headers ────────────────────────────────────────── */}
+        <div className="gtd-col-header-row">
+          {(() => {
+            const hdr = (field, label, cls) => {
+              const active = sortField === field
+              const dir    = active ? (sortDir === 'asc' ? '↑' : '↓') : '⇅'
+              return (
+                <button
+                  key={field}
+                  className={`gtd-col-hdr gtd-col-hdr--${cls} gtd-col-hdr--sortable${active ? ' gtd-col-hdr--active' : ''}`}
+                  onClick={() => handleSort(field)}
+                >
+                  {label}<span className="gtd-col-hdr-arrow">{dir}</span>
+                </button>
+              )
+            }
+            return <>
+              {hdr('status',      'Status',      'status')}
+              {hdr('title',       'Task',        'task')}
+              <div className="gtd-col-hdr gtd-col-hdr--action">Action</div>
+              <div className="gtd-col-hdr gtd-col-hdr--cmt" />
+              {hdr('due_date',    'Due',         'due')}
+              <div className="gtd-col-hdr gtd-col-hdr--due-status">Due Status</div>
+              {hdr('assigned_to', 'Assigned To', 'assignee')}
+              <div className="gtd-col-hdr gtd-col-hdr--acts" />
+            </>
+          })()}
+        </div>
+
         {groupedData.length === 0 && (
           <div className="gtd-empty">No tasks match these filters</div>
         )}

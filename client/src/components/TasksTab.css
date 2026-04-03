@@ -763,7 +763,7 @@
   border-radius: 5px;
   cursor: pointer;
   color: #d0d0d0;
-  font-size: 18px;
+  font-size: 21px;
   line-height: 1;
   transition: color 0.1s, background 0.1s;
 }
@@ -1333,7 +1333,7 @@
 }
 
 .gtd-col-hdr {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   color: #aab;
   text-transform: uppercase;
@@ -1362,9 +1362,9 @@
 .gtd-col-hdr--active .gtd-col-hdr-arrow { opacity: 1; }
 
 /* Width mirrors for each column — must match gtd-grow column widths exactly */
-.gtd-col-hdr--status    { width: 120px; text-align: left; }
+.gtd-col-hdr--status    { width: 144px; text-align: left; }
 .gtd-col-hdr--task      { flex: 1; text-align: left; }
-.gtd-col-hdr--action    { width: 230px; }
+.gtd-col-hdr--action    { width: 200px; }
 .gtd-col-hdr--addr      { width: 160px; }
 .gtd-col-hdr--cmt       { width: 36px; flex-shrink: 0; }
 .gtd-col-hdr--due       { width: 100px; text-align: right; }
@@ -1391,7 +1391,7 @@
 
 .gtd-grow-status-cell {
   flex-shrink: 0;
-  width: 120px;
+  width: 144px;
   display: flex;
   align-items: flex-start;
 }
@@ -1402,6 +1402,7 @@
   flex-direction: column;
   gap: 5px;
   min-width: 0;
+  max-width: calc(100% - 660px);
 }
 
 .gtd-grow-title {
@@ -1530,12 +1531,14 @@
 .gtd-due-status-bar {
   flex-shrink: 0;
   width: 68px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   padding: 2px 0 2px 8px;
   border-left: 3px solid transparent;
   white-space: nowrap;
-  align-self: center;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
 }
 .gtd-due-status--none    { border-left-color: transparent; color: transparent; }
 .gtd-due-status--overdue { border-left-color: #dc2626; color: #dc2626; }
@@ -1546,10 +1549,10 @@
   border: none;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   padding: 4px 8px;
-  width: 120px;
+  width: 144px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -1619,15 +1622,16 @@
 
 .gtd-cd-label {
   flex: 1;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   color: #1a3d82;
   white-space: normal;
   word-break: break-word;
+  padding-left: 200px;
 }
 
 .gtd-cd-countdown {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   color: #1a3d82;
   flex-shrink: 0;
@@ -1635,10 +1639,11 @@
 }
 
 .gtd-cd-date {
-  font-size: 9px;
+  font-size: 11px;
   color: #2c5aa0;
   font-weight: 600;
   flex-shrink: 0;
+  margin-left: auto;
   text-align: right;
   white-space: nowrap;
 }
@@ -1846,16 +1851,17 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
-  width: 230px;
-  max-width: 230px;
+  width: 200px;
+  max-width: 200px;
   overflow: hidden;
 }
 
 /* ── Progress Date column ────────────────────────────────────────────────── */
 .gtd-progress-date-col {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
   flex-shrink: 0;
   width: 180px;
 }
@@ -1867,7 +1873,7 @@
 }
 
 .gtd-progress-date-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: #4a7fd4;
   text-transform: uppercase;
@@ -1921,7 +1927,7 @@
   background: #fafafa;
   color: #333;
   cursor: pointer;
-  width: 120px;
+  width: 144px;
   min-width: 0;
   flex-shrink: 1;
 }

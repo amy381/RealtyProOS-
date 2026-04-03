@@ -44,7 +44,7 @@ const DEFAULT_FILTERS = {
   dueChecks:   DEFAULT_DUE_CHECKS,
 }
 
-const TC_NAMES         = ['Justina Morris', 'Victoria Lareau']
+const TC_NAMES         = ['Justina Morris', 'Victoria Lareau', 'Amy Casanova']
 const ASSIGNEE_OPTIONS = ['Me', 'Justina Morris', 'Victoria Lareau']
 const STATUS_OPTIONS   = [{ value: 'open', label: 'Open' }, { value: 'complete', label: 'Done' }]
 
@@ -514,7 +514,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
             <span className="gtd-status-rect-label">{STATUS_LABELS[statusKey]}</span>
             {done && task.completed_at && (
               <span className="gtd-status-rect-date">
-                {new Date(task.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {new Date(task.completed_at).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })}
               </span>
             )}
           </button>
@@ -545,17 +545,6 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
           >
             {task.title}
           </span>
-        )}
-        {dateCfg && (
-          <div className="gtd-row-date-field" onClick={e => e.stopPropagation()}>
-            <span className="gtd-row-date-label">{dateCfg.label}</span>
-            <input
-              type="date"
-              className="gtd-row-date-input"
-              value={rowDateValue}
-              onChange={handleRowDateChange}
-            />
-          </div>
         )}
       </div>
 
@@ -1539,7 +1528,7 @@ function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, 
                   className={`gtd-fp-toggle${draft.tcFilter === v ? ' active' : ''}`}
                   onClick={() => set('tcFilter', v)}
                 >
-                  {v === 'Justina Morris' ? 'Justina' : v === 'Victoria Lareau' ? 'Victoria' : v}
+                  {v === 'Justina Morris' ? 'Justina' : v === 'Victoria Lareau' ? 'Victoria' : v === 'Amy Casanova' ? 'Amy' : v}
                 </button>
               ))}
             </div>
@@ -1695,7 +1684,10 @@ export default function TasksTab({
       if (!tx) return false
       if (!filters.stageChecks.has(tx.status)) return false
       if (filters.typeFilter !== 'All' && tx.rep_type !== filters.typeFilter) return false
-      if (filters.tcFilter   !== 'All' && tx.assigned_tc !== filters.tcFilter) return false
+      if (filters.tcFilter !== 'All') {
+        const match = filters.tcFilter === 'Amy Casanova' ? 'Me' : filters.tcFilter
+        if (tx.assigned_tc !== match) return false
+      }
       if (filters.search.trim()) {
         const q = filters.search.toLowerCase()
         if (!(task.title || '').toLowerCase().includes(q) &&
@@ -1845,7 +1837,7 @@ export default function TasksTab({
     })
 
     if (filters.tcFilter !== 'All') {
-      const short = filters.tcFilter === 'Justina Morris' ? 'Justina' : 'Victoria'
+      const short = filters.tcFilter === 'Justina Morris' ? 'Justina' : filters.tcFilter === 'Victoria Lareau' ? 'Victoria' : 'Amy'
       chips.push({
         key: 'tc',
         label: `TC: ${short}`,
@@ -2159,11 +2151,11 @@ export default function TasksTab({
               {hdr('status',      'Status',      'status')}
               {hdr('title',       'Task',        'task')}
               <div className="gtd-col-hdr gtd-col-hdr--action">Action</div>
-              {viewMode === 'flat' && hdr('tx_address', 'Address', 'addr')}
+              {viewMode === 'flat' && hdr('tx_address', 'Transaction', 'addr')}
               <div className="gtd-col-hdr gtd-col-hdr--cmt" />
               {hdr('due_date',    'Due',         'due')}
               <div className="gtd-col-hdr gtd-col-hdr--due-status">Due Status</div>
-              {hdr('assigned_to', 'Assigned To', 'assignee')}
+              <div className="gtd-col-hdr gtd-col-hdr--assignee">Assigned To</div>
               <div className="gtd-col-hdr gtd-col-hdr--acts" />
             </>
           })()}

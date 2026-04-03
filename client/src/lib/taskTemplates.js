@@ -54,6 +54,7 @@ export function buildTemplateTasksFromDB(templateTaskRows, transaction) {
       // resolves_critical_date holds the template_task id at build time;
       // App.jsx resolves it to the actual task id after insert.
       resolves_critical_date: t.resolves_critical_date || null,
+      has_progress_tracking:  t.has_progress_tracking  || false,
       // Internal mapping field — stripped before DB insert.
       _template_task_id:      t.id,
     }))

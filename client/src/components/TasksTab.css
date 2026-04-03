@@ -101,8 +101,25 @@
   color: #666666;
 }
 
-.gtd-filters-btn {
+.gtd-view-toggle {
   margin-left: auto;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #555;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.gtd-view-toggle:hover { border-color: #999; background: #fafafa; }
+.gtd-view-toggle--active { border-color: #4a7fd4; color: #1d4ed8; background: #eff6ff; }
+.gtd-view-toggle--active:hover { background: #dbeafe; border-color: #2563eb; }
+
+.gtd-filters-btn {
   border: 1.5px solid #ddd;
   border-radius: 8px;
   background: #fff;
@@ -1339,6 +1356,7 @@
 .gtd-col-hdr--status    { width: 120px; text-align: left; }
 .gtd-col-hdr--task      { flex: 1; text-align: left; }
 .gtd-col-hdr--action    { width: 230px; }
+.gtd-col-hdr--addr      { width: 160px; }
 .gtd-col-hdr--cmt       { width: 36px; flex-shrink: 0; }
 .gtd-col-hdr--due       { width: 100px; text-align: right; }
 .gtd-col-hdr--due-status { width: 68px; padding-left: 8px; }
@@ -1624,6 +1642,19 @@
 }
 .gtd-cd-row:hover .gtd-cd-del-btn { opacity: 1; }
 
+.gtd-cd-flat-addr {
+  font-size: 9px;
+  color: #2c5aa0;
+  font-weight: 500;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  opacity: 0.75;
+  font-style: italic;
+}
+
 /* ── Add task row ───────────────────────────────────────────────────────── */
 .gtd-add-task-row {
   padding: 8px 14px;
@@ -1850,6 +1881,27 @@
 }
 .gtd-progress-date-input:hover,
 .gtd-progress-date-input:focus { border-color: #4a7fd4; background: #eef4ff; }
+
+/* ── Transaction Address column (flat list mode) ─────────────────────────── */
+.gtd-grow-addr-col {
+  flex-shrink: 0;
+  width: 160px;
+  font-size: 12px;
+  color: #555;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-top: 1px;
+}
+
+/* ── Flat list container ─────────────────────────────────────────────────── */
+.gtd-flat-list {
+  background: #fff;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 10px;
+  overflow: hidden;
+}
 
 .gtd-vendor-select {
   font-size: 12px;

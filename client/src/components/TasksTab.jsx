@@ -397,11 +397,12 @@ function VendorFormModal({ vendor, tx, task, tcSettings, onClose, onTaskUpdate }
 }
 
 // ─── Sub-components for grouped view ─────────────────────────────────────────
-function CriticalDateRow({ task, onDelete }) {
+function CriticalDateRow({ task, onDelete, flatAddr }) {
   const ddl = dueDateLabel(task.due_date, false, null)
   return (
     <div className="gtd-cd-row">
       <span className="gtd-cd-label">{task.title}</span>
+      {flatAddr && <span className="gtd-cd-flat-addr">{flatAddr}</span>}
       <span className={`gtd-cd-countdown gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</span>
       <span className="gtd-cd-date">
         {task.due_date
@@ -415,7 +416,7 @@ function CriticalDateRow({ task, onDelete }) {
   )
 }
 
-function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, onOpenComments, commentCount, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [], isEven = false }) {
+function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, onOpenComments, commentCount, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [], isEven = false, txAddress = null }) {
   const done      = task.status === 'complete'
   const statusKey = task.status || 'open'
 
@@ -623,6 +624,11 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
             />
           </div>
         </div>
+      )}
+
+      {/* 4.5. Transaction Address — flat list only */}
+      {txAddress != null && (
+        <span className="gtd-grow-addr-col" title={txAddress}>{txAddress}</span>
       )}
 
       {/* 5. Comments */}
@@ -1659,6 +1665,9 @@ export default function TasksTab({
     }
   }
 
+  // View mode: grouped accordion or flat list
+  const [viewMode, setViewMode] = useState('grouped')
+
   // Vendors
   const [vendors, setVendors] = useState([])
   useEffect(() => {
@@ -1773,6 +1782,27 @@ export default function TasksTab({
   const openCount        = allFilteredTasks.filter(t => t.status !== 'complete').length
   const doneCount        = allFilteredTasks.filter(t => t.status === 'complete').length
   const filterCount      = countFilters(filters)
+
+  // Flat list: all items from all groups, globally sorted, each item carries _tx reference
+  const flatListData = useMemo(() => {
+    if (viewMode !== 'flat') return []
+    const all = groupedData.flatMap(({ tx, items }) =>
+      items.map(item => ({ ...item, _tx: tx }))
+    )
+    return all.slice().sort((a, b) => {
+      const aCD = a.task_type === 'Critical Date'
+      const bCD = b.task_type === 'Critical Date'
+      if (aCD !== bCD) return aCD ? -1 : 1
+      let cmp = 0
+      switch (sortField) {
+        case 'status':      cmp = (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0); break
+        case 'title':       cmp = (a.title || '').localeCompare(b.title || ''); break
+        case 'assigned_to': cmp = (a.assigned_to || '').localeCompare(b.assigned_to || ''); break
+        default:            cmp = (a.due_date || 'zzzz').localeCompare(b.due_date || 'zzzz')
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [viewMode, groupedData, sortField, sortDir])
 
   // ── Active filter chips ────────────────────────────────────────────────────
   const activeChips = useMemo(() => {
@@ -2013,6 +2043,12 @@ export default function TasksTab({
         ) : (
           <button className="gtd-bulk-toggle" onClick={enterBulkMode}>Bulk Edit</button>
         )}
+        <button
+          className={`gtd-view-toggle${viewMode === 'flat' ? ' gtd-view-toggle--active' : ''}`}
+          onClick={() => setViewMode(m => m === 'grouped' ? 'flat' : 'grouped')}
+        >
+          {viewMode === 'grouped' ? 'List View' : 'Grouped View'}
+        </button>
         {filterCount > 0 && (
           <button className="gtd-fp-clear-inline" onClick={clearAll}>Clear Filters</button>
         )}
@@ -2118,6 +2154,7 @@ export default function TasksTab({
               {hdr('status',      'Status',      'status')}
               {hdr('title',       'Task',        'task')}
               <div className="gtd-col-hdr gtd-col-hdr--action">Action</div>
+              {viewMode === 'flat' && <div className="gtd-col-hdr gtd-col-hdr--addr">Address</div>}
               <div className="gtd-col-hdr gtd-col-hdr--cmt" />
               {hdr('due_date',    'Due',         'due')}
               <div className="gtd-col-hdr gtd-col-hdr--due-status">Due Status</div>
@@ -2127,11 +2164,12 @@ export default function TasksTab({
           })()}
         </div>
 
-        {groupedData.length === 0 && (
+        {/* ── Grouped accordion view ────────────────────────────────── */}
+        {viewMode === 'grouped' && groupedData.length === 0 && (
           <div className="gtd-empty">No tasks match these filters</div>
         )}
 
-        {groupedData.map(({ tx, items, completedCount }) => {
+        {viewMode === 'grouped' && groupedData.map(({ tx, items, completedCount }) => {
           const isCollapsed = !!collapsed[tx.id]
           const showDone    = !!showCompleted[tx.id]
 
@@ -2223,6 +2261,48 @@ export default function TasksTab({
             </div>
           )
         })}
+
+        {/* ── Flat list view ────────────────────────────────────────── */}
+        {viewMode === 'flat' && (
+          <div className="gtd-flat-list">
+            {flatListData.length === 0 && (
+              <div className="gtd-empty">No tasks match these filters</div>
+            )}
+            {(() => {
+              let taskRowIdx = 0
+              return flatListData.map(item => {
+                const addr = item._tx.property_address?.split(',')[0] || ''
+                return item.task_type === 'Critical Date' ? (
+                  <CriticalDateRow
+                    key={item.id}
+                    task={item}
+                    onDelete={onDeleteTask}
+                    flatAddr={addr}
+                  />
+                ) : (
+                  <GlobalTaskRow
+                    key={item.id}
+                    task={item}
+                    tx={item._tx}
+                    onUpdate={onTaskUpdate}
+                    onUpdateTx={onUpdateTransaction}
+                    onDelete={onDeleteTask}
+                    onOpenEdit={() => setEditingTaskId(item.id)}
+                    onOpenComments={() => setCommentTaskId(item.id)}
+                    commentCount={taskComments.filter(c => c.task_id === item.id).length}
+                    bulkMode={bulkMode}
+                    selected={selectedIds.has(item.id)}
+                    onToggleSelect={() => toggleId(item.id)}
+                    vendors={vendors}
+                    tcSettings={tcSettings}
+                    isEven={taskRowIdx++ % 2 === 1}
+                    txAddress={addr}
+                  />
+                )
+              })
+            })()}
+          </div>
+        )}
       </div>
 
       {/* ── Add task modal ──────────────────────────────────────────── */}

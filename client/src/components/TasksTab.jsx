@@ -400,15 +400,16 @@ function VendorFormModal({ vendor, tx, task, tcSettings, onClose, onTaskUpdate }
 function CriticalDateRow({ task, onDelete, flatAddr }) {
   const ddl = dueDateLabel(task.due_date, false, null)
   return (
-    <div className="gtd-cd-row">
+    <div className={`gtd-cd-row${flatAddr != null ? ' gtd-cd-row--flat' : ''}`}>
       <span className="gtd-cd-label">{task.title}</span>
-      {flatAddr && <span className="gtd-cd-flat-addr">{flatAddr}</span>}
-      <span className={`gtd-cd-countdown gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</span>
+      {flatAddr != null && <span className="gtd-cd-flat-addr">{flatAddr}</span>}
       <span className="gtd-cd-date">
         {task.due_date
           ? new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
           : '—'}
       </span>
+      <span className={`gtd-cd-color-bar${ddl.cls ? ` gtd-color-bar--${ddl.cls}` : ''}`} />
+      <span className={`gtd-cd-countdown gtd-due--${ddl.cls || 'none'}`}>{ddl.text}</span>
       {onDelete && (
         <button className="gtd-grow-del-btn gtd-cd-del-btn" onClick={() => onDelete(task.id)} title="Delete critical date">✕</button>
       )}
@@ -490,9 +491,10 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
   return (
     <div className={[
       'gtd-grow',
-      isEven   ? 'gtd-grow-even'     : '',
-      done     ? 'gtd-grow-done'     : '',
-      selected ? 'gtd-grow-selected' : '',
+      txAddress != null  ? 'gtd-grow--flat'      : '',
+      isEven             ? 'gtd-grow-even'        : '',
+      done               ? 'gtd-grow-done'        : '',
+      selected           ? 'gtd-grow-selected'    : '',
     ].filter(Boolean).join(' ')}>
 
       {/* 1. Status cell — rectangular block; checkbox in bulk mode */}
@@ -548,10 +550,10 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
         )}
       </div>
 
-      {/* 3. Action — vendor dropdown + preview links */}
+      {/* 3. Action — vendor dropdown + progress dates */}
       <div className="gtd-grow-action-col" onClick={e => e.stopPropagation()}>
         {matchedVendors.length > 0 && (
-          <>
+          <div className="gtd-action-vendor-row">
             <select
               className="gtd-vendor-select"
               value={task.selected_vendor_id || ''}
@@ -587,14 +589,10 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
                 )}
               </>
             )}
-          </>
+          </div>
         )}
-      </div>
-
-      {/* 4. Progress Date — ordered_date / scheduled_date (only when has_progress_tracking) */}
-      {task.has_progress_tracking && (
-        <div className="gtd-progress-date-col" onClick={e => e.stopPropagation()}>
-          <div className="gtd-progress-date-row">
+        {task.has_progress_tracking && (
+          <div className="gtd-action-progress-row">
             <span className="gtd-progress-date-label">Ordered</span>
             <input
               type="date"
@@ -602,8 +600,6 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
               value={task.ordered_date || ''}
               onChange={e => handleProgressDateChange('ordered_date', e.target.value)}
             />
-          </div>
-          <div className="gtd-progress-date-row">
             <span className="gtd-progress-date-label">Scheduled</span>
             <input
               type="date"
@@ -612,10 +608,10 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
               onChange={e => handleProgressDateChange('scheduled_date', e.target.value)}
             />
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* 4.5. Transaction Address — flat list only */}
+      {/* 4. Transaction Address — flat list only */}
       {txAddress != null && (
         <span className="gtd-grow-addr-col" title={txAddress}>{txAddress}</span>
       )}
@@ -655,8 +651,11 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
         </span>
       )}
 
-      {/* 7. Due Status — colored urgency bar */}
-      <span className={`gtd-due-status-bar${dueStatusInfo ? ` gtd-due-status--${dueStatusInfo.cls}` : ' gtd-due-status--none'}`}>
+      {/* 6.5. Color bar — solid urgency stripe */}
+      <span className={`gtd-color-bar${dueStatusInfo ? ` gtd-color-bar--${dueStatusInfo.cls}` : ''}`} />
+
+      {/* 7. Due Status text */}
+      <span className={`gtd-due-status-text${dueStatusInfo ? ` gtd-due-status--${dueStatusInfo.cls}` : ''}`}>
         {dueStatusInfo?.label || ''}
       </span>
 
@@ -2126,7 +2125,7 @@ export default function TasksTab({
       <div className="gtd-grouped-list" ref={tasksScrollRef}>
 
         {/* ── Column headers ────────────────────────────────────────── */}
-        <div className="gtd-col-header-row">
+        <div className={`gtd-col-header-row${viewMode === 'flat' ? ' gtd-col-header-row--flat' : ''}`}>
           {(() => {
             const hdr = (field, label, cls) => {
               const active = sortField === field
@@ -2148,6 +2147,7 @@ export default function TasksTab({
               {viewMode === 'flat' && hdr('tx_address', 'Transaction', 'addr')}
               <div className="gtd-col-hdr gtd-col-hdr--cmt" />
               {hdr('due_date',    'Due',         'due')}
+              <div className="gtd-col-hdr gtd-col-hdr--color-bar" />
               <div className="gtd-col-hdr gtd-col-hdr--due-status">Due Status</div>
               <div className="gtd-col-hdr gtd-col-hdr--assignee">Assigned To</div>
               <div className="gtd-col-hdr gtd-col-hdr--acts" />

@@ -766,8 +766,6 @@
   font-size: 21px;
   line-height: 1;
   transition: color 0.1s, background 0.1s;
-  flex-shrink: 0;
-  margin-left: auto;
 }
 .gtd-cmt-btn:hover { color: #888; background: #f0f0f0; }
 .gtd-cmt-btn.active { color: #2563eb; }
@@ -1321,9 +1319,10 @@
 
 /* ── Column header row ──────────────────────────────────────────────────── */
 .gtd-col-header-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 144px 1fr 280px 36px 110px 8px 80px 120px 28px 28px;
+  column-gap: 10px;
   align-items: center;
-  gap: 10px;
   padding: 7px 14px;
   background: #f1f4fb;
   border: 1.5px solid #dde3f0;
@@ -1332,6 +1331,9 @@
   top: 0;
   z-index: 10;
   flex-shrink: 0;
+}
+.gtd-col-header-row--flat {
+  grid-template-columns: 144px 1fr 280px 160px 36px 110px 8px 80px 120px 28px 28px;
 }
 
 .gtd-col-hdr {
@@ -1342,7 +1344,6 @@
   letter-spacing: 0.06em;
   white-space: nowrap;
   user-select: none;
-  flex-shrink: 0;
   background: none;
   border: none;
   padding: 0;
@@ -1363,26 +1364,27 @@
 }
 .gtd-col-hdr--active .gtd-col-hdr-arrow { opacity: 1; }
 
-/* Width mirrors for each column — must match gtd-grow column widths exactly */
-.gtd-col-hdr--status    { width: 144px; text-align: left; }
-.gtd-col-hdr--task      { flex: 1; text-align: left; max-width: 450px; }
-.gtd-col-hdr--action    { width: 200px; }
-.gtd-col-hdr--addr      { width: 160px; }
-.gtd-col-hdr--cmt       { width: 36px; flex-shrink: 0; }
-.gtd-col-hdr--due       { width: 100px; text-align: right; }
-.gtd-col-hdr--due-status { width: 68px; padding-left: 8px; }
-.gtd-col-hdr--assignee  { width: 90px; text-align: right; }
-.gtd-col-hdr--acts      { width: 56px; flex-shrink: 0; }
+/* Header text alignment — widths come from the grid template */
+.gtd-col-hdr--status    { text-align: left; }
+.gtd-col-hdr--task      { text-align: left; min-width: 0; }
+.gtd-col-hdr--due       { text-align: right; }
+.gtd-col-hdr--due-status { padding-left: 4px; }
+.gtd-col-hdr--assignee  { text-align: right; }
+.gtd-col-hdr--acts      { grid-column: span 2; }
 
 /* ── Global task row ────────────────────────────────────────────────────── */
 .gtd-grow {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 144px 1fr 280px 36px 110px 8px 80px 120px 28px 28px;
+  column-gap: 10px;
+  align-items: start;
   padding: 10px 14px;
   border-bottom: 1px solid #f4f4f4;
   min-height: 44px;
   transition: background 0.08s;
+}
+.gtd-grow--flat {
+  grid-template-columns: 144px 1fr 280px 160px 36px 110px 8px 80px 120px 28px 28px;
 }
 .gtd-grow:last-child { border-bottom: none; }
 .gtd-grow:hover { background: #f0f4ff !important; }
@@ -1392,19 +1394,15 @@
 .gtd-grow-keydate { background: #fffdf4; }
 
 .gtd-grow-status-cell {
-  flex-shrink: 0;
-  width: 144px;
   display: flex;
   align-items: flex-start;
 }
 
 .gtd-grow-title-col {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 5px;
   min-width: 0;
-  max-width: 450px;
 }
 
 .gtd-grow-title {
@@ -1511,8 +1509,6 @@
 .gtd-grow-assignee {
   font-size: 12px;
   color: #999;
-  flex-shrink: 0;
-  width: 90px;
   text-align: right;
   white-space: normal;
   word-break: break-word;
@@ -1522,30 +1518,30 @@
 .gtd-grow-due {
   font-size: 12px;
   color: #666;
-  flex-shrink: 0;
-  width: 100px;
   text-align: right;
   font-weight: 400;
   padding-top: 1px;
 }
 
-/* ── Due Status urgency column — plain text, colored left-border divider ─── */
-.gtd-due-status-bar {
-  flex-shrink: 0;
-  width: 68px;
+/* ── Color bar (8px urgency stripe) ─────────────────────────────────────── */
+.gtd-color-bar {
+  align-self: stretch;
+}
+.gtd-color-bar--overdue { background: #dc2626; }
+.gtd-color-bar--soon    { background: #2563eb; }
+.gtd-color-bar--future  { background: #aaaaaa; }
+
+/* ── Due Status text column ─────────────────────────────────────────────── */
+.gtd-due-status-text {
   font-size: 13px;
   font-weight: 600;
-  padding: 2px 0 2px 8px;
-  border-left: 3px solid transparent;
   white-space: nowrap;
-  align-self: center;
-  display: flex;
-  align-items: center;
+  align-self: start;
+  padding-top: 3px;
 }
-.gtd-due-status--none    { border-left-color: transparent; color: transparent; }
-.gtd-due-status--overdue { border-left-color: #dc2626; color: #dc2626; }
-.gtd-due-status--soon    { border-left-color: #2563eb; color: #2563eb; }
-.gtd-due-status--future  { border-left-color: #aaaaaa; color: #888888; }
+.gtd-due-status--overdue { color: #dc2626; }
+.gtd-due-status--soon    { color: #2563eb; }
+.gtd-due-status--future  { color: #888888; }
 
 .gtd-status-rect-btn {
   border: none;
@@ -1576,7 +1572,6 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  flex-shrink: 0;
 }
 
 .gtd-grow-edit-btn {
@@ -1609,67 +1604,76 @@
 
 /* ── Critical date row ──────────────────────────────────────────────────── */
 .gtd-cd-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 144px 1fr 280px 36px 110px 8px 80px 120px 28px 28px;
+  column-gap: 10px;
   align-items: center;
-  gap: 9px;
-  padding: 7px 11px 7px 14px;
+  padding: 7px 14px;
   background: rgba(221, 234, 255, 0.75);
   border-top: 1px solid rgba(184, 208, 248, 0.75);
   border-bottom: 1px solid rgba(184, 208, 248, 0.75);
-  width: 100%;
   box-sizing: border-box;
+}
+.gtd-cd-row--flat {
+  grid-template-columns: 144px 1fr 280px 160px 36px 110px 8px 80px 120px 28px 28px;
 }
 .gtd-cd-row + .gtd-cd-row { border-top: none; }
 .gtd-cd-row:last-child { border-bottom: none; }
 
 .gtd-cd-label {
-  flex: 1;
+  grid-column: 1 / 4;
   font-size: 12px;
   font-weight: 700;
   color: #1a3d82;
   white-space: normal;
   word-break: break-word;
-  padding-left: 200px;
 }
-
-.gtd-cd-countdown {
-  font-size: 11px;
-  font-weight: 700;
-  color: #1a3d82;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.gtd-cd-date {
-  font-size: 11px;
-  color: #2c5aa0;
-  font-weight: 600;
-  flex-shrink: 0;
-  margin-left: auto;
-  text-align: right;
-  white-space: nowrap;
-}
-
-.gtd-cd-del-btn {
-  flex-shrink: 0;
-  margin-left: 4px;
-  opacity: 0;
-  transition: opacity 0.1s;
-}
-.gtd-cd-row:hover .gtd-cd-del-btn { opacity: 1; }
 
 .gtd-cd-flat-addr {
+  grid-column: 4;
   font-size: 9px;
   color: #2c5aa0;
   font-weight: 500;
-  flex-shrink: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 120px;
   opacity: 0.75;
   font-style: italic;
 }
+
+.gtd-cd-date {
+  grid-column: 5;
+  font-size: 11px;
+  color: #2c5aa0;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+.gtd-cd-row--flat .gtd-cd-date { grid-column: 6; }
+
+.gtd-cd-color-bar {
+  grid-column: 6;
+  align-self: stretch;
+}
+.gtd-cd-row--flat .gtd-cd-color-bar { grid-column: 7; }
+
+.gtd-cd-countdown {
+  grid-column: 7;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a3d82;
+  white-space: nowrap;
+}
+.gtd-cd-row--flat .gtd-cd-countdown { grid-column: 8; }
+
+.gtd-cd-del-btn {
+  grid-column: 10;
+  opacity: 0;
+  transition: opacity 0.1s;
+  justify-self: center;
+}
+.gtd-cd-row--flat .gtd-cd-del-btn { grid-column: 11; }
+.gtd-cd-row:hover .gtd-cd-del-btn { opacity: 1; }
 
 /* ── Add task row ───────────────────────────────────────────────────────── */
 .gtd-add-task-row {
@@ -1846,34 +1850,28 @@
 }
 .gtd-edit-save:hover { background: #333; }
 
-/* ── Action column (vendor dropdown + links) ─────────────────────────────── */
+/* ── Action column (vendor dropdown + progress dates) ────────────────────── */
 .gtd-grow-action-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.gtd-action-vendor-row {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 6px;
-  flex-shrink: 0;
-  width: 200px;
-  max-width: 200px;
-  overflow: hidden;
+  flex-wrap: wrap;
 }
 
-/* ── Progress Date column ────────────────────────────────────────────────── */
-.gtd-progress-date-col {
+.gtd-action-progress-row {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  align-items: flex-start;
-  flex-shrink: 0;
-  max-width: 200px;
-  overflow: hidden;
-}
-
-.gtd-progress-date-row {
-  display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 6px;
-  width: 100%;
+  gap: 8px;
 }
 
 .gtd-progress-date-label {
@@ -1904,8 +1902,6 @@
 
 /* ── Transaction Address column (flat list mode) ─────────────────────────── */
 .gtd-grow-addr-col {
-  flex-shrink: 0;
-  width: 160px;
   font-size: 12px;
   color: #555;
   font-weight: 500;

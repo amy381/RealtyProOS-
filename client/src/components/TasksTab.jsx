@@ -86,8 +86,8 @@ function dueDateLabel(dateStr, isDone, completedAt) {
   const abs   = Math.abs(diff)
   if (diff < 0)   return { text: `${abs} day${abs !== 1 ? 's' : ''} overdue`, cls: 'overdue' }
   if (diff === 0) return { text: 'Due Today',  cls: 'today'    }
-  if (diff <= 3)  return { text: `Due in ${diff}`, cls: 'soon' }
-  return             { text: `Due in ${diff}`, cls: 'upcoming' }
+  if (diff <= 3)  return { text: `${diff} day${diff !== 1 ? 's' : ''}`, cls: 'soon' }
+  return             { text: `${diff} days`, cls: 'upcoming' }
 }
 
 function startOfWeek() {

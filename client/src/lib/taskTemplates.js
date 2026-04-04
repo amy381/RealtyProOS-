@@ -32,6 +32,7 @@ export function calcDueDate(timingType, timingDays, tx) {
     case 'days_before_ipe':            return addDays(tx.ipe_date, -days)
     case 'days_after_ipe':             return addDays(tx.ipe_date, days)
     case 'days_after_binsr':           return addDays(tx.binsr_submitted_date, days)
+    case 'days_after_home_inspection': return addDays(tx.home_inspection_date, days)
     case 'specific_date':              return null
     default:                           return null
   }

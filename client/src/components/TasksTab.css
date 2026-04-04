@@ -767,6 +767,7 @@
   line-height: 1;
   transition: color 0.1s, background 0.1s;
   flex-shrink: 0;
+  margin-left: auto;
 }
 .gtd-cmt-btn:hover { color: #888; background: #f0f0f0; }
 .gtd-cmt-btn.active { color: #2563eb; }
@@ -1537,7 +1538,7 @@
   padding: 2px 0 2px 8px;
   border-left: 3px solid transparent;
   white-space: nowrap;
-  align-self: stretch;
+  align-self: center;
   display: flex;
   align-items: center;
 }

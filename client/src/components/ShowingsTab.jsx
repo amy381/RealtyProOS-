@@ -85,41 +85,6 @@ export default function ShowingsTab({ transactions }) {
     setAddForm(EMPTY_SHOWING)
   }
 
-  const sendEmail = async ({ toEmail, toName, subject, body, emailingKey, txAddr, templateId }) => {
-    const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
-    const TEMPLATE_ID = templateId || import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-    const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-    console.log('[sendEmail] templateId param:', templateId)
-    console.log('[sendEmail] VITE_EMAILJS_FEEDBACK_TEMPLATE_ID:', import.meta.env.VITE_EMAILJS_FEEDBACK_TEMPLATE_ID)
-    console.log('[sendEmail] resolved TEMPLATE_ID:', TEMPLATE_ID)
-    console.log('[sendEmail] subject:', subject)
-    setEmailingId(emailingKey)
-    try {
-      if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
-        toast.success(`[Demo] Would email "${toName}" at ${toEmail}`)
-        return true
-      }
-      const { default: emailjs } = await import('@emailjs/browser')
-      await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-        to_email:         toEmail,
-        to_name:          toName,
-        subject,
-        task_title:       subject,
-        mention_notes:    body,
-        message:          body,
-        address:          txAddr || '',
-        transaction_addr: txAddr || '',
-      }, PUBLIC_KEY)
-      toast.success('Email sent')
-      return true
-    } catch (err) {
-      toast.error('Email failed: ' + (err?.text || err?.message || 'Unknown error'))
-      return false
-    } finally {
-      setEmailingId(null)
-    }
-  }
-
   const htmlToText = (html) => {
     if (!html) return ''
     return html
@@ -161,7 +126,28 @@ export default function ShowingsTab({ transactions }) {
     const bodyNoGreeting = rawBody.replace(/^Hi\s+[^,\n]*,?\s*\n+/i, '')
     const body = `Hi ${agentName},\n\n${bodyNoGreeting}`
 
-    const sent = await sendEmail({ toEmail, toName: agentName, subject, body, emailingKey: `${s.id}_agent`, txAddr: addr, templateId: import.meta.env.VITE_EMAILJS_FEEDBACK_TEMPLATE_ID })
+    const htmlBody = body.replace(/\n/g, '<br>')
+    setEmailingId(`${s.id}_agent`)
+    let sent = false
+    try {
+      const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
+      const gmailRes = await fetch(`${API_BASE}/api/google/gmail-send`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: toEmail, subject, body: htmlBody, transactionId: s.transaction_id }),
+      })
+      const result = await gmailRes.json()
+      if (!gmailRes.ok) {
+        toast.error('Email failed: ' + (result.error || 'Unknown error'))
+      } else {
+        toast.success('Email sent')
+        sent = true
+      }
+    } catch (err) {
+      toast.error('Email failed: ' + (err.message || 'Unknown error'))
+    } finally {
+      setEmailingId(null)
+    }
     if (sent) {
       const now = new Date().toISOString()
       const { error } = await supabase

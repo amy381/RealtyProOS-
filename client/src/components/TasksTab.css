@@ -763,9 +763,10 @@
   border-radius: 5px;
   cursor: pointer;
   color: #d0d0d0;
-  font-size: 24px;
+  font-size: 21px;
   line-height: 1;
   transition: color 0.1s, background 0.1s;
+  flex-shrink: 0;
 }
 .gtd-cmt-btn:hover { color: #888; background: #f0f0f0; }
 .gtd-cmt-btn.active { color: #2563eb; }
@@ -1527,22 +1528,23 @@
   padding-top: 1px;
 }
 
-/* ── Due Status urgency column — full colored block spanning row height ─── */
+/* ── Due Status urgency column — plain text, colored left-border divider ─── */
 .gtd-due-status-bar {
   flex-shrink: 0;
   width: 68px;
   font-size: 13px;
   font-weight: 600;
-  padding: 4px 6px;
+  padding: 2px 0 2px 8px;
+  border-left: 3px solid transparent;
   white-space: nowrap;
   align-self: stretch;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
 }
-.gtd-due-status--none    { background: transparent; color: transparent; }
-.gtd-due-status--overdue { background: #dc2626; color: #fff; }
-.gtd-due-status--soon    { background: #2563eb; color: #fff; }
-.gtd-due-status--future  { background: #e8e8e8; color: #666; }
+.gtd-due-status--none    { border-left-color: transparent; color: transparent; }
+.gtd-due-status--overdue { border-left-color: #dc2626; color: #dc2626; }
+.gtd-due-status--soon    { border-left-color: #2563eb; color: #2563eb; }
+.gtd-due-status--future  { border-left-color: #aaaaaa; color: #888888; }
 
 .gtd-status-rect-btn {
   border: none;
@@ -1642,10 +1644,9 @@
   color: #2c5aa0;
   font-weight: 600;
   flex-shrink: 0;
-  width: 100px;
+  margin-left: auto;
   text-align: right;
   white-space: nowrap;
-  margin-right: 214px;
 }
 
 .gtd-cd-del-btn {
@@ -1859,21 +1860,23 @@
 /* ── Progress Date column ────────────────────────────────────────────────── */
 .gtd-progress-date-col {
   display: flex;
-  flex-direction: row;
-  gap: 10px;
-  align-items: center;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
   flex-shrink: 0;
-  width: 180px;
+  max-width: 200px;
+  overflow: hidden;
 }
 
 .gtd-progress-date-row {
   display: flex;
   align-items: center;
   gap: 6px;
+  width: 100%;
 }
 
 .gtd-progress-date-label {
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 600;
   color: #4a7fd4;
   text-transform: uppercase;
@@ -1884,7 +1887,7 @@
 }
 
 .gtd-progress-date-input {
-  font-size: 12px;
+  font-size: 11px;
   font-family: inherit;
   color: #333;
   border: 1px solid #d0d9f0;
@@ -1893,6 +1896,7 @@
   background: #f5f8ff;
   cursor: pointer;
   outline: none;
+  width: 100%;
 }
 .gtd-progress-date-input:hover,
 .gtd-progress-date-input:focus { border-color: #4a7fd4; background: #eef4ff; }

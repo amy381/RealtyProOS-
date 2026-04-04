@@ -1320,7 +1320,7 @@
 /* ── Column header row ──────────────────────────────────────────────────── */
 .gtd-col-header-row {
   display: grid;
-  grid-template-columns: 144px minmax(0, 580px) 360px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 580px) 596px 36px 110px 8px 80px 120px 28px 28px;
   column-gap: 10px;
   align-items: center;
   padding: 7px 14px;
@@ -1333,7 +1333,7 @@
   flex-shrink: 0;
 }
 .gtd-col-header-row--flat {
-  grid-template-columns: 144px minmax(0, 580px) 360px 160px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 580px) 596px 160px 36px 110px 8px 80px 120px 28px 28px;
 }
 
 .gtd-col-hdr {
@@ -1375,16 +1375,18 @@
 /* ── Global task row ────────────────────────────────────────────────────── */
 .gtd-grow {
   display: grid;
-  grid-template-columns: 144px minmax(0, 580px) 360px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 580px) 596px 36px 110px 8px 80px 120px 28px 28px;
   column-gap: 10px;
   align-items: start;
   padding: 10px 14px;
   border-bottom: 1px solid #f4f4f4;
-  min-height: 44px;
+  min-height: 38px;
+  max-height: 38px;
+  overflow: hidden;
   transition: background 0.08s;
 }
 .gtd-grow--flat {
-  grid-template-columns: 144px minmax(0, 580px) 360px 160px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 580px) 596px 160px 36px 110px 8px 80px 120px 28px 28px;
 }
 .gtd-grow:last-child { border-bottom: none; }
 .gtd-grow-even { background: #f9f9f9; }
@@ -1526,9 +1528,10 @@
 .gtd-color-bar {
   align-self: stretch;
 }
-.gtd-color-bar--overdue { background: #dc2626; }
-.gtd-color-bar--soon    { background: #2563eb; }
-.gtd-color-bar--future  { background: #aaaaaa; }
+.gtd-color-bar--overdue  { background: #dc2626; }
+.gtd-color-bar--soon     { background: #2563eb; }
+.gtd-color-bar--future   { background: #aaaaaa; }
+.gtd-color-bar--upcoming { background: #aaaaaa; }
 
 /* ── Due Status text column ─────────────────────────────────────────────── */
 .gtd-due-status-text {
@@ -1604,7 +1607,7 @@
 /* ── Critical date row ──────────────────────────────────────────────────── */
 .gtd-cd-row {
   display: grid;
-  grid-template-columns: 144px minmax(0, 580px) 360px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 580px) 596px 36px 110px 8px 80px 120px 28px 28px;
   column-gap: 10px;
   align-items: center;
   padding: 7px 14px;
@@ -1612,9 +1615,12 @@
   border-top: 1px solid rgba(184, 208, 248, 0.75);
   border-bottom: 1px solid rgba(184, 208, 248, 0.75);
   box-sizing: border-box;
+  min-height: 38px;
+  max-height: 38px;
+  overflow: hidden;
 }
 .gtd-cd-row--flat {
-  grid-template-columns: 144px minmax(0, 580px) 360px 160px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 580px) 596px 160px 36px 110px 8px 80px 120px 28px 28px;
 }
 .gtd-cd-row + .gtd-cd-row { border-top: none; }
 .gtd-cd-row:last-child { border-bottom: none; }
@@ -1630,7 +1636,7 @@
 
 .gtd-cd-flat-addr {
   grid-column: 4;
-  font-size: 9px;
+  font-size: 13px;
   color: #2c5aa0;
   font-weight: 500;
   white-space: nowrap;
@@ -1852,9 +1858,9 @@
 /* ── Action column (vendor dropdown + progress dates) ────────────────────── */
 .gtd-grow-action-col {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
   overflow: hidden;
 }

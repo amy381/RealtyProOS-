@@ -80,7 +80,7 @@ const HTML_SHELL_OPEN = `<!DOCTYPE html>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LegacyOS</title>
-  <script type="text/javascript" src="https://eia.followupboss.com/v1.0.1.js"></script>
+  <script type="text/javascript" src="https://eia.followupboss.com/embeddedApps-v1.0.0.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {

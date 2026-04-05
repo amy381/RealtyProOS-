@@ -353,6 +353,10 @@ function FubInlineSearch({ onSelect, onClose }) {
   }
 
   const handleSelect = async (person) => {
+    if (person._via) {
+      onSelect({ _isRelationship: true, client2: { first_name: person.first_name, last_name: person.last_name, email: person.email, phone: person.phone } })
+      return
+    }
     if (person.id) {
       const full = await fetchFubPerson(person.id)
       if (full) { onSelect(full); return }
@@ -1768,7 +1772,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               phone={transaction.client2_phone || ''}
               tabIndex={17}
               onFubSelect={(result) => {
-                const p = result?.client1
+                const p = result._isRelationship ? result.client2 : result?.client1
                 if (!p) return
                 save('client2_first_name')(p.first_name || '')
                 save('client2_last_name')(p.last_name   || '')

@@ -449,7 +449,7 @@
   border: 1px solid #e8e8e8;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
   margin-bottom: 18px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .txp-section-title {
@@ -461,6 +461,7 @@
   padding: 13px 18px 11px;
   border-bottom: 1px solid #f0f0f0;
   background: #fafafa;
+  border-radius: 10px 10px 0 0;
 }
 
 /* ─── Pending Contract Dates section ────────────────────────────────────────── */

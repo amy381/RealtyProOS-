@@ -1,4 +1,4 @@
-const LOGO_URL = 'https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo.png'
+const LOGO_URL = 'https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo-v2.png'
 
 /**
  * Wraps an HTML (or plain-text) body in a branded LegacyOS email shell.

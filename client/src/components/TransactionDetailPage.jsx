@@ -338,7 +338,7 @@ function FubInlineSearch({ onSelect, onClose }) {
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [onClose])
+  }, [])
 
   const handleChange = (val) => {
     setQuery(val)

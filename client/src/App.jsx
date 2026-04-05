@@ -749,10 +749,8 @@ export default function App() {
       <header className="app-header">
         <div className="header-left">
           <div className="logo">
-            <span className="logo-icon">🏠</span>
-            <span className="logo-text">Legacy<span className="logo-os">OS</span></span>
+            <img src="https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo.png" alt="LegacyOS" height="44" style={{ width: 'auto' }} />
           </div>
-          <span className="header-subtitle">Transaction Management</span>
         </div>
         <div className="app-tabs">
           {[

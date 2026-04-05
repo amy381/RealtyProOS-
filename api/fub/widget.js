@@ -74,17 +74,7 @@ function buildCard(tx) {
   return `<div class="card">${addrHtml}<span class="stage">${label}</span>${rows}</div>`
 }
 
-function buildPage(transactions, person) {
-  const newTxUrl = `https://realty-pro-os.vercel.app/?newTransaction=true` +
-    `&fubContactId=${encodeURIComponent(person.id)}` +
-    `&name=${encodeURIComponent(person.name || '')}` +
-    `&email=${encodeURIComponent(person.email || '')}`
-
-  const bodyHtml = transactions.length > 0
-    ? transactions.map(buildCard).join('')
-    : `<p class="empty">No active transaction found.</p>`
-
-  return `<!DOCTYPE html>
+const HTML_SHELL_OPEN = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -147,6 +137,17 @@ function buildPage(transactions, person) {
       text-align: center;
       padding: 20px 0 12px;
     }
+    .msg {
+      color: #697175;
+      text-align: center;
+      padding: 20px 0;
+      font-size: 13px;
+    }
+    .err {
+      color: #c0392b;
+      padding: 16px 0;
+      font-size: 13px;
+    }
     .btn-new {
       display: block;
       width: 100%;
@@ -165,11 +166,24 @@ function buildPage(transactions, person) {
     .btn-new:hover { background: #3a5070; }
   </style>
 </head>
-<body>
-  ${bodyHtml}
-  <a class="btn-new" href="${newTxUrl}" target="_blank" rel="noopener noreferrer">+ New Transaction</a>
-</body>
+<body>`
+
+const HTML_SHELL_CLOSE = `</body>
 </html>`
+
+function buildPage(transactions, person) {
+  const newTxUrl = `https://realty-pro-os.vercel.app/?newTransaction=true` +
+    `&fubContactId=${encodeURIComponent(person.id)}` +
+    `&name=${encodeURIComponent(person.name || '')}` +
+    `&email=${encodeURIComponent(person.email || '')}`
+
+  const bodyHtml = transactions.length > 0
+    ? transactions.map(buildCard).join('')
+    : `<p class="empty">No active transaction found.</p>`
+
+  return HTML_SHELL_OPEN +
+    `\n  ${bodyHtml}\n  <a class="btn-new" href="${newTxUrl}" target="_blank" rel="noopener noreferrer">+ New Transaction</a>\n` +
+    HTML_SHELL_CLOSE
 }
 
 module.exports = async function handler(req, res) {
@@ -181,21 +195,26 @@ module.exports = async function handler(req, res) {
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
 
   // Decode FUB context
-  let person
+  let person = null
   try {
-    const raw = Buffer.from(req.query.context || '', 'base64').toString('utf-8')
-    const ctx  = JSON.parse(raw)
-    person = {
-      id:    ctx?.person?.id,
-      name:  ctx?.person?.name  || '',
-      email: ctx?.person?.emails?.[0]?.value || '',
+    const raw = req.query.context ? Buffer.from(req.query.context, 'base64').toString('utf-8') : ''
+    if (raw) {
+      const ctx = JSON.parse(raw)
+      person = {
+        id:    ctx?.person?.id   || null,
+        name:  ctx?.person?.name || '',
+        email: ctx?.person?.emails?.[0]?.value || '',
+      }
+      if (!person.id) person = null
     }
-    if (!person.id) throw new Error('Missing person.id in context')
-  } catch (err) {
-    return res.status(200).end(`<!DOCTYPE html><html><body style="font-family:sans-serif;padding:16px;color:#c0392b;">
-      <p>Could not read FUB contact context.</p>
-      <small style="color:#999;">${err.message}</small>
-    </body></html>`)
+  } catch { person = null }
+
+  if (!person) {
+    return res.status(200).end(
+      HTML_SHELL_OPEN +
+      `\n  <p class="msg">Open a contact in Follow Up Boss to view their transactions.</p>\n` +
+      HTML_SHELL_CLOSE
+    )
   }
 
   // Query Supabase
@@ -210,10 +229,11 @@ module.exports = async function handler(req, res) {
     if (error) throw error
     transactions = data || []
   } catch (err) {
-    return res.status(200).end(`<!DOCTYPE html><html><body style="font-family:sans-serif;padding:16px;color:#c0392b;">
-      <p>Database error.</p>
-      <small style="color:#999;">${err.message}</small>
-    </body></html>`)
+    return res.status(200).end(
+      HTML_SHELL_OPEN +
+      `\n  <p class="err">Database error: ${err.message}</p>\n` +
+      HTML_SHELL_CLOSE
+    )
   }
 
   return res.status(200).end(buildPage(transactions, person))

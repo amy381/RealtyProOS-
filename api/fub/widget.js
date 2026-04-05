@@ -200,9 +200,11 @@ module.exports = async function handler(req, res) {
     const raw = req.query.context ? Buffer.from(req.query.context, 'base64').toString('utf-8') : ''
     if (raw) {
       const ctx = JSON.parse(raw)
+      const firstName = ctx?.person?.firstName || ''
+      const lastName  = ctx?.person?.lastName  || ''
       person = {
-        id:    ctx?.person?.id   || null,
-        name:  ctx?.person?.name || '',
+        id:    ctx?.person?.id || null,
+        name:  [firstName, lastName].filter(Boolean).join(' '),
         email: ctx?.person?.emails?.[0]?.value || '',
       }
       if (!person.id) person = null

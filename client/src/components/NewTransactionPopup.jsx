@@ -70,7 +70,7 @@ function FubSearch({ onSelect }) {
     setResults([])
     setOpen(false)
     if (person._via) {
-      onSelect({ client1: { first_name: person.first_name, last_name: person.last_name, phone: person.phone, email: person.email }, related: [] })
+      onSelect({ _isRelationship: true, client2: { first_name: person.first_name, last_name: person.last_name, phone: person.phone, email: person.email } })
       return
     }
     if (person.id) {
@@ -161,6 +161,12 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
   }
 
   const handleFubSelect = (result) => {
+    if (result._isRelationship) {
+      const p = result.client2
+      if (!p) return
+      setClient2({ first_name: p.first_name || '', last_name: p.last_name || '', phone: p.phone || '', email: p.email || '' })
+      return
+    }
     const p = result?.client1
     if (!p) return
     setClient1({ first_name: p.first_name || '', last_name: p.last_name || '', phone: p.phone || '', email: p.email || '', id: p.id ?? null })

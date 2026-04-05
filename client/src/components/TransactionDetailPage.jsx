@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { wrapEmailBody } from '../lib/emailWrapper'
 import { formatPhone, formatApn } from '../lib/formatters'
 import { mouseDownIsInside } from '../lib/dragGuard'
 import TaskCommentPanel from './TaskCommentPanel'
@@ -1329,7 +1330,7 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
         body: JSON.stringify({
           to:            recipients.map(r => r.email),
           subject,
-          body:          htmlBody,
+          body:          wrapEmailBody(htmlBody),
           transactionId: transaction.id,
         }),
       })
@@ -2797,7 +2798,7 @@ function ShowingsSection({ transaction }) {
       const gmailRes = await fetch(`${API_BASE}/api/google/gmail-send`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: toEmail, subject, body: htmlBody, transactionId: transaction.id }),
+        body: JSON.stringify({ to: toEmail, subject, body: wrapEmailBody(htmlBody), transactionId: transaction.id }),
       })
       const result = await gmailRes.json()
       if (!gmailRes.ok) {
@@ -2865,7 +2866,7 @@ function ShowingsSection({ transaction }) {
       const gmailRes = await fetch(`${API_BASE}/api/google/gmail-send`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: toEmail, subject, body: htmlBody, transactionId: transaction.id }),
+        body: JSON.stringify({ to: toEmail, subject, body: wrapEmailBody(htmlBody), transactionId: transaction.id }),
       })
       const result = await gmailRes.json()
       if (!gmailRes.ok) {

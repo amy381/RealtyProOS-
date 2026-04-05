@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
+import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import './ShowingsTab.css'
 
@@ -134,7 +135,7 @@ export default function ShowingsTab({ transactions }) {
       const gmailRes = await fetch(`${API_BASE}/api/google/gmail-send`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: toEmail, subject, body: htmlBody, transactionId: s.transaction_id }),
+        body: JSON.stringify({ to: toEmail, subject, body: wrapEmailBody(htmlBody), transactionId: s.transaction_id }),
       })
       const result = await gmailRes.json()
       if (!gmailRes.ok) {

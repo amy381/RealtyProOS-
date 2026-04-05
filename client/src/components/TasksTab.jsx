@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import { mouseDownIsInside } from '../lib/dragGuard'
 import TaskCommentPanel from './TaskCommentPanel'
@@ -241,7 +242,7 @@ function VendorEmailModal({ vendor, tx, onClose }) {
         body: JSON.stringify({
           to:            vendor.email,
           subject,
-          body:          htmlBody,
+          body:          wrapEmailBody(htmlBody),
           transactionId: tx?.id || undefined,
         }),
       })
@@ -327,7 +328,7 @@ function VendorFormModal({ vendor, tx, task, tcSettings, onClose, onTaskUpdate }
         body: JSON.stringify({
           to:            vendor.email,
           subject,
-          body:          htmlBody,
+          body:          wrapEmailBody(htmlBody),
           transactionId: tx?.id || undefined,
         }),
       })
@@ -1200,7 +1201,7 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
           to:            row.to_email,
           cc:            row.cc     || undefined,
           subject:       row.subject,
-          body:          htmlBody,
+          body:          wrapEmailBody(htmlBody),
           transactionId: row.transaction_id || undefined,
         }),
       })

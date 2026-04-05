@@ -119,7 +119,7 @@ function FubSearch({ onSelect }) {
 }
 
 // ─── Main popup ───────────────────────────────────────────────────────────────
-export default function NewTransactionPopup({ onCreate, onClose }) {
+export default function NewTransactionPopup({ onCreate, onClose, prefill = null }) {
   const [repType,  setRepType]  = useState('Seller')
   const [status,   setStatus]   = useState('pre-listing')
   const [propType, setPropType] = useState('')
@@ -143,6 +143,17 @@ export default function NewTransactionPopup({ onCreate, onClose }) {
 
   const isSeller = repType === 'Seller'
   const stages   = isSeller ? SELLER_STAGES : BUYER_STAGES
+
+  useEffect(() => {
+    if (!prefill) return
+    setClient1({
+      first_name: prefill.first_name || '',
+      last_name:  prefill.last_name  || '',
+      email:      prefill.email      || '',
+      phone:      '',
+      id:         prefill.fubContactId ?? null,
+    })
+  }, [prefill])
 
   const handleTypeChange = (t) => {
     setRepType(t)

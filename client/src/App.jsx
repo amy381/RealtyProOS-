@@ -66,6 +66,7 @@ export default function App() {
   const [backMoveModal,    setBackMoveModal]    = useState(null)
   const [loading, setLoading]                   = useState(true)
   const [newTxOpen, setNewTxOpen]               = useState(false)
+  const [newTxPrefill, setNewTxPrefill]         = useState(null)
   const [modalOpen, setModalOpen]               = useState(false)
   const [settingsOpen, setSettingsOpen]         = useState(false)
   const [editingTransaction, setEditingTransaction] = useState(null)
@@ -126,6 +127,25 @@ export default function App() {
     const params = new URLSearchParams(window.location.search)
     if (params.get('drive_connected') === '1') {
       toast.success('Google Drive connected!')
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
+
+  // Open New Transaction popup pre-filled when launched from FUB widget
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('newTransaction') === 'true') {
+      const fubContactId = params.get('fubContactId')
+      const name         = params.get('name') || ''
+      const email        = params.get('email') || ''
+      const [firstName, ...rest] = name.trim().split(' ')
+      setNewTxPrefill({
+        fubContactId: fubContactId ? Number(fubContactId) : null,
+        first_name:   firstName || '',
+        last_name:    rest.join(' '),
+        email,
+      })
+      setNewTxOpen(true)
       window.history.replaceState({}, '', window.location.pathname)
     }
   }, [])
@@ -885,7 +905,8 @@ export default function App() {
       {newTxOpen && (
         <NewTransactionPopup
           onCreate={handleCreateTransaction}
-          onClose={() => setNewTxOpen(false)}
+          onClose={() => { setNewTxOpen(false); setNewTxPrefill(null) }}
+          prefill={newTxPrefill}
         />
       )}
 

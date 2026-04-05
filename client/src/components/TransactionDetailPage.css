@@ -674,6 +674,28 @@ select.txp-input { cursor: pointer; }
 .txp-fub-via   { font-size: 14px; color: #bbb; font-style: italic; flex-shrink: 0; }
 .txp-fub-loading, .txp-fub-empty { padding: 12px 14px; font-size: 16px; color: #999999; white-space: nowrap; }
 
+.txp-fub-rel-prompt {
+  padding: 10px 14px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #999999;
+}
+.txp-fub-rel-skip {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  border-top: 1px solid #f0f0f0;
+  font-size: 14px;
+  color: #aaaaaa;
+  text-align: left;
+  cursor: pointer;
+}
+.txp-fub-rel-skip:hover { background: #f7f7f7; color: #555555; }
+
 /* ─── Checkboxes (property features) ──────────────────────────────────────────── */
 .txp-checks-row {
   display: flex;

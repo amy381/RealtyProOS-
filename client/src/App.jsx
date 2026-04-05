@@ -749,7 +749,11 @@ export default function App() {
       <header className="app-header">
         <div className="header-left">
           <div className="logo">
-            <img src="https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo-nav.png" alt="LegacyOS" style={{ height: '44px', width: 'auto' }} />
+            <img
+              src="https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo-nav.png"
+              alt="LegacyOS"
+              style={{ height: '44px', width: 'auto' }}
+            />
           </div>
         </div>
         <div className="app-tabs">

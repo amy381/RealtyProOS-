@@ -90,6 +90,7 @@ function buildPage(transactions, person) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LegacyOS</title>
+  <script type="text/javascript" src="https://eia.followupboss.com/v1.0.1.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -175,7 +176,8 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end('Method not allowed')
 
   // Allow FUB to load this page in an iframe
-  res.setHeader('X-Frame-Options', 'ALLOWALL')
+  res.removeHeader('X-Frame-Options')
+  res.setHeader('Content-Security-Policy', 'frame-ancestors *')
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
 
   // Decode FUB context

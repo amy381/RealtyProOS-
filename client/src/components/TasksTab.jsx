@@ -4,6 +4,7 @@ import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import { mouseDownIsInside } from '../lib/dragGuard'
 import TaskCommentPanel from './TaskCommentPanel'
+import VendorFormPreviewModal from './VendorFormPreviewModal'
 import { useGmailStatus } from '../lib/useGmailStatus'
 import './TasksTab.css'
 
@@ -427,6 +428,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
   const [titleDraft,      setTitleDraft]      = useState(task.title || '')
   const [vendorFormOpen,  setVendorFormOpen]  = useState(false)
   const [vendorEmailOpen, setVendorEmailOpen] = useState(false)
+  const [vendorPdfOpen,   setVendorPdfOpen]   = useState(false)
   useEffect(() => { setTitleDraft(task.title || '') }, [task.title])
 
   const vendorType     = getVendorTypeForTask(task.title)
@@ -566,7 +568,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
             {selectedVendor && (
               <>
                 {selectedVendor.contact_method === 'PDF Form + Email' && (
-                  <button className="gtd-vendor-action" onClick={() => setVendorFormOpen(true)}>
+                  <button className="gtd-vendor-action" onClick={() => setVendorPdfOpen(true)}>
                     Preview Form ↗
                   </button>
                 )}
@@ -711,6 +713,14 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
           vendor={selectedVendor}
           tx={tx}
           onClose={() => setVendorEmailOpen(false)}
+        />
+      )}
+      {vendorPdfOpen && selectedVendor && (
+        <VendorFormPreviewModal
+          taskId={task.id}
+          vendorId={selectedVendor.id}
+          tx={tx}
+          onClose={() => setVendorPdfOpen(false)}
         />
       )}
     </div>
@@ -1207,6 +1217,13 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
           subject:       row.subject,
           body:          wrapEmailBody(htmlBody),
           transactionId: row.transaction_id || undefined,
+          ...(row.pdf_data ? {
+            attachments: [{
+              filename:    row.pdf_filename || 'attachment.pdf',
+              contentType: 'application/pdf',
+              data:        row.pdf_data,
+            }],
+          } : {}),
         }),
       })
 

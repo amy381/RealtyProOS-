@@ -11,6 +11,7 @@
     { "src": "/api/google/create-folder",    "dest": "/api/google/create-folder" },
     { "src": "/api/google/gmail-send",       "dest": "/api/google/gmail-send" },
     { "src": "/api/google/gmail-status",     "dest": "/api/google/gmail-status" },
+    { "src": "/api/vendor/fill-pdf",         "dest": "/api/vendor/fill-pdf" },
     { "src": "/api/fub/widget",              "dest": "/api/fub/widget" },
     { "src": "/api/(.*)",                    "dest": "/api/$1" },
     { "handle": "filesystem" },

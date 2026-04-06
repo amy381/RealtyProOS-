@@ -1320,7 +1320,7 @@
 /* ── Column header row ──────────────────────────────────────────────────── */
 .gtd-col-header-row {
   display: grid;
-  grid-template-columns: 144px minmax(0, 500px) 300px 376px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 450px) 350px 376px 36px 110px 8px 80px 120px 28px 28px;
   column-gap: 10px;
   align-items: center;
   padding: 7px 14px;
@@ -1333,7 +1333,7 @@
   flex-shrink: 0;
 }
 .gtd-col-header-row--flat {
-  grid-template-columns: 144px minmax(0, 500px) 300px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 450px) 350px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
 }
 
 .gtd-col-hdr {
@@ -1376,7 +1376,7 @@
 /* ── Global task row ────────────────────────────────────────────────────── */
 .gtd-grow {
   display: grid;
-  grid-template-columns: 144px minmax(0, 500px) 300px 376px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 450px) 350px 376px 36px 110px 8px 80px 120px 28px 28px;
   column-gap: 10px;
   align-items: start;
   padding: 10px 14px;
@@ -1387,7 +1387,7 @@
   transition: background 0.08s;
 }
 .gtd-grow--flat {
-  grid-template-columns: 144px minmax(0, 500px) 300px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 450px) 350px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
 }
 .gtd-grow:last-child { border-bottom: none; }
 .gtd-grow-even { background: #f9f9f9; }
@@ -1608,7 +1608,7 @@
 /* ── Critical date row ──────────────────────────────────────────────────── */
 .gtd-cd-row {
   display: grid;
-  grid-template-columns: 144px minmax(0, 500px) 300px 376px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 450px) 350px 376px 36px 110px 8px 80px 120px 28px 28px;
   column-gap: 10px;
   align-items: center;
   padding: 7px 14px;
@@ -1621,7 +1621,7 @@
   overflow: hidden;
 }
 .gtd-cd-row--flat {
-  grid-template-columns: 144px minmax(0, 500px) 300px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 450px) 350px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
 }
 .gtd-cd-row + .gtd-cd-row { border-top: none; }
 .gtd-cd-row:last-child { border-bottom: none; }

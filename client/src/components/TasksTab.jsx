@@ -2171,7 +2171,7 @@ export default function TasksTab({
               <div className="gtd-col-hdr gtd-col-hdr--cmt" />
               {hdr('due_date',    'Due',         'due')}
               <div className="gtd-col-hdr gtd-col-hdr--color-bar" />
-              <div className="gtd-col-hdr gtd-col-hdr--due-status">Due Status</div>
+              <div className="gtd-col-hdr gtd-col-hdr--due-status"></div>
               <div className="gtd-col-hdr gtd-col-hdr--assignee">Assigned To</div>
               <div className="gtd-col-hdr gtd-col-hdr--acts" />
             </>

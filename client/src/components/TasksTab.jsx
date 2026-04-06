@@ -551,7 +551,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
         )}
       </div>
 
-      {/* 3. Action — vendor dropdown + progress dates */}
+      {/* 3. Action — vendor dropdown + context-sensitive action button only */}
       <div className="gtd-grow-action-col" onClick={e => e.stopPropagation()}>
         {matchedVendors.length > 0 && (
           <div className="gtd-action-vendor-row">
@@ -592,6 +592,10 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
             )}
           </div>
         )}
+      </div>
+
+      {/* 4. Progress — Ordered + Scheduled date inputs (always rendered for consistent column count) */}
+      <div className="gtd-progress-col" onClick={e => e.stopPropagation()}>
         {task.has_progress_tracking && (
           <div className="gtd-action-progress-row">
             <span className="gtd-progress-date-label">Ordered</span>
@@ -612,12 +616,12 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
         )}
       </div>
 
-      {/* 4. Transaction Address — flat list only */}
+      {/* 6. Transaction Address — flat list only */}
       {txAddress != null && (
         <span className="gtd-grow-addr-col" title={txAddress}>{txAddress}</span>
       )}
 
-      {/* 5. Comments */}
+      {/* 7. Comments */}
       <button
         className={`gtd-cmt-btn${commentCount > 0 ? ' active' : ''}`}
         onClick={e => { e.stopPropagation(); onOpenComments() }}
@@ -626,7 +630,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
         💬{commentCount > 0 && <span className="gtd-cmt-count">{commentCount}</span>}
       </button>
 
-      {/* 6. Due date (inline editable) */}
+      {/* 8. Due date (inline editable) */}
       {!done && editingField === 'due' ? (
         <input
           autoFocus
@@ -2145,6 +2149,7 @@ export default function TasksTab({
               {hdr('status',      'Status',      'status')}
               {hdr('title',       'Task',        'task')}
               <div className="gtd-col-hdr gtd-col-hdr--action">Action</div>
+              <div className="gtd-col-hdr gtd-col-hdr--progress">Progress</div>
               {viewMode === 'flat' && hdr('tx_address', 'Transaction', 'addr')}
               <div className="gtd-col-hdr gtd-col-hdr--cmt" />
               {hdr('due_date',    'Due',         'due')}

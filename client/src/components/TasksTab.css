@@ -1320,7 +1320,7 @@
 /* ── Column header row ──────────────────────────────────────────────────── */
 .gtd-col-header-row {
   display: grid;
-  grid-template-columns: 144px minmax(0, 580px) 596px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 500px) 300px 376px 36px 110px 8px 80px 120px 28px 28px;
   column-gap: 10px;
   align-items: center;
   padding: 7px 14px;
@@ -1333,7 +1333,7 @@
   flex-shrink: 0;
 }
 .gtd-col-header-row--flat {
-  grid-template-columns: 144px minmax(0, 580px) 596px 160px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 500px) 300px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
 }
 
 .gtd-col-hdr {
@@ -1367,6 +1367,7 @@
 /* Header text alignment — widths come from the grid template */
 .gtd-col-hdr--status    { text-align: left; }
 .gtd-col-hdr--task      { text-align: left; min-width: 0; }
+.gtd-col-hdr--progress  { text-align: left; }
 .gtd-col-hdr--due       { text-align: right; }
 .gtd-col-hdr--due-status { padding-left: 4px; }
 .gtd-col-hdr--assignee  { text-align: right; }
@@ -1375,7 +1376,7 @@
 /* ── Global task row ────────────────────────────────────────────────────── */
 .gtd-grow {
   display: grid;
-  grid-template-columns: 144px minmax(0, 580px) 596px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 500px) 300px 376px 36px 110px 8px 80px 120px 28px 28px;
   column-gap: 10px;
   align-items: start;
   padding: 10px 14px;
@@ -1386,7 +1387,7 @@
   transition: background 0.08s;
 }
 .gtd-grow--flat {
-  grid-template-columns: 144px minmax(0, 580px) 596px 160px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 500px) 300px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
 }
 .gtd-grow:last-child { border-bottom: none; }
 .gtd-grow-even { background: #f9f9f9; }
@@ -1607,7 +1608,7 @@
 /* ── Critical date row ──────────────────────────────────────────────────── */
 .gtd-cd-row {
   display: grid;
-  grid-template-columns: 144px minmax(0, 580px) 596px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 500px) 300px 376px 36px 110px 8px 80px 120px 28px 28px;
   column-gap: 10px;
   align-items: center;
   padding: 7px 14px;
@@ -1620,13 +1621,13 @@
   overflow: hidden;
 }
 .gtd-cd-row--flat {
-  grid-template-columns: 144px minmax(0, 580px) 596px 160px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: 144px minmax(0, 500px) 300px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
 }
 .gtd-cd-row + .gtd-cd-row { border-top: none; }
 .gtd-cd-row:last-child { border-bottom: none; }
 
 .gtd-cd-label {
-  grid-column: 1 / 4;
+  grid-column: 1 / 5;
   font-size: 13px;
   font-weight: 400;
   color: #1a3d82;
@@ -1635,7 +1636,7 @@
 }
 
 .gtd-cd-flat-addr {
-  grid-column: 4;
+  grid-column: 5;
   font-size: 13px;
   color: #2c5aa0;
   font-weight: 500;
@@ -1647,37 +1648,37 @@
 }
 
 .gtd-cd-date {
-  grid-column: 5;
+  grid-column: 6;
   font-size: 12px;
   color: #2c5aa0;
   font-weight: 400;
   text-align: right;
   white-space: nowrap;
 }
-.gtd-cd-row--flat .gtd-cd-date { grid-column: 6; }
+.gtd-cd-row--flat .gtd-cd-date { grid-column: 7; }
 
 .gtd-cd-color-bar {
-  grid-column: 6;
+  grid-column: 7;
   align-self: stretch;
 }
-.gtd-cd-row--flat .gtd-cd-color-bar { grid-column: 7; }
+.gtd-cd-row--flat .gtd-cd-color-bar { grid-column: 8; }
 
 .gtd-cd-countdown {
-  grid-column: 7;
+  grid-column: 8;
   font-size: 12px;
   font-weight: 400;
   color: #1a3d82;
   white-space: nowrap;
 }
-.gtd-cd-row--flat .gtd-cd-countdown { grid-column: 8; }
+.gtd-cd-row--flat .gtd-cd-countdown { grid-column: 9; }
 
 .gtd-cd-del-btn {
-  grid-column: 10;
+  grid-column: 11;
   opacity: 0;
   transition: opacity 0.1s;
   justify-self: center;
 }
-.gtd-cd-row--flat .gtd-cd-del-btn { grid-column: 11; }
+.gtd-cd-row--flat .gtd-cd-del-btn { grid-column: 12; }
 .gtd-cd-row:hover .gtd-cd-del-btn { opacity: 1; }
 
 /* ── Add task row ───────────────────────────────────────────────────────── */
@@ -1855,7 +1856,7 @@
 }
 .gtd-edit-save:hover { background: #333; }
 
-/* ── Action column (vendor dropdown + progress dates) ────────────────────── */
+/* ── Action column (vendor dropdown + context-sensitive action button only) ── */
 .gtd-grow-action-col {
   display: flex;
   flex-direction: row;
@@ -1871,6 +1872,16 @@
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+/* ── Progress column (Ordered + Scheduled date inputs) ───────────────────── */
+.gtd-progress-col {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .gtd-action-progress-row {

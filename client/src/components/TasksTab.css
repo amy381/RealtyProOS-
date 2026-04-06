@@ -1468,13 +1468,13 @@
 }
 
 .gtd-inline-title-input {
-  font-size: 14px;
+  font-size: 16.8px;
   font-family: inherit;
   color: #1a1a1a;
   border: 1px solid #4a7fd4;
   border-radius: 4px;
   padding: 1px 6px;
-  width: 26%;
+  width: 31.2%;
   outline: none;
   background: #f5f8ff;
   box-sizing: border-box;
@@ -1937,7 +1937,7 @@
 }
 
 .gtd-vendor-select {
-  font-size: 12px;
+  font-size: 14.4px;
   font-family: inherit;
   padding: 3px 6px;
   border: 1px solid #d0d0d0;
@@ -1945,7 +1945,7 @@
   background: #fafafa;
   color: #333;
   cursor: pointer;
-  width: 144px;
+  width: 172.8px;
   min-width: 0;
   flex-shrink: 1;
 }

@@ -19,11 +19,13 @@ function fmtDate(val) {
 // Build the value map from DB rows.
 // seller/buyer are derived from rep_type + client vs opposite_party_name.
 function buildValueMap(tx, agent) {
-  const clientName = [tx.client_first_name, tx.client_last_name].filter(Boolean).join(' ')
-  const isSellerRep = (tx.rep_type || '').toLowerCase() !== 'buyer'
+  const clientName  = [tx.client_first_name, tx.client_last_name].filter(Boolean).join(' ')
+  const isBuyerRep  = (tx.rep_type || '').toLowerCase() === 'buyer'
 
-  const sellerName = isSellerRep ? clientName : (tx.opposite_party_name || '')
-  const buyerName  = isSellerRep ? (tx.opposite_party_name || '') : clientName
+  // Buyer rep:  client = buyer,  opposite party = seller
+  // Seller rep: client = seller, opposite party = buyer
+  const sellerName  = isBuyerRep ? (tx.opposite_party_name || '') : clientName
+  const buyerName   = isBuyerRep ? clientName : (tx.opposite_party_name || '')
 
   return {
     realtor_name:       agent.realtor_name      || '',

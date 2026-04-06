@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import './SettingsModal.css'
 
@@ -10,6 +10,30 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
       daily_digest_enabled:  userSettings[tc.email]?.daily_digest_enabled ?? true,
     }))
   )
+
+  const [agentDraft, setAgentDraft] = useState({
+    realtor_name: '', company: '', realtor_phone: '', realtor_email: ''
+  })
+  const [agentId, setAgentId] = useState(null)
+
+  useEffect(() => {
+    supabase
+      .from('agent_settings')
+      .select('*')
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setAgentId(data.id)
+          setAgentDraft({
+            realtor_name:  data.realtor_name  || '',
+            company:       data.company       || '',
+            realtor_phone: data.realtor_phone || '',
+            realtor_email: data.realtor_email || '',
+          })
+        }
+      })
+  }, [])
 
   const setEmail = (idx, email) => {
     setDraft(prev => prev.map((t, i) => i === idx ? { ...t, email } : t))
@@ -23,7 +47,13 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
     ))
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (agentId) {
+      await supabase
+        .from('agent_settings')
+        .update({ ...agentDraft, updated_at: new Date().toISOString() })
+        .eq('id', agentId)
+    }
     onSave(draft, digestDraft)
     onClose()
   }
@@ -37,6 +67,28 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
         </div>
 
         <div className="settings-body">
+          <div className="settings-section-label">Agent Information</div>
+
+          <div className="settings-fields">
+            {[
+              { label: 'Realtor Name', key: 'realtor_name', type: 'text',  placeholder: 'Your name' },
+              { label: 'Company',      key: 'company',      type: 'text',  placeholder: 'Brokerage name' },
+              { label: 'Phone',        key: 'realtor_phone',type: 'tel',   placeholder: '555-555-5555' },
+              { label: 'Email',        key: 'realtor_email',type: 'email', placeholder: 'you@email.com' },
+            ].map(({ label, key, type, placeholder }) => (
+              <div key={key} className="settings-field-row">
+                <span className="settings-tc-name">{label}</span>
+                <input
+                  type={type}
+                  className="settings-email-input"
+                  placeholder={placeholder}
+                  value={agentDraft[key]}
+                  onChange={e => setAgentDraft(prev => ({ ...prev, [key]: e.target.value }))}
+                />
+              </div>
+            ))}
+          </div>
+
           <div className="settings-section-label">Team Member Email Addresses</div>
           <p className="settings-hint">
             Used for @mention notifications in task notes. Type @Justina or @Victoria in a task note to send an email alert.

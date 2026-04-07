@@ -90,7 +90,7 @@
   font-variant: small-caps;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: rgba(140,170,190,0.22);
+  color: rgba(140,170,190,0.7);
   white-space: nowrap;
   flex-shrink: 0;
 }

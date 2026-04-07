@@ -17,8 +17,8 @@
 .gd-card {
   background: rgba(2,5,18,0.18);
   border: 1px solid rgba(50,200,220,0.12);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   box-shadow: 0 4px 28px rgba(0,0,0,0.5), inset 0 1px 0 rgba(180,210,230,0.04);
   border-radius: 13px;
   padding: 10px 12px 8px;
@@ -91,8 +91,8 @@
 .gd-quarter {
   background: rgba(2,5,18,0.18);
   border: 1px solid rgba(50,200,220,0.12);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border-radius: 13px;
   padding: 8px 12px;
 }

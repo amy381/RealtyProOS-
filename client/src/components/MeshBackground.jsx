@@ -27,17 +27,21 @@ export default function MeshBackground() {
   useEffect(() => {
     // Set body background image
     document.body.style.backgroundImage    = `url(${MESH_BG_URL})`
-    document.body.style.backgroundSize     = '80%'
-    document.body.style.backgroundRepeat   = 'no-repeat'
-    document.body.style.backgroundPosition = 'center center'
+    document.body.style.backgroundSize       = '80%'
+    document.body.style.backgroundRepeat     = 'no-repeat'
+    document.body.style.backgroundPosition   = 'center center'
     document.body.style.backgroundAttachment = 'fixed'
+    document.body.style.webkitMaskImage = 'radial-gradient(ellipse 85% 85% at 50% 50%, black 60%, transparent 100%)'
+    document.body.style.maskImage       = 'radial-gradient(ellipse 85% 85% at 50% 50%, black 60%, transparent 100%)'
 
     return () => {
       document.body.style.backgroundImage    = ''
-      document.body.style.backgroundSize     = ''
-      document.body.style.backgroundRepeat   = ''
-      document.body.style.backgroundPosition = ''
+      document.body.style.backgroundSize       = ''
+      document.body.style.backgroundRepeat     = ''
+      document.body.style.backgroundPosition   = ''
       document.body.style.backgroundAttachment = ''
+      document.body.style.webkitMaskImage = ''
+      document.body.style.maskImage       = ''
     }
   }, [])
 

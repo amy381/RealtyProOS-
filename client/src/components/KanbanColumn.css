@@ -34,8 +34,8 @@
   border-bottom: 1px solid rgba(50,200,220,0.07);
   flex-shrink: 0;
   background: rgba(2,5,18,0.18);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .kanban-column--list .column-header {

@@ -36,6 +36,7 @@
   background: rgba(2,5,18,0.18);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  color: #0d85bb;
 }
 
 .kanban-column--list .column-header {

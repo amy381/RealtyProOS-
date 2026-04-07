@@ -1259,13 +1259,14 @@
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  background: #f7f7f7;
-  border-bottom: 1px solid #ececec;
+  background: rgba(2, 5, 18, 0.6);
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.15);
+  color: #c8d4e0;
   cursor: pointer;
   user-select: none;
   transition: background 0.1s;
 }
-.gtd-tx-header:hover { background: #f0f0f0; }
+.gtd-tx-header:hover { background: rgba(2, 5, 18, 0.75); }
 
 .gtd-tx-collapse {
   font-size: 10px;
@@ -1326,8 +1327,9 @@
   column-gap: 10px;
   align-items: center;
   padding: 7px 14px;
-  background: #f1f4fb;
-  border: 1.5px solid #dde3f0;
+  background: rgba(2, 5, 18, 0.7);
+  border: none;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
   border-radius: 8px;
   position: sticky;
   top: 0;
@@ -1341,7 +1343,7 @@
 .gtd-col-hdr {
   font-size: 12px;
   font-weight: 700;
-  color: #aab;
+  color: rgba(168, 191, 204, 0.6);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   white-space: nowrap;
@@ -1382,7 +1384,7 @@
   column-gap: 10px;
   align-items: start;
   padding: 10px 14px;
-  border-bottom: 1px solid #f4f4f4;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.08);
   min-height: 38px;
   max-height: 38px;
   overflow: hidden;
@@ -1392,10 +1394,10 @@
   grid-template-columns: 144px minmax(0, 450px) 350px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
 }
 .gtd-grow:last-child { border-bottom: none; }
-.gtd-grow-even { background: #f9f9f9; }
+.gtd-grow-even { background: rgba(2, 5, 18, 0.2); }
 .gtd-grow-done { opacity: 0.7; }
-.gtd-grow-selected { background: #e8f0ff !important; }
-.gtd-grow-keydate { background: #fffdf4; }
+.gtd-grow-selected { background: rgba(50, 200, 220, 0.1) !important; }
+.gtd-grow-keydate { background: rgba(212, 120, 30, 0.06); }
 
 .gtd-grow-status-cell {
   display: flex;

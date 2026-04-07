@@ -156,7 +156,7 @@ router.get('/auth', (req, res) => {
     client_id:     clientId,
     redirect_uri:  redirectUri,
     response_type: 'code',
-    scope:         'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/gmail.send',
+    scope:         'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify',
     access_type:   'offline',
     prompt:        'consent',
   })
@@ -228,9 +228,9 @@ router.get('/gmail-status', async (req, res) => {
     const { data } = await getSupabase()
       .from('google_auth').select('refresh_token, scopes').limit(1).single()
     const connected     = !!data?.refresh_token
-    const hasGmailScope = connected && typeof data.scopes === 'string'
-      ? data.scopes.split(' ').includes('https://www.googleapis.com/auth/gmail.send')
-      : false
+    const scopeList     = connected && typeof data.scopes === 'string' ? data.scopes.split(' ') : []
+    const hasGmailScope = scopeList.includes('https://www.googleapis.com/auth/gmail.send') ||
+                          scopeList.includes('https://www.googleapis.com/auth/gmail.modify')
     res.json({ connected, hasGmailScope })
   } catch {
     res.json({ connected: false, hasGmailScope: false })

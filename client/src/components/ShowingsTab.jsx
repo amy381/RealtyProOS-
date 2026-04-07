@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
+import { useSyncSupraShowings } from '../hooks/useSyncSupraShowings'
 import './ShowingsTab.css'
 
 function fmtDate(d) {
@@ -31,6 +32,13 @@ export default function ShowingsTab({ transactions }) {
   const [emailingId,     setEmailingId]     = useState(null)
   const [emailTemplates, setEmailTemplates] = useState([])
 
+  // Inline feedback editing
+  const [editingFeedbackId,  setEditingFeedbackId]  = useState(null)
+  const [editingFeedbackVal, setEditingFeedbackVal] = useState('')
+  const feedbackInputRef = useRef(null)
+
+  const { sync, syncing } = useSyncSupraShowings(transactions)
+
   useEffect(() => {
     supabase.from('email_templates').select('*')
       .then(({ data }) => setEmailTemplates(data || []))
@@ -52,6 +60,23 @@ export default function ShowingsTab({ transactions }) {
 
   useEffect(() => { load() }, [])
 
+  // Silently sync Supra emails on mount
+  useEffect(() => {
+    sync()
+      .then(({ inserted, unmatched }) => {
+        if (inserted > 0) {
+          toast.success(`${inserted} new showing${inserted !== 1 ? 's' : ''} synced from Supra`)
+          load()
+        }
+        if (unmatched.length > 0) {
+          toast(`⚠ Unmatched addresses:\n${unmatched.join('\n')}`, { duration: 7000 })
+        }
+      })
+      .catch(() => {
+        // Silent — don't block UI if Gmail not connected
+      })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const load = async () => {
     setLoading(true)
     const { data } = await supabase
@@ -60,6 +85,23 @@ export default function ShowingsTab({ transactions }) {
       .order('showing_date', { ascending: false })
     setShowings(data || [])
     setLoading(false)
+  }
+
+  const handleSync = async () => {
+    try {
+      const { inserted, unmatched } = await sync()
+      if (inserted > 0) {
+        toast.success(`${inserted} new showing${inserted !== 1 ? 's' : ''} synced from Supra`)
+        load()
+      } else {
+        toast.success('No new showings to sync')
+      }
+      if (unmatched.length > 0) {
+        toast(`⚠ Unmatched addresses:\n${unmatched.join('\n')}`, { duration: 7000 })
+      }
+    } catch (err) {
+      toast.error('Sync failed: ' + (err.message || 'Unknown error'))
+    }
   }
 
   const handleDelete = async (id) => {
@@ -84,6 +126,27 @@ export default function ShowingsTab({ transactions }) {
     setShowings(prev => [data, ...prev])
     setAddOpen(false)
     setAddForm(EMPTY_SHOWING)
+  }
+
+  // Inline feedback edit handlers
+  const startEditFeedback = (s) => {
+    setEditingFeedbackId(s.id)
+    setEditingFeedbackVal(s.feedback || '')
+    setTimeout(() => feedbackInputRef.current?.focus(), 0)
+  }
+
+  const saveFeedback = async (showingId) => {
+    const val = editingFeedbackVal.trim()
+    setEditingFeedbackId(null)
+    setEditingFeedbackVal('')
+    const { error } = await supabase.from('showings').update({ feedback: val }).eq('id', showingId)
+    if (error) { toast.error('Could not save feedback'); return }
+    setShowings(prev => prev.map(s => s.id === showingId ? { ...s, feedback: val } : s))
+  }
+
+  const handleFeedbackKeyDown = (e, showingId) => {
+    if (e.key === 'Enter') { e.preventDefault(); saveFeedback(showingId) }
+    if (e.key === 'Escape') { setEditingFeedbackId(null) }
   }
 
   const htmlToText = (html) => {
@@ -214,6 +277,14 @@ export default function ShowingsTab({ transactions }) {
           )}
         </div>
         <span className="sht-count">{filtered.length} showing{filtered.length !== 1 ? 's' : ''}</span>
+        <button
+          className="sht-sync-btn"
+          onClick={handleSync}
+          disabled={syncing}
+          title="Sync showings from Supra emails"
+        >
+          {syncing ? 'Syncing…' : 'Sync Supra'}
+        </button>
         <button className="sht-add-btn" onClick={() => setAddOpen(true)}>+ Add Showing</button>
       </div>
 
@@ -325,7 +396,27 @@ export default function ShowingsTab({ transactions }) {
                   <td>{s.agent_name || '—'}</td>
                   <td className="sht-email">{s.agent_email || '—'}</td>
                   <td className="sht-date">{fmtDate(s.showing_date)}</td>
-                  <td className="sht-feedback">{s.feedback || '—'}</td>
+                  <td className="sht-feedback">
+                    {editingFeedbackId === s.id ? (
+                      <input
+                        ref={feedbackInputRef}
+                        className="sht-feedback-input"
+                        value={editingFeedbackVal}
+                        onChange={e => setEditingFeedbackVal(e.target.value)}
+                        onBlur={() => saveFeedback(s.id)}
+                        onKeyDown={e => handleFeedbackKeyDown(e, s.id)}
+                      />
+                    ) : (
+                      <span className="sht-feedback-text">
+                        {s.feedback || <span className="sht-feedback-empty">—</span>}
+                        <button
+                          className="sht-feedback-edit-btn"
+                          onClick={() => startEditFeedback(s)}
+                          title="Edit feedback"
+                        >✏</button>
+                      </span>
+                    )}
+                  </td>
                   <td className="sht-actions-cell">
                     <div className="sht-req-wrap">
                       <button

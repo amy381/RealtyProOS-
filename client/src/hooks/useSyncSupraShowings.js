@@ -61,13 +61,13 @@ export function useSyncSupraShowings(transactions) {
         return res.json()
       }
 
-      // Search inbox for all emails from Supra (max 100)
+      // Search for Supra emails that already have Label_53 (applied by Apps Script on arrival)
       const search = await gmail(
-        `/messages?q=${encodeURIComponent(`from:${SUPRA_SENDER}`)}&maxResults=100`
+        `/messages?q=${encodeURIComponent(`from:${SUPRA_SENDER} label:${SUPRA_LABEL_ID}`)}&maxResults=100`
       )
       if (!search.messages?.length) return { inserted: 0, unmatched: [] }
 
-      // Fetch existing gmail_message_ids to detect duplicates
+      // Fetch existing gmail_message_ids — sole duplicate check
       const { data: existing } = await supabase
         .from('showings')
         .select('gmail_message_id')
@@ -81,26 +81,13 @@ export function useSyncSupraShowings(transactions) {
       const unmatched = []
 
       for (const { id: msgId } of search.messages) {
-        // Fetch minimal first (fast) to check if already labeled
-        const minimal = await gmail(`/messages/${msgId}?format=minimal`)
-        const hasLabel = minimal.labelIds?.includes(SUPRA_LABEL_ID)
-
-        // Already processed — ensure label is applied and skip
-        if (existingIds.has(msgId)) {
-          if (!hasLabel) await gmail(`/messages/${msgId}/modify`, { method: 'POST', body: { addLabelIds: [SUPRA_LABEL_ID] } })
-          continue
-        }
-
-        // Already labeled but not in our DB — skip (was processed on another device or manually)
-        if (hasLabel) continue
+        // Skip if already in our showings table
+        if (existingIds.has(msgId)) continue
 
         // Fetch full message for body parsing
         const full = await gmail(`/messages/${msgId}?format=full`)
         const body = extractPlainText(full.payload)
         const match = body.match(SHOWING_REGEX)
-
-        // Always apply label regardless of parse result
-        await gmail(`/messages/${msgId}/modify`, { method: 'POST', body: { addLabelIds: [SUPRA_LABEL_ID] } })
 
         if (!match) continue
 

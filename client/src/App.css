@@ -29,8 +29,8 @@
   padding: 0 24px;
   height: 64px;
   background: rgba(2,3,10,0.88);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(50,200,220,0.1);
   box-shadow: 0 2px 16px rgba(0,0,0,0.4);
   position: sticky;

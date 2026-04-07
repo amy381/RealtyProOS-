@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-const MESH_BG_URL = 'https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/mesh-bg.jpg'
+const WAVE_BG_URL = 'https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/wave-bg.jpg'
 
 const NODE_COUNT   = 70
 const CONNECT_DIST = 145
@@ -23,27 +23,6 @@ export default function MeshBackground() {
   const canvasRef = useRef(null)
   const nodesRef  = useRef([])
   const rafRef    = useRef(null)
-
-  useEffect(() => {
-    // Set body background image
-    document.body.style.backgroundImage    = `url(${MESH_BG_URL})`
-    document.body.style.backgroundSize       = '80%'
-    document.body.style.backgroundRepeat     = 'no-repeat'
-    document.body.style.backgroundPosition   = 'center center'
-    document.body.style.backgroundAttachment = 'fixed'
-    document.body.style.webkitMaskImage = 'radial-gradient(ellipse 85% 85% at 50% 50%, black 60%, transparent 100%)'
-    document.body.style.maskImage       = 'radial-gradient(ellipse 85% 85% at 50% 50%, black 60%, transparent 100%)'
-
-    return () => {
-      document.body.style.backgroundImage    = ''
-      document.body.style.backgroundSize       = ''
-      document.body.style.backgroundRepeat     = ''
-      document.body.style.backgroundPosition   = ''
-      document.body.style.backgroundAttachment = ''
-      document.body.style.webkitMaskImage = ''
-      document.body.style.maskImage       = ''
-    }
-  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -129,20 +108,27 @@ export default function MeshBackground() {
 
   return (
     <>
-      {/* Image overlay at ~45% dark to let bg show through at ~55% */}
+      {/* Background image layer */}
       <div style={{
         position: 'fixed',
-        inset: 0,
-        background: 'rgba(2,3,10,0.45)',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
         zIndex: 0,
         pointerEvents: 'none',
+        backgroundImage: `url(${WAVE_BG_URL})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
       }} />
+      {/* Animated nodes canvas — sits above the image */}
       <canvas
         ref={canvasRef}
         style={{
           position: 'fixed',
           inset: 0,
-          zIndex: 0,
+          zIndex: 1,
           pointerEvents: 'none',
         }}
       />

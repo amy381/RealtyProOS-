@@ -5,11 +5,11 @@
   position: relative;
 }
 
-/* All content layers sit above the mesh canvas (z-index: 0) */
+/* All content layers sit above the mesh canvas (z-index: 1) */
 .app-header,
 .app-main {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 .app-loading {

@@ -32,7 +32,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: rgba(160,190,210,0.7);
+  color: rgba(160,190,210,0.7); /* was 0.35 */
 }
 
 .gd-card-actual {

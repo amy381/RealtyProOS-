@@ -17,7 +17,9 @@ import SettingsModal from './components/SettingsModal'
 import LoginPage from './components/LoginPage'
 import TemplatesTab from './components/TemplatesTab'
 import ShowingsTab  from './components/ShowingsTab'
+import MeshBackground from './components/MeshBackground'
 import './App.css'
+import './styles/darkTheme.css'
 
 const ALLOWED_EMAILS = (import.meta.env.VITE_ALLOWED_EMAILS || '')
   .split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
@@ -745,6 +747,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <MeshBackground />
       <Toaster position="top-right" />
       <header className="app-header">
         <div className="header-left">

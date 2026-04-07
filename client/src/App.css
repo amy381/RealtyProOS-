@@ -2,6 +2,13 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  position: relative;
+}
+
+/* All content layers sit above the mesh canvas (z-index: 0) */
+.app > *:not(canvas):not(div[style*="position: fixed"]) {
+  position: relative;
+  z-index: 1;
 }
 
 .app-loading {
@@ -10,8 +17,8 @@
   justify-content: center;
   height: 100vh;
   font-size: 17px;
-  color: #666666;
-  background: #f0f0f0;
+  color: #a8bfcc;
+  background: #02030a;
 }
 
 /* ── Navigation bar ─────────────────────────────────────── */
@@ -21,9 +28,11 @@
   justify-content: space-between;
   padding: 0 24px;
   height: 64px;
-  background: #333333;
-  border-bottom: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  background: rgba(2,3,10,0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(50,200,220,0.1);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.4);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -41,7 +50,7 @@
   gap: 8px;
   font-size: 22px;
   font-weight: 700;
-  color: #ffffff;
+  color: #c8d4e0;
 }
 
 .logo-icon {
@@ -49,13 +58,13 @@
 }
 
 .logo-os {
-  color: #cccccc;
+  color: #50C8DC;
 }
 
 .header-subtitle {
   font-size: 15px;
-  color: #999999;
-  border-left: 1px solid rgba(255,255,255,0.2);
+  color: #a8bfcc;
+  border-left: 1px solid rgba(50,200,220,0.2);
   padding-left: 16px;
 }
 
@@ -64,10 +73,12 @@
   flex: 1;
   padding: 24px;
   overflow: hidden;
-  background: #f0f0f0;
+  background: transparent;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  position: relative;
+  z-index: 1;
 }
 
 .header-right {
@@ -80,7 +91,8 @@
 .board-view-toggle {
   display: flex;
   align-items: center;
-  background: rgba(255,255,255,0.12);
+  background: rgba(50,200,220,0.06);
+  border: 1px solid rgba(50,200,220,0.14);
   border-radius: 8px;
   padding: 3px;
   gap: 2px;
@@ -94,18 +106,18 @@
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
-  color: rgba(255,255,255,0.65);
+  color: rgba(168,191,204,0.65);
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
 }
-.bvt-btn:hover { color: #ffffff; background: rgba(255,255,255,0.1); }
-.bvt-btn.active { background: #ffffff; color: #1a1a1a; }
+.bvt-btn:hover { color: #b8cdd8; background: rgba(50,200,220,0.08); }
+.bvt-btn.active { background: rgba(50,200,220,0.15); color: #b8cdd8; border: 1px solid rgba(50,200,220,0.2); }
 
 /* ── Buttons ────────────────────────────────────────────── */
 .btn-new-transaction {
-  background: #ffffff;
-  color: #111111;
-  border: 1px solid rgba(255,255,255,0.4);
+  background: rgba(210,120,30,0.12);
+  color: rgba(220,135,45,0.95);
+  border: 1px solid rgba(210,120,30,0.38);
   padding: 7px 16px;
   border-radius: 8px;
   font-size: 15px;
@@ -116,14 +128,14 @@
 }
 
 .btn-new-transaction:hover {
-  background: #f0f0f0;
-  border-color: rgba(255,255,255,0.6);
+  background: rgba(210,120,30,0.2);
+  border-color: rgba(210,120,30,0.55);
 }
 
 .btn-primary {
-  background: #000000;
-  color: #ffffff;
-  border: none;
+  background: rgba(50,200,220,0.15);
+  color: #b8cdd8;
+  border: 1px solid rgba(50,200,220,0.2);
   padding: 9px 18px;
   border-radius: 8px;
   font-size: 16px;
@@ -132,7 +144,7 @@
 }
 
 .btn-primary:hover {
-  background: #333333;
+  background: rgba(50,200,220,0.22);
 }
 
 /* ── Settings icon ──────────────────────────────────────── */
@@ -140,7 +152,7 @@
   background: none;
   border: none;
   font-size: 28px;
-  color: #999999;
+  color: rgba(168,191,204,0.6);
   cursor: pointer;
   padding: 6px 8px;
   border-radius: 8px;
@@ -148,20 +160,21 @@
   line-height: 1;
 }
 .btn-settings:hover {
-  background: rgba(255,255,255,0.12);
-  color: #ffffff;
+  background: rgba(50,200,220,0.08);
+  color: #b8cdd8;
 }
 
 /* ── Tabs ───────────────────────────────────────────────── */
 .app-tabs {
   display: flex;
   gap: 4px;
-  background: rgba(255,255,255,0.1);
+  background: rgba(50,200,220,0.05);
   padding: 4px;
   border-radius: 8px;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+  border: 1px solid rgba(50,200,220,0.08);
 }
 
 .tab-btn {
@@ -171,28 +184,28 @@
   border-radius: 6px;
   font-size: 16px;
   font-weight: 500;
-  color: rgba(255,255,255,0.55);
+  color: rgba(168,191,204,0.55);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .tab-btn.active {
-  background: #000000;
-  color: #ffffff;
+  background: rgba(50,200,220,0.07);
+  border: 1px solid rgba(50,200,220,0.2);
+  color: #b8cdd8;
   font-weight: 700;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
 .tab-btn:hover:not(.active) {
-  color: #ffffff;
-  background: rgba(255,255,255,0.08);
+  color: #a8bfcc;
+  background: rgba(50,200,220,0.05);
 }
 
 /* ── Backward stage move modal ───────────────────────────────────────── */
 .back-move-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0,0,0,0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -200,24 +213,26 @@
 }
 
 .back-move-modal {
-  background: #fff;
+  background: rgba(5,10,25,0.92);
+  border: 1px solid rgba(50,200,220,0.15);
   border-radius: 12px;
   width: 440px;
   max-width: 94vw;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   padding: 28px;
+  backdrop-filter: blur(20px);
 }
 
 .back-move-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #111;
+  color: #b8cdd8;
   margin-bottom: 12px;
 }
 
 .back-move-body {
   font-size: 0.9rem;
-  color: #444;
+  color: #a8bfcc;
   line-height: 1.6;
   margin-bottom: 24px;
 }
@@ -229,8 +244,9 @@
 }
 
 .back-move-no {
-  background: #f5f5f5;
-  border: none;
+  background: rgba(168,191,204,0.08);
+  border: 1px solid rgba(168,191,204,0.15);
+  color: #a8bfcc;
   padding: 8px 18px;
   border-radius: 8px;
   font-size: 0.875rem;
@@ -239,12 +255,12 @@
   font-family: inherit;
 }
 
-.back-move-no:hover { background: #ebebeb; }
+.back-move-no:hover { background: rgba(168,191,204,0.13); }
 
 .back-move-yes {
-  background: #111;
-  color: #fff;
-  border: none;
+  background: rgba(210,120,30,0.15);
+  color: rgba(220,135,45,0.95);
+  border: 1px solid rgba(210,120,30,0.35);
   padding: 8px 20px;
   border-radius: 8px;
   font-size: 0.875rem;
@@ -253,4 +269,4 @@
   font-family: inherit;
 }
 
-.back-move-yes:hover { background: #333; }
+.back-move-yes:hover { background: rgba(210,120,30,0.25); }

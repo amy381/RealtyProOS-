@@ -1,0 +1,14 @@
+/* === LEGACYOS DARK THEME === */
+
+/* Color tokens */
+/* Fire amber: #D4781E — used sparingly: dots, seller tags, logo border, btn border */
+/* Icy teal: #50C8DC — dominant: buyer tags, nav active, column counts */
+/* Text silver body: #a8bfcc */
+/* Text silver headings/prices: #b8cdd8 */
+/* Text silver logo: #c8d4e0 */
+/* NO pure white (#ffffff) anywhere */
+
+body {
+  background-color: #02030a;
+  color: #a8bfcc;
+}

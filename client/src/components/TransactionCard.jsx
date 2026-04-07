@@ -122,7 +122,7 @@ export default function TransactionCard({ transaction, onEdit, onDelete, isDragg
       <div className="card-address">{streetOnly(transaction.property_address)}</div>
 
       <div className="card-row">
-        <span className="card-icon">👤</span>
+        <span className="card-client-dot" />
         <span className="card-client">
           <span>{[transaction.client_first_name, transaction.client_last_name].filter(Boolean).join(' ') || transaction.client_name || '—'}</span>
           {(transaction.client2_first_name || transaction.client2_last_name) && (

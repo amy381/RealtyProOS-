@@ -47,11 +47,11 @@ function sanitizeForDB(obj) {
 }
 
 const COLUMNS = [
-  { id: 'pre-listing',       label: 'Pre-Listing',          color: '#888888', bgColor: '#e8e8e8', priceLabel: 'List Price',     viewMode: 'list'   },
-  { id: 'buyer-broker',      label: 'Buyer-Broker',         color: '#666666', bgColor: '#e8e8e8', priceLabel: 'Purchase Price', viewMode: 'list'   },
-  { id: 'active-listing',    label: 'Active Listing',       color: '#555555', bgColor: '#e8e8e8', priceLabel: 'List Price',     viewMode: 'medium' },
-  { id: 'pending',           label: 'Pending',              color: '#333333', bgColor: '#e8e8e8', priceLabel: 'Purchase Price', viewMode: 'wide'   },
-  { id: 'closed',            label: 'Closed',               color: '#444444', bgColor: '#e8e8e8', priceLabel: 'Purchase Price', viewMode: 'narrow' },
+  { id: 'pre-listing',       label: 'Pre-Listing',          color: '#888888', bgColor: 'transparent', priceLabel: 'List Price',     viewMode: 'list'   },
+  { id: 'buyer-broker',      label: 'Buyer-Broker',         color: '#666666', bgColor: 'transparent', priceLabel: 'Purchase Price', viewMode: 'list'   },
+  { id: 'active-listing',    label: 'Active Listing',       color: '#555555', bgColor: 'transparent', priceLabel: 'List Price',     viewMode: 'medium' },
+  { id: 'pending',           label: 'Pending',              color: '#333333', bgColor: 'transparent', priceLabel: 'Purchase Price', viewMode: 'wide'   },
+  { id: 'closed',            label: 'Closed',               color: '#444444', bgColor: 'transparent', priceLabel: 'Purchase Price', viewMode: 'narrow' },
 ]
 
 export default function App() {

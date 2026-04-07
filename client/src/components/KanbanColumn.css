@@ -89,6 +89,7 @@
   gap: 7px;
   overflow-y: auto;
   min-height: 60px;
+  background: rgba(2,3,10,0.12);
 }
 
 .column-empty {

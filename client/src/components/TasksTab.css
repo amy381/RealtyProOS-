@@ -9,9 +9,9 @@
 .gtd-searchbar {
   display: flex;
   align-items: center;
-  background: #fff;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 10px;
+  background: rgba(2, 5, 18, 0.6);
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
+  border-radius: 8px;
   padding: 0 12px;
   gap: 8px;
   flex-shrink: 0;
@@ -32,7 +32,7 @@
   outline: none;
   font-size: 15px;
   font-family: inherit;
-  color: #1a1a1a;
+  color: #a8bfcc;
   padding: 11px 0;
   background: transparent;
 }
@@ -113,30 +113,30 @@
 }
 
 .gtd-vt-btn {
-  background: none;
+  background: transparent;
   border: none;
   border-radius: 6px;
   padding: 4px 13px;
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
-  color: #888;
+  color: rgba(168, 191, 204, 0.5);
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
   white-space: nowrap;
 }
-.gtd-vt-btn:hover { color: #333; background: rgba(0,0,0,0.06); }
-.gtd-vt-btn.active { background: #ffffff; color: #1a1a1a; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.gtd-vt-btn:hover { color: #a8bfcc; background: rgba(50, 200, 220, 0.06); }
+.gtd-vt-btn.active { background: rgba(50, 200, 220, 0.12); border: 0.5px solid rgba(50, 200, 220, 0.3); color: #50C8DC; box-shadow: none; }
 
 .gtd-filters-btn {
-  border: 1.5px solid #ddd;
-  border-radius: 8px;
-  background: #fff;
+  border: 0.5px solid rgba(50, 200, 220, 0.2);
+  border-radius: 6px;
+  background: rgba(2, 5, 18, 0.6);
   padding: 7px 16px;
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
-  color: #333;
+  color: #a8bfcc;
   cursor: pointer;
   transition: border-color 0.12s, background 0.12s, color 0.12s;
   white-space: nowrap;
@@ -610,15 +610,15 @@
 
 /* ── Bulk edit ─────────────────────────────────────────────────────────── */
 .gtd-bulk-toggle {
-  border: 1px solid #ddd;
-  background: #fff;
+  border: 0.5px solid rgba(212, 120, 30, 0.4);
+  background: rgba(212, 120, 30, 0.15);
   padding: 5px 14px;
-  border-radius: 7px;
+  border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
-  color: #333;
+  color: #D4781E;
   transition: border-color 0.15s, background 0.15s;
   white-space: nowrap;
 }
@@ -781,9 +781,10 @@
   display: flex;
   gap: 2px;
   flex-shrink: 0;
-  background: #fff;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 10px;
+  background: rgba(2, 5, 18, 0.7);
+  border: 0.5px solid rgba(50, 200, 220, 0.2);
+  border-radius: 8px;
+  backdrop-filter: blur(12px);
   padding: 4px;
 }
 
@@ -796,7 +797,7 @@
   font-size: 0.85rem;
   font-weight: 500;
   font-family: inherit;
-  color: #888;
+  color: rgba(168, 191, 204, 0.5);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -806,11 +807,11 @@
   white-space: nowrap;
 }
 
-.gtd-subtab:hover { background: #f5f5f5; color: #333; }
+.gtd-subtab:hover { background: rgba(50, 200, 220, 0.06); color: #a8bfcc; }
 
 .gtd-subtab.active {
-  background: #111;
-  color: #fff;
+  background: rgba(50, 200, 220, 0.12);
+  color: #50C8DC;
   font-weight: 600;
 }
 
@@ -1247,9 +1248,10 @@
 
 /* ── Transaction group ───────────────────────────────────────────────────── */
 .gtd-tx-group {
-  background: #fff;
-  border: 1.5px solid #e8e8e8;
-  border-radius: 10px;
+  background: rgba(2, 5, 18, 0.5);
+  border: none;
+  border-left: 2px solid rgba(50, 200, 220, 0.5);
+  border-radius: 0 6px 6px 0;
 }
 
 .gtd-tx-header {
@@ -1547,8 +1549,10 @@
 .gtd-due-status--future  { color: #888888; }
 
 .gtd-status-rect-btn {
-  border: none;
-  border-radius: 3px;
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
+  border-radius: 6px;
+  background: rgba(50, 200, 220, 0.08);
+  color: #a8bfcc;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;

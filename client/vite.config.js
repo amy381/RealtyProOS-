@@ -1,8 +1,15 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@supabase/realtime-js':  resolve('./src/stubs/realtime-stub.js'),
+      '@supabase/functions-js': resolve('./src/stubs/functions-stub.js'),
+    },
+  },
   server: {
     port: 5173,
     proxy: {

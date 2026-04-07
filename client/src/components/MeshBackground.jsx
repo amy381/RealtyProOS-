@@ -121,6 +121,7 @@ export default function MeshBackground() {
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
+        opacity: 0.4,
       }} />
       {/* Animated nodes canvas — sits above the image */}
       <canvas

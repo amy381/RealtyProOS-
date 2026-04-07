@@ -12,4 +12,16 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor':   ['react', 'react-dom', 'react-hot-toast'],
+          'supabase':       ['@supabase/supabase-js'],
+          'dnd':            ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+          'emailjs':        ['@emailjs/browser'],
+        },
+      },
+    },
+  },
 })

@@ -6,7 +6,8 @@
 }
 
 /* All content layers sit above the mesh canvas (z-index: 0) */
-.app > *:not(canvas):not(div[style*="position: fixed"]) {
+.app-header,
+.app-main {
   position: relative;
   z-index: 1;
 }

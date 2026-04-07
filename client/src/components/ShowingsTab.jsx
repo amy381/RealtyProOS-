@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
@@ -29,13 +29,9 @@ export default function ShowingsTab({ transactions }) {
   const [addOpen,        setAddOpen]        = useState(false)
   const [addForm,        setAddForm]        = useState(EMPTY_SHOWING)
   const [adding,         setAdding]         = useState(false)
+  const [editingShowing, setEditingShowing] = useState(null) // null = add mode, showing obj = edit mode
   const [emailingId,     setEmailingId]     = useState(null)
   const [emailTemplates, setEmailTemplates] = useState([])
-
-  // Inline feedback editing
-  const [editingFeedbackId,  setEditingFeedbackId]  = useState(null)
-  const [editingFeedbackVal, setEditingFeedbackVal] = useState('')
-  const feedbackInputRef = useRef(null)
 
   const { sync, syncing } = useSyncSupraShowings(transactions)
 
@@ -44,14 +40,12 @@ export default function ShowingsTab({ transactions }) {
       .then(({ data }) => setEmailTemplates(data || []))
   }, [])
 
-  // Map transaction id → transaction object for quick lookup
   const txById = useMemo(() => {
     const map = {}
     for (const t of transactions) map[t.id] = t
     return map
   }, [transactions])
 
-  // Only Seller transactions that are not closed/cancelled
   const activeSelllerIds = useMemo(() => new Set(
     transactions
       .filter(t => t.rep_type === 'Seller' && !CLOSED_STATUSES.has(t.status))
@@ -110,43 +104,62 @@ export default function ShowingsTab({ transactions }) {
     if (!error) setShowings(prev => prev.filter(s => s.id !== id))
   }
 
-  const handleAddShowing = async (e) => {
-    e.preventDefault()
-    if (!addForm.transaction_id) return
-    setAdding(true)
-    const { data, error } = await supabase.from('showings').insert({
-      transaction_id: addForm.transaction_id,
-      agent_name:     addForm.agent_name  || null,
-      agent_email:    addForm.agent_email || null,
-      showing_date:   addForm.showing_date || null,
-      feedback:       addForm.feedback    || '',
-    }).select().single()
-    setAdding(false)
-    if (error) { alert('Could not save showing.'); return }
-    setShowings(prev => [data, ...prev])
+  const openAdd = () => {
+    setEditingShowing(null)
+    setAddForm(EMPTY_SHOWING)
+    setAddOpen(true)
+  }
+
+  const openEdit = (s) => {
+    setEditingShowing(s)
+    setAddForm({
+      transaction_id: s.transaction_id,
+      agent_name:     s.agent_name  || '',
+      agent_email:    s.agent_email || '',
+      showing_date:   s.showing_date || '',
+      feedback:       s.feedback    || '',
+    })
+    setAddOpen(true)
+  }
+
+  const closeModal = () => {
     setAddOpen(false)
+    setEditingShowing(null)
     setAddForm(EMPTY_SHOWING)
   }
 
-  // Inline feedback edit handlers
-  const startEditFeedback = (s) => {
-    setEditingFeedbackId(s.id)
-    setEditingFeedbackVal(s.feedback || '')
-    setTimeout(() => feedbackInputRef.current?.focus(), 0)
-  }
+  const handleModalSubmit = async (e) => {
+    e.preventDefault()
+    setAdding(true)
 
-  const saveFeedback = async (showingId) => {
-    const val = editingFeedbackVal.trim()
-    setEditingFeedbackId(null)
-    setEditingFeedbackVal('')
-    const { error } = await supabase.from('showings').update({ feedback: val }).eq('id', showingId)
-    if (error) { toast.error('Could not save feedback'); return }
-    setShowings(prev => prev.map(s => s.id === showingId ? { ...s, feedback: val } : s))
-  }
-
-  const handleFeedbackKeyDown = (e, showingId) => {
-    if (e.key === 'Enter') { e.preventDefault(); saveFeedback(showingId) }
-    if (e.key === 'Escape') { setEditingFeedbackId(null) }
+    if (editingShowing) {
+      // Edit mode — UPDATE feedback only
+      const { error } = await supabase
+        .from('showings')
+        .update({ feedback: addForm.feedback || '' })
+        .eq('id', editingShowing.id)
+      setAdding(false)
+      if (error) { toast.error('Could not update showing.'); return }
+      setShowings(prev => prev.map(s =>
+        s.id === editingShowing.id ? { ...s, feedback: addForm.feedback || '' } : s
+      ))
+      toast.success('Showing updated')
+      closeModal()
+    } else {
+      // Add mode — INSERT
+      if (!addForm.transaction_id) { setAdding(false); return }
+      const { data, error } = await supabase.from('showings').insert({
+        transaction_id: addForm.transaction_id,
+        agent_name:     addForm.agent_name  || null,
+        agent_email:    addForm.agent_email || null,
+        showing_date:   addForm.showing_date || null,
+        feedback:       addForm.feedback    || '',
+      }).select().single()
+      setAdding(false)
+      if (error) { toast.error('Could not save showing.'); return }
+      setShowings(prev => [data, ...prev])
+      closeModal()
+    }
   }
 
   const htmlToText = (html) => {
@@ -170,9 +183,9 @@ export default function ShowingsTab({ transactions }) {
   const handleRequestFeedback = async (s) => {
     const toEmail = s.agent_email
     if (!toEmail) { toast.error('No agent email for this showing'); return }
-    const tx         = txById[s.transaction_id]
-    const addr       = tx?.property_address || 'our listing'
-    const agentName  = s.agent_name || 'Agent'
+    const tx          = txById[s.transaction_id]
+    const addr        = tx?.property_address || 'our listing'
+    const agentName   = s.agent_name || 'Agent'
     const showingDate = fmtDate(s.showing_date)
 
     const template = emailTemplates.find(t => t.name === 'Showing Feedback')
@@ -219,7 +232,9 @@ export default function ShowingsTab({ transactions }) {
         .update({ feedback_requested: true, feedback_requested_at: now })
         .eq('id', s.id)
       if (error) { toast.error('Could not save feedback request status'); return }
-      setShowings(prev => prev.map(sh => sh.id === s.id ? { ...sh, feedback_requested: true, feedback_requested_at: now } : sh))
+      setShowings(prev => prev.map(sh =>
+        sh.id === s.id ? { ...sh, feedback_requested: true, feedback_requested_at: now } : sh
+      ))
     }
   }
 
@@ -259,6 +274,8 @@ export default function ShowingsTab({ transactions }) {
     </span>
   )
 
+  const isEdit = !!editingShowing
+
   return (
     <div className="showings-tab">
 
@@ -285,32 +302,38 @@ export default function ShowingsTab({ transactions }) {
         >
           {syncing ? 'Syncing…' : 'Sync Supra'}
         </button>
-        <button className="sht-add-btn" onClick={() => setAddOpen(true)}>+ Add Showing</button>
+        <button className="sht-add-btn" onClick={openAdd}>+ Add Showing</button>
       </div>
 
       {addOpen && (
-        <div className="sht-modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) setAddOpen(false) }}>
+        <div className="sht-modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) closeModal() }}>
           <div className="sht-modal">
             <div className="sht-modal-header">
-              <span>Add Showing</span>
-              <button className="sht-modal-close" onClick={() => setAddOpen(false)}>✕</button>
+              <span>{isEdit ? 'Edit Showing' : 'Add Showing'}</span>
+              <button className="sht-modal-close" onClick={closeModal}>✕</button>
             </div>
-            <form className="sht-modal-body" onSubmit={handleAddShowing}>
-              <label className="sht-modal-label">Property *</label>
-              <select
-                className="sht-modal-select"
-                value={addForm.transaction_id}
-                onChange={e => setAddForm(p => ({ ...p, transaction_id: e.target.value }))}
-                required
-              >
-                <option value="">— Select property —</option>
-                {transactions
-                  .filter(t => t.rep_type === 'Seller' && !CLOSED_STATUSES.has(t.status))
-                  .sort((a, b) => (a.property_address || '').localeCompare(b.property_address || ''))
-                  .map(t => (
-                    <option key={t.id} value={t.id}>{t.property_address || t.id}</option>
-                  ))}
-              </select>
+            <form className="sht-modal-body" onSubmit={handleModalSubmit}>
+              <label className="sht-modal-label">Property</label>
+              {isEdit ? (
+                <div className="sht-modal-readonly">
+                  {txById[editingShowing.transaction_id]?.property_address || '—'}
+                </div>
+              ) : (
+                <select
+                  className="sht-modal-select"
+                  value={addForm.transaction_id}
+                  onChange={e => setAddForm(p => ({ ...p, transaction_id: e.target.value }))}
+                  required
+                >
+                  <option value="">— Select property —</option>
+                  {transactions
+                    .filter(t => t.rep_type === 'Seller' && !CLOSED_STATUSES.has(t.status))
+                    .sort((a, b) => (a.property_address || '').localeCompare(b.property_address || ''))
+                    .map(t => (
+                      <option key={t.id} value={t.id}>{t.property_address || t.id}</option>
+                    ))}
+                </select>
+              )}
 
               <label className="sht-modal-label">Showing Date</label>
               <input
@@ -318,6 +341,7 @@ export default function ShowingsTab({ transactions }) {
                 className="sht-modal-input"
                 value={addForm.showing_date}
                 onChange={e => setAddForm(p => ({ ...p, showing_date: e.target.value }))}
+                readOnly={isEdit}
               />
 
               <label className="sht-modal-label">Agent Name</label>
@@ -327,6 +351,7 @@ export default function ShowingsTab({ transactions }) {
                 placeholder="Buyer's agent name"
                 value={addForm.agent_name}
                 onChange={e => setAddForm(p => ({ ...p, agent_name: e.target.value }))}
+                readOnly={isEdit}
               />
 
               <label className="sht-modal-label">Agent Email</label>
@@ -336,6 +361,7 @@ export default function ShowingsTab({ transactions }) {
                 placeholder="agent@email.com"
                 value={addForm.agent_email}
                 onChange={e => setAddForm(p => ({ ...p, agent_email: e.target.value }))}
+                readOnly={isEdit}
               />
 
               <label className="sht-modal-label">Feedback</label>
@@ -345,12 +371,17 @@ export default function ShowingsTab({ transactions }) {
                 value={addForm.feedback}
                 onChange={e => setAddForm(p => ({ ...p, feedback: e.target.value }))}
                 rows={3}
+                autoFocus={isEdit}
               />
 
               <div className="sht-modal-actions">
-                <button type="button" className="sht-modal-cancel" onClick={() => setAddOpen(false)}>Cancel</button>
-                <button type="submit" className="sht-modal-save" disabled={adding || !addForm.transaction_id}>
-                  {adding ? 'Saving…' : 'Save Showing'}
+                <button type="button" className="sht-modal-cancel" onClick={closeModal}>Cancel</button>
+                <button
+                  type="submit"
+                  className="sht-modal-save"
+                  disabled={adding || (!isEdit && !addForm.transaction_id)}
+                >
+                  {adding ? 'Saving…' : isEdit ? 'Save Changes' : 'Save Showing'}
                 </button>
               </div>
             </form>
@@ -396,27 +427,7 @@ export default function ShowingsTab({ transactions }) {
                   <td>{s.agent_name || '—'}</td>
                   <td className="sht-email">{s.agent_email || '—'}</td>
                   <td className="sht-date">{fmtDate(s.showing_date)}</td>
-                  <td className="sht-feedback">
-                    {editingFeedbackId === s.id ? (
-                      <input
-                        ref={feedbackInputRef}
-                        className="sht-feedback-input"
-                        value={editingFeedbackVal}
-                        onChange={e => setEditingFeedbackVal(e.target.value)}
-                        onBlur={() => saveFeedback(s.id)}
-                        onKeyDown={e => handleFeedbackKeyDown(e, s.id)}
-                      />
-                    ) : (
-                      <span className="sht-feedback-text">
-                        {s.feedback || <span className="sht-feedback-empty">—</span>}
-                        <button
-                          className="sht-feedback-edit-btn"
-                          onClick={() => startEditFeedback(s)}
-                          title="Edit feedback"
-                        >✏</button>
-                      </span>
-                    )}
-                  </td>
+                  <td className="sht-feedback">{s.feedback || '—'}</td>
                   <td className="sht-actions-cell">
                     <div className="sht-req-wrap">
                       <button
@@ -433,6 +444,11 @@ export default function ShowingsTab({ transactions }) {
                         </span>
                       )}
                     </div>
+                    <button
+                      className="sht-edit-btn"
+                      onClick={() => openEdit(s)}
+                      title="Edit showing"
+                    >✏</button>
                     <button
                       className="sht-del-btn"
                       onClick={() => handleDelete(s.id)}

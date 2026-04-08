@@ -16,13 +16,15 @@
 }
 
 .lv-summary-box {
-  background: #ffffff;
-  border-radius: 10px;
+  background: rgba(2, 5, 18, 0.5);
+  border: 0.5px solid rgba(50, 200, 220, 0.18);
+  border-radius: 6px;
+  color: #c8d4e0;
   padding: 16px 22px;
   display: flex;
   flex-direction: column;
   gap: 3px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  box-shadow: none;
   min-width: 140px;
 }
 
@@ -46,9 +48,9 @@
 .lv-searchbar {
   display: flex;
   align-items: center;
-  background: #fff;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 10px;
+  background: rgba(2, 5, 18, 0.6);
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
+  border-radius: 8px;
   padding: 0 14px;
   gap: 10px;
   flex-shrink: 0;
@@ -134,33 +136,33 @@
 
 .lv-filters-btn {
   margin-left: auto;
-  border: 1.5px solid #ddd;
-  border-radius: 8px;
-  background: #fff;
+  border: 0.5px solid rgba(50, 200, 220, 0.2);
+  border-radius: 6px;
+  background: rgba(2, 5, 18, 0.6);
   padding: 8px 16px;
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
-  color: #333;
+  color: #a8bfcc;
   cursor: pointer;
   transition: border-color 0.12s, background 0.12s, color 0.12s;
   white-space: nowrap;
 }
 
 .lv-filters-btn:hover {
-  border-color: #999;
-  background: #fafafa;
+  border-color: rgba(50, 200, 220, 0.35);
+  background: rgba(2, 5, 18, 0.75);
 }
 
 .lv-filters-btn.has-filters {
-  border-color: #1a1a1a;
-  background: #1a1a1a;
-  color: #fff;
+  border-color: rgba(50, 200, 220, 0.5);
+  background: rgba(50, 200, 220, 0.12);
+  color: #50C8DC;
 }
 
 .lv-filters-btn.has-filters:hover {
-  background: #333;
-  border-color: #333;
+  background: rgba(50, 200, 220, 0.18);
+  border-color: rgba(50, 200, 220, 0.6);
 }
 
 .lv-result-count {
@@ -170,19 +172,19 @@
 }
 
 .lv-clear-btn {
-  background: none;
-  border: 1.5px solid #ddd;
-  border-radius: 7px;
+  background: rgba(2, 5, 18, 0.6);
+  border: 0.5px solid rgba(50, 200, 220, 0.2);
+  border-radius: 6px;
   padding: 7px 14px;
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
-  color: #666;
+  color: #a8bfcc;
   cursor: pointer;
   white-space: nowrap;
   transition: border-color 0.12s, color 0.12s;
 }
-.lv-clear-btn:hover { border-color: #888; color: #1a1a1a; }
+.lv-clear-btn:hover { border-color: rgba(50, 200, 220, 0.35); color: #c8d4e0; }
 
 /* ─── Filter Panel ────────────────────────────────────────────────────────── */
 .lv-fpanel-overlay {
@@ -476,9 +478,9 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  background: #ffffff;
+  background: transparent;
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  box-shadow: none;
 }
 
 /* ─── Table ───────────────────────────────────────────────────────────────── */
@@ -496,28 +498,28 @@
 }
 
 .lv-th {
-  background: #f7f7f7;
-  border-bottom: 1.5px solid #e8e8e8;
+  background: rgba(2, 5, 18, 0.5);
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
   padding: 10px 14px;
   text-align: left;
   font-size: 12px;
   font-weight: 600;
   font-variant: small-caps;
   letter-spacing: 0.06em;
-  color: #888888;
+  color: rgba(168, 191, 204, 0.6);
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
   transition: background 0.1s, color 0.1s;
 }
-.lv-th:hover { background: #efefef; color: #1a1a1a; }
+.lv-th:hover { background: rgba(2, 5, 18, 0.65); color: #a8bfcc; }
 
 .lv-th-actions {
   cursor: default;
   text-align: left;
   min-width: 120px;
 }
-.lv-th-actions:hover { background: #f7f7f7; color: #888888; }
+.lv-th-actions:hover { background: rgba(2, 5, 18, 0.5); color: rgba(168, 191, 204, 0.6); }
 
 .lv-th-arrow {
   font-size: 11px;
@@ -529,14 +531,15 @@
 .lv-row {
   cursor: pointer;
   transition: background 0.1s;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.07);
 }
 .lv-row:last-child { border-bottom: none; }
-.lv-row:hover { background: #fafafa; }
+.lv-row:nth-child(even) { background: rgba(255, 255, 255, 0.03); }
+.lv-row:hover { background: rgba(50, 200, 220, 0.05); }
 
 .lv-td {
   padding: 11px 14px;
-  color: #1a1a1a;
+  color: #a8bfcc;
   font-size: 14px;
   font-weight: 400;
   vertical-align: middle;
@@ -550,6 +553,7 @@
 .lv-td-addr {
   font-weight: 500;
   min-width: 160px;
+  color: #c8d4e0;
 }
 
 .lv-td-client {
@@ -561,23 +565,23 @@
 
 .lv-client1 {
   font-weight: 500;
-  color: #1a1a1a;
+  color: #c8d4e0;
 }
 
 .lv-client2 {
   font-size: 13px;
-  color: #777;
+  color: #a8bfcc;
 }
 
 .lv-td-tc {
   font-size: 13px;
-  color: #555;
+  color: #a8bfcc;
   white-space: nowrap;
 }
 
 .lv-td-date {
   font-size: 13px;
-  color: #555;
+  color: #a8bfcc;
   white-space: nowrap;
 }
 
@@ -597,12 +601,12 @@
   white-space: nowrap;
   letter-spacing: 0.01em;
 }
-.lv-stage--pre-listing       { background: #ebebeb; color: #555; }
-.lv-stage--active-listing    { background: #e0e0e0; color: #333; }
-.lv-stage--buyer-broker      { background: #ebebeb; color: #555; }
-.lv-stage--pending           { background: #d8d8d8; color: #222; }
-.lv-stage--closed            { background: #1a1a1a; color: #fff; }
-.lv-stage--cancelled-expired { background: #f5f5f5; color: #999; }
+.lv-stage--pre-listing       { background: rgba(168, 191, 204, 0.08); border: 0.5px solid rgba(168, 191, 204, 0.2); color: rgba(168, 191, 204, 0.6); }
+.lv-stage--active-listing    { background: rgba(50, 200, 220, 0.08); border: 0.5px solid rgba(50, 200, 220, 0.25); color: rgba(50, 200, 220, 0.8); }
+.lv-stage--buyer-broker      { background: rgba(168, 191, 204, 0.08); border: 0.5px solid rgba(168, 191, 204, 0.2); color: rgba(168, 191, 204, 0.6); }
+.lv-stage--pending           { background: rgba(50, 200, 220, 0.12); border: 0.5px solid rgba(50, 200, 220, 0.4); color: #50C8DC; }
+.lv-stage--closed            { background: rgba(168, 191, 204, 0.1); border: 0.5px solid rgba(168, 191, 204, 0.3); color: rgba(168, 191, 204, 0.7); }
+.lv-stage--cancelled-expired { background: rgba(168, 191, 204, 0.05); border: 0.5px solid rgba(168, 191, 204, 0.15); color: rgba(168, 191, 204, 0.4); }
 
 /* ─── Empty state ─────────────────────────────────────────────────────────── */
 .lv-empty {

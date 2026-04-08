@@ -619,9 +619,10 @@
 
 /* ─── Action buttons ──────────────────────────────────────────────────────── */
 .lv-action-btn {
-  border: 1.5px solid #e0e0e0;
+  border: 0.5px solid rgba(212, 120, 30, 0.5);
   border-radius: 6px;
-  background: #fff;
+  background: rgba(212, 120, 30, 0.15);
+  color: #D4781E;
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
@@ -630,7 +631,7 @@
   transition: background 0.1s, border-color 0.1s;
   white-space: nowrap;
 }
-.lv-action-btn:hover { background: #f5f5f5; border-color: #bbb; }
+.lv-action-btn:hover { background: rgba(212, 120, 30, 0.22); border-color: rgba(212, 120, 30, 0.7); }
 .lv-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ─── Go To dropdown ──────────────────────────────────────────────────────── */

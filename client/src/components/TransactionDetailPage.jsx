@@ -13,8 +13,7 @@ import './TransactionDetailPage.css'
 
 const SECTIONS = [
   { id: 'details',      label: 'Transaction Details' },
-  { id: 'tasks',        label: 'Tasks'               },
-  { id: 'docs-req',     label: 'Documents Required'  },
+  { id: 'docs-req',     label: 'Tasks & Documents'   },
   { id: 'commission',   label: 'Commission'           },
   { id: 'showings',     label: 'Showings',  sellerOnly: true },
   { id: 'google-drive', label: 'Google Drive'         },
@@ -3222,30 +3221,29 @@ export default function TransactionDetailPage({
             />
           )}
 
-          {activeSection === 'tasks' && (
-            <TasksSpreadsheet
-              tasks={tasks || []}
-              transactionId={transaction.id}
-              transaction={transaction}
-              onAdd={onAddTask}
-              onUpdate={onUpdateTask}
-              onDelete={onDeleteTask}
-              dbTemplates={dbTemplates}
-              dbTemplateTasks={dbTemplateTasks}
-              onApplyTemplate={onApplyTemplate}
-              taskComments={taskComments}
-              onAddTaskComment={onAddTaskComment}
-              onDeleteTaskComment={onDeleteTaskComment}
-              tcSettings={tcSettings}
-              transactionAddr={fullAddress}
-            />
-          )}
-
           {activeSection === 'docs-req' && (
-            <DocsRequiredSection
-              transaction={transaction}
-              commissions={commissions}
-            />
+            <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', width: '100%' }}>
+              <div style={{
+                flex: '0 0 340px',
+                minHeight: '200px',
+                border: '1px dashed rgba(50,200,220,0.25)',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'rgba(168,191,204,0.4)',
+                fontSize: '13px',
+                fontStyle: 'italic',
+              }}>
+                Template &amp; Tasks
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <DocsRequiredSection
+                  transaction={transaction}
+                  commissions={commissions}
+                />
+              </div>
+            </div>
           )}
 
           {activeSection === 'commission' && (

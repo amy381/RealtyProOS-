@@ -539,7 +539,7 @@
 .gtd-row td {
   padding: 9px 12px;
   border-bottom: 1px solid #f0f0f0;
-  color: #1a1a1a;
+  color: #a8bfcc;
   white-space: nowrap;
 }
 
@@ -1279,7 +1279,7 @@
 .gtd-tx-addr {
   font-size: 15px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #c8d4e0;
   cursor: pointer;
   text-decoration: none;
 }
@@ -1413,7 +1413,7 @@
 
 .gtd-grow-title {
   font-size: 14px;
-  color: #1a1a1a;
+  color: #c8d4e0;
   white-space: normal;
   word-break: break-word;
   padding-top: 1px;
@@ -1460,10 +1460,11 @@
 .gtd-inline-editable {
   cursor: text;
   border-radius: 4px;
+  color: #c8d4e0;
   transition: background 0.1s;
 }
 .gtd-inline-editable:hover {
-  background: #f0f4ff;
+  background: rgba(50, 200, 220, 0.07);
 }
 
 .gtd-inline-placeholder {
@@ -1514,7 +1515,7 @@
 
 .gtd-grow-assignee {
   font-size: 12px;
-  color: #999;
+  color: #a8bfcc;
   text-align: right;
   white-space: normal;
   word-break: break-word;
@@ -1523,7 +1524,7 @@
 
 .gtd-grow-due {
   font-size: 12px;
-  color: #666;
+  color: #a8bfcc;
   text-align: right;
   font-weight: 400;
   padding-top: 1px;

@@ -461,9 +461,10 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: rgba(2, 5, 18, 0.85) !important;
+  background: rgba(2, 5, 18, 0.45) !important;
   border: 0.5px solid rgba(50, 200, 220, 0.18);
   border-radius: 8px;
+  backdrop-filter: blur(6px);
   padding: 16px;
 }
 
@@ -1533,9 +1534,10 @@ select.txp-input { cursor: pointer; }
 
 /* Right column container */
 .txp-td-col:last-child > .txp-section {
-  background: rgba(2, 5, 18, 0.85);
+  background: rgba(2, 5, 18, 0.45);
   border: 0.5px solid rgba(50, 200, 220, 0.18) !important;
   border-radius: 8px;
+  backdrop-filter: blur(6px);
   padding: 16px;
   color: #a8bfcc;
 }

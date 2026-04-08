@@ -624,8 +624,8 @@
 .tdl-tpl-section { position: relative; }
 
 .tdl-tpl-btn {
-  background: rgba(2, 5, 18, 0.25);
-  border: 0.5px solid rgba(50, 200, 220, 0.25);
+  background: rgba(2, 5, 18, 0.15);
+  border: 0.5px solid rgba(50, 200, 220, 0.12);
   color: #a8bfcc;
   border-radius: 6px;
   padding: 6px 14px;
@@ -681,9 +681,9 @@
 }
 
 .tdl-preview-name {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
-  color: rgba(168, 191, 204, 0.6);
+  color: rgba(168, 191, 204, 0.8);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -812,15 +812,21 @@
 }
 
 .txp-section-title {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #aaaaaa;
+  color: rgba(168, 191, 204, 0.8);
   padding: 13px 18px 11px;
   border-bottom: 1px solid #f0f0f0;
   background: #fafafa;
   border-radius: 10px 10px 0 0;
+}
+
+/* DOCUMENTS REQUIRED main header override */
+.txp-td-col:last-child > .txp-section .txp-section-title {
+  font-size: 16px;
+  color: #c8d4e0;
 }
 
 /* ─── Pending Contract Dates section ────────────────────────────────────────── */
@@ -1555,10 +1561,10 @@ select.txp-input { cursor: pointer; }
 
 /* Sub-section header (Buyer / Listing / Pending) */
 .txp-docs-section-header {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.09em;
+  letter-spacing: 1px;
   color: rgba(168, 191, 204, 0.6);
   padding: 12px 18px 10px;
   background: transparent;

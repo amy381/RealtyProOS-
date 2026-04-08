@@ -1409,6 +1409,7 @@
   flex-direction: column;
   gap: 5px;
   min-width: 0;
+  padding-left: 145px;
 }
 
 .gtd-grow-title {
@@ -1417,7 +1418,6 @@
   white-space: normal;
   word-break: break-word;
   padding-top: 1px;
-  padding-left: 145px;
 }
 
 /* ── Inline task date field ─────────────────────────────────────────────── */

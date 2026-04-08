@@ -445,7 +445,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
   border: 0.5px solid rgba(50, 200, 220, 0.18);
   border-radius: 8px;
   padding: 16px;
@@ -457,7 +457,7 @@
   color: #D4781E;
   border-radius: 6px;
   padding: 6px 14px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -612,7 +612,7 @@
   color: #a8bfcc;
   border-radius: 6px;
   padding: 6px 14px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -664,9 +664,11 @@
 }
 
 .tdl-preview-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #c8d4e0;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(168, 191, 204, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .tdl-preview-count {
@@ -708,9 +710,10 @@
 
 .tdl-th-num  { width: 28px; }
 .tdl-td-num  { color: rgba(168, 191, 204, 0.4); }
-.tdl-td-title { color: #c8d4e0; }
-.tdl-td-timing { color: rgba(168, 191, 204, 0.6); font-size: 11px; white-space: nowrap; }
-.tdl-td-assign { color: rgba(168, 191, 204, 0.6); white-space: nowrap; }
+.tdl-td-title { color: #c8d4e0; font-size: 16px; }
+.tdl-td-timing { display: none; }
+.tdl-preview-table thead tr th:nth-child(4) { display: none; }
+.tdl-td-assign { color: rgba(168, 191, 204, 0.6); font-size: 13px; white-space: nowrap; }
 .tdl-td-remove { width: 28px; }
 
 .tdl-critical-badge {
@@ -724,7 +727,7 @@
   white-space: nowrap;
 }
 
-.tdl-type-label { color: rgba(168, 191, 204, 0.6); font-size: 11px; }
+.tdl-type-label { color: rgba(168, 191, 204, 0.6); font-size: 13px; }
 
 .tdl-remove-btn {
   background: none;

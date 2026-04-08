@@ -1620,6 +1620,7 @@ select.txp-input { cursor: pointer; }
 .txp-doc-link {
   color: #c8d4e0;
   text-decoration: none;
+  font-weight: 400;
 }
 .txp-doc-link:hover { color: #e0eaf0; }
 

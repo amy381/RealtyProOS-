@@ -1409,7 +1409,6 @@
   flex-direction: column;
   gap: 5px;
   min-width: 0;
-  padding-left: 145px;
 }
 
 .gtd-grow-title {
@@ -1637,7 +1636,7 @@
 .gtd-cd-row:last-child { border-bottom: none; }
 
 .gtd-cd-label {
-  grid-column: 1 / 5;
+  grid-column: 2 / 5;
   font-size: 13px;
   font-weight: 400;
   color: rgba(168, 191, 204, 0.7);

@@ -1647,7 +1647,7 @@
 .gtd-cd-flat-addr {
   grid-column: 5;
   font-size: 13px;
-  color: #2c5aa0;
+  color: rgba(50, 200, 220, 0.7);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -1929,7 +1929,7 @@
 /* ── Transaction Address column (flat list mode) ─────────────────────────── */
 .gtd-grow-addr-col {
   font-size: 12px;
-  color: #555;
+  color: rgba(50, 200, 220, 0.7);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -1939,8 +1939,8 @@
 
 /* ── Flat list container ─────────────────────────────────────────────────── */
 .gtd-flat-list {
-  background: #fff;
-  border: 1.5px solid #e8e8e8;
+  background: transparent;
+  border: none;
   border-radius: 10px;
   overflow: hidden;
 }

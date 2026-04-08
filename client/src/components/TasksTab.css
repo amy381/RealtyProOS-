@@ -1620,10 +1620,9 @@
   align-items: center;
   padding: 7px 14px;
   background: rgba(50, 200, 220, 0.06);
-  border-top: none;
-  border-bottom: none;
-  border-left: 1px solid rgba(50, 200, 220, 0.2);
-  border-radius: 0 6px 6px 0;
+  border: 0.5px solid rgba(50, 200, 220, 0.18);
+  border-left: 1px solid rgba(50, 200, 220, 0.3);
+  border-radius: 4px;
   box-sizing: border-box;
   min-height: 38px;
   max-height: 38px;

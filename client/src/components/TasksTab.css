@@ -1417,6 +1417,7 @@
   white-space: normal;
   word-break: break-word;
   padding-top: 1px;
+  padding-left: 145px;
 }
 
 /* ── Inline task date field ─────────────────────────────────────────────── */
@@ -1619,9 +1620,11 @@
   column-gap: 10px;
   align-items: center;
   padding: 7px 14px;
-  background: rgba(221, 234, 255, 0.75);
-  border-top: 1px solid rgba(184, 208, 248, 0.75);
-  border-bottom: 1px solid rgba(184, 208, 248, 0.75);
+  background: rgba(50, 200, 220, 0.06);
+  border-top: none;
+  border-bottom: none;
+  border-left: 1px solid rgba(50, 200, 220, 0.2);
+  border-radius: 0 6px 6px 0;
   box-sizing: border-box;
   min-height: 38px;
   max-height: 38px;
@@ -1637,7 +1640,7 @@
   grid-column: 1 / 5;
   font-size: 13px;
   font-weight: 400;
-  color: #1a3d82;
+  color: rgba(168, 191, 204, 0.7);
   white-space: normal;
   word-break: break-word;
 }

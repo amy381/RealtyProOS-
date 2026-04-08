@@ -2288,19 +2288,93 @@ function CommissionSection({ transaction, commissions, onCommissionChange, onAdd
   )
 }
 
+const TDL_TASK_TYPES  = ['Task', 'Email', 'Notification', 'Critical Date']
+const TDL_ASSIGNEES   = ['Me', 'Justina Morris', 'Victoria Lareau']
+
+function TdlAddTaskModal({ transaction, onAdd, onClose }) {
+  const [title,         setTitle]        = useState('')
+  const [taskType,      setTaskType]     = useState('Task')
+  const [assigned,      setAssigned]     = useState('Me')
+  const [dueDate,       setDueDate]      = useState('')
+  const [trackProgress, setTrackProgress] = useState(false)
+  const inputRef = useRef(null)
+  useEffect(() => { inputRef.current?.focus() }, [])
+
+  const handleSave = () => {
+    if (!title.trim()) return
+    onAdd({
+      title:              title.trim(),
+      task_type:          taskType,
+      assigned_to:        assigned,
+      due_date:           dueDate || null,
+      track_progress:     trackProgress,
+      status:             'open',
+      notes:              '',
+      transaction_id:     transaction.id,
+    })
+    onClose()
+  }
+
+  return (
+    <div className="tdl-modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="tdl-modal">
+        <div className="tdl-modal-header">
+          <span className="tdl-modal-title">Add Task</span>
+          <button className="tdl-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="tdl-modal-body">
+          <label className="tdl-modal-field">
+            <span className="tdl-modal-label">Task Name</span>
+            <input
+              ref={inputRef}
+              className="tdl-modal-input"
+              value={title}
+              placeholder="Task name…"
+              onChange={e => setTitle(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') onClose() }}
+            />
+          </label>
+          <div className="tdl-modal-row">
+            <label className="tdl-modal-field">
+              <span className="tdl-modal-label">Task Type</span>
+              <select className="tdl-modal-select" value={taskType} onChange={e => setTaskType(e.target.value)}>
+                {TDL_TASK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </label>
+            <label className="tdl-modal-field">
+              <span className="tdl-modal-label">Due Date</span>
+              <input className="tdl-modal-input" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+            </label>
+          </div>
+          <label className="tdl-modal-field">
+            <span className="tdl-modal-label">Assign To</span>
+            <select className="tdl-modal-select" value={assigned} onChange={e => setAssigned(e.target.value)}>
+              {TDL_ASSIGNEES.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </label>
+          <label className="tdl-modal-checkbox">
+            <input type="checkbox" checked={trackProgress} onChange={e => setTrackProgress(e.target.checked)} />
+            <span>Track Progress Dates</span>
+          </label>
+        </div>
+        <div className="tdl-modal-footer">
+          <button className="tdl-modal-cancel" onClick={onClose}>Cancel</button>
+          <button className="tdl-modal-save" onClick={handleSave} disabled={!title.trim()}>Add Task</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Tasks & Documents — Left Column ─────────────────────────────────────────
 function TasksDocsLeft({ transactionId, transaction, onAdd, dbTemplates, dbTemplateTasks, onApplyTemplate }) {
-  const [adding,       setAdding]      = useState(false)
-  const [newTitle,     setNewTitle]    = useState('')
+  const [modalOpen,    setModalOpen]   = useState(false)
   const [tplDropOpen,  setTplDropOpen] = useState(false)
   const [selectedTpl,  setSelectedTpl] = useState(null)
   const [excludedIds,  setExcludedIds] = useState(new Set())
   const [applying,     setApplying]   = useState(false)
   const [applied,      setApplied]    = useState(false)
-  const newInputRef = useRef(null)
   const tplDropRef  = useRef(null)
-
-  useEffect(() => { if (adding) newInputRef.current?.focus() }, [adding])
 
   useEffect(() => {
     if (!tplDropOpen) return
@@ -2314,13 +2388,6 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, dbTemplates, dbTempl
         .filter(t => t.template_id === selectedTpl.id && !excludedIds.has(t.id))
         .sort((a, b) => a.sort_order - b.sort_order)
     : []
-
-  const handleAddTask = () => {
-    if (!newTitle.trim()) { setAdding(false); return }
-    onAdd({ title: newTitle.trim(), transaction_id: transactionId, status: 'open', assigned_to: 'Me', notes: '', due_date: '' })
-    setNewTitle('')
-    setAdding(false)
-  }
 
   const handleApply = async () => {
     if (!selectedTpl || !onApplyTemplate) return
@@ -2342,26 +2409,19 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, dbTemplates, dbTempl
 
   return (
     <div className="tdl-wrap">
-      {/* ── Add Task ── */}
-      {!adding ? (
-        <button className="tdl-add-btn" onClick={() => setAdding(true)}>+ Add Task</button>
-      ) : (
-        <div className="tdl-add-form">
-          <input
-            ref={newInputRef}
-            className="tdl-add-input"
-            value={newTitle}
-            placeholder="Task name…"
-            onChange={e => setNewTitle(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') handleAddTask()
-              if (e.key === 'Escape') { setAdding(false); setNewTitle('') }
-            }}
-          />
-          <button className="tdl-add-save" onClick={handleAddTask}>Add</button>
-          <button className="tdl-add-cancel" onClick={() => { setAdding(false); setNewTitle('') }}>✕</button>
-        </div>
+      {/* ── Add Task modal ── */}
+      {modalOpen && (
+        <TdlAddTaskModal
+          transaction={transaction}
+          onAdd={onAdd}
+          onClose={() => setModalOpen(false)}
+        />
       )}
+
+      {/* ── Add Task button ── */}
+      <div>
+        <button className="tdl-add-btn" onClick={() => setModalOpen(true)}>+ Add Task</button>
+      </div>
 
       {/* ── Apply Template ── */}
       {(dbTemplates?.length > 0) && (

@@ -448,13 +448,11 @@
 }
 
 .tdl-add-btn {
-  width: 100%;
-  text-align: left;
   background: rgba(212, 120, 30, 0.15);
   border: 0.5px solid rgba(212, 120, 30, 0.5);
   color: #D4781E;
   border-radius: 6px;
-  padding: 8px 14px;
+  padding: 6px 14px;
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
@@ -463,51 +461,144 @@
 }
 .tdl-add-btn:hover { background: rgba(212, 120, 30, 0.22); }
 
-.tdl-add-form {
+/* ── Add Task modal ── */
+.tdl-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
-  gap: 8px;
   align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
-.tdl-add-input {
+.tdl-modal {
+  background: rgba(8, 12, 28, 0.97);
+  border: 0.5px solid rgba(50, 200, 220, 0.2);
+  border-radius: 12px;
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.tdl-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.15);
+}
+
+.tdl-modal-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #c8d4e0;
+}
+
+.tdl-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(168, 191, 204, 0.5);
+  font-size: 12px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  transition: color 0.1s;
+}
+.tdl-modal-close:hover { color: #a8bfcc; }
+
+.tdl-modal-body {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tdl-modal-row {
+  display: flex;
+  gap: 12px;
+}
+
+.tdl-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   flex: 1;
+}
+
+.tdl-modal-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(168, 191, 204, 0.6);
+}
+
+.tdl-modal-input,
+.tdl-modal-select {
   background: rgba(2, 5, 18, 0.6);
-  border: 0.5px solid rgba(50, 200, 220, 0.3);
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
   border-radius: 6px;
   color: #c8d4e0;
   font-size: 13px;
   font-family: inherit;
-  padding: 7px 10px;
+  padding: 8px 10px;
   outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.12s;
 }
-.tdl-add-input::placeholder { color: rgba(168, 191, 204, 0.4); }
-.tdl-add-input:focus { border-color: rgba(50, 200, 220, 0.5); }
+.tdl-modal-input:focus,
+.tdl-modal-select:focus { border-color: rgba(50, 200, 220, 0.5); }
+.tdl-modal-input::placeholder { color: rgba(168, 191, 204, 0.35); }
+.tdl-modal-input[type="date"] { color-scheme: dark; }
 
-.tdl-add-save {
-  background: rgba(50, 200, 220, 0.12);
-  border: 0.5px solid rgba(50, 200, 220, 0.4);
-  color: #50C8DC;
-  border-radius: 6px;
-  padding: 7px 12px;
+.tdl-modal-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
   font-size: 13px;
-  font-weight: 600;
+  color: #a8bfcc;
+}
+.tdl-modal-checkbox input[type="checkbox"] { accent-color: #50C8DC; width: 14px; height: 14px; cursor: pointer; }
+
+.tdl-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 18px;
+  border-top: 0.5px solid rgba(50, 200, 220, 0.12);
+}
+
+.tdl-modal-cancel {
+  background: rgba(2, 5, 18, 0.4);
+  border: 0.5px solid rgba(168, 191, 204, 0.2);
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
   font-family: inherit;
+  color: #a8bfcc;
   cursor: pointer;
   transition: background 0.1s;
 }
-.tdl-add-save:hover { background: rgba(50, 200, 220, 0.2); }
+.tdl-modal-cancel:hover { background: rgba(2, 5, 18, 0.6); }
 
-.tdl-add-cancel {
-  background: none;
-  border: none;
-  color: rgba(168, 191, 204, 0.4);
+.tdl-modal-save {
+  background: rgba(50, 200, 220, 0.12);
+  border: 0.5px solid rgba(50, 200, 220, 0.4);
+  border-radius: 6px;
+  padding: 8px 18px;
   font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #50C8DC;
   cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 4px;
-  transition: color 0.1s;
+  transition: background 0.1s;
 }
-.tdl-add-cancel:hover { color: #a8bfcc; }
+.tdl-modal-save:hover:not(:disabled) { background: rgba(50, 200, 220, 0.22); }
+.tdl-modal-save:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .tdl-tpl-section { position: relative; }
 

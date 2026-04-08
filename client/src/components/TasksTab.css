@@ -1653,7 +1653,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   opacity: 0.75;
-  font-style: italic;
+  font-style: normal;
 }
 
 .gtd-cd-date {

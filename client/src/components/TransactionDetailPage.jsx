@@ -2288,6 +2288,163 @@ function CommissionSection({ transaction, commissions, onCommissionChange, onAdd
   )
 }
 
+// ─── Tasks & Documents — Left Column ─────────────────────────────────────────
+function TasksDocsLeft({ transactionId, transaction, onAdd, dbTemplates, dbTemplateTasks, onApplyTemplate }) {
+  const [adding,       setAdding]      = useState(false)
+  const [newTitle,     setNewTitle]    = useState('')
+  const [tplDropOpen,  setTplDropOpen] = useState(false)
+  const [selectedTpl,  setSelectedTpl] = useState(null)
+  const [excludedIds,  setExcludedIds] = useState(new Set())
+  const [applying,     setApplying]   = useState(false)
+  const [applied,      setApplied]    = useState(false)
+  const newInputRef = useRef(null)
+  const tplDropRef  = useRef(null)
+
+  useEffect(() => { if (adding) newInputRef.current?.focus() }, [adding])
+
+  useEffect(() => {
+    if (!tplDropOpen) return
+    const handler = (e) => { if (!tplDropRef.current?.contains(e.target)) setTplDropOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [tplDropOpen])
+
+  const previewTasks = selectedTpl
+    ? (dbTemplateTasks || [])
+        .filter(t => t.template_id === selectedTpl.id && !excludedIds.has(t.id))
+        .sort((a, b) => a.sort_order - b.sort_order)
+    : []
+
+  const handleAddTask = () => {
+    if (!newTitle.trim()) { setAdding(false); return }
+    onAdd({ title: newTitle.trim(), transaction_id: transactionId, status: 'open', assigned_to: 'Me', notes: '', due_date: '' })
+    setNewTitle('')
+    setAdding(false)
+  }
+
+  const handleApply = async () => {
+    if (!selectedTpl || !onApplyTemplate) return
+    setApplying(true)
+    try {
+      await onApplyTemplate(transactionId, selectedTpl.id, transaction, excludedIds)
+      setApplied(true)
+    } finally {
+      setApplying(false)
+    }
+  }
+
+  const selectTemplate = (tpl) => {
+    setSelectedTpl(tpl)
+    setExcludedIds(new Set())
+    setApplied(false)
+    setTplDropOpen(false)
+  }
+
+  return (
+    <div className="tdl-wrap">
+      {/* ── Add Task ── */}
+      {!adding ? (
+        <button className="tdl-add-btn" onClick={() => setAdding(true)}>+ Add Task</button>
+      ) : (
+        <div className="tdl-add-form">
+          <input
+            ref={newInputRef}
+            className="tdl-add-input"
+            value={newTitle}
+            placeholder="Task name…"
+            onChange={e => setNewTitle(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleAddTask()
+              if (e.key === 'Escape') { setAdding(false); setNewTitle('') }
+            }}
+          />
+          <button className="tdl-add-save" onClick={handleAddTask}>Add</button>
+          <button className="tdl-add-cancel" onClick={() => { setAdding(false); setNewTitle('') }}>✕</button>
+        </div>
+      )}
+
+      {/* ── Apply Template ── */}
+      {(dbTemplates?.length > 0) && (
+        <div className="tdl-tpl-section" ref={tplDropRef}>
+          <button className="tdl-tpl-btn" onClick={() => setTplDropOpen(o => !o)}>
+            Apply Template ▾
+          </button>
+          {tplDropOpen && (
+            <div className="tdl-tpl-menu">
+              {dbTemplates.map(tpl => (
+                <button key={tpl.id} className="tdl-tpl-item" onClick={() => selectTemplate(tpl)}>
+                  {tpl.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Inline template preview ── */}
+      {selectedTpl && (
+        <div className="tdl-preview">
+          <div className="tdl-preview-header">
+            <span className="tdl-preview-name">{selectedTpl.name}</span>
+            <span className="tdl-preview-count">{previewTasks.length} task{previewTasks.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="tdl-preview-scroll">
+            <table className="tdl-preview-table">
+              <thead>
+                <tr>
+                  <th className="tdl-th-num">#</th>
+                  <th>Task Name</th>
+                  <th>Type</th>
+                  <th>Timing</th>
+                  <th>Assign To</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {previewTasks.map((t, i) => {
+                  const isCritical = t.task_type === 'Critical Date'
+                  return (
+                    <tr key={t.id} className={isCritical ? 'tdl-preview-critical' : ''}>
+                      <td className="tdl-td-num">{i + 1}</td>
+                      <td className="tdl-td-title">{t.title}</td>
+                      <td className="tdl-td-type">
+                        {isCritical
+                          ? <span className="tdl-critical-badge">Critical Date</span>
+                          : <span className="tdl-type-label">{t.task_type || 'Task'}</span>}
+                      </td>
+                      <td className="tdl-td-timing">{fmtTemplateTiming(t.timing_type, t.timing_days)}</td>
+                      <td className="tdl-td-assign">{t.auto_assign_to}</td>
+                      <td className="tdl-td-remove">
+                        <button
+                          className="tdl-remove-btn"
+                          title="Remove from this apply"
+                          onClick={() => setExcludedIds(prev => new Set([...prev, t.id]))}
+                        >✕</button>
+                      </td>
+                    </tr>
+                  )
+                })}
+                {previewTasks.length === 0 && (
+                  <tr><td colSpan={6} className="tdl-preview-empty">All tasks removed</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="tdl-preview-actions">
+            <button
+              className="tdl-apply-btn"
+              onClick={handleApply}
+              disabled={applying || previewTasks.length === 0}
+            >
+              {applying ? 'Adding…' : applied ? `✓ Added — ${previewTasks.length} task${previewTasks.length !== 1 ? 's' : ''} added` : `Add ${previewTasks.length} Task${previewTasks.length !== 1 ? 's' : ''}`}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Documents Required (with Google Drive upload) ────────────────────────────
 function DocsRequiredSection({ transaction, commissions }) {
   const [docStatuses, setDocStatuses] = useState({})   // { docName: { checked, filename, drive_id, drive_link } }
@@ -3223,8 +3380,15 @@ export default function TransactionDetailPage({
 
           {activeSection === 'docs-req' && (
             <div className="txp-td-wrap">
-              <div className="txp-td-col txp-td-col--placeholder">
-                Template &amp; Tasks
+              <div className="txp-td-col">
+                <TasksDocsLeft
+                  transactionId={transaction.id}
+                  transaction={transaction}
+                  onAdd={onAddTask}
+                  dbTemplates={dbTemplates}
+                  dbTemplateTasks={dbTemplateTasks}
+                  onApplyTemplate={onApplyTemplate}
+                />
               </div>
               <div className="txp-td-col">
                 <DocsRequiredSection

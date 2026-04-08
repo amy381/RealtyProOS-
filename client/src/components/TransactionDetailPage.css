@@ -427,6 +427,31 @@
 /* ─── Two-column layout ─────────────────────────────────────────────────────────── */
 .txp-details-view { display: flex; flex-direction: column; gap: 0; }
 
+/* ─── Tasks & Documents two-column layout ───────────────────────────────────────── */
+.txp-td-wrap {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.txp-td-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.txp-td-col--placeholder {
+  min-height: 200px;
+  border: 1px dashed rgba(50, 200, 220, 0.25);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(168, 191, 204, 0.4);
+  font-size: 13px;
+  font-style: italic;
+}
+
 .txp-details-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;

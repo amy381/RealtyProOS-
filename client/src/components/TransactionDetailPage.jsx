@@ -3222,22 +3222,11 @@ export default function TransactionDetailPage({
           )}
 
           {activeSection === 'docs-req' && (
-            <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', width: '100%' }}>
-              <div style={{
-                flex: 1,
-                minHeight: '200px',
-                border: '1px dashed rgba(50,200,220,0.25)',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'rgba(168,191,204,0.4)',
-                fontSize: '13px',
-                fontStyle: 'italic',
-              }}>
+            <div className="txp-td-wrap">
+              <div className="txp-td-col txp-td-col--placeholder">
                 Template &amp; Tasks
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="txp-td-col">
                 <DocsRequiredSection
                   transaction={transaction}
                   commissions={commissions}

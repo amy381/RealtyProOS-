@@ -3224,7 +3224,7 @@ export default function TransactionDetailPage({
           {activeSection === 'docs-req' && (
             <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', width: '100%' }}>
               <div style={{
-                flex: '0 0 340px',
+                flex: 1,
                 minHeight: '200px',
                 border: '1px dashed rgba(50,200,220,0.25)',
                 borderRadius: '8px',

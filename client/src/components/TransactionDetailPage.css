@@ -446,6 +446,7 @@
   flex-direction: column;
   gap: 12px;
   background: rgba(2, 5, 18, 0.6);
+  border: 0.5px solid rgba(50, 200, 220, 0.18);
   border-radius: 8px;
   padding: 16px;
 }
@@ -1517,6 +1518,11 @@ select.txp-input { cursor: pointer; }
   border-radius: 8px;
   padding: 16px;
   color: #a8bfcc;
+}
+
+.txp-td-col:last-child > .txp-section .txp-section-title {
+  background: transparent;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
 }
 
 /* Per-section wrapper */

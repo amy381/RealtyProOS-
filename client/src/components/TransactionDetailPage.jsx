@@ -397,8 +397,7 @@ function FubInlineSearch({ onSelect, onClose }) {
             <button
               key={r.relationship_id || i}
               className="txp-fub-result"
-              onMouseDown={e => e.preventDefault()}
-              onClick={() => handleRelPick(r)}
+              onMouseDown={e => { e.preventDefault(); handleRelPick(r) }}
             >
               <span className="txp-fub-name">{[r.first_name, r.last_name].filter(Boolean).join(' ') || '—'}</span>
               {r.email && <span className="txp-fub-email">{r.email}</span>}
@@ -419,8 +418,7 @@ function FubInlineSearch({ onSelect, onClose }) {
             <button
               key={p.id || p.relationship_id || p.name}
               className="txp-fub-result"
-              onMouseDown={e => e.preventDefault()}
-              onClick={() => handleSelect(p)}
+              onMouseDown={e => { e.preventDefault(); handleSelect(p) }}
             >
               <span className="txp-fub-name">{p.name}</span>
               {p.email && <span className="txp-fub-email">{p.email}</span>}

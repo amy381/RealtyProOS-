@@ -1019,6 +1019,7 @@ select.txp-input { cursor: pointer; }
   min-width: max(100%, 360px);
   width: max-content;
   max-width: 520px;
+  z-index: 1000;
   background: #ffffff;
   border: 1px solid #dddddd;
   border-radius: 9px;

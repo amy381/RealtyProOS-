@@ -2,15 +2,17 @@
   display: flex;
   flex-direction: row;
   height: 100%;
-  background: #f0f0f0;
+  background: transparent;
 }
 
 /* ── Sidebar ──────────────────────────────────────────────── */
 .collab-sidebar {
   width: 210px;
   flex-shrink: 0;
-  background: #ffffff;
-  border-right: 1px solid #e8e8e8;
+  background: rgba(2, 5, 18, 0.6);
+  border-right: 0.5px solid rgba(50, 200, 220, 0.18);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   padding: 20px 0;
   overflow-y: auto;
 }
@@ -18,14 +20,14 @@
 .collab-nav-item {
   display: block;
   width: 100%;
-  background: none;
+  background: transparent;
   border: none;
-  border-left: 3px solid transparent;
+  border-left: 2px solid transparent;
   text-align: left;
   padding: 11px 20px;
   font-size: 16px;
   font-weight: 400;
-  color: #777;
+  color: rgba(168, 191, 204, 0.6);
   cursor: pointer;
   font-family: inherit;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
@@ -33,15 +35,15 @@
 }
 
 .collab-nav-item:hover {
-  background: #f7f7f7;
-  color: #1a1a1a;
+  background: rgba(50, 200, 220, 0.05);
+  color: #a8bfcc;
 }
 
 .collab-nav-item.active {
-  background: #f4f4f4;
-  color: #1a1a1a;
+  background: rgba(50, 200, 220, 0.12);
+  color: #50C8DC;
   font-weight: 600;
-  border-left-color: #1a1a1a;
+  border-left-color: rgba(50, 200, 220, 0.5);
 }
 
 /* ── Body ─────────────────────────────────────────────────── */
@@ -60,15 +62,15 @@
 
 .collab-count {
   font-size: 15px;
-  color: #888;
+  color: rgba(168, 191, 204, 0.6);
 }
 
 .collab-add-btn {
-  background: #111;
-  color: #fff;
-  border: none;
+  background: rgba(212, 120, 30, 0.15);
+  color: #D4781E;
+  border: 0.5px solid rgba(212, 120, 30, 0.5);
   padding: 7px 16px;
-  border-radius: 7px;
+  border-radius: 6px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -77,17 +79,19 @@
 }
 
 .collab-add-btn:hover {
-  background: #333;
+  background: rgba(212, 120, 30, 0.25);
 }
 
 /* ── Table ────────────────────────────────────────────────── */
 .collab-table {
   width: 100%;
   border-collapse: collapse;
-  background: #fff;
+  background: rgba(2, 5, 18, 0.45);
+  border: 0.5px solid rgba(50, 200, 220, 0.18);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .collab-table th {
@@ -97,28 +101,33 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #999;
-  background: #fafafa;
-  border-bottom: 1px solid #ebebeb;
+  color: rgba(168, 191, 204, 0.7);
+  background: transparent;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
 }
 
 .collab-table td {
   padding: 11px 14px;
   font-size: 15px;
-  color: #222;
-  border-bottom: 1px solid #f2f2f2;
+  color: #a8bfcc;
+  border-bottom: 0.5px solid rgba(168, 191, 204, 0.08);
 }
 
 .collab-table tbody tr:last-child td {
   border-bottom: none;
 }
 
+.collab-table tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .collab-table tbody tr:hover td {
-  background: #fafafa;
+  background: rgba(50, 200, 220, 0.05);
 }
 
 .collab-name {
-  font-weight: 600;
+  font-weight: 500;
+  color: #c8d4e0;
 }
 
 .collab-actions {
@@ -131,7 +140,7 @@
 .collab-edit-btn,
 .collab-del-btn {
   padding: 4px 12px;
-  border-radius: 5px;
+  border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -140,30 +149,31 @@
 }
 
 .collab-edit-btn {
-  background: #f0f0f0;
-  color: #333;
-  border: 1px solid #ddd;
+  background: rgba(2, 5, 18, 0.6);
+  color: #a8bfcc;
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
 }
 
 .collab-edit-btn:hover {
-  background: #e4e4e4;
+  background: rgba(50, 200, 220, 0.1);
+  border-color: rgba(50, 200, 220, 0.4);
 }
 
 .collab-del-btn {
-  background: #fff0f0;
-  color: #c00;
-  border: 1px solid #ffd0d0;
+  background: rgba(220, 50, 50, 0.12);
+  color: rgba(220, 50, 50, 0.8);
+  border: 0.5px solid rgba(220, 50, 50, 0.4);
 }
 
 .collab-del-btn:hover {
-  background: #ffe0e0;
+  background: rgba(220, 50, 50, 0.22);
 }
 
 /* ── Empty state ──────────────────────────────────────────── */
 .collab-empty {
   text-align: center;
   padding: 60px 24px;
-  color: #aaa;
+  color: rgba(168, 191, 204, 0.5);
   font-size: 16px;
 }
 
@@ -171,7 +181,7 @@
 .collab-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -179,11 +189,12 @@
 }
 
 .collab-modal {
-  background: #fff;
+  background: rgba(8, 12, 28, 0.97);
+  border: 0.5px solid rgba(50, 200, 220, 0.2);
   border-radius: 12px;
   width: 480px;
   max-width: 95vw;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
 }
@@ -193,13 +204,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px 16px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.15);
 }
 
 .collab-modal-header h2 {
   font-size: 18px;
   font-weight: 700;
-  color: #111;
+  color: #c8d4e0;
   margin: 0;
 }
 
@@ -207,15 +218,15 @@
   background: none;
   border: none;
   font-size: 18px;
-  color: #999;
+  color: rgba(168, 191, 204, 0.5);
   cursor: pointer;
   padding: 2px 6px;
   border-radius: 4px;
 }
 
 .collab-modal-close:hover {
-  background: #f0f0f0;
-  color: #333;
+  background: rgba(50, 200, 220, 0.08);
+  color: #a8bfcc;
 }
 
 .collab-modal-body {
@@ -231,24 +242,25 @@
   gap: 5px;
   font-size: 14px;
   font-weight: 600;
-  color: #666;
+  color: rgba(168, 191, 204, 0.7);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .collab-modal-body input {
   padding: 8px 10px;
-  border: 1px solid #ddd;
+  border: 0.5px solid rgba(50, 200, 220, 0.3);
   border-radius: 6px;
   font-size: 16px;
-  color: #111;
+  color: #c8d4e0;
+  background: rgba(2, 5, 18, 0.6);
   font-family: inherit;
   outline: none;
   transition: border-color 0.12s;
 }
 
 .collab-modal-body input:focus {
-  border-color: #999;
+  border-color: rgba(50, 200, 220, 0.6);
 }
 
 .collab-form-row {
@@ -262,13 +274,13 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 16px 24px 20px;
-  border-top: 1px solid #eee;
+  border-top: 0.5px solid rgba(50, 200, 220, 0.15);
 }
 
 .collab-cancel-btn {
-  background: #f0f0f0;
-  color: #555;
-  border: none;
+  background: rgba(2, 5, 18, 0.6);
+  color: #a8bfcc;
+  border: 0.5px solid rgba(168, 191, 204, 0.2);
   padding: 8px 18px;
   border-radius: 7px;
   font-size: 15px;
@@ -278,13 +290,13 @@
 }
 
 .collab-cancel-btn:hover {
-  background: #e4e4e4;
+  background: rgba(168, 191, 204, 0.08);
 }
 
 .collab-save-btn {
-  background: #111;
-  color: #fff;
-  border: none;
+  background: rgba(50, 200, 220, 0.15);
+  color: #50C8DC;
+  border: 0.5px solid rgba(50, 200, 220, 0.4);
   padding: 8px 20px;
   border-radius: 7px;
   font-size: 15px;
@@ -295,5 +307,5 @@
 }
 
 .collab-save-btn:hover {
-  background: #333;
+  background: rgba(50, 200, 220, 0.25);
 }

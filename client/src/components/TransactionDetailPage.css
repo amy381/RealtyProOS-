@@ -1969,7 +1969,7 @@ select.txp-input { cursor: pointer; }
 }
 .collab-search-input:hover { background: rgba(2, 5, 18, 0.5); }
 .collab-search-input:focus { background: rgba(2, 5, 18, 0.5); outline: none; border-color: rgba(50, 200, 220, 0.35); }
-.collab-search-input::placeholder { color: rgba(168, 191, 204, 0.5); font-style: italic; font-size: 16px; font-weight: 400; }
+.collab-search-input::placeholder { color: rgba(168, 191, 204, 0.8); font-style: italic; font-size: 16px; font-weight: 400; }
 
 .collab-search-dropdown {
   position: absolute;

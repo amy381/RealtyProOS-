@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import ReactDOM from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { formatPhone, formatApn } from '../lib/formatters'
@@ -328,36 +327,18 @@ function FubInlineSearch({ onSelect, onClose }) {
   const [results, setResults] = useState([])
   const [loading,     setLoading]     = useState(false)
   const [pendingFull, setPendingFull] = useState(null)
-  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 360 })
-  const timer       = useRef(null)
-  const inputRef    = useRef(null)
-  const wrapRef     = useRef(null)
-  const dropdownRef = useRef(null)
-
-  const updatePos = useCallback(() => {
-    if (inputRef.current) {
-      const r = inputRef.current.getBoundingClientRect()
-      setDropPos({ top: r.bottom + 4, left: r.left, width: r.width })
-    }
-  }, [])
+  const timer   = useRef(null)
+  const inputRef = useRef(null)
+  const wrapRef  = useRef(null)
 
   useEffect(() => {
     inputRef.current?.focus()
-    updatePos()
     const handler = (e) => {
-      const inWrap = wrapRef.current?.contains(e.target)
-      const inDrop = dropdownRef.current?.contains(e.target)
-      if (!inWrap && !inDrop) onClose()
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) onClose()
     }
     document.addEventListener('mousedown', handler)
-    window.addEventListener('scroll', updatePos, true)
-    return () => {
-      document.removeEventListener('mousedown', handler)
-      window.removeEventListener('scroll', updatePos, true)
-    }
+    return () => document.removeEventListener('mousedown', handler)
   }, [])
-
-  useEffect(() => { updatePos() }, [results, pendingFull, query])
 
   const handleChange = (val) => {
     setQuery(val)
@@ -399,54 +380,6 @@ function FubInlineSearch({ onSelect, onClose }) {
     onSelect(pendingFull)
   }
 
-  const portalStyle = {
-    position: 'fixed',
-    top: dropPos.top,
-    left: dropPos.left,
-    width: dropPos.width,
-    zIndex: 1000,
-  }
-
-  const dropdown = pendingFull ? (
-    <div className="txp-fub-results" style={portalStyle} ref={dropdownRef}>
-      <div className="txp-fub-rel-prompt">This contact has a related party:</div>
-      {pendingFull.related.map((r, i) => (
-        <button
-          key={r.relationship_id || i}
-          className="txp-fub-result"
-          onMouseDown={e => { e.preventDefault(); handleRelPick(r) }}
-        >
-          <span className="txp-fub-name">{[r.first_name, r.last_name].filter(Boolean).join(' ') || '—'}</span>
-          {r.email && <span className="txp-fub-email">{r.email}</span>}
-        </button>
-      ))}
-      <button
-        className="txp-fub-rel-skip"
-        onMouseDown={e => { e.preventDefault(); handleRelSkip() }}
-      >
-        Skip — no Client 2
-      </button>
-    </div>
-  ) : (loading || results.length > 0 || (query.length >= 2 && !loading)) ? (
-    <div className="txp-fub-results" style={portalStyle} ref={dropdownRef}>
-      {loading && <div className="txp-fub-loading">Searching…</div>}
-      {results.map(p => (
-        <button
-          key={p.id || p.relationship_id || p.name}
-          className="txp-fub-result"
-          onMouseDown={e => { e.preventDefault(); handleSelect(p) }}
-        >
-          <span className="txp-fub-name">{p.name}</span>
-          {p.email && <span className="txp-fub-email">{p.email}</span>}
-          {p._via && <span className="txp-fub-via">via {p._via.name}</span>}
-        </button>
-      ))}
-      {!loading && query.length >= 2 && results.length === 0 && (
-        <div className="txp-fub-empty">No results found</div>
-      )}
-    </div>
-  ) : null
-
   return (
     <div className="txp-fub-inline" ref={wrapRef}>
       <input
@@ -457,7 +390,48 @@ function FubInlineSearch({ onSelect, onClose }) {
         onChange={e => handleChange(e.target.value)}
         onKeyDown={e => { if (e.key === 'Escape') onClose() }}
       />
-      {dropdown && ReactDOM.createPortal(dropdown, document.body)}
+      {pendingFull ? (
+        <div className="txp-fub-results">
+          <div className="txp-fub-rel-prompt">This contact has a related party:</div>
+          {pendingFull.related.map((r, i) => (
+            <button
+              key={r.relationship_id || i}
+              className="txp-fub-result"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => handleRelPick(r)}
+            >
+              <span className="txp-fub-name">{[r.first_name, r.last_name].filter(Boolean).join(' ') || '—'}</span>
+              {r.email && <span className="txp-fub-email">{r.email}</span>}
+            </button>
+          ))}
+          <button
+            className="txp-fub-rel-skip"
+            onMouseDown={e => e.preventDefault()}
+            onClick={handleRelSkip}
+          >
+            Skip — no Client 2
+          </button>
+        </div>
+      ) : (loading || results.length > 0 || (query.length >= 2 && !loading)) && (
+        <div className="txp-fub-results">
+          {loading && <div className="txp-fub-loading">Searching…</div>}
+          {results.map(p => (
+            <button
+              key={p.id || p.relationship_id || p.name}
+              className="txp-fub-result"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => handleSelect(p)}
+            >
+              <span className="txp-fub-name">{p.name}</span>
+              {p.email && <span className="txp-fub-email">{p.email}</span>}
+              {p._via && <span className="txp-fub-via">via {p._via.name}</span>}
+            </button>
+          ))}
+          {!loading && query.length >= 2 && results.length === 0 && (
+            <div className="txp-fub-empty">No results found</div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -322,7 +322,7 @@ async function fetchFubPerson(personId) {
 }
 
 // ─── FUB Inline Search (matches intake form behavior) ─────────────────────────
-function FubInlineSearch({ onSelect, onClose }) {
+function FubInlineSearch({ onSelect, onClose, onRelatedParty }) {
   const [query, setQuery]     = useState('')
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
@@ -356,7 +356,14 @@ function FubInlineSearch({ onSelect, onClose }) {
       onSelect({ _isRelationship: true, client2: { first_name: person.first_name, last_name: person.last_name, email: person.email, phone: person.phone } })
       return
     }
+    // Save client 1 immediately from search result data
     onSelect({ client1: person, related: [] })
+    // Then async-fetch related parties for client 2 auto-fill (fire and forget)
+    if (person.id && onRelatedParty) {
+      fetchFubPerson(person.id).then(full => {
+        if (full?.related?.length > 0) onRelatedParty(full.related)
+      })
+    }
   }
 
   return (
@@ -393,7 +400,7 @@ function FubInlineSearch({ onSelect, onClose }) {
 }
 
 // ─── Client Row ────────────────────────────────────────────────────────────────
-function ClientRow({ label, first, last, email, phone, onFubSelect, onUnlink, tabIndex }) {
+function ClientRow({ label, first, last, email, phone, onFubSelect, onUnlink, onRelatedParty, tabIndex }) {
   const [searching, setSearching] = useState(false)
   const name = [first, last].filter(Boolean).join(' ')
 
@@ -414,6 +421,7 @@ function ClientRow({ label, first, last, email, phone, onFubSelect, onUnlink, ta
           <FubInlineSearch
             onSelect={(r) => { onFubSelect(r); setSearching(false) }}
             onClose={() => setSearching(false)}
+            onRelatedParty={onRelatedParty}
           />
         ) : (
           <>
@@ -1764,13 +1772,14 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                 save('client_last_name')(p.last_name   || '')
                 save('client_phone')(p.phone            || '')
                 save('client_email')(p.email            || '')
-                if (result.related?.[0]) {
-                  const r = result.related[0]
-                  save('client2_first_name')(r.first_name || '')
-                  save('client2_last_name')(r.last_name   || '')
-                  save('client2_phone')(r.phone            || '')
-                  save('client2_email')(r.email            || '')
-                }
+              }}
+              onRelatedParty={(related) => {
+                const r = related[0]
+                if (!r) return
+                save('client2_first_name')(r.first_name || '')
+                save('client2_last_name')(r.last_name   || '')
+                save('client2_phone')(r.phone            || '')
+                save('client2_email')(r.email            || '')
               }}
             />
             <ClientRow

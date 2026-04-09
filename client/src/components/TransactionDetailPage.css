@@ -30,15 +30,15 @@
 /* ─── Top Bar ─────────────────────────────────────────────────────────────────── */
 .txp-topbar {
   height: 56px;
-  background: #ffffff;
-  border-bottom: 1px solid #e4e4e4;
+  background: rgba(2, 5, 18, 0.85);
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
+  color: #c8d4e0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 32px;
   flex-shrink: 0;
   z-index: 2;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .txp-back-btn {
@@ -113,7 +113,7 @@
 .txp-topbar-address {
   font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: #c8d4e0;
   letter-spacing: 0.01em;
   white-space: nowrap;
   overflow: hidden;
@@ -400,8 +400,8 @@
 .txp-sidebar {
   width: 210px;
   flex-shrink: 0;
-  background: #ffffff;
-  border-right: 1px solid #e8e8e8;
+  background: rgba(2, 5, 18, 0.7);
+  border-right: 0.5px solid rgba(50, 200, 220, 0.15);
   padding: 20px 0;
   overflow-y: auto;
 }
@@ -416,18 +416,18 @@
   padding: 11px 20px;
   font-size: 16px;
   font-weight: 400;
-  color: #777777;
+  color: #a8bfcc;
   cursor: pointer;
   font-family: inherit;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
   letter-spacing: 0.01em;
 }
-.txp-nav-item:hover { background: #f7f7f7; color: #1a1a1a; }
+.txp-nav-item:hover { background: rgba(50, 200, 220, 0.05); color: #c8d4e0; }
 .txp-nav-item.active {
-  background: #f4f4f4;
-  color: #1a1a1a;
+  background: rgba(50, 200, 220, 0.08);
+  color: #50C8DC;
   font-weight: 600;
-  border-left-color: #1a1a1a;
+  border-left-color: #50C8DC;
 }
 
 /* ─── Main Content ──────────────────────────────────────────────────────────────── */
@@ -803,10 +803,10 @@
 
 /* ─── Section card ─────────────────────────────────────────────────────────────── */
 .txp-section {
-  background: #ffffff;
-  border-radius: 10px;
-  border: 1px solid #e8e8e8;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
+  background: rgba(2, 5, 18, 0.45);
+  border-radius: 8px;
+  border: 0.5px solid rgba(50, 200, 220, 0.18);
+  backdrop-filter: blur(6px);
   margin-bottom: 18px;
   overflow: visible;
 }
@@ -818,9 +818,9 @@
   letter-spacing: 0.1em;
   color: rgba(168, 191, 204, 0.8);
   padding: 13px 18px 11px;
-  border-bottom: 1px solid #f0f0f0;
-  background: #fafafa;
-  border-radius: 10px 10px 0 0;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
+  background: transparent;
+  border-radius: 8px 8px 0 0;
 }
 
 /* DOCUMENTS REQUIRED main header override */
@@ -831,13 +831,15 @@
 
 /* ─── Pending Contract Dates section ────────────────────────────────────────── */
 .txp-pending-dates-section {
-  border: 2px solid #ddeaff;
+  background: rgba(2, 5, 18, 0.45);
+  border: 0.5px solid rgba(50, 200, 220, 0.18);
+  backdrop-filter: blur(6px);
 }
 
 .txp-pending-dates-title {
-  color: #2c5aa0 !important;
-  background: #eef4ff !important;
-  border-bottom-color: #c8dbf8 !important;
+  color: #50C8DC !important;
+  background: rgba(50, 200, 220, 0.08) !important;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.3) !important;
 }
 
 /* ─── Field row ──────────────────────────────────────────────────────────────── */
@@ -860,7 +862,7 @@
   font-variant: small-caps;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: #888888;
+  color: rgba(168, 191, 204, 0.6);
   user-select: none;
   line-height: 1.2;
   padding: 6px 0;
@@ -876,7 +878,7 @@
   flex: 1;
   font-size: 16px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: #c8d4e0;
   cursor: pointer;
   border-radius: 4px;
   padding: 5px 7px;
@@ -888,13 +890,13 @@
   line-height: 1.35;
   word-break: break-word;
 }
-.txp-field-value:hover { background: #f0f0f0; }
+.txp-field-value:hover { background: rgba(50, 200, 220, 0.06); }
 
 .txp-field-readonly {
   flex: 1;
   font-size: 16px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: #c8d4e0;
   padding: 5px 7px;
 }
 
@@ -964,11 +966,11 @@ select.txp-input { cursor: pointer; }
 
 /* ─── FUB Search ──────────────────────────────────────────────────────────────── */
 .txp-fub-btn {
-  background: none;
-  border: 1.5px solid #d8d8d8;
-  color: #666666;
+  background: rgba(2, 5, 18, 0.6);
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
+  color: #a8bfcc;
   padding: 4px 12px;
-  border-radius: 5px;
+  border-radius: 6px;
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
@@ -976,7 +978,7 @@ select.txp-input { cursor: pointer; }
   transition: all 0.12s;
   white-space: nowrap;
 }
-.txp-fub-btn:hover { background: #f5f5f5; border-color: #aaaaaa; color: #1a1a1a; }
+.txp-fub-btn:hover { background: rgba(50, 200, 220, 0.1); border-color: rgba(50, 200, 220, 0.4); color: #c8d4e0; }
 
 .txp-client-unlink-btn {
   background: none;
@@ -1089,13 +1091,13 @@ select.txp-input { cursor: pointer; }
   cursor: pointer;
   font-size: 17px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: #a8bfcc;
 }
 .txp-checkbox-item input[type="checkbox"] {
   width: 15px;
   height: 15px;
   cursor: pointer;
-  accent-color: #1a1a1a;
+  accent-color: #50C8DC;
 }
 
 /* ─── Additional Parcel inline row ───────────────────────────────────────────── */
@@ -1138,20 +1140,19 @@ select.txp-input { cursor: pointer; }
   font-size: 17px;
   font-family: inherit;
   font-weight: 400;
-  color: #1a1a1a;
-  background: #fafafa;
-  border: 1.5px solid #e8e8e8;
-  border-radius: 7px;
+  color: #a8bfcc;
+  background: rgba(2, 5, 18, 0.4);
+  border: 0.5px solid rgba(50, 200, 220, 0.15);
+  border-radius: 6px;
   padding: 8px 12px;
   outline: none;
   box-sizing: border-box;
   line-height: 1.4;
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
 .txp-note-compose-input:focus {
-  border-color: #1a1a1a;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.07);
+  border-color: rgba(50, 200, 220, 0.4);
+  background: rgba(2, 5, 18, 0.5);
 }
 
 /* Fixed 200px height — notes scroll internally, never push layout down */

@@ -328,15 +328,16 @@ function FubInlineSearch({ onSelect, onClose }) {
   const [results, setResults] = useState([])
   const [loading,     setLoading]     = useState(false)
   const [pendingFull, setPendingFull] = useState(null)
-  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 400 })
-  const timer   = useRef(null)
-  const inputRef = useRef(null)
-  const wrapRef  = useRef(null)
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 360 })
+  const timer       = useRef(null)
+  const inputRef    = useRef(null)
+  const wrapRef     = useRef(null)
+  const dropdownRef = useRef(null)
 
   const updatePos = useCallback(() => {
     if (inputRef.current) {
       const r = inputRef.current.getBoundingClientRect()
-      setDropPos({ top: r.bottom + 4, left: r.left, width: Math.max(r.width, 360) })
+      setDropPos({ top: r.bottom + 4, left: r.left, width: r.width })
     }
   }, [])
 
@@ -344,7 +345,9 @@ function FubInlineSearch({ onSelect, onClose }) {
     inputRef.current?.focus()
     updatePos()
     const handler = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) onClose()
+      const inWrap = wrapRef.current?.contains(e.target)
+      const inDrop = dropdownRef.current?.contains(e.target)
+      if (!inWrap && !inDrop) onClose()
     }
     document.addEventListener('mousedown', handler)
     window.addEventListener('scroll', updatePos, true)
@@ -400,20 +403,18 @@ function FubInlineSearch({ onSelect, onClose }) {
     position: 'fixed',
     top: dropPos.top,
     left: dropPos.left,
-    width: '350px',
-    maxWidth: '350px',
+    width: dropPos.width,
     zIndex: 1000,
   }
 
   const dropdown = pendingFull ? (
-    <div className="txp-fub-results" style={portalStyle}>
+    <div className="txp-fub-results" style={portalStyle} ref={dropdownRef}>
       <div className="txp-fub-rel-prompt">This contact has a related party:</div>
       {pendingFull.related.map((r, i) => (
         <button
           key={r.relationship_id || i}
           className="txp-fub-result"
-          onMouseDown={e => e.preventDefault()}
-          onClick={() => handleRelPick(r)}
+          onMouseDown={e => { e.preventDefault(); handleRelPick(r) }}
         >
           <span className="txp-fub-name">{[r.first_name, r.last_name].filter(Boolean).join(' ') || '—'}</span>
           {r.email && <span className="txp-fub-email">{r.email}</span>}
@@ -421,21 +422,19 @@ function FubInlineSearch({ onSelect, onClose }) {
       ))}
       <button
         className="txp-fub-rel-skip"
-        onMouseDown={e => e.preventDefault()}
-        onClick={handleRelSkip}
+        onMouseDown={e => { e.preventDefault(); handleRelSkip() }}
       >
         Skip — no Client 2
       </button>
     </div>
   ) : (loading || results.length > 0 || (query.length >= 2 && !loading)) ? (
-    <div className="txp-fub-results" style={portalStyle}>
+    <div className="txp-fub-results" style={portalStyle} ref={dropdownRef}>
       {loading && <div className="txp-fub-loading">Searching…</div>}
       {results.map(p => (
         <button
           key={p.id || p.relationship_id || p.name}
           className="txp-fub-result"
-          onMouseDown={e => e.preventDefault()}
-          onClick={() => handleSelect(p)}
+          onMouseDown={e => { e.preventDefault(); handleSelect(p) }}
         >
           <span className="txp-fub-name">{p.name}</span>
           {p.email && <span className="txp-fub-email">{p.email}</span>}

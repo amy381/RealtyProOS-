@@ -809,6 +809,12 @@
   backdrop-filter: blur(6px);
   margin-bottom: 18px;
   overflow: visible;
+  position: relative;
+  z-index: 1;
+}
+/* Elevate section above siblings when a search input inside is focused */
+.txp-section:focus-within {
+  z-index: 10;
 }
 
 .txp-section-title {

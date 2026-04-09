@@ -39,7 +39,7 @@ function buildValueMap(tx, agent) {
     vacant_or_occupied: tx.vacant_or_occupied   || '',
     year_built:         tx.year_built           || '',
     title_company:      tx.title_company        || '',
-    title_contact:      '',                          // no source column — always blank
+    title_contact:      tx.title_contact_name   || '',
     title_email:        tx.title_company_email  || '',
     title_phone:        tx.title_company_phone  || '',
     escrow_number:      tx.escrow_number        || '',
@@ -105,6 +105,21 @@ module.exports = async function handler(req, res) {
       .select('realtor_name, company, realtor_phone, realtor_email')
       .limit(1)
       .single()
+
+    // ── Resolve title company from linked collaborator ────────────────────────
+    if (tx.title_collaborator_id) {
+      const { data: collab } = await supabase
+        .from('collaborators')
+        .select('*')
+        .eq('id', tx.title_collaborator_id)
+        .single()
+      if (collab) {
+        tx.title_company       = collab.company || tx.title_company
+        tx.title_contact_name  = [collab.first_name, collab.last_name].filter(Boolean).join(' ')
+        tx.title_company_email = collab.email || tx.title_company_email
+        tx.title_company_phone = collab.phone || tx.title_company_phone
+      }
+    }
 
     // ── Download PDF ──────────────────────────────────────────────────────────
     const pdfRes = await fetch(vendor.pdf_form_url)

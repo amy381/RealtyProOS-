@@ -1667,6 +1667,22 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
     }
   }, [transaction.additional_parcels])
 
+  const [titleCollabs, setTitleCollabs] = useState([])
+  const [titleCollab,  setTitleCollab]  = useState(null)
+
+  useEffect(() => {
+    supabase.from('collaborators').select('*').eq('category', 'title-escrow').order('company')
+      .then(({ data }) => setTitleCollabs(data || []))
+  }, [])
+
+  useEffect(() => {
+    if (!transaction.title_collaborator_id) { setTitleCollab(null); return }
+    const found = titleCollabs.find(c => c.id === transaction.title_collaborator_id)
+    if (found) { setTitleCollab(found); return }
+    supabase.from('collaborators').select('*').eq('id', transaction.title_collaborator_id).single()
+      .then(({ data }) => setTitleCollab(data || null))
+  }, [transaction.title_collaborator_id, titleCollabs])
+
   const priceLabel = column?.priceLabel ||
     (transaction.rep_type === 'Buyer' ? 'Purchase Price' : 'List Price')
 
@@ -1902,20 +1918,35 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
           {isPendingOrBeyond && (
             <div className="txp-section">
               <div className="txp-section-title">Contract Details</div>
-              <CollaboratorSearch
-                label="Title Company"
-                value={transaction.title_company || ''}
-                category="title-escrow"
-                onSave={save('title_company')}
-                onSelect={c => {
-                  if (c.email) save('title_company_email')(c.email)
-                  if (c.phone) save('title_company_phone')(c.phone)
-                }}
-                placeholder="Title company"
-                tabIndex={32}
-              />
-              <TxField label="Title Email"    value={transaction.title_company_email || ''} type="text" onSave={save('title_company_email')} placeholder="title@company.com" tabIndex={33} />
-              <TxField label="Title Phone"    value={transaction.title_company_phone || ''} type="text" onSave={v => save('title_company_phone')(formatPhone(v))} placeholder="(555) 000-0000"    tabIndex={34} />
+              <div className="txp-field">
+                <span className="txp-field-label">Title Company</span>
+                <select
+                  className="txp-input"
+                  tabIndex={32}
+                  value={transaction.title_collaborator_id || ''}
+                  onChange={e => {
+                    const id = e.target.value || null
+                    const c  = id ? titleCollabs.find(col => col.id === id) : null
+                    save('title_collaborator_id')(id)
+                    save('title_company')(c?.company || null)
+                    save('title_contact_name')(c ? [c.first_name, c.last_name].filter(Boolean).join(' ') : null)
+                    save('title_company_email')(c?.email || null)
+                    save('title_company_phone')(c?.phone || null)
+                    setTitleCollab(c || null)
+                  }}
+                >
+                  <option value="">— Select title company —</option>
+                  {titleCollabs.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {[c.first_name, c.last_name].filter(Boolean).join(' ')}{c.company ? ` — ${c.company}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <TxField label="Company"        value={titleCollab?.company            || transaction.title_company        || ''} type="text" readOnly={!!titleCollab} onSave={save('title_company')}        placeholder="Title company name"  tabIndex={33} />
+              <TxField label="Title Contact"  value={titleCollab ? [titleCollab.first_name, titleCollab.last_name].filter(Boolean).join(' ') : (transaction.title_contact_name || '')} type="text" readOnly={!!titleCollab} onSave={save('title_contact_name')} placeholder="Contact name"        tabIndex={34} />
+              <TxField label="Title Email"    value={titleCollab?.email              || transaction.title_company_email  || ''} type="text" readOnly={!!titleCollab} onSave={save('title_company_email')} placeholder="title@company.com"   tabIndex={35} />
+              <TxField label="Title Phone"    value={titleCollab?.phone              || transaction.title_company_phone  || ''} type="text" readOnly={!!titleCollab} onSave={v => save('title_company_phone')(formatPhone(v))} placeholder="(555) 000-0000" tabIndex={36} />
               <TxField label="Escrow Number"  value={transaction.escrow_number       || ''} type="text" onSave={save('escrow_number')}       placeholder="Escrow #"         tabIndex={35} />
               <CollaboratorSearch
                 label="Co-op Agent"

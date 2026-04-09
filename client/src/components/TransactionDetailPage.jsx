@@ -437,7 +437,7 @@ function FubInlineSearch({ onSelect, onClose }) {
 }
 
 // ─── Client Row ────────────────────────────────────────────────────────────────
-function ClientRow({ label, first, last, email, phone, onFubSelect, tabIndex }) {
+function ClientRow({ label, first, last, email, phone, onFubSelect, onUnlink, tabIndex }) {
   const [searching, setSearching] = useState(false)
   const name = [first, last].filter(Boolean).join(' ')
 
@@ -460,9 +460,18 @@ function ClientRow({ label, first, last, email, phone, onFubSelect, tabIndex }) 
             onClose={() => setSearching(false)}
           />
         ) : (
-          <button className="txp-fub-btn" tabIndex={tabIndex} onClick={() => setSearching(true)}>
-            {name ? 'Change' : 'Search FUB'}
-          </button>
+          <>
+            <button className="txp-fub-btn" tabIndex={tabIndex} onClick={() => setSearching(true)}>
+              {name ? 'Change' : 'Search FUB'}
+            </button>
+            {name && (
+              <button
+                className="txp-client-unlink-btn"
+                title="Remove client"
+                onClick={onUnlink}
+              >{'×'}</button>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -1786,6 +1795,12 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               email={transaction.client_email || ''}
               phone={transaction.client_phone || ''}
               tabIndex={16}
+              onUnlink={() => {
+                save('client_first_name')(null)
+                save('client_last_name')(null)
+                save('client_phone')(null)
+                save('client_email')(null)
+              }}
               onFubSelect={(result) => {
                 const p = result?.client1
                 if (!p) return
@@ -1809,6 +1824,12 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               email={transaction.client2_email || ''}
               phone={transaction.client2_phone || ''}
               tabIndex={17}
+              onUnlink={() => {
+                save('client2_first_name')(null)
+                save('client2_last_name')(null)
+                save('client2_phone')(null)
+                save('client2_email')(null)
+              }}
               onFubSelect={(result) => {
                 const p = result._isRelationship ? result.client2 : result?.client1
                 if (!p) return

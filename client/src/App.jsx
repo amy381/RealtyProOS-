@@ -212,7 +212,7 @@ export default function App() {
       if (tcErr) {
         console.warn('tc_settings table not found — run the new SQL in Supabase to enable settings:', tcErr.message)
         setTcSettings([
-          { name: 'Me', email: '' },
+          { name: 'Amy Casanova', email: '' },
           { name: 'Justina Morris', email: '' },
           { name: 'Victoria Lareau', email: '' },
         ])
@@ -220,7 +220,7 @@ export default function App() {
         const tcs = tcData || []
         if (tcs.length === 0) {
           const defaults = [
-            { name: 'Me', email: '' },
+            { name: 'Amy Casanova', email: '' },
             { name: 'Justina Morris', email: '' },
             { name: 'Victoria Lareau', email: '' },
           ]

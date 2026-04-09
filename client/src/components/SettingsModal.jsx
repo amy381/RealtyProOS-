@@ -91,7 +91,7 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
 
           <div className="settings-section-label">Team Member Email Addresses</div>
           <p className="settings-hint">
-            Used for @mention notifications in task notes. Type @Justina or @Victoria in a task note to send an email alert.
+            Used for @mention notifications in task notes. Type @Amy, @Justina, or @Victoria in a task note to send an email alert.
           </p>
 
           <div className="settings-fields">
@@ -101,7 +101,7 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
                 <input
                   type="email"
                   className="settings-email-input"
-                  placeholder={tc.name === 'Me' ? 'your@email.com' : `${tc.name.split(' ')[0].toLowerCase()}@email.com`}
+                  placeholder={`${tc.name.split(' ')[0].toLowerCase()}@email.com`}
                   value={tc.email || ''}
                   onChange={e => setEmail(i, e.target.value)}
                 />
@@ -117,7 +117,7 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
           <div className="settings-fields">
             {draft.map((tc, i) => (
               <div key={tc.id || tc.name} className="settings-field-row">
-                <span className="settings-tc-name">{tc.name === 'Me' ? 'Amy (Me)' : tc.name}</span>
+                <span className="settings-tc-name">{tc.name}</span>
                 <label className="settings-toggle">
                   <input
                     type="checkbox"

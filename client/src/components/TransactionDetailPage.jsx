@@ -231,11 +231,14 @@ function renderNoteText(text) {
 
 // Build the mention people list dynamically from tcSettings
 function buildMentionPeople(tcSettings = []) {
-  return tcSettings.map(tc => ({
-    handle: '@' + tc.name.split(' ')[0],
-    email:  tc.email || null,
-    name:   tc.name,
-  }))
+  return tcSettings.map(tc => {
+    const name = tc.name === 'Me' ? 'Amy Casanova' : tc.name
+    return {
+      handle: '@' + name.split(' ')[0],
+      email:  tc.email || null,
+      name,
+    }
+  })
 }
 
 // Send EmailJS notification to each mentioned person (uses live tcSettings)
@@ -1652,7 +1655,17 @@ function CollaboratorSearch({ label, value, category, onSave, onSelect, placehol
 function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onNoteAdded, transactionAddr, tcSettings }) {
   const save   = (field) => (value) => onFieldSave(field, value)
   const column = columns.find(c => c.id === transaction.status)
-  const [parcelsText, setParcelsText] = useState('')
+  const [parcelsChecked, setParcelsChecked] = useState(!!transaction.additional_parcels)
+  const [parcelsText,    setParcelsText]    = useState(
+    typeof transaction.additional_parcels === 'string' ? transaction.additional_parcels : ''
+  )
+
+  useEffect(() => {
+    setParcelsChecked(!!transaction.additional_parcels)
+    if (typeof transaction.additional_parcels === 'string') {
+      setParcelsText(transaction.additional_parcels)
+    }
+  }, [transaction.additional_parcels])
 
   const priceLabel = column?.priceLabel ||
     (transaction.rep_type === 'Buyer' ? 'Purchase Price' : 'List Price')
@@ -1951,10 +1964,13 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                     type="checkbox"
                     className="txp-additional-parcel-check"
                     tabIndex={41}
-                    checked={!!transaction.additional_parcels}
-                    onChange={e => save('additional_parcels')(e.target.checked)}
+                    checked={parcelsChecked}
+                    onChange={e => {
+                      setParcelsChecked(e.target.checked)
+                      if (!e.target.checked) save('additional_parcels')(null)
+                    }}
                   />
-                  {!!transaction.additional_parcels && (
+                  {parcelsChecked && (
                     <input
                       type="text"
                       className="txp-additional-parcel-text"
@@ -1962,6 +1978,10 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                       placeholder="Parcel APN(s)…"
                       tabIndex={42}
                       onChange={e => setParcelsText(e.target.value)}
+                      onBlur={() => {
+                        const val = parcelsText.trim() || null
+                        if (String(val ?? '') !== String(transaction.additional_parcels ?? '')) save('additional_parcels')(val)
+                      }}
                       onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
                     />
                   )}

@@ -184,7 +184,7 @@ const VENDOR_FIELD_LABELS = {
 }
 
 function buildFormFields(vendor, tx, tcSettings) {
-  const me = tcSettings?.find(t => t.name === 'Me')
+  const me = tcSettings?.find(t => t.name === 'Amy Casanova' || t.name === 'Me')
   const clientName = [tx?.client_first_name, tx?.client_last_name].filter(Boolean).join(' ')
   const valueMap = {
     realtor_name:       'Amy Casanova',

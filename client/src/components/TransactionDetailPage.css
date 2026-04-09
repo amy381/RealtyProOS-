@@ -44,7 +44,7 @@
 .txp-back-btn {
   background: none;
   border: none;
-  color: #555;
+  color: #a8bfcc;
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
@@ -54,8 +54,8 @@
   transition: background 0.12s, color 0.12s;
 }
 .txp-back-btn:hover {
-  background: #f0f0f0;
-  color: #111;
+  background: rgba(50, 200, 220, 0.08);
+  color: #c8d4e0;
 }
 
 .txp-topbar-left {
@@ -74,9 +74,9 @@
 
 .txp-nav-arrow {
   background: none;
-  border: 1px solid #e0e0e0;
+  border: 0.5px solid rgba(50, 200, 220, 0.2);
   border-radius: 5px;
-  color: #555;
+  color: #a8bfcc;
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
@@ -85,9 +85,9 @@
   transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
 .txp-nav-arrow:hover:not(:disabled) {
-  background: #f0f0f0;
-  color: #111;
-  border-color: #bbb;
+  background: rgba(50, 200, 220, 0.08);
+  color: #c8d4e0;
+  border-color: rgba(50, 200, 220, 0.4);
 }
 .txp-nav-arrow:disabled {
   opacity: 0.3;
@@ -111,7 +111,7 @@
 }
 
 .txp-topbar-address {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   color: #c8d4e0;
   letter-spacing: 0.01em;
@@ -805,7 +805,7 @@
 .txp-section {
   background: rgba(2, 5, 18, 0.45);
   border-radius: 8px;
-  border: 0.5px solid rgba(50, 200, 220, 0.18);
+  border: 0.5px solid rgba(50, 200, 220, 0.35);
   backdrop-filter: blur(6px);
   margin-bottom: 18px;
   overflow: visible;
@@ -847,13 +847,13 @@
   display: flex;
   align-items: center;
   min-height: 38px;
-  border-bottom: 1px solid #f4f4f4;
+  border-bottom: 0.5px solid rgba(168, 191, 204, 0.08);
   gap: 12px;
   padding: 0 18px;
   transition: background 0.1s;
 }
 .txp-field:last-child { border-bottom: none; }
-.txp-field:hover { background: #fafafa; }
+.txp-field:hover { background: rgba(50, 200, 220, 0.05); }
 
 .txp-field-label {
   width: 152px;
@@ -862,7 +862,7 @@
   font-variant: small-caps;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: rgba(168, 191, 204, 0.6);
+  color: rgba(168, 191, 204, 0.85);
   user-select: none;
   line-height: 1.2;
   padding: 6px 0;
@@ -924,13 +924,13 @@ select.txp-input { cursor: pointer; }
   display: flex;
   align-items: center;
   min-height: 38px;
-  border-bottom: 1px solid #f4f4f4;
+  border-bottom: 0.5px solid rgba(168, 191, 204, 0.08);
   gap: 12px;
   padding: 0 18px;
   transition: background 0.1s;
 }
 .txp-client-row:last-child { border-bottom: none; }
-.txp-client-row:hover { background: #fafafa; }
+.txp-client-row:hover { background: rgba(50, 200, 220, 0.05); }
 
 .txp-client-row-right {
   flex: 1;
@@ -1734,7 +1734,7 @@ select.txp-input { cursor: pointer; }
 .txp-csz-val {
   font-size: 16px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: #c8d4e0;
   cursor: pointer;
   border-radius: 4px;
   padding: 3px 6px;
@@ -1743,7 +1743,7 @@ select.txp-input { cursor: pointer; }
   align-items: center;
   transition: background 0.1s;
 }
-.txp-csz-val:hover { background: #f0f0f0; }
+.txp-csz-val:hover { background: rgba(50, 200, 220, 0.05); }
 
 .txp-csz-input {
   font-size: 16px;

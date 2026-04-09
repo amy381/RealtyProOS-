@@ -400,7 +400,8 @@ function FubInlineSearch({ onSelect, onClose }) {
     position: 'fixed',
     top: dropPos.top,
     left: dropPos.left,
-    width: dropPos.width,
+    width: '350px',
+    maxWidth: '350px',
     zIndex: 1000,
   }
 

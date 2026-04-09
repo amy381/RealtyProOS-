@@ -868,9 +868,8 @@
   padding: 6px 0;
 }
 
-/* required = bold black */
 .txp-field-label.required {
-  color: #1a1a1a;
+  color: rgba(168, 191, 204, 0.85);
   font-weight: 800;
 }
 
@@ -943,7 +942,7 @@ select.txp-input { cursor: pointer; }
 .txp-client-linked-name {
   font-size: 16px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: #c8d4e0;
 }
 
 .txp-client-row-info {
@@ -1046,7 +1045,7 @@ select.txp-input { cursor: pointer; }
   white-space: nowrap;
 }
 .txp-fub-result:last-child { border-bottom: none; }
-.txp-fub-result:hover { background: #f7f7f7; }
+.txp-fub-result:hover { background: rgba(50, 200, 220, 0.05); }
 
 .txp-fub-name  { font-size: 16px; font-weight: 600; color: #1a1a1a; flex-shrink: 0; }
 .txp-fub-email { font-size: 15px; color: #999; flex-shrink: 0; }
@@ -1073,7 +1072,7 @@ select.txp-input { cursor: pointer; }
   text-align: left;
   cursor: pointer;
 }
-.txp-fub-rel-skip:hover { background: #f7f7f7; color: #555555; }
+.txp-fub-rel-skip:hover { background: rgba(50, 200, 220, 0.05); color: #a8bfcc; }
 
 /* ─── Checkboxes (property features) ──────────────────────────────────────────── */
 .txp-checks-row {
@@ -1195,7 +1194,7 @@ select.txp-input { cursor: pointer; }
   transition: background 0.1s;
 }
 .txp-mention-option:last-child { border-bottom: none; }
-.txp-mention-option:hover { background: #f5f5f5; }
+.txp-mention-option:hover { background: rgba(50, 200, 220, 0.05); }
 
 /* Highlighted @mention in saved note cards */
 .txp-mention {
@@ -1224,7 +1223,7 @@ select.txp-input { cursor: pointer; }
   margin: -1px -4px;
   transition: background 0.1s;
 }
-.txp-note-text:hover { background: #f0f0f0; }
+.txp-note-text:hover { background: rgba(50, 200, 220, 0.05); }
 
 .txp-note-meta {
   display: flex;
@@ -1371,7 +1370,7 @@ select.txp-input { cursor: pointer; }
 /* Alternating row shading */
 .txp-task-row { transition: background 0.08s; }
 .txp-task-row:nth-child(even) { background: #fafafa; }
-.txp-task-row:hover { background: #f4f4f4; }
+.txp-task-row:hover { background: rgba(50, 200, 220, 0.05); }
 .txp-task-row:last-child td { border-bottom: none; }
 
 /* Completed rows: muted but not invisible */
@@ -1416,7 +1415,7 @@ select.txp-input { cursor: pointer; }
   display: inline-block;
   transition: background 0.08s;
 }
-.txp-task-name-text:hover { background: #eeeeee; }
+.txp-task-name-text:hover { background: rgba(50, 200, 220, 0.05); }
 .txp-task-name-text.done { text-decoration: line-through; color: #aaaaaa; cursor: default; }
 
 .txp-task-inline-input {
@@ -1444,7 +1443,7 @@ select.txp-input { cursor: pointer; }
   display: inline-block;
   transition: background 0.08s;
 }
-.txp-task-date:hover { background: #eeeeee; }
+.txp-task-date:hover { background: rgba(50, 200, 220, 0.05); }
 .txp-task-date.overdue { color: #dc2626; font-weight: 600; }
 .txp-task-date.today   { color: #d97706; font-weight: 600; }
 .txp-task-date.soon    { color: #0284c7; }
@@ -1460,7 +1459,7 @@ select.txp-input { cursor: pointer; }
   display: inline-block;
   transition: background 0.08s;
 }
-.txp-task-assignee-text:hover { background: #eeeeee; }
+.txp-task-assignee-text:hover { background: rgba(50, 200, 220, 0.05); }
 
 .txp-task-status-badge {
   font-size: 15px;

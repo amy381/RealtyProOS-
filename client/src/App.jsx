@@ -753,7 +753,7 @@ export default function App() {
         <div className="header-left">
           <div className="logo">
             <img
-              src="https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo-nav-v2.png"
+              src="https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo-nav-v3.png"
               alt="LegacyOS"
               style={{ height: '44px', width: 'auto' }}
             />

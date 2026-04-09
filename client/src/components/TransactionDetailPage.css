@@ -1126,17 +1126,19 @@ select.txp-input { cursor: pointer; }
 
 .txp-additional-parcel-text {
   flex: 1;
-  border: none;
-  border-bottom: 1px solid #ddd;
+  border: 0.5px solid rgba(50, 200, 220, 0.2);
+  border-radius: 4px;
   outline: none;
   font-size: 13px;
   padding: 2px 4px;
-  background: transparent;
+  background: rgba(2, 5, 18, 0.4);
+  color: #c8d4e0;
   height: 22px;
   line-height: 1;
 }
 
-.txp-additional-parcel-text:focus { border-bottom-color: #3b82f6; }
+.txp-additional-parcel-text::placeholder { color: rgba(168, 191, 204, 0.4); }
+.txp-additional-parcel-text:focus { border-color: rgba(50, 200, 220, 0.45); }
 
 /* ─── Notes ──────────────────────────────────────────────────────────────────── */
 .txp-note-compose-row { padding: 12px 18px 8px; position: relative; }

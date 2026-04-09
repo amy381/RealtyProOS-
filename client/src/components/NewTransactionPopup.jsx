@@ -207,7 +207,8 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
       tx.city                    = city    || null
       tx.state                   = 'AZ'
       tx.zip                     = zip     || null
-      tx.price                   = price   || null
+      const cleanedPrice = parseFloat(String(price).replace(/,/g, '')) || 0
+      tx.price                   = cleanedPrice || null
       tx.listing_contract        = listingContract || null
       tx.listing_expiration_date = listingExp      || null
       tx.target_live_date        = targetLive      || null
@@ -322,7 +323,17 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
 
             <div className="ntp-field ntp-half">
               <label>List Price</label>
-              <input type="text" placeholder="e.g. 309900" value={price} onChange={e => setPrice(e.target.value)} />
+              <input
+                type="text"
+                placeholder="e.g. 309900"
+                value={price}
+                onChange={e => setPrice(e.target.value)}
+                onFocus={() => setPrice(String(price).replace(/,/g, ''))}
+                onBlur={() => {
+                  const cleanedValue = String(price).replace(/,/g, '')
+                  if (cleanedValue && !isNaN(cleanedValue)) setPrice(Number(cleanedValue).toLocaleString('en-US'))
+                }}
+              />
             </div>
 
             <div className="ntp-row-2">

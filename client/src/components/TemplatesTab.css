@@ -22,27 +22,22 @@
 }
 
 .templates-sidebar-hdr {
-  padding: 12px 16px;
-  font-size: 0.7rem;
+  padding: 8px 12px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: rgba(168, 191, 204, 0.6);
+  color: #50C8DC;
   cursor: pointer;
-  background: transparent;
-  border-bottom: 0.5px solid rgba(50, 200, 220, 0.15);
+  background: rgba(50, 200, 220, 0.08);
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
+  border-radius: 6px;
   user-select: none;
   transition: color 0.15s, background 0.15s;
 }
 
 .templates-sidebar-hdr:hover {
-  color: #a8bfcc;
-  background: rgba(50, 200, 220, 0.05);
-}
-
-.templates-sidebar-hdr.active {
-  color: #50C8DC;
-  background: rgba(50, 200, 220, 0.08);
+  background: rgba(50, 200, 220, 0.13);
 }
 
 .templates-list {
@@ -161,7 +156,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px 16px;
-  border-bottom: 1px solid #e0e0e0;
+  background: transparent;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
   gap: 16px;
 }
 
@@ -178,22 +174,22 @@
 }
 
 .tt-header-btn {
-  border: 1px solid #ddd;
-  background: #fff;
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
+  background: rgba(2, 5, 18, 0.6);
   padding: 7px 14px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
-  color: #333;
+  color: #a8bfcc;
   transition: border-color 0.15s, background 0.15s;
   white-space: nowrap;
 }
 
 .tt-header-btn:hover {
-  border-color: #999;
-  background: #fafafa;
+  border-color: rgba(50, 200, 220, 0.4);
+  background: rgba(50, 200, 220, 0.08);
 }
 
 .tt-export-btn   { }
@@ -335,15 +331,15 @@
 }
 
 .templates-main-title {
-  font-size: 1rem;
+  font-size: 16px;
   font-weight: 700;
-  color: #111;
+  color: #c8d4e0;
   margin: 0 0 2px;
 }
 
 .templates-main-meta {
   font-size: 0.75rem;
-  color: #888;
+  color: rgba(168, 191, 204, 0.6);
   text-transform: capitalize;
 }
 
@@ -360,8 +356,7 @@
 
 .tt-tpl-edit-btn,
 .tt-tpl-delete-btn {
-  border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 11px;
   padding: 3px 8px;
@@ -369,25 +364,27 @@
 }
 
 .tt-tpl-edit-btn {
-  background: #f0f4ff;
-  color: #3b5fc0;
+  background: rgba(2, 5, 18, 0.6);
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
+  color: #a8bfcc;
 }
 
-.tt-tpl-edit-btn:hover { background: #dbeafe; }
+.tt-tpl-edit-btn:hover { background: rgba(50, 200, 220, 0.1); border-color: rgba(50, 200, 220, 0.4); }
 
 .tt-tpl-delete-btn {
-  background: #fff0f0;
-  color: #c0392b;
+  background: rgba(220, 50, 50, 0.12);
+  border: 0.5px solid rgba(220, 50, 50, 0.4);
+  color: rgba(220, 50, 50, 0.8);
 }
 
-.tt-tpl-delete-btn:hover { background: #fde8e8; }
+.tt-tpl-delete-btn:hover { background: rgba(220, 50, 50, 0.22); }
 
 .templates-add-task-btn {
-  background: #111;
-  color: #fff;
-  border: none;
+  background: rgba(212, 120, 30, 0.15);
+  color: #D4781E;
+  border: 0.5px solid rgba(212, 120, 30, 0.5);
   padding: 8px 18px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -397,7 +394,7 @@
 }
 
 .templates-add-task-btn:hover {
-  background: #333;
+  background: rgba(212, 120, 30, 0.25);
 }
 
 .templates-table-wrap {
@@ -421,20 +418,25 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #888;
-  border-bottom: 2px solid #e0e0e0;
+  color: rgba(168, 191, 204, 0.7);
+  background: transparent;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
   white-space: nowrap;
 }
 
 .templates-table td {
   padding: 10px 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 0.5px solid rgba(168, 191, 204, 0.08);
   vertical-align: middle;
-  color: #222;
+  color: #a8bfcc;
+}
+
+.templates-table tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .templates-table tbody tr:hover td {
-  background: #fafafa;
+  background: rgba(50, 200, 220, 0.05);
 }
 
 .tt-row-dragging td {
@@ -463,7 +465,7 @@
   text-align: center;
 }
 
-.tt-title-link { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+.tt-title-link { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; color: #c8d4e0; }
 .tt-title-link:hover { text-decoration-style: solid; }
 .tt-type-cell  { width: 100px; }
 .tt-timing-cell { min-width: 200px; color: #555; }

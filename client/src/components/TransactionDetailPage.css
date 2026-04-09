@@ -1505,38 +1505,52 @@ select.txp-input { cursor: pointer; }
 /* ─── History ──────────────────────────────────────────────────────────────────── */
 
 /* Section title doubles as flex header for the filter */
+.txp-section:has(.txp-history-header) {
+  background: rgba(2, 5, 18, 0.45);
+  border: 0.5px solid rgba(50, 200, 220, 0.18);
+  border-radius: 8px;
+  backdrop-filter: blur(6px);
+}
+
 .txp-history-header {
   display: flex !important;
   align-items: center;
   justify-content: space-between;
+  color: #50C8DC;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
+  letter-spacing: 1px;
 }
 
 .txp-history-filter {
   font-size: 15px;
   font-family: inherit;
   font-weight: 500;
-  color: #555555;
-  border: 1.5px solid #e4e4e4;
-  border-radius: 5px;
+  color: #a8bfcc;
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
+  border-radius: 6px;
   padding: 3px 8px;
-  background: #ffffff;
+  background: rgba(2, 5, 18, 0.6);
   cursor: pointer;
   outline: none;
 }
-.txp-history-filter:focus { border-color: #aaaaaa; }
+.txp-history-filter:focus { border-color: rgba(50, 200, 220, 0.5); }
 
 .txp-history-entry {
   display: flex;
   align-items: flex-start;
   gap: 10px;
   padding: 12px 18px;
-  border-bottom: 1px solid #f4f4f4;
+  border-bottom: 0.5px solid rgba(168, 191, 204, 0.08);
+  transition: background 0.12s;
 }
 .txp-history-entry:last-child { border-bottom: none; }
+.txp-history-entry:nth-child(even) { background: rgba(255, 255, 255, 0.03); }
+.txp-history-entry:nth-child(odd)  { background: transparent; }
+.txp-history-entry:hover { background: rgba(50, 200, 220, 0.05); }
 
 /* Distinct background for note and mention entries */
-.txp-history-note    { background: #fafdf7; }
-.txp-history-mention { background: #f0f4ff; }
+.txp-history-note    { background: rgba(16, 185, 129, 0.04); }
+.txp-history-mention { background: rgba(99, 102, 241, 0.04); }
 
 .txp-history-badge {
   flex-shrink: 0;
@@ -1549,11 +1563,11 @@ select.txp-input { cursor: pointer; }
   white-space: nowrap;
   margin-top: 2px;
 }
-.txp-history-badge--note    { background: #dcfce7; color: #166534; }
-.txp-history-badge--mention { background: #dbeafe; color: #1e40af; }
+.txp-history-badge--note    { background: rgba(16, 185, 129, 0.12); color: rgba(16, 185, 129, 0.85); }
+.txp-history-badge--mention { background: rgba(99, 102, 241, 0.12); color: rgba(148, 163, 255, 0.85); }
 
-.txp-history-desc { font-size: 17px; color: #1a1a1a; line-height: 1.5; flex: 1; }
-.txp-history-time { font-size: 15px; color: #bbbbbb; white-space: nowrap; flex-shrink: 0; padding-top: 2px; }
+.txp-history-desc { font-size: 17px; color: #a8bfcc; line-height: 1.5; flex: 1; }
+.txp-history-time { font-size: 15px; color: rgba(168, 191, 204, 0.5); white-space: nowrap; flex-shrink: 0; padding-top: 2px; }
 
 /* ─── Documents Required ────────────────────────────────────────────────────────── */
 
@@ -1777,7 +1791,7 @@ select.txp-input { cursor: pointer; }
 .txp-cm-address {
   font-size: 15px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: rgba(168, 191, 204, 0.5);
   padding: 14px 18px 10px;
   border-bottom: 1px solid #f0f0f0;
   letter-spacing: -0.01em;
@@ -1787,29 +1801,30 @@ select.txp-input { cursor: pointer; }
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: #aaaaaa;
+  letter-spacing: 1px;
+  color: #50C8DC;
   padding: 12px 18px 8px;
-  border-bottom: 1px solid #f0f0f0;
-  background: #fafafa;
+  border-top: 0.5px solid rgba(50, 200, 220, 0.25);
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.25);
+  background: rgba(50, 200, 220, 0.08);
 }
 
 .txp-cm-check-hint {
   font-size: 13px;
-  color: #888888;
+  color: rgba(168, 191, 204, 0.5);
   margin-left: 4px;
 }
 
 .txp-cm-net-row {
-  background: #f7f7f7;
-  border-top: 1.5px solid #e8e8e8 !important;
+  background: rgba(50, 200, 220, 0.06);
+  border-top: 0.5px solid rgba(50, 200, 220, 0.2) !important;
   border-bottom: 1.5px solid #e8e8e8 !important;
 }
 
 .txp-cm-net-label {
   font-size: 13px !important;
-  font-weight: 800 !important;
-  color: #1a1a1a !important;
+  font-weight: 500 !important;
+  color: #50C8DC !important;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -1817,8 +1832,8 @@ select.txp-input { cursor: pointer; }
 .txp-cm-net-value {
   flex: 1;
   font-size: 18px;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-weight: 600;
+  color: #c8d4e0;
   padding: 6px 7px;
 }
 
@@ -1851,12 +1866,12 @@ select.txp-input { cursor: pointer; }
 .txp-cm-num-input {
   width: 80px;
   padding: 6px 8px;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 6px;
+  border: 0.5px solid rgba(50, 200, 220, 0.3) !important;
+  border-radius: 4px;
   font-size: 14px;
   font-family: inherit;
-  color: #1a1a1a;
-  background: #fff;
+  color: #c8d4e0 !important;
+  background: rgba(2, 5, 18, 0.6) !important;
   outline: none;
   -moz-appearance: textfield;
 }
@@ -1868,7 +1883,7 @@ select.txp-input { cursor: pointer; }
 .txp-cm-split-unit {
   font-size: 13px;
   font-weight: 600;
-  color: #888;
+  color: rgba(168, 191, 204, 0.5);
 }
 
 .txp-cm-split-or {
@@ -1912,9 +1927,23 @@ select.txp-input { cursor: pointer; }
 }
 
 /* ─── Google Drive Section ─────────────────────────────────────────────────────── */
+.txp-section:has(.txp-drive-status, .txp-drive-links) {
+  background: rgba(2, 5, 18, 0.45);
+  border: 0.5px solid rgba(50, 200, 220, 0.18);
+  border-radius: 8px;
+  backdrop-filter: blur(6px);
+  padding: 16px;
+}
+
+.txp-section:has(.txp-drive-status, .txp-drive-links) .txp-section-title {
+  color: #50C8DC;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
+  letter-spacing: 1px;
+}
+
 .txp-drive-status {
   font-size: 15px;
-  color: #888888;
+  color: rgba(168, 191, 204, 0.6);
   margin: 0 0 14px;
   line-height: 1.5;
 }
@@ -1936,17 +1965,19 @@ select.txp-input { cursor: pointer; }
   cursor: pointer;
   text-decoration: none;
   transition: background 0.12s, border-color 0.12s;
-  border: 1.5px solid #1a1a1a;
-  background: #1a1a1a;
-  color: #ffffff;
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(212, 120, 30, 0.15);
+  border: 0.5px solid rgba(212, 120, 30, 0.5);
+  color: #D4781E;
 }
 .txp-drive-connect-btn:hover,
-.txp-drive-folder-btn:hover   { background: #333333; }
+.txp-drive-folder-btn:hover   { background: rgba(212, 120, 30, 0.25); }
 .txp-drive-folder-btn--secondary {
-  background: #ffffff;
-  color: #1a1a1a;
+  background: rgba(212, 120, 30, 0.08);
+  color: #D4781E;
 }
-.txp-drive-folder-btn--secondary:hover { background: #f5f5f5; }
+.txp-drive-folder-btn--secondary:hover { background: rgba(212, 120, 30, 0.2); }
 
 /* ─── CollaboratorSearch ───────────────────────────────────────────────────────── */
 .collab-search-field { position: relative; }

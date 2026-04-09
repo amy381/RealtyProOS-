@@ -1476,14 +1476,19 @@
 .gtd-inline-title-input {
   font-size: 14px;
   font-family: inherit;
-  color: #1a1a1a;
-  border: 1px solid #4a7fd4;
+  color: #c8d4e0 !important;
+  border: 0.5px solid rgba(50, 200, 220, 0.4) !important;
   border-radius: 4px;
   padding: 1px 6px;
-  width: 31.2%;
+  width: 272px;
   outline: none;
-  background: #f5f8ff;
+  background: rgba(2, 5, 18, 0.6) !important;
   box-sizing: border-box;
+}
+
+.gtd-inline-title-input:focus {
+  background: rgba(2, 5, 18, 0.7) !important;
+  outline: none;
 }
 
 .gtd-inline-select {

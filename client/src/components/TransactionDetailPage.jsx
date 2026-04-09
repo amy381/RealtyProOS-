@@ -325,8 +325,7 @@ async function fetchFubPerson(personId) {
 function FubInlineSearch({ onSelect, onClose }) {
   const [query, setQuery]     = useState('')
   const [results, setResults] = useState([])
-  const [loading,     setLoading]     = useState(false)
-  const [pendingFull, setPendingFull] = useState(null)
+  const [loading, setLoading] = useState(false)
   const timer   = useRef(null)
   const inputRef = useRef(null)
   const wrapRef  = useRef(null)
@@ -352,32 +351,12 @@ function FubInlineSearch({ onSelect, onClose }) {
     }, 350)
   }
 
-  const handleSelect = async (person) => {
+  const handleSelect = (person) => {
     if (person._via) {
       onSelect({ _isRelationship: true, client2: { first_name: person.first_name, last_name: person.last_name, email: person.email, phone: person.phone } })
       return
     }
-    if (person.id) {
-      const full = await fetchFubPerson(person.id)
-      if (full) {
-        if (full.related && full.related.length > 0) {
-          setResults([])
-          setPendingFull(full)
-          return
-        }
-        onSelect(full)
-        return
-      }
-    }
     onSelect({ client1: person, related: [] })
-  }
-
-  const handleRelPick = (rel) => {
-    onSelect({ _isRelationship: true, client2: { first_name: rel.first_name, last_name: rel.last_name, email: rel.email, phone: rel.phone } })
-  }
-
-  const handleRelSkip = () => {
-    onSelect(pendingFull)
   }
 
   return (
@@ -390,28 +369,7 @@ function FubInlineSearch({ onSelect, onClose }) {
         onChange={e => handleChange(e.target.value)}
         onKeyDown={e => { if (e.key === 'Escape') onClose() }}
       />
-      {pendingFull ? (
-        <div className="txp-fub-results">
-          <div className="txp-fub-rel-prompt">This contact has a related party:</div>
-          {pendingFull.related.map((r, i) => (
-            <button
-              key={r.relationship_id || i}
-              className="txp-fub-result"
-              onMouseDown={e => { e.preventDefault(); handleRelPick(r) }}
-            >
-              <span className="txp-fub-name">{[r.first_name, r.last_name].filter(Boolean).join(' ') || '—'}</span>
-              {r.email && <span className="txp-fub-email">{r.email}</span>}
-            </button>
-          ))}
-          <button
-            className="txp-fub-rel-skip"
-            onMouseDown={e => e.preventDefault()}
-            onClick={handleRelSkip}
-          >
-            Skip — no Client 2
-          </button>
-        </div>
-      ) : (loading || results.length > 0 || (query.length >= 2 && !loading)) && (
+      {(loading || results.length > 0 || (query.length >= 2 && !loading)) && (
         <div className="txp-fub-results">
           {loading && <div className="txp-fub-loading">Searching…</div>}
           {results.map(p => (

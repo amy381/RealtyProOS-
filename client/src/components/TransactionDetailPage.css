@@ -1012,8 +1012,12 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-fub-results {
-  position: fixed;
-  width: 400px;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: max(100%, 360px);
+  width: max-content;
+  max-width: 520px;
   z-index: 1000;
   background: #ffffff;
   border: 1px solid #dddddd;

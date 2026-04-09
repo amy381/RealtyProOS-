@@ -327,6 +327,7 @@ function FubInlineSearch({ onSelect, onClose }) {
   const [results, setResults] = useState([])
   const [loading,     setLoading]     = useState(false)
   const [pendingFull, setPendingFull] = useState(null)
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0 })
   const timer   = useRef(null)
   const inputRef = useRef(null)
   const wrapRef  = useRef(null)
@@ -339,6 +340,13 @@ function FubInlineSearch({ onSelect, onClose }) {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  useEffect(() => {
+    if (inputRef.current) {
+      const r = inputRef.current.getBoundingClientRect()
+      setDropPos({ top: r.bottom + 4, left: r.left })
+    }
+  }, [results, pendingFull, query])
 
   const handleChange = (val) => {
     setQuery(val)
@@ -391,7 +399,7 @@ function FubInlineSearch({ onSelect, onClose }) {
         onKeyDown={e => { if (e.key === 'Escape') onClose() }}
       />
       {pendingFull ? (
-        <div className="txp-fub-results">
+        <div className="txp-fub-results" style={{ top: dropPos.top, left: dropPos.left }}>
           <div className="txp-fub-rel-prompt">This contact has a related party:</div>
           {pendingFull.related.map((r, i) => (
             <button
@@ -413,7 +421,7 @@ function FubInlineSearch({ onSelect, onClose }) {
           </button>
         </div>
       ) : (loading || results.length > 0 || (query.length >= 2 && !loading)) && (
-        <div className="txp-fub-results">
+        <div className="txp-fub-results" style={{ top: dropPos.top, left: dropPos.left }}>
           {loading && <div className="txp-fub-loading">Searching…</div>}
           {results.map(p => (
             <button

@@ -741,6 +741,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
           task={task}
           tx={tx}
           tcSettings={tcSettings}
+          driveFolderId={tx?.drive_folder_id || null}
           onClose={() => setEmailPreviewOpen(false)}
         />
       )}

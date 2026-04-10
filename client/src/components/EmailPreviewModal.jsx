@@ -142,7 +142,7 @@ function friendlyMime(mimeType = '') {
 }
 
 // ─── Main EmailPreviewModal ───────────────────────────────────────────────────
-export default function EmailPreviewModal({ task, tx, tcSettings = [], onClose }) {
+export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFolderId = null, onClose }) {
   const [template,     setTemplate]     = useState(null)
   const [loading,      setLoading]      = useState(true)
   const [titleContact, setTitleContact] = useState(null)
@@ -392,7 +392,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], onClose }
 
       {driveOpen && (
         <DriveFilePicker
-          folderId={tx?.drive_folder_id || null}
+          folderId={driveFolderId ?? tx?.drive_folder_id ?? null}
           selectedFiles={attachments}
           onToggleFile={toggleAttachment}
           onClose={() => setDriveOpen(false)}

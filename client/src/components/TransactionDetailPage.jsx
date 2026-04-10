@@ -2544,7 +2544,7 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, dbTemplates, dbTempl
 }
 
 // ─── Documents Required (with Google Drive upload) ────────────────────────────
-function DocsRequiredSection({ transaction, commissions }) {
+function DocsRequiredSection({ transaction, commissions, onTransactionUpdate }) {
   const [docStatuses, setDocStatuses] = useState({})   // { docName: { checked, filename, drive_id, drive_link } }
   const [uploading,   setUploading]   = useState({})
   const [customDocs,  setCustomDocs]  = useState({ buyer: [], listing: [], pending: [] })
@@ -2554,6 +2554,37 @@ function DocsRequiredSection({ transaction, commissions }) {
     drive_under_contract_id: transaction.drive_under_contract_id || null,
   })
   const fileRefs = useRef({})
+
+  // Drive folder linking state
+  const [linkOpen,   setLinkOpen]   = useState(false)
+  const [linkDraft,  setLinkDraft]  = useState('')
+  const [linkSaving, setLinkSaving] = useState(false)
+
+  const extractFolderId = (input) => {
+    const m = input.match(/\/folders\/([a-zA-Z0-9_-]+)/)
+    return m ? m[1] : input.trim()
+  }
+
+  const handleSaveFolder = async () => {
+    const folderId = extractFolderId(linkDraft)
+    if (!folderId) return
+    setLinkSaving(true)
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({ drive_folder_id: folderId })
+        .eq('id', transaction.id)
+      if (error) throw error
+      setFolderIds(prev => ({ ...prev, drive_folder_id: folderId }))
+      if (onTransactionUpdate) onTransactionUpdate(transaction.id, { drive_folder_id: folderId })
+      setLinkOpen(false)
+      setLinkDraft('')
+    } catch (err) {
+      toast.error('Could not save folder: ' + err.message)
+    } finally {
+      setLinkSaving(false)
+    }
+  }
 
   // Keep folderIds in sync
   useEffect(() => {
@@ -2822,6 +2853,50 @@ function DocsRequiredSection({ transaction, commissions }) {
   return (
     <div className="txp-section">
       <div className="txp-section-title">Documents Required</div>
+
+      {/* Drive Folder row */}
+      <div className="txp-drive-folder-row">
+        {folderIds.drive_folder_id && !linkOpen ? (
+          <>
+            <a
+              href={`https://drive.google.com/drive/folders/${folderIds.drive_folder_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="txp-drive-folder-link"
+            >
+              📁 Open Drive Folder
+            </a>
+            <button
+              className="txp-drive-folder-edit-btn"
+              onClick={() => { setLinkDraft(''); setLinkOpen(true) }}
+              title="Change folder"
+            >✏</button>
+          </>
+        ) : linkOpen ? (
+          <div className="txp-drive-link-form">
+            <div className="txp-drive-link-inputs">
+              <input
+                className="txp-drive-link-input"
+                placeholder="Paste Drive folder URL or ID…"
+                value={linkDraft}
+                onChange={e => setLinkDraft(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleSaveFolder(); if (e.key === 'Escape') setLinkOpen(false) }}
+                autoFocus
+              />
+              <button className="txp-doc-upload-btn" onClick={handleSaveFolder} disabled={linkSaving || !linkDraft.trim()}>
+                {linkSaving ? 'Saving…' : 'Save'}
+              </button>
+              <button className="txp-drive-folder-edit-btn" onClick={() => setLinkOpen(false)}>Cancel</button>
+            </div>
+            <div className="txp-drive-link-hint">Tip: Folder naming convention — Street Name, Street Address — Last Name</div>
+          </div>
+        ) : (
+          <button className="txp-drive-link-btn" onClick={() => setLinkOpen(true)}>
+            🔗 Link Drive Folder
+          </button>
+        )}
+      </div>
+
       {!showBuyerSection && !showListingSection && !showPendingSection && (
         <div className="txp-docs-empty">No document sections apply to this transaction&rsquo;s type and stage.</div>
       )}
@@ -3492,6 +3567,7 @@ export default function TransactionDetailPage({
                 <DocsRequiredSection
                   transaction={transaction}
                   commissions={commissions}
+                  onTransactionUpdate={onTransactionUpdate}
                 />
               </div>
             </div>

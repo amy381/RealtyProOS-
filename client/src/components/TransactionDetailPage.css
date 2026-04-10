@@ -1588,6 +1588,93 @@ select.txp-input { cursor: pointer; }
   border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
 }
 
+/* ── Drive Folder row (top of Documents Required section) ─────────────────── */
+.txp-drive-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-bottom: 1px solid rgba(50, 200, 220, 0.08);
+  flex-wrap: wrap;
+}
+
+.txp-drive-folder-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: #50C8DC;
+  text-decoration: none;
+  transition: color 0.12s;
+}
+.txp-drive-folder-link:hover { color: #a8e8f0; }
+
+.txp-drive-folder-edit-btn {
+  background: none;
+  border: none;
+  color: rgba(168, 191, 204, 0.45);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  transition: color 0.12s, background 0.12s;
+}
+.txp-drive-folder-edit-btn:hover {
+  color: #a8bfcc;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.txp-drive-link-btn {
+  background: rgba(2, 5, 18, 0.6);
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
+  color: #a8bfcc;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.txp-drive-link-btn:hover {
+  background: rgba(50, 200, 220, 0.08);
+  border-color: rgba(50, 200, 220, 0.4);
+  color: #c8d4e0;
+}
+
+.txp-drive-link-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.txp-drive-link-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.txp-drive-link-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
+  border-radius: 6px;
+  color: #a8bfcc;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 5px 10px;
+  outline: none;
+  transition: border-color 0.12s;
+}
+.txp-drive-link-input:focus { border-color: rgba(50, 200, 220, 0.5); }
+.txp-drive-link-input::placeholder { color: rgba(168, 191, 204, 0.35); }
+
+.txp-drive-link-hint {
+  font-size: 11px;
+  color: rgba(168, 191, 204, 0.45);
+  font-style: italic;
+  padding-left: 2px;
+}
+
 /* Per-section wrapper */
 .txp-docs-section {
   border-top: 1px solid rgba(50, 200, 220, 0.1);

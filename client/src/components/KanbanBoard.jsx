@@ -12,7 +12,7 @@ import KanbanColumn from './KanbanColumn'
 import TransactionCard from './TransactionCard'
 import './KanbanBoard.css'
 
-export default function KanbanBoard({ columns, transactions, onEdit, onStatusChange, onDelete, onCardClick, commissions }) {
+export default function KanbanBoard({ columns, transactions, onStatusChange, onDelete, onCardClick, commissions }) {
   const [activeId, setActiveId] = useState(null)
 
   const mainColumns = columns.filter(c => c.id !== 'cancelled-expired')
@@ -50,7 +50,6 @@ export default function KanbanBoard({ columns, transactions, onEdit, onStatusCha
                 key={col.id}
                 column={col}
                 transactions={transactions.filter(t => t.status === col.id)}
-                onEdit={onEdit}
                 onDelete={onDelete}
                 onCardClick={onCardClick}
                 commissions={commissions}

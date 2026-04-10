@@ -71,7 +71,7 @@ function getCardFields(transaction) {
   return [...visibleDateFields, ...textFields]
 }
 
-export default function TransactionCard({ transaction, onEdit, onDelete, isDragging, priceLabel, onCardClick, viewMode }) {
+export default function TransactionCard({ transaction, onDelete, isDragging, priceLabel, onCardClick, viewMode }) {
   const hasDragged = useRef(false)
   const pointerStart = useRef({ x: 0, y: 0 })
 
@@ -174,12 +174,6 @@ export default function TransactionCard({ transaction, onEdit, onDelete, isDragg
             <span className={`card-rep-badge ${transaction.rep_type === 'Buyer' ? 'buyer' : 'seller'}`}>{transaction.rep_type}</span>
           )}
           <div className="card-actions">
-            <button
-              className="card-btn edit-btn"
-              onClick={(e) => { e.stopPropagation(); onEdit && onEdit(transaction) }}
-              onPointerDown={(e) => e.stopPropagation()}
-              title="Edit"
-            >✏️</button>
           </div>
         </div>
       </div>

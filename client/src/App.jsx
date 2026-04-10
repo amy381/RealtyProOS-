@@ -7,7 +7,6 @@ import { sendMentionNotifications, parseMentions } from './lib/emailNotify'
 import KanbanBoard from './components/KanbanBoard'
 import ListView from './components/ListView'
 import GoalsDashboard from './components/GoalsDashboard'
-import TransactionModal from './components/TransactionModal'
 import TransactionDetailPage from './components/TransactionDetailPage'
 import CommissionsTab from './components/CommissionsTab'
 import TasksTab from './components/TasksTab'
@@ -69,9 +68,7 @@ export default function App() {
   const [loading, setLoading]                   = useState(true)
   const [newTxOpen, setNewTxOpen]               = useState(false)
   const [newTxPrefill, setNewTxPrefill]         = useState(null)
-  const [modalOpen, setModalOpen]               = useState(false)
   const [settingsOpen, setSettingsOpen]         = useState(false)
-  const [editingTransaction, setEditingTransaction] = useState(null)
   const [selectedTransaction, setSelectedTransaction] = useState(null)
   const [selectedSection,     setSelectedSection]     = useState('details')
   const [txOpenRevision,      setTxOpenRevision]      = useState(0)
@@ -290,33 +287,6 @@ export default function App() {
       toast.error('Failed to create transaction')
       console.error('[create]', err)
     }
-  }
-
-  // ── Edit transaction ────────────────────────────────────────────────────────
-  const handleEdit = (transaction) => {
-    setEditingTransaction(transaction)
-    setModalOpen(true)
-  }
-
-  const handleSave = async (data) => {
-    if (!editingTransaction) { setModalOpen(false); return }
-    const { id, created_at, updated_at, ...updateData } = data
-    if ('price' in updateData) updateData.price = parsePrice(updateData.price)
-
-    try {
-      const { data: updated, error } = await supabase
-        .from('transactions').update(sanitizeForDB(updateData)).eq('id', editingTransaction.id).select().single()
-      if (error) throw error
-
-      setTransactions(prev => prev.map(t => t.id === editingTransaction.id ? updated : t))
-      if (selectedTransaction?.id === editingTransaction.id) setSelectedTransaction(updated)
-      toast.success('Transaction updated!')
-    } catch (err) {
-      toast.error('Failed to update transaction')
-      console.error(err)
-    }
-    setModalOpen(false)
-    setEditingTransaction(null)
   }
 
   // ── Status change (drag-drop or detail page Stage dropdown) ────────────────
@@ -798,7 +768,6 @@ export default function App() {
           <KanbanBoard
             columns={COLUMNS}
             transactions={transactions}
-            onEdit={handleEdit}
             onStatusChange={handleStatusChange}
             onDelete={handleDelete}
             onCardClick={(tx) => openTransaction(tx)}
@@ -912,15 +881,6 @@ export default function App() {
           onCreate={handleCreateTransaction}
           onClose={() => { setNewTxOpen(false); setNewTxPrefill(null) }}
           prefill={newTxPrefill}
-        />
-      )}
-
-      {modalOpen && (
-        <TransactionModal
-          transaction={editingTransaction}
-          columns={COLUMNS}
-          onSave={handleSave}
-          onClose={() => { setModalOpen(false); setEditingTransaction(null) }}
         />
       )}
 

@@ -16,7 +16,6 @@ const SECTIONS = [
   { id: 'docs-req',     label: 'Tasks & Documents'   },
   { id: 'commission',   label: 'Commission'           },
   { id: 'showings',     label: 'Showings',  sellerOnly: true },
-  { id: 'google-drive', label: 'Google Drive'         },
   { id: 'history',      label: 'History'              },
 ]
 
@@ -2917,105 +2916,6 @@ function DocsRequiredSection({ transaction, commissions, onTransactionUpdate }) 
 }
 
 // ─── Google Drive Section ─────────────────────────────────────────────────────
-function GoogleDriveSection({ transaction, onFoldersCreated }) {
-  const [connected, setConnected] = useState(null)  // null = loading
-  const [creating,  setCreating]  = useState(false)
-
-  useEffect(() => {
-    fetch('/api/google/status').then(r => r.json())
-      .then(d => setConnected(d.connected === true))
-      .catch(() => setConnected(false))
-  }, [])
-
-  const hasFolders       = !!transaction.drive_folder_id
-  const hasUnderContract = !!transaction.drive_under_contract_id
-
-  const handleCreateFolder = async () => {
-    const addr = transaction.property_address || ''
-    const last = transaction.client_last_name  || ''
-    if (!addr && !last) {
-      toast.error('Add a property address or client name before creating the Drive folder.')
-      return
-    }
-    setCreating(true)
-    try {
-      const result = await syncDriveFolder({
-        transactionId:        transaction.id,
-        newStatus:            transaction.status,
-        driveFolderId:        null,
-        driveUnderContractId: null,
-        repType:              transaction.rep_type,
-        propertyAddress:      addr,
-        clientLastName:       last,
-      })
-      onFoldersCreated(transaction.id, result)
-      toast.success('Drive folder created!')
-    } catch (err) {
-      toast.error('Could not create folder: ' + err.message)
-    } finally {
-      setCreating(false)
-    }
-  }
-
-  if (connected === null) {
-    return (
-      <div className="txp-section">
-        <div className="txp-section-title">Google Drive</div>
-        <p className="txp-drive-status">Checking connection…</p>
-      </div>
-    )
-  }
-
-  if (!connected) {
-    return (
-      <div className="txp-section">
-        <div className="txp-section-title">Google Drive</div>
-        <p className="txp-drive-status">Not connected. Sign in once to sync folders and documents.</p>
-        <a href="/api/google/auth" className="txp-drive-connect-btn">Connect Google Drive</a>
-      </div>
-    )
-  }
-
-  return (
-    <div className="txp-section">
-      <div className="txp-section-title">Google Drive</div>
-      {hasFolders ? (
-        <div className="txp-drive-links">
-          <a
-            href={getDriveUrl(transaction.drive_folder_id)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="txp-drive-folder-btn"
-          >
-            Open Folder in Drive
-          </a>
-          {hasUnderContract && (
-            <a
-              href={getDriveUrl(transaction.drive_under_contract_id)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="txp-drive-folder-btn txp-drive-folder-btn--secondary"
-            >
-              Open Under Contract Folder
-            </a>
-          )}
-        </div>
-      ) : (
-        <div className="txp-drive-links">
-          <p className="txp-drive-status">No Drive folder yet for this transaction.</p>
-          <button
-            className="txp-drive-connect-btn"
-            onClick={handleCreateFolder}
-            disabled={creating}
-          >
-            {creating ? 'Creating…' : 'Create Drive Folder'}
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ─── History Section with filter ───────────────────────────────────────────────
 function getEntryType(entry) {
   if (entry.type) return entry.type         // session entries carry explicit type
@@ -3585,13 +3485,6 @@ export default function TransactionDetailPage({
 
           {activeSection === 'showings' && transaction.rep_type === 'Seller' && (
             <ShowingsSection transaction={transaction} />
-          )}
-
-          {activeSection === 'google-drive' && (
-            <GoogleDriveSection
-              transaction={transaction}
-              onFoldersCreated={onTransactionUpdate}
-            />
           )}
 
           {activeSection === 'history' && (

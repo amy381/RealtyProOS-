@@ -2155,7 +2155,7 @@
 
 .gtd-email-tmpl-name {
   font-size: 13px;
-  color: #555;
+  color: rgba(255, 255, 255, 0.75);
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;

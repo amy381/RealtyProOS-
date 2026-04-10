@@ -1309,7 +1309,7 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #888;
+  color: rgba(168, 191, 204, 0.75);
   cursor: pointer;
   user-select: none;
   padding: 2px 0;
@@ -1319,17 +1319,17 @@
   -webkit-appearance: none;
   width: 15px;
   height: 15px;
-  border: 1.5px solid #bbb;
+  border: 1.5px solid rgba(168, 191, 204, 0.3);
   border-radius: 3px;
-  background: #f4f4f4;
+  background: rgba(255, 255, 255, 0.08);
   cursor: pointer;
   flex-shrink: 0;
   position: relative;
   transition: background 0.15s, border-color 0.15s;
 }
 .et-recipient-var-check input[type="checkbox"]:checked {
-  background: #3b5fc0;
-  border-color: #3b5fc0;
+  background: rgba(80, 200, 220, 0.25);
+  border-color: #50C8DC;
 }
 .et-recipient-var-check input[type="checkbox"]:checked::after {
   content: '';
@@ -1338,7 +1338,7 @@
   top: 1px;
   width: 5px;
   height: 9px;
-  border: 2px solid #fff;
+  border: 2px solid #a8bfcc;
   border-top: none;
   border-left: none;
   transform: rotate(45deg);
@@ -1349,18 +1349,30 @@
   gap: 6px;
   align-items: center;
 }
-.et-recipient-custom-input { flex: 1; }
+.et-recipient-custom-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(168, 191, 204, 0.2) !important;
+  color: #a8bfcc !important;
+}
+.et-recipient-custom-input::placeholder {
+  color: rgba(168, 191, 204, 0.4);
+}
 
 .et-recipient-add-btn {
   padding: 6px 12px;
   font-size: 12px;
-  background: #f0f0f0;
-  border: 1px solid #ccc;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(168, 191, 204, 0.2);
   border-radius: 5px;
   cursor: pointer;
   white-space: nowrap;
+  color: #a8bfcc;
 }
-.et-recipient-add-btn:hover { background: #e4e4e4; }
+.et-recipient-add-btn:hover {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(168, 191, 204, 0.35);
+}
 
 .et-recipient-tags {
   display: flex;

@@ -63,7 +63,6 @@ export default function KanbanBoard({ columns, transactions, onStatusChange, onD
               key={col.id}
               column={col}
               transactions={transactions.filter(t => t.status === col.id)}
-              onEdit={onEdit}
               onDelete={onDelete}
               onCardClick={onCardClick}
               commissions={commissions}

@@ -12,13 +12,40 @@ const GOALS = {
 const Q_UNITS_GOAL = 15
 const Q_GCI_GOAL   = 90_000
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function gciFor(transaction, commission) {
+// ─── GCI / Net calculation — mirrors CommissionsTab exactly ──────────────────
+const CAP_RATE      = 0.30
+const CAP_LIMIT     = 10_000
+const ROYALTY_RATE  = 0.06
+const ROYALTY_LIMIT = 3_000
+const EO_FLAT       = 35
+
+function calcGCI(t, c) {
+  const price     = Number(t.price) || 0
+  const scFlat    = c.seller_concession_flat     != null ? Number(c.seller_concession_flat)     : null
+  const scPct     = Number(c.seller_concession_percent)  || 0
+  const bcFlat    = c.buyer_contribution_flat    != null ? Number(c.buyer_contribution_flat)    : null
+  const bcPct     = Number(c.buyer_contribution_percent) || 0
+  const sellerGCI = scFlat != null ? scFlat : scPct / 100 * price
+  const buyerGCI  = bcFlat != null ? bcFlat : bcPct / 100 * price
+  return sellerGCI + buyerGCI
+}
+
+function calcRow(t, c) {
+  const referralPct    = Number(t.referral_pct) || 0
+  const gci            = calcGCI(t, c)
+  const referralAmt    = referralPct > 0 ? gci * referralPct / 100 : 0
+  const capAmt         = c.cap_deduction     ? gci * CAP_RATE    : 0
+  const royaltyAmt     = c.royalty_deduction ? gci * ROYALTY_RATE : 0
+  const eoAmt          = gci > 0 ? EO_FLAT : 0
+  const tcFeeAmt       = Number(c.tc_fee_commission) || 0
+  const concessionsAmt = Number(c.concessions) || 0
+  const net            = gci - referralAmt - capAmt - royaltyAmt - eoAmt - tcFeeAmt - concessionsAmt
+  return { gci, net }
+}
+
+function netGciFor(t, commission) {
   if (!commission) return 0
-  const price  = Number(transaction.price) || 0
-  const rate   = Number((commission.commission_rate || '').toString().replace(/[$,%]/g, '').trim()) || 0
-  const isFlat = (commission.commission_type || 'pct') === 'flat'
-  return isFlat ? rate : price * rate / 100
+  return calcRow(t, commission).net
 }
 
 function fmtShort(n) {
@@ -116,7 +143,7 @@ export default function GoalsDashboard({ transactions, commissions }) {
     let volume = 0, gci = 0
     for (const t of closed) {
       volume += Number(t.price) || 0
-      gci    += gciFor(t, commissions[t.id])
+      gci    += netGciFor(t, commissions[t.id])
     }
     const units    = closed.length
     const avgPrice = units > 0 ? volume / units : 0
@@ -127,7 +154,7 @@ export default function GoalsDashboard({ transactions, commissions }) {
   const quarters = useMemo(() =>
     [1, 2, 3, 4].map(q => {
       const txns = closed.filter(t => getQuarterOf(t) === q)
-      const gci  = txns.reduce((s, t) => s + gciFor(t, commissions[t.id]), 0)
+      const gci  = txns.reduce((s, t) => s + netGciFor(t, commissions[t.id]), 0)
       return { q, units: txns.length, gci }
     }),
   [closed, commissions])

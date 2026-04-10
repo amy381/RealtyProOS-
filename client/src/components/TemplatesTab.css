@@ -792,31 +792,36 @@
 .et-input,
 .et-select {
   padding: 8px 10px;
-  border: 1px solid #ddd;
+  border: 1px solid rgba(168, 191, 204, 0.2);
   border-radius: 7px;
   font-size: 0.875rem;
   font-family: inherit;
-  color: #111;
-  background: #fff;
+  color: #a8bfcc;
+  background: rgba(255, 255, 255, 0.08);
   width: 100%;
   box-sizing: border-box;
   transition: border-color 0.15s;
 }
 
+.et-input::placeholder,
+.et-select::placeholder {
+  color: rgba(168, 191, 204, 0.4);
+}
+
 .et-input:focus,
 .et-select:focus {
   outline: none;
-  border-color: #111;
+  border-color: rgba(168, 191, 204, 0.45);
 }
 
 .et-textarea {
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid rgba(168, 191, 204, 0.2);
   border-radius: 7px;
   font-size: 0.85rem;
   font-family: inherit;
-  color: #111;
-  background: #fff;
+  color: #a8bfcc;
+  background: rgba(255, 255, 255, 0.08);
   width: 100%;
   box-sizing: border-box;
   resize: vertical;
@@ -825,21 +830,25 @@
   transition: border-color 0.15s;
 }
 
+.et-textarea::placeholder {
+  color: rgba(168, 191, 204, 0.4);
+}
+
 .et-textarea:focus {
   outline: none;
-  border-color: #111;
+  border-color: rgba(168, 191, 204, 0.45);
 }
 
 /* ── Rich body editor ─────────────────────────────────────────────────────── */
 .et-richbody-wrap {
-  border: 1px solid #ddd;
+  border: 1px solid rgba(168, 191, 204, 0.2);
   border-radius: 7px;
   overflow: hidden;
   transition: border-color 0.15s;
 }
 
 .et-richbody-wrap:focus-within {
-  border-color: #111;
+  border-color: rgba(168, 191, 204, 0.45);
 }
 
 .et-toolbar {
@@ -847,8 +856,8 @@
   align-items: center;
   gap: 2px;
   padding: 5px 8px;
-  background: #f7f7f7;
-  border-bottom: 1px solid #e8e8e8;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(168, 191, 204, 0.15);
   flex-wrap: wrap;
 }
 
@@ -859,7 +868,7 @@
   background: none;
   font-size: 0.8rem;
   font-family: inherit;
-  color: #444;
+  color: rgba(168, 191, 204, 0.75);
   cursor: pointer;
   line-height: 1.4;
   transition: background 0.1s, border-color 0.1s;
@@ -867,8 +876,8 @@
 }
 
 .et-toolbar-btn:hover {
-  background: #ebebeb;
-  border-color: #d0d0d0;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(168, 191, 204, 0.25);
 }
 
 .et-tb-bold   { font-weight: 700; }
@@ -878,7 +887,7 @@
 .et-toolbar-sep {
   width: 1px;
   height: 18px;
-  background: #ddd;
+  background: rgba(168, 191, 204, 0.2);
   margin: 0 4px;
   flex-shrink: 0;
 }
@@ -888,9 +897,9 @@
   min-height: 280px;
   font-size: 0.875rem;
   font-family: inherit;
-  color: #111;
+  color: #a8bfcc;
   line-height: 1.6;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.08);
   outline: none;
   box-sizing: border-box;
 }
@@ -898,7 +907,7 @@
 .et-richbody:empty::before {
   content: 'Hi {{client_greeting}},\A\AYour transaction at {{property_address}} is underway…';
   white-space: pre;
-  color: #bbb;
+  color: rgba(168, 191, 204, 0.35);
   pointer-events: none;
 }
 
@@ -1006,8 +1015,8 @@
 .et-vars {
   width: 224px;
   min-width: 224px;
-  border-left: 1px solid #e0e0e0;
-  background: #fafafa;
+  border-left: 1px solid rgba(168, 191, 204, 0.15);
+  background: rgba(255, 255, 255, 0.04);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1019,16 +1028,16 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #888;
-  border-bottom: 1px solid #ebebeb;
+  color: rgba(168, 191, 204, 0.75);
+  border-bottom: 1px solid rgba(168, 191, 204, 0.15);
   flex-shrink: 0;
 }
 
 .et-vars-hint {
   padding: 8px 16px 10px;
   font-size: 0.72rem;
-  color: #aaa;
-  border-bottom: 1px solid #ebebeb;
+  color: rgba(168, 191, 204, 0.45);
+  border-bottom: 1px solid rgba(168, 191, 204, 0.15);
   flex-shrink: 0;
   line-height: 1.4;
 }
@@ -1048,7 +1057,7 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #bbb;
+  color: rgba(168, 191, 204, 0.4);
   margin-bottom: 6px;
 }
 
@@ -1063,21 +1072,21 @@
   width: 100%;
   text-align: left;
   padding: 5px 8px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid rgba(168, 191, 204, 0.2);
   border-radius: 5px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.05);
   font-size: 0.75rem;
   font-family: 'Courier New', monospace;
-  color: #555;
+  color: rgba(168, 191, 204, 0.7);
   cursor: pointer;
   transition: background 0.1s, border-color 0.1s, color 0.1s;
   word-break: break-all;
 }
 
 .et-var-chip:hover {
-  background: #111;
-  border-color: #111;
-  color: #fff;
+  background: rgba(80, 200, 220, 0.12);
+  border-color: rgba(80, 200, 220, 0.4);
+  color: #a8bfcc;
 }
 
 /* ══════════════════════════════════════════════════════════════

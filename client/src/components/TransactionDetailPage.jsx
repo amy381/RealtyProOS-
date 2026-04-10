@@ -1912,7 +1912,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               <div className="txp-section-title">Contract Details</div>
               {titleCollab ? (
                 <div className="txp-field">
-                  <span className="txp-field-label">Title Company</span>
+                  <span className="txp-field-label">Title Contact</span>
                   <div className="txp-title-linked">
                     <span className="txp-title-linked-name">
                       {[titleCollab.first_name, titleCollab.last_name].filter(Boolean).join(' ')}
@@ -1930,7 +1930,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                 </div>
               ) : (
                 <CollaboratorSearch
-                  label="Title Company"
+                  label="Title Contact"
                   value=""
                   category="title-escrow"
                   onSave={() => {}}
@@ -1942,14 +1942,13 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                     save('title_company_phone')(c.phone || null)
                     setTitleCollab(c)
                   }}
-                  placeholder="Search title companies…"
+                  placeholder="Search title contacts…"
                   tabIndex={32}
                 />
               )}
-              <TxField label="Company"        value={titleCollab?.company            || transaction.title_company        || ''} type="text" readOnly={!!titleCollab} onSave={save('title_company')}        placeholder="Title company name"  tabIndex={33} />
-              <TxField label="Title Contact"  value={titleCollab ? [titleCollab.first_name, titleCollab.last_name].filter(Boolean).join(' ') : (transaction.title_contact_name || '')} type="text" readOnly={!!titleCollab} onSave={save('title_contact_name')} placeholder="Contact name"        tabIndex={34} />
-              <TxField label="Title Email"    value={titleCollab?.email              || transaction.title_company_email  || ''} type="text" readOnly={!!titleCollab} onSave={save('title_company_email')} placeholder="title@company.com"   tabIndex={35} />
-              <TxField label="Title Phone"    value={titleCollab?.phone              || transaction.title_company_phone  || ''} type="text" readOnly={!!titleCollab} onSave={v => save('title_company_phone')(formatPhone(v))} placeholder="(555) 000-0000" tabIndex={36} />
+              <TxField label="Company"     value={titleCollab?.company           || transaction.title_company        || ''} type="text" readOnly={!!titleCollab} onSave={save('title_company')}        placeholder="Title company name" tabIndex={33} />
+              <TxField label="Title Email" value={titleCollab?.email             || transaction.title_company_email  || ''} type="text" readOnly={!!titleCollab} onSave={save('title_company_email')} placeholder="title@company.com"  tabIndex={34} />
+              <TxField label="Title Phone" value={titleCollab?.phone             || transaction.title_company_phone  || ''} type="text" readOnly={!!titleCollab} onSave={v => save('title_company_phone')(formatPhone(v))} placeholder="(555) 000-0000" tabIndex={35} />
               <TxField label="Escrow Number"  value={transaction.escrow_number       || ''} type="text" onSave={save('escrow_number')}       placeholder="Escrow #"         tabIndex={35} />
               <CollaboratorSearch
                 label="Co-op Agent"

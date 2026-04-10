@@ -990,25 +990,25 @@
 }
 
 .et-btn-outline {
-  background: #fff;
-  color: #333;
-  border-color: #ddd;
+  background: rgba(2, 5, 18, 0.6);
+  color: #a8bfcc;
+  border-color: rgba(168, 191, 204, 0.2);
 }
 
 .et-btn-outline:hover {
-  border-color: #999;
-  background: #fafafa;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(168, 191, 204, 0.4);
 }
 
 .et-btn-danger {
-  background: #fff;
-  color: #c0392b;
-  border-color: #f5c6c2;
+  background: rgba(220, 50, 50, 0.12);
+  color: rgba(220, 50, 50, 0.85);
+  border-color: rgba(220, 50, 50, 0.4);
 }
 
 .et-btn-danger:hover {
-  background: #fdf2f2;
-  border-color: #c0392b;
+  background: rgba(220, 50, 50, 0.22);
+  border-color: rgba(220, 50, 50, 0.6);
 }
 
 /* Right: variables panel */

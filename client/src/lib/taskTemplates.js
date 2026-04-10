@@ -46,7 +46,7 @@ export function buildTemplateTasksFromDB(templateTaskRows, transaction) {
       title:                  t.title,
       task_type:              t.task_type || 'Task',
       due_date:               calcDueDate(t.timing_type, t.timing_days, transaction),
-      assigned_to:            t.auto_assign_to || 'Me',
+      assigned_to:            (t.task_type === 'Critical Date') ? null : (t.auto_assign_to || 'Me'),
       status:                 'open',
       notes:                  '',
       sort_order:             i,
@@ -56,6 +56,7 @@ export function buildTemplateTasksFromDB(templateTaskRows, transaction) {
       // App.jsx resolves it to the actual task id after insert.
       resolves_critical_date: t.resolves_critical_date || null,
       has_progress_tracking:  t.has_progress_tracking  || false,
+      email_template_id:      t.email_template_id      || null,
       // Internal mapping field — stripped before DB insert.
       _template_task_id:      t.id,
     }))

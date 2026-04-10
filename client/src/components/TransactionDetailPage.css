@@ -2005,6 +2005,39 @@ select.txp-input { cursor: pointer; }
 .collab-search-input:focus { background: rgba(2, 5, 18, 0.5); outline: none; border-color: rgba(50, 200, 220, 0.35); }
 .collab-search-input::placeholder { color: rgba(168, 191, 204, 0.8); font-style: italic; font-size: 16px; font-weight: 400; }
 
+/* ── Title company linked state ──────────────────────────────────────────── */
+.txp-title-linked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(2, 5, 18, 0.4);
+  border: 0.5px solid rgba(50, 200, 220, 0.3);
+  border-radius: 6px;
+  padding: 8px 10px;
+  flex: 1;
+}
+
+.txp-title-linked-name {
+  flex: 1;
+  font-size: 15px;
+  color: #c8d4e0;
+  font-weight: 500;
+}
+
+.txp-title-clear-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(168, 191, 204, 0.5);
+  font-size: 13px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.1s;
+}
+.txp-title-clear-btn:hover { color: #c8d4e0; }
+
 .collab-search-dropdown {
   position: absolute;
   top: calc(100% + 4px);

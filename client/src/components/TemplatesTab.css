@@ -1309,15 +1309,39 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #333;
+  color: #888;
   cursor: pointer;
   user-select: none;
   padding: 2px 0;
 }
 .et-recipient-var-check input[type="checkbox"] {
-  accent-color: #3b5fc0;
-  width: 14px;
-  height: 14px;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid #bbb;
+  border-radius: 3px;
+  background: #f4f4f4;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s, border-color 0.15s;
+}
+.et-recipient-var-check input[type="checkbox"]:checked {
+  background: #3b5fc0;
+  border-color: #3b5fc0;
+}
+.et-recipient-var-check input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
 }
 
 .et-recipient-custom-row {

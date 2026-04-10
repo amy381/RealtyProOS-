@@ -1,6 +1,8 @@
 export function resolveVars(text, tx, tcSettings = []) {
-  if (!text) return ''
-  if (!tx)   return text.replace(/\{\{(\w+)\}\}/g, '')  // no transaction → all blanks
+  if (text == null) return ''
+  const str = typeof text === 'string' ? text : String(text)
+  if (!str) return ''
+  if (!tx)  return str.replace(/\{\{(\w+)\}\}/g, '')  // no transaction → all blanks
 
   const tc  = tcSettings.find(t => t.name === tx.assigned_tc)
   const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''
@@ -84,5 +86,5 @@ export function resolveVars(text, tx, tcSettings = []) {
   }
 
   // Any unrecognised key resolves to '' — never shows raw {{variable}} text
-  return text.replace(/\{\{(\w+)\}\}/g, (_, k) => map[k] ?? '')
+  return str.replace(/\{\{(\w+)\}\}/g, (_, k) => map[k] ?? '')
 }

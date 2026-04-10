@@ -2144,3 +2144,21 @@
   transition: border-color 0.1s;
 }
 .vf-textarea:focus { outline: none; border-color: #888; background: #fff; }
+
+/* ─── Email task action row ───────────────────────────────────────────────────── */
+.gtd-action-email-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.gtd-email-tmpl-name {
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 120px;
+}

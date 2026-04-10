@@ -67,13 +67,23 @@ const EMPTY_TASK = {
 
 // ─── Email template constants ─────────────────────────────────────────────────
 const EMPTY_EMAIL = {
-  name:       '',
-  subject:    '',
-  body:       '',
-  cc:         '',
-  trigger:    'manual',
-  applies_to: 'Both',
+  name:          '',
+  subject:       '',
+  body:          '',
+  cc:            '',
+  recipients:    [],
+  cc_recipients: [],
+  trigger:       'manual',
+  applies_to:    'Both',
 }
+
+const RECIPIENT_VARIABLE_OPTIONS = [
+  { value: 'client',        label: 'Client'        },
+  { value: 'client2',       label: 'Client 2'      },
+  { value: 'lender',        label: 'Lender'        },
+  { value: 'title_contact', label: 'Title Contact' },
+  { value: 'co_op_agent',   label: 'Co-op Agent'   },
+]
 
 const TRIGGER_OPTIONS = [
   { value: 'manual',                label: 'Manual only'                    },
@@ -134,6 +144,83 @@ const EMAIL_VARIABLES = [
     vars:  ['title_block', 'lender_block'],
   },
 ]
+
+// ─── RecipientField: variable checkboxes + custom email tag input ─────────────
+function RecipientField({ label, value = [], onChange, hint }) {
+  const [customInput, setCustomInput] = useState('')
+  const vars   = value.filter(e => e.type === 'variable')
+  const customs = value.filter(e => e.type === 'custom')
+
+  const toggleVar = (varValue) => {
+    const has = vars.some(e => e.value === varValue)
+    if (has) {
+      onChange(value.filter(e => !(e.type === 'variable' && e.value === varValue)))
+    } else {
+      onChange([...value, { type: 'variable', value: varValue }])
+    }
+  }
+
+  const addCustom = () => {
+    const email = customInput.trim()
+    if (!email) return
+    if (customs.some(e => e.value === email)) { setCustomInput(''); return }
+    onChange([...value, { type: 'custom', value: email }])
+    setCustomInput('')
+  }
+
+  const removeEntry = (entry) => {
+    onChange(value.filter(e => !(e.type === entry.type && e.value === entry.value)))
+  }
+
+  return (
+    <div className="et-field et-recipient-field">
+      <label className="et-label">{label}</label>
+
+      {/* Variable checkboxes */}
+      <div className="et-recipient-vars">
+        {RECIPIENT_VARIABLE_OPTIONS.map(opt => (
+          <label key={opt.value} className="et-recipient-var-check">
+            <input
+              type="checkbox"
+              checked={vars.some(e => e.value === opt.value)}
+              onChange={() => toggleVar(opt.value)}
+            />
+            <span>{opt.label}</span>
+          </label>
+        ))}
+      </div>
+
+      {/* Custom email input */}
+      <div className="et-recipient-custom-row">
+        <input
+          className="et-input et-recipient-custom-input"
+          type="text"
+          placeholder="custom@email.com — press Enter to add"
+          value={customInput}
+          onChange={e => setCustomInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustom() } }}
+        />
+        <button type="button" className="et-recipient-add-btn" onClick={addCustom}>Add</button>
+      </div>
+
+      {/* Tags */}
+      {value.length > 0 && (
+        <div className="et-recipient-tags">
+          {value.map((entry, i) => (
+            <span key={i} className={`et-recipient-tag et-recipient-tag--${entry.type}`}>
+              {entry.type === 'variable'
+                ? (RECIPIENT_VARIABLE_OPTIONS.find(o => o.value === entry.value)?.label || entry.value)
+                : entry.value}
+              <button type="button" className="et-recipient-tag-remove" onClick={() => removeEntry(entry)}>×</button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {hint && <span className="et-hint">{hint}</span>}
+    </div>
+  )
+}
 
 // ─── Vendor constants ─────────────────────────────────────────────────────────
 const VENDOR_TYPES    = ['Home Inspector', 'Septic', 'Permits', 'Tiedowns', 'Home Warranty']
@@ -443,10 +530,9 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   const [emailsLoading,   setEmailsLoading]   = useState(false)
   const [editingEmail,    setEditingEmail]    = useState(null)  // null = nothing selected
   const [emailSaving,     setEmailSaving]     = useState(false)
-  const [lastFocused,     setLastFocused]     = useState('body') // 'subject' | 'cc' | 'body'
+  const [lastFocused,     setLastFocused]     = useState('body') // 'subject' | 'body'
 
   const subjectRef       = useRef(null)
-  const ccRef            = useRef(null)
   const bodyRef          = useRef(null)
   const lastSyncedIdRef  = useRef(null)   // tracks which template's HTML is in the editor
 
@@ -752,6 +838,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
       if (editingEmail.id) {
         const { id, created_at, auto_send, ...updates } = editingEmail
         const payload = { ...updates, body: currentBody }
+        console.log('[DEBUG] saving recipients:', payload.recipients, 'cc_recipients:', payload.cc_recipients)
         const { error } = await supabase.from('email_templates').update(payload).eq('id', id)
         if (error) throw error
         setEmailTemplates(prev => prev.map(e => e.id === id ? { ...e, ...payload } : e))
@@ -759,12 +846,14 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
         const { data, error } = await supabase
           .from('email_templates')
           .insert({
-            name:       editingEmail.name.trim(),
-            subject:    editingEmail.subject,
-            body:       currentBody,
-            cc:         editingEmail.cc || '',
-            trigger:    editingEmail.trigger,
-            applies_to: editingEmail.applies_to,
+            name:          editingEmail.name.trim(),
+            subject:       editingEmail.subject,
+            body:          currentBody,
+            cc:            editingEmail.cc || '',
+            recipients:    editingEmail.recipients    || [],
+            cc_recipients: editingEmail.cc_recipients || [],
+            trigger:       editingEmail.trigger,
+            applies_to:    editingEmail.applies_to,
           })
           .select().single()
         if (error) throw error
@@ -792,11 +881,14 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
       const { data, error } = await supabase
         .from('email_templates')
         .insert({
-          name:       `Copy of ${editingEmail.name || 'Template'}`,
-          subject:    editingEmail.subject,
-          body:       bodyRef.current?.innerHTML ?? editingEmail.body ?? '',
-          trigger:    editingEmail.trigger,
-          applies_to: editingEmail.applies_to,
+          name:          `Copy of ${editingEmail.name || 'Template'}`,
+          subject:       editingEmail.subject,
+          body:          bodyRef.current?.innerHTML ?? editingEmail.body ?? '',
+          cc:            editingEmail.cc || '',
+          recipients:    editingEmail.recipients    || [],
+          cc_recipients: editingEmail.cc_recipients || [],
+          trigger:       editingEmail.trigger,
+          applies_to:    editingEmail.applies_to,
         })
         .select().single()
       if (error) throw error
@@ -811,7 +903,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     setEditingEmail(e => ({ ...e, [key]: val }))
   }
 
-  // Insert variable at cursor in the last-focused field (subject, cc, or body)
+  // Insert variable at cursor in the last-focused field (subject or body)
   const insertVariable = (varName) => {
     const token = `{{${varName}}}`
 
@@ -834,15 +926,13 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
       return
     }
 
-    // Subject / CC — plain textarea API
-    const ref   = lastFocused === 'subject' ? subjectRef : ccRef
-    const field = lastFocused === 'subject' ? 'subject'  : 'cc'
-    const el = ref.current
+    // Subject — plain input API
+    const el = subjectRef.current
     if (!el) return
     const start  = el.selectionStart ?? el.value.length
     const end    = el.selectionEnd   ?? el.value.length
     const newVal = el.value.substring(0, start) + token + el.value.substring(end)
-    setEmailField(field, newVal)
+    setEmailField('subject', newVal)
     setTimeout(() => {
       el.focus()
       el.setSelectionRange(start + token.length, start + token.length)
@@ -1055,19 +1145,19 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                     <span className="et-hint">Supports variables — click any variable on the right to insert</span>
                   </div>
 
-                  <div className="et-field">
-                    <label className="et-label">CC</label>
-                    <input
-                      ref={ccRef}
-                      className="et-input"
-                      type="text"
-                      placeholder="e.g. {{tc_email}}, coordinator@example.com"
-                      value={editingEmail.cc}
-                      onChange={e => setEmailField('cc', e.target.value)}
-                      onFocus={() => setLastFocused('cc')}
-                    />
-                    <span className="et-hint">Comma-separated emails. Supports variables like <code>{'{{tc_email}}'}</code></span>
-                  </div>
+                  <RecipientField
+                    label="To (Recipients)"
+                    value={editingEmail.recipients || []}
+                    onChange={val => setEmailField('recipients', val)}
+                    hint="Select variables and/or enter custom email addresses"
+                  />
+
+                  <RecipientField
+                    label="CC"
+                    value={editingEmail.cc_recipients || []}
+                    onChange={val => setEmailField('cc_recipients', val)}
+                    hint="Optional — same options as Recipients"
+                  />
 
                   <div className="et-field">
                     <label className="et-label">Body</label>
@@ -1178,6 +1268,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                 <div className="et-vars-title">Variables</div>
                 <div className="et-vars-hint">
                   Click to insert at cursor in Subject or Body
+                  <br /><em style={{fontSize:'11px'}}>To add a variable recipient, use the checkboxes in the To/CC fields above</em>
                 </div>
                 <div className="et-vars-scroll">
                   {EMAIL_VARIABLES.map(group => (

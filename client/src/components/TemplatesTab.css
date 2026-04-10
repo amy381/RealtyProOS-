@@ -897,7 +897,7 @@
   min-height: 280px;
   font-size: 0.875rem;
   font-family: inherit;
-  color: #a8bfcc;
+  color: rgba(255, 255, 255, 0.85);
   line-height: 1.6;
   background: rgba(255, 255, 255, 0.08);
   outline: none;

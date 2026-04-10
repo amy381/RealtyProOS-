@@ -1916,7 +1916,6 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                   <div className="txp-title-linked">
                     <span className="txp-title-linked-name">
                       {[titleCollab.first_name, titleCollab.last_name].filter(Boolean).join(' ')}
-                      {titleCollab.company ? ` — ${titleCollab.company}` : ''}
                     </span>
                     <button
                       className="txp-title-clear-btn"

@@ -969,6 +969,83 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
 
       {/* ── MAIN CONTENT ─────────────────────────────────────────────── */}
       <div className="templates-main">
+        <div className="tt-content-layout">
+
+          {/* Left pane — section-specific list */}
+          <div className="tt-list-pane">
+
+            {sideSection === 'tasks' && <>
+              <div className="templates-list">
+                {templates.map(t => (
+                  <div
+                    key={t.id}
+                    className={`templates-list-item${selectedTemplateId === t.id ? ' active' : ''}`}
+                    onClick={() => selectTemplate(t.id)}
+                  >
+                    <span className="templates-list-name">{t.name}</span>
+                  </div>
+                ))}
+                {templates.length === 0 && (
+                  <div className="templates-coming-soon">No templates yet</div>
+                )}
+              </div>
+              <button className="templates-create-btn" onClick={handleCreateTemplate}>
+                + Create New Template
+              </button>
+            </>}
+
+            {sideSection === 'email' && <>
+              {emailsLoading ? (
+                <div className="templates-coming-soon">Loading…</div>
+              ) : (
+                <div className="templates-list">
+                  {emailTemplates.map(et => (
+                    <div
+                      key={et.id}
+                      className={`templates-list-item${editingEmail?.id === et.id ? ' active' : ''}`}
+                      onClick={() => selectEmail(et)}
+                    >
+                      <span className="templates-list-name">{et.name || '(Untitled)'}</span>
+                    </div>
+                  ))}
+                  {emailTemplates.length === 0 && (
+                    <div className="templates-coming-soon">No email templates yet</div>
+                  )}
+                </div>
+              )}
+              <button className="templates-create-btn" onClick={newEmail}>
+                + New Email Template
+              </button>
+            </>}
+
+            {sideSection === 'vendors' && <>
+              {vendorsLoading ? (
+                <div className="templates-coming-soon">Loading…</div>
+              ) : (
+                <div className="templates-list">
+                  {vendors.map(v => (
+                    <div
+                      key={v.id}
+                      className={`templates-list-item${selectedVendorId === v.id ? ' active' : ''}`}
+                      onClick={() => { setSelectedVendorId(v.id); setSideSection('vendors') }}
+                    >
+                      <span className="templates-list-name">{v.name}</span>
+                    </div>
+                  ))}
+                  {vendors.length === 0 && (
+                    <div className="templates-coming-soon">No vendors yet</div>
+                  )}
+                </div>
+              )}
+              <button className="templates-create-btn" onClick={handleCreateVendor}>
+                + Add Vendor
+              </button>
+            </>}
+
+          </div>
+
+          {/* Right pane — editor / detail */}
+          <div className="tt-detail-pane">
 
         {/* ── VENDOR TEMPLATE SECTION ── */}
         {sideSection === 'vendors' ? (
@@ -1346,6 +1423,8 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
             </>
           )
         )}
+          </div>
+        </div>
       </div>
 
       {/* ── TASK EDIT MODAL ───────────────────────────────────────────── */}

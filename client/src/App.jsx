@@ -18,6 +18,7 @@ import TemplatesTab from './components/TemplatesTab'
 import ShowingsTab  from './components/ShowingsTab'
 import MeshBackground from './components/MeshBackground'
 import Sidebar from './components/Sidebar'
+import MissionControl from './components/MissionControl'
 import './App.css'
 import './styles/darkTheme.css'
 
@@ -759,10 +760,10 @@ export default function App() {
 
         <main className="app-main">
           {activeTab === 'dashboard' && (
-            <div className="placeholder-card">
-              <div className="placeholder-title">Mission Control</div>
-              <div className="placeholder-sub">Coming Soon</div>
-            </div>
+            <MissionControl
+              transactions={transactions}
+              commissions={commissions}
+            />
           )}
 
           {activeTab === 'board' && boardView === 'board' && (

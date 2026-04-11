@@ -19,6 +19,7 @@ import ShowingsTab  from './components/ShowingsTab'
 import MeshBackground from './components/MeshBackground'
 import Sidebar from './components/Sidebar'
 import MissionControl from './components/MissionControl'
+import AppHeader from './components/AppHeader'
 import './App.css'
 import './styles/darkTheme.css'
 
@@ -728,35 +729,18 @@ export default function App() {
       <MeshBackground />
       <Toaster position="top-right" />
 
-      <Sidebar
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        onSettingsOpen={() => setSettingsOpen(true)}
+      <AppHeader
+        transactions={transactions}
+        onNavigateTransaction={(tx) => openTransaction(tx)}
+        onNavigateTab={handleTabChange}
       />
 
-      <div className="app-body">
-        <header className="app-header">
-          <div className="header-left">
-            <div className="logo">
-              <img
-                src="https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo-nav-v3.png"
-                alt="LegacyOS"
-                style={{ height: '44px', width: 'auto' }}
-              />
-            </div>
-          </div>
-          <div className="header-right">
-            {activeTab === 'board' && (
-              <div className="board-view-toggle">
-                <button className={`bvt-btn${boardView === 'board' ? ' active' : ''}`} onClick={() => switchBoardView('board')}>Board</button>
-                <button className={`bvt-btn${boardView === 'list'  ? ' active' : ''}`} onClick={() => switchBoardView('list')}>List</button>
-              </div>
-            )}
-            <button className="btn-new-transaction" onClick={() => setNewTxOpen(true)}>
-              + New Transaction
-            </button>
-          </div>
-        </header>
+      <div className="app-layout">
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onSettingsOpen={() => setSettingsOpen(true)}
+        />
 
         <main className="app-main">
           {activeTab === 'dashboard' && (
@@ -764,6 +748,18 @@ export default function App() {
               transactions={transactions}
               commissions={commissions}
             />
+          )}
+
+          {activeTab === 'board' && (
+            <div className="board-toolbar">
+              <div className="board-view-toggle">
+                <button className={`bvt-btn${boardView === 'board' ? ' active' : ''}`} onClick={() => switchBoardView('board')}>Board</button>
+                <button className={`bvt-btn${boardView === 'list'  ? ' active' : ''}`} onClick={() => switchBoardView('list')}>List</button>
+              </div>
+              <button className="btn-new-transaction" onClick={() => setNewTxOpen(true)}>
+                + New Transaction
+              </button>
+            </div>
           )}
 
           {activeTab === 'board' && boardView === 'board' && (

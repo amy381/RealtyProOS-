@@ -1,23 +1,19 @@
 .app {
   display: flex;
-  flex-direction: row;
-  min-height: 100vh;
-  position: relative;
-}
-
-/* Column wrapper that holds header + main, sits to the right of the sidebar */
-.app-body {
-  display: flex;
   flex-direction: column;
-  flex: 1;
-  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
   position: relative;
-  z-index: 2;
 }
 
-/* All content layers sit above the mesh canvas */
-.app-header,
-.app-main {
+/* Row container: sidebar + main — sits below the fixed header */
+.app-layout {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  margin-top: 64px;
+  height: calc(100vh - 64px);
+  overflow: hidden;
   position: relative;
   z-index: 2;
 }
@@ -30,53 +26,6 @@
   font-size: 17px;
   color: #a8bfcc;
   background: #02030a;
-}
-
-/* ── Navigation bar ─────────────────────────────────────── */
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  height: 64px;
-  background: rgba(2,3,10,0.88);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border-bottom: 1px solid rgba(50,200,220,0.1);
-  box-shadow: 0 2px 16px rgba(0,0,0,0.4);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 22px;
-  font-weight: 700;
-  color: #c8d4e0;
-}
-
-.logo-icon {
-  font-size: 24px;
-}
-
-.logo-os {
-  color: #50C8DC;
-}
-
-.header-subtitle {
-  font-size: 15px;
-  color: #a8bfcc;
-  border-left: 1px solid rgba(50,200,220,0.2);
-  padding-left: 16px;
 }
 
 /* ── Board main area ────────────────────────────────────── */
@@ -92,10 +41,12 @@
   z-index: 1;
 }
 
-.header-right {
+/* ── Board page toolbar (New Transaction + Board/List toggle) ── */
+.board-toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  flex-shrink: 0;
 }
 
 /* ── Board view toggle ──────────────────────────────────── */
@@ -131,7 +82,7 @@
   border: 1px solid rgba(210,120,30,0.38);
   padding: 7px 16px;
   border-radius: 8px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -158,24 +109,7 @@
   background: rgba(50,200,220,0.22);
 }
 
-/* ── Settings icon ──────────────────────────────────────── */
-.btn-settings {
-  background: none;
-  border: none;
-  font-size: 28px;
-  color: rgba(168,191,204,0.6);
-  cursor: pointer;
-  padding: 6px 8px;
-  border-radius: 8px;
-  transition: background 0.12s, color 0.12s;
-  line-height: 1;
-}
-.btn-settings:hover {
-  background: rgba(50,200,220,0.08);
-  color: #b8cdd8;
-}
-
-/* ── Placeholder cards (Mission Control, Reporting) ─────── */
+/* ── Placeholder cards (Reporting) ─────────────────────── */
 .placeholder-card {
   display: flex;
   flex-direction: column;

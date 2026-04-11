@@ -17,6 +17,7 @@ import LoginPage from './components/LoginPage'
 import TemplatesTab from './components/TemplatesTab'
 import ShowingsTab  from './components/ShowingsTab'
 import MeshBackground from './components/MeshBackground'
+import Sidebar from './components/Sidebar'
 import './App.css'
 import './styles/darkTheme.css'
 
@@ -75,7 +76,7 @@ export default function App() {
   const [txFrom,              setTxFrom]              = useState('board')
   const [activeTab,  setActiveTab]  = useState(() => {
     const p = new URLSearchParams(window.location.search)
-    const VALID_TABS = ['board','tasks','commissions','collaborators','templates','showings']
+    const VALID_TABS = ['dashboard','board','tasks','commissions','collaborators','templates','showings','reporting']
     const t = p.get('tab')
     return VALID_TABS.includes(t) ? t : 'board'
   })
@@ -715,112 +716,123 @@ export default function App() {
     ? tasks.filter(t => t.transaction_id === selectedTransaction.id)
     : []
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab)
+    setSelectedTransaction(null)
+    window.history.replaceState({}, '', `?tab=${tab}`)
+  }
+
   return (
     <div className="app">
       <MeshBackground />
       <Toaster position="top-right" />
-      <header className="app-header">
-        <div className="header-left">
-          <div className="logo">
-            <img
-              src="https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo-nav-v3.png"
-              alt="LegacyOS"
-              style={{ height: '44px', width: 'auto' }}
-            />
+
+      <Sidebar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onSettingsOpen={() => setSettingsOpen(true)}
+      />
+
+      <div className="app-body">
+        <header className="app-header">
+          <div className="header-left">
+            <div className="logo">
+              <img
+                src="https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo-nav-v3.png"
+                alt="LegacyOS"
+                style={{ height: '44px', width: 'auto' }}
+              />
+            </div>
           </div>
-        </div>
-        <div className="app-tabs">
-          {[
-            { id: 'board',          label: 'The Board'     },
-            { id: 'tasks',          label: 'Tasks'         },
-            { id: 'commissions',    label: 'Commissions'   },
-            { id: 'collaborators',  label: 'Collaborators' },
-            { id: 'templates',      label: 'Templates'     },
-            { id: 'showings',       label: 'Showings'      },
-          ].map(tab => (
-            <button key={tab.id}
-              className={`tab-btn${activeTab === tab.id ? ' active' : ''}`}
-              onClick={() => { setActiveTab(tab.id); setSelectedTransaction(null); window.history.replaceState({}, '', `?tab=${tab.id}`) }}>
-              {tab.label}
+          <div className="header-right">
+            {activeTab === 'board' && (
+              <div className="board-view-toggle">
+                <button className={`bvt-btn${boardView === 'board' ? ' active' : ''}`} onClick={() => switchBoardView('board')}>Board</button>
+                <button className={`bvt-btn${boardView === 'list'  ? ' active' : ''}`} onClick={() => switchBoardView('list')}>List</button>
+              </div>
+            )}
+            <button className="btn-new-transaction" onClick={() => setNewTxOpen(true)}>
+              + New Transaction
             </button>
-          ))}
-        </div>
-        <div className="header-right">
-          {activeTab === 'board' && (
-            <div className="board-view-toggle">
-              <button className={`bvt-btn${boardView === 'board' ? ' active' : ''}`} onClick={() => switchBoardView('board')}>Board</button>
-              <button className={`bvt-btn${boardView === 'list'  ? ' active' : ''}`} onClick={() => switchBoardView('list')}>List</button>
+          </div>
+        </header>
+
+        <main className="app-main">
+          {activeTab === 'dashboard' && (
+            <div className="placeholder-card">
+              <div className="placeholder-title">Mission Control</div>
+              <div className="placeholder-sub">Coming Soon</div>
             </div>
           )}
-          <button className="btn-new-transaction" onClick={() => setNewTxOpen(true)}>
-            + New Transaction
-          </button>
-          <button className="btn-settings" onClick={() => setSettingsOpen(true)} title="Settings">⚙</button>
-        </div>
-      </header>
 
-      <main className="app-main">
-        {activeTab === 'board' && boardView === 'board' && (
-          <GoalsDashboard transactions={transactions} commissions={commissions} />
-        )}
+          {activeTab === 'board' && boardView === 'board' && (
+            <GoalsDashboard transactions={transactions} commissions={commissions} />
+          )}
 
-        {activeTab === 'board' && boardView === 'board' && (
-          <KanbanBoard
-            columns={COLUMNS}
-            transactions={transactions}
-            onStatusChange={handleStatusChange}
-            onDelete={handleDelete}
-            onCardClick={(tx) => openTransaction(tx)}
-            commissions={commissions}
-          />
-        )}
+          {activeTab === 'board' && boardView === 'board' && (
+            <KanbanBoard
+              columns={COLUMNS}
+              transactions={transactions}
+              onStatusChange={handleStatusChange}
+              onDelete={handleDelete}
+              onCardClick={(tx) => openTransaction(tx)}
+              commissions={commissions}
+            />
+          )}
 
-        {activeTab === 'board' && boardView === 'list' && (
-          <ListView
-            transactions={transactions}
-            commissions={commissions}
-            columns={COLUMNS}
-            onCardClick={(tx) => openTransaction(tx)}
-            onOpenSection={(tx, section) => openTransaction(tx, section)}
-          />
-        )}
-        {activeTab === 'commissions' && (
-          <CommissionsTab
-            transactions={transactions}
-            commissions={commissions}
-            onDeleteCommission={handleDeleteCommission}
-          />
-        )}
-        {activeTab === 'tasks' && (
-          <TasksTab
-            tasks={tasks}
-            transactions={transactions}
-            onTaskUpdate={handleUpdateTask}
-            onDeleteTask={handleDeleteTask}
-            onAddTask={handleAddTask}
-            onUpdateTransaction={handleUpdateTransactionField}
-            taskComments={taskComments}
-            onAddTaskComment={handleAddTaskComment}
-            onDeleteTaskComment={handleDeleteTaskComment}
-            tcSettings={tcSettings}
-            onCardClick={(tx) => openTransaction(tx, 'details', 'tasks')}
-          />
-        )}
-        {activeTab === 'collaborators' && (
-          <CollaboratorsTab />
-        )}
-        {activeTab === 'showings' && (
-          <ShowingsTab transactions={transactions} />
-        )}
-        {activeTab === 'templates' && (
-          <TemplatesTab
-            templates={dbTemplates}
-            allTemplateTasks={dbTemplateTasks}
-            onRefresh={handleTemplatesRefresh}
-            tcSettings={tcSettings}
-          />
-        )}
-      </main>
+          {activeTab === 'board' && boardView === 'list' && (
+            <ListView
+              transactions={transactions}
+              commissions={commissions}
+              columns={COLUMNS}
+              onCardClick={(tx) => openTransaction(tx)}
+              onOpenSection={(tx, section) => openTransaction(tx, section)}
+            />
+          )}
+          {activeTab === 'commissions' && (
+            <CommissionsTab
+              transactions={transactions}
+              commissions={commissions}
+              onDeleteCommission={handleDeleteCommission}
+            />
+          )}
+          {activeTab === 'tasks' && (
+            <TasksTab
+              tasks={tasks}
+              transactions={transactions}
+              onTaskUpdate={handleUpdateTask}
+              onDeleteTask={handleDeleteTask}
+              onAddTask={handleAddTask}
+              onUpdateTransaction={handleUpdateTransactionField}
+              taskComments={taskComments}
+              onAddTaskComment={handleAddTaskComment}
+              onDeleteTaskComment={handleDeleteTaskComment}
+              tcSettings={tcSettings}
+              onCardClick={(tx) => openTransaction(tx, 'details', 'tasks')}
+            />
+          )}
+          {activeTab === 'collaborators' && (
+            <CollaboratorsTab />
+          )}
+          {activeTab === 'showings' && (
+            <ShowingsTab transactions={transactions} />
+          )}
+          {activeTab === 'templates' && (
+            <TemplatesTab
+              templates={dbTemplates}
+              allTemplateTasks={dbTemplateTasks}
+              onRefresh={handleTemplatesRefresh}
+              tcSettings={tcSettings}
+            />
+          )}
+          {activeTab === 'reporting' && (
+            <div className="placeholder-card">
+              <div className="placeholder-title">Reporting</div>
+              <div className="placeholder-sub">Coming Soon</div>
+            </div>
+          )}
+        </main>
+      </div>
 
       {selectedTransaction && (
         <TransactionDetailPage

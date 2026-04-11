@@ -3471,7 +3471,7 @@ export default function TransactionDetailPage({
       {/* Top Bar */}
       <div className="txp-topbar">
         <div className="txp-topbar-left">
-          <button className="txp-back-btn" onClick={onBack} title={from === 'tasks' ? 'Back to Tasks (Esc)' : 'Back to The Board (Esc)'}>←</button>
+          <button className="txp-back-btn" onClick={onBack} title={from === 'tasks' ? 'Back to Tasks (Esc)' : 'Back to Start to Close (Esc)'}>←</button>
           {sameStage.length > 1 && (
             <div className="txp-nav-arrows">
               <button

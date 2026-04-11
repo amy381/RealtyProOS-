@@ -766,10 +766,6 @@ export default function App() {
           )}
 
           {activeTab === 'board' && boardView === 'board' && (
-            <GoalsDashboard transactions={transactions} commissions={commissions} />
-          )}
-
-          {activeTab === 'board' && boardView === 'board' && (
             <KanbanBoard
               columns={COLUMNS}
               transactions={transactions}

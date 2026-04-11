@@ -1008,7 +1008,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                 onClick={() => selectEmail(et)}
               >
                 <span className="templates-list-name">{et.name || '(Untitled)'}</span>
-                <span className="et-list-badge">{et.applies_to}</span>
               </div>
             ))}
             {emailTemplates.length === 0 && (
@@ -1243,21 +1242,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                       </select>
                     </div>
 
-                    <div className="et-field">
-                      <label className="et-label">Applies To</label>
-                      <div className="et-toggle-group">
-                        {EMAIL_APPLIES_TO.map(v => (
-                          <button
-                            key={v}
-                            className={`et-toggle-btn${editingEmail.applies_to === v ? ' active' : ''}`}
-                            onClick={() => setEmailField('applies_to', v)}
-                            type="button"
-                          >
-                            {v}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                   </div>
 
                 </div>

@@ -691,23 +691,6 @@
   color: #444;
 }
 
-/* Applies-to badge in sidebar list */
-.et-list-badge {
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(168, 191, 204, 0.1);
-  border: 0.5px solid rgba(168, 191, 204, 0.3);
-  color: rgba(168, 191, 204, 0.8);
-  flex-shrink: 0;
-}
-
-.templates-list-item.active .et-list-badge {
-  opacity: 1;
-}
 
 /* Two-column editor layout */
 .et-editor-wrap {
@@ -923,42 +906,6 @@
   text-decoration: underline;
 }
 
-/* Applies-to toggle group */
-.et-toggle-group {
-  display: flex;
-  gap: 0;
-  border: 1px solid #ddd;
-  border-radius: 7px;
-  overflow: hidden;
-  width: fit-content;
-}
-
-.et-toggle-btn {
-  padding: 7px 18px;
-  border: none;
-  background: #fff;
-  font-size: 0.82rem;
-  font-weight: 500;
-  font-family: inherit;
-  color: #666;
-  cursor: pointer;
-  border-right: 1px solid #ddd;
-  transition: background 0.12s, color 0.12s;
-}
-
-.et-toggle-btn:last-child {
-  border-right: none;
-}
-
-.et-toggle-btn.active {
-  background: #111;
-  color: #fff;
-}
-
-.et-toggle-btn:not(.active):hover {
-  background: #f5f5f5;
-  color: #111;
-}
 
 /* Buttons */
 .et-btn {

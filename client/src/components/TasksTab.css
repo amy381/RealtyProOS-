@@ -1,7 +1,7 @@
 /* ── Grid column templates ───────────────────────────────────────────────── */
 :root {
-  --gtd-grid-template:      144px 380px 350px 376px 30px 100px 8px 60px 30px 56px;
-  --gtd-grid-template-flat: 144px 380px 350px 376px 160px 30px 100px 8px 60px 30px 56px;
+  --gtd-grid-template:      144px 380px 350px 376px 30px 100px 8px 60px 30px 28px 38px;
+  --gtd-grid-template-flat: 144px 380px 350px 376px 160px 30px 100px 8px 60px 30px 28px 38px;
 }
 
 .tasks-tab {
@@ -1397,7 +1397,7 @@
   border-bottom: 0.5px solid rgba(50, 200, 220, 0.08);
   min-height: 38px;
   max-height: 38px;
-  overflow: hidden;
+  overflow: visible;
   transition: background 0.08s;
 }
 .gtd-grow--flat {

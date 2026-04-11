@@ -92,19 +92,6 @@ export default function CollaboratorsTab({ activeCat: activeCatProp, onCatChange
   return (
     <div className="collab-tab">
 
-      {/* Sidebar */}
-      <aside className="collab-sidebar">
-        {CATEGORIES.map(c => (
-          <button
-            key={c.id}
-            className={`collab-nav-item${activeCat === c.id ? ' active' : ''}`}
-            onClick={() => setActiveCat(c.id)}
-          >
-            {c.label}
-          </button>
-        ))}
-      </aside>
-
       {/* Main content */}
       <div className="collab-body">
         <div className="collab-toolbar">

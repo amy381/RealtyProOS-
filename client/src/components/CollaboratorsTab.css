@@ -1,49 +1,6 @@
 .collab-tab {
-  display: flex;
-  flex-direction: row;
   height: 100%;
   background: transparent;
-}
-
-/* ── Sidebar ──────────────────────────────────────────────── */
-.collab-sidebar {
-  width: 210px;
-  flex-shrink: 0;
-  background: rgba(2, 5, 18, 0.6);
-  border-right: 0.5px solid rgba(50, 200, 220, 0.18);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  padding: 20px 0;
-  overflow-y: auto;
-}
-
-.collab-nav-item {
-  display: block;
-  width: 100%;
-  background: transparent;
-  border: none;
-  border-left: 2px solid transparent;
-  text-align: left;
-  padding: 11px 20px;
-  font-size: 16px;
-  font-weight: 400;
-  color: rgba(168, 191, 204, 0.6);
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
-  letter-spacing: 0.01em;
-}
-
-.collab-nav-item:hover {
-  background: rgba(50, 200, 220, 0.05);
-  color: #a8bfcc;
-}
-
-.collab-nav-item.active {
-  background: rgba(50, 200, 220, 0.12);
-  color: #50C8DC;
-  font-weight: 600;
-  border-left-color: rgba(50, 200, 220, 0.5);
 }
 
 /* ── Body ─────────────────────────────────────────────────── */

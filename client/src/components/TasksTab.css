@@ -1,3 +1,9 @@
+/* ── Grid column templates ───────────────────────────────────────────────── */
+:root {
+  --gtd-grid-template:      144px minmax(0, 450px) 350px 376px 36px 110px 8px 80px 120px 28px 28px;
+  --gtd-grid-template-flat: 144px minmax(0, 450px) 350px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
+}
+
 .tasks-tab {
   height: calc(100vh - 64px - 48px);
   display: flex;
@@ -1327,7 +1333,7 @@
 /* ── Column header row ──────────────────────────────────────────────────── */
 .gtd-col-header-row {
   display: grid;
-  grid-template-columns: 144px minmax(0, 450px) 350px 376px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: var(--gtd-grid-template);
   column-gap: 10px;
   align-items: center;
   padding: 7px 14px;
@@ -1341,7 +1347,7 @@
   flex-shrink: 0;
 }
 .gtd-col-header-row--flat {
-  grid-template-columns: 144px minmax(0, 450px) 350px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: var(--gtd-grid-template-flat);
 }
 
 .gtd-col-hdr {
@@ -1384,7 +1390,7 @@
 /* ── Global task row ────────────────────────────────────────────────────── */
 .gtd-grow {
   display: grid;
-  grid-template-columns: 144px minmax(0, 450px) 350px 376px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: var(--gtd-grid-template);
   column-gap: 10px;
   align-items: start;
   padding: 10px 14px;
@@ -1395,7 +1401,7 @@
   transition: background 0.08s;
 }
 .gtd-grow--flat {
-  grid-template-columns: 144px minmax(0, 450px) 350px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: var(--gtd-grid-template-flat);
 }
 .gtd-grow:last-child { border-bottom: none; }
 .gtd-grow-even { background: rgba(255, 255, 255, 0.03); }
@@ -1624,7 +1630,7 @@
 /* ── Critical date row ──────────────────────────────────────────────────── */
 .gtd-cd-row {
   display: grid;
-  grid-template-columns: 144px minmax(0, 450px) 350px 376px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: var(--gtd-grid-template);
   column-gap: 10px;
   align-items: center;
   padding: 7px 14px;
@@ -1638,7 +1644,7 @@
   overflow: hidden;
 }
 .gtd-cd-row--flat {
-  grid-template-columns: 144px minmax(0, 450px) 350px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
+  grid-template-columns: var(--gtd-grid-template-flat);
 }
 .gtd-cd-row + .gtd-cd-row { border-top: none; }
 .gtd-cd-row:last-child { border-bottom: none; }

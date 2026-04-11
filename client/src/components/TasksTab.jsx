@@ -527,7 +527,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, b
             <span className="gtd-status-rect-label">{STATUS_LABELS[statusKey]}</span>
             {done && task.completed_at && (
               <span className="gtd-status-rect-date">
-                {new Date(task.completed_at).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })}
+                {new Date(task.completed_at).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' })}
               </span>
             )}
           </button>

@@ -888,6 +888,14 @@
   pointer-events: none;
 }
 
+.ProseMirror {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.ProseMirror * {
+  color: inherit !important;
+}
+
 /* Ensure lists render visibly inside the editor */
 .et-richbody ul,
 .et-richbody ol {
@@ -950,6 +958,40 @@
 .et-btn-danger:hover {
   background: rgba(220, 50, 50, 0.22);
   border-color: rgba(220, 50, 50, 0.6);
+}
+
+.et-btn-send-test {
+  background: rgba(50, 200, 220, 0.1);
+  color: #50C8DC;
+  border-color: #50C8DC;
+}
+
+.et-btn-send-test:not(:disabled):hover {
+  background: rgba(50, 200, 220, 0.2);
+}
+
+.et-btn-send-test:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.et-test-toast {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.et-test-toast--ok {
+  background: rgba(50, 200, 220, 0.12);
+  border: 0.5px solid rgba(50, 200, 220, 0.4);
+  color: #50C8DC;
+}
+
+.et-test-toast--err {
+  background: rgba(220, 50, 50, 0.12);
+  border: 0.5px solid rgba(220, 50, 50, 0.4);
+  color: rgba(220, 80, 80, 0.9);
 }
 
 /* Right: variables panel */

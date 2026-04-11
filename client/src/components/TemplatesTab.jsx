@@ -17,7 +17,30 @@ import { supabase } from '../lib/supabase'
 import { mouseDownIsInside } from '../lib/dragGuard'
 import { TC_ASSIGNEES } from '../lib/taskTemplates'
 import { formatPhone } from '../lib/formatters'
+import { wrapEmailBody } from '../lib/emailWrapper'
 import './TemplatesTab.css'
+
+const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
+
+const TEST_VARS = {
+  client_first_name:  'Jodi',
+  client_last_name:   'Smith',
+  client_full_name:   'Jodi Smith',
+  client_full_names:  'Jodi Smith',
+  client_greeting:    'Jodi',
+  client_email:       'jodimelissa83@gmail.com',
+  property_address:   '3870 E Thompson Ave',
+  city:               'Kingman',
+  zip:                '86409',
+  apn:                '324-05-339A',
+}
+
+function applyTestVars(text) {
+  if (!text) return ''
+  return text.replace(/\{\{(\w+)\}\}/g, (match, key) =>
+    key in TEST_VARS ? TEST_VARS[key] : match
+  )
+}
 
 // ─── Task template constants ───────────────────────────────────────────────────
 const TIMING_OPTIONS = [
@@ -532,6 +555,8 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   const [emailsLoading,   setEmailsLoading]   = useState(false)
   const [editingEmail,    setEditingEmail]    = useState(null)  // null = nothing selected
   const [emailSaving,     setEmailSaving]     = useState(false)
+  const [testSending,     setTestSending]     = useState(false)
+  const [testToast,       setTestToast]       = useState(null)  // { ok: bool, msg: string } | null
   const [lastFocused,     setLastFocused]     = useState('body') // 'subject' | 'body'
 
   const subjectRef       = useRef(null)
@@ -831,6 +856,38 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     setEditingEmail({ ...EMPTY_EMAIL })
   }
 
+  const handleSendTestEmail = async () => {
+    if (!editingEmail) return
+    const currentBody = bodyRef.current?.innerHTML ?? editingEmail.body ?? ''
+    const subject = applyTestVars(editingEmail.subject || '(no subject)')
+    const rawBody = applyTestVars(currentBody)
+    const htmlBody = rawBody.trimStart().startsWith('<')
+      ? rawBody
+      : `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${rawBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
+
+    setTestSending(true)
+    setTestToast(null)
+    try {
+      const res = await fetch(`${API_BASE}/api/google/gmail-send`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to:      ['amy@desert-legacy.com'],
+          subject: `[TEST] ${subject}`,
+          body:    wrapEmailBody(htmlBody),
+        }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || 'Send failed')
+      setTestToast({ ok: true, msg: '✓ Test email sent to amy@desert-legacy.com' })
+    } catch (err) {
+      setTestToast({ ok: false, msg: '✗ Failed to send test email' })
+    } finally {
+      setTestSending(false)
+      setTimeout(() => setTestToast(null), 5000)
+    }
+  }
+
   const handleSaveEmail = async () => {
     if (!editingEmail.name?.trim()) { alert('Please enter a template name.'); return }
     // Read body directly from DOM — body editor is fully uncontrolled so state may be stale
@@ -1100,6 +1157,14 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                       </>
                     )}
                     <button
+                      className="et-btn et-btn-send-test"
+                      onClick={handleSendTestEmail}
+                      disabled={testSending || emailSaving}
+                      title="Send a test email to amy@desert-legacy.com"
+                    >
+                      {testSending ? 'Sending…' : 'Send Test'}
+                    </button>
+                    <button
                       className="et-btn et-btn-primary"
                       onClick={handleSaveEmail}
                       disabled={emailSaving || !editingEmail.name?.trim()}
@@ -1108,6 +1173,13 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                     </button>
                   </div>
                 </div>
+
+                {/* Test email toast */}
+                {testToast && (
+                  <div className={`et-test-toast${testToast.ok ? ' et-test-toast--ok' : ' et-test-toast--err'}`}>
+                    {testToast.msg}
+                  </div>
+                )}
 
                 {/* Form fields */}
                 <div className="et-form-body">

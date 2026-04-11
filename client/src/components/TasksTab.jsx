@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import { mouseDownIsInside } from '../lib/dragGuard'
-import TaskCommentPanel from './TaskCommentPanel'
 import VendorFormPreviewModal from './VendorFormPreviewModal'
 import EmailPreviewModal from './EmailPreviewModal'
 import { useGmailStatus } from '../lib/useGmailStatus'
@@ -421,7 +420,7 @@ function CriticalDateRow({ task, onDelete, flatAddr }) {
   )
 }
 
-function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, onOpenComments, commentCount, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [], emailTemplateMap = {}, isEven = false, txAddress = null }) {
+function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [], emailTemplateMap = {}, isEven = false, txAddress = null }) {
   const done      = task.status === 'complete'
   const statusKey = task.status || 'open'
 
@@ -642,16 +641,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
         <span className="gtd-grow-addr-col" title={txAddress}>{txAddress}</span>
       )}
 
-      {/* 7. Comments */}
-      <button
-        className={`gtd-cmt-btn${commentCount > 0 ? ' active' : ''}`}
-        onClick={e => { e.stopPropagation(); onOpenComments() }}
-        title={commentCount > 0 ? `${commentCount} comment${commentCount !== 1 ? 's' : ''}` : 'Add comment'}
-      >
-        💬{commentCount > 0 && <span className="gtd-cmt-count">{commentCount}</span>}
-      </button>
-
-      {/* 8. Due date (inline editable) */}
+      {/* 7. Due date (inline editable) */}
       {!done && editingField === 'due' ? (
         <input
           autoFocus
@@ -1547,7 +1537,6 @@ function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function TasksTab({
   tasks, transactions, onTaskUpdate, onDeleteTask, onAddTask, onUpdateTransaction,
-  taskComments = [], onAddTaskComment, onDeleteTaskComment,
   tcSettings = [], onCardClick,
 }) {
   // Sub-tab
@@ -1599,9 +1588,6 @@ export default function TasksTab({
   const [bulkAssignTo, setBulkAssignTo] = useState('')
   const [bulkStatus,   setBulkStatus]   = useState('')
   const [bulkApplying, setBulkApplying] = useState(false)
-
-  // Comment panel
-  const [commentTaskId, setCommentTaskId] = useState(null)
 
   // Column sort
   const [sortField, setSortField] = useState('due_date')
@@ -2119,7 +2105,6 @@ export default function TasksTab({
               <div className="gtd-col-hdr gtd-col-hdr--action">Action</div>
               <div className="gtd-col-hdr gtd-col-hdr--progress">Progress</div>
               {viewMode === 'flat' && hdr('tx_address', 'Transaction', 'addr')}
-              <div className="gtd-col-hdr gtd-col-hdr--cmt" />
               {hdr('due_date',    'Due',         'due')}
               <div className="gtd-col-hdr gtd-col-hdr--color-bar" />
               <div className="gtd-col-hdr gtd-col-hdr--due-status"></div>
@@ -2204,8 +2189,6 @@ export default function TasksTab({
                       onUpdateTx={onUpdateTransaction}
                       onDelete={onDeleteTask}
                       onOpenEdit={() => setEditingTaskId(item.id)}
-                      onOpenComments={() => setCommentTaskId(item.id)}
-                      commentCount={taskComments.filter(c => c.task_id === item.id).length}
                       bulkMode={bulkMode}
                       selected={selectedIds.has(item.id)}
                       onToggleSelect={() => toggleId(item.id)}
@@ -2254,8 +2237,6 @@ export default function TasksTab({
                     onUpdateTx={onUpdateTransaction}
                     onDelete={onDeleteTask}
                     onOpenEdit={() => setEditingTaskId(item.id)}
-                    onOpenComments={() => setCommentTaskId(item.id)}
-                    commentCount={taskComments.filter(c => c.task_id === item.id).length}
                     bulkMode={bulkMode}
                     selected={selectedIds.has(item.id)}
                     onToggleSelect={() => toggleId(item.id)}
@@ -2300,23 +2281,6 @@ export default function TasksTab({
         ) : null
       })()}
 
-      {/* ── Comment panel ───────────────────────────────────────────── */}
-      {commentTaskId && (() => {
-        const ct = tasks.find(t => t.id === commentTaskId)
-        const tx = ct ? txMap[ct.transaction_id] : null
-        const comments = taskComments.filter(c => c.task_id === commentTaskId)
-        return (
-          <TaskCommentPanel
-            taskTitle={ct?.title || ''}
-            comments={comments}
-            onAdd={(author, body) => onAddTaskComment?.(commentTaskId, author, body)}
-            onDelete={onDeleteTaskComment}
-            onClose={() => setCommentTaskId(null)}
-            tcSettings={tcSettings}
-            transactionAddr={tx?.property_address || ''}
-          />
-        )
-      })()}
       </>}
     </div>
   )

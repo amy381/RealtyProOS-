@@ -82,7 +82,8 @@ export default function App() {
     const t = p.get('tab')
     return VALID_TABS.includes(t) ? t : 'board'
   })
-  const [boardView,  setBoardView]  = useState(() => localStorage.getItem('boardView') || 'board')
+  const [boardView,           setBoardView]           = useState(() => localStorage.getItem('boardView') || 'board')
+  const [collaboratorFilter, setCollaboratorFilter]  = useState('title-escrow')
 
   const commissionsRef = useRef({})
   const saveTimers     = useRef({})
@@ -721,6 +722,7 @@ export default function App() {
   const handleTabChange = (tab) => {
     setActiveTab(tab)
     setSelectedTransaction(null)
+    if (tab === 'collaborators') setCollaboratorFilter('title-escrow')
     window.history.replaceState({}, '', `?tab=${tab}`)
   }
 
@@ -740,6 +742,8 @@ export default function App() {
           activeTab={activeTab}
           onTabChange={handleTabChange}
           onSettingsOpen={() => setSettingsOpen(true)}
+          collaboratorFilter={collaboratorFilter}
+          onCollaboratorFilterChange={setCollaboratorFilter}
         />
 
         <main className="app-main">
@@ -805,7 +809,10 @@ export default function App() {
             />
           )}
           {activeTab === 'collaborators' && (
-            <CollaboratorsTab />
+            <CollaboratorsTab
+              activeCat={collaboratorFilter}
+              onCatChange={setCollaboratorFilter}
+            />
           )}
           {activeTab === 'showings' && (
             <ShowingsTab transactions={transactions} />

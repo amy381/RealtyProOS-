@@ -17,7 +17,21 @@ const NAV_ITEMS = [
   { key: 'reporting',     label: 'Reporting',       Icon: SquareLibrary    },
 ]
 
-export default function Sidebar({ activeTab, onTabChange, onSettingsOpen }) {
+const COLLAB_SUB = [
+  { key: 'title-escrow',    label: 'Title / Escrow'  },
+  { key: 'lenders',         label: 'Lenders'         },
+  { key: 'home-inspectors', label: 'Home Inspectors' },
+  { key: 'coop-agents',     label: 'Co-op Agents'    },
+  { key: 'other-vendors',   label: 'Other Vendors'   },
+]
+
+export default function Sidebar({
+  activeTab,
+  onTabChange,
+  onSettingsOpen,
+  collaboratorFilter,
+  onCollaboratorFilterChange,
+}) {
   const [collapsed, setCollapsed] = useState(() => {
     const stored = localStorage.getItem('legacyos-sidebar-collapsed')
     return stored !== null ? stored === 'true' : true
@@ -28,6 +42,9 @@ export default function Sidebar({ activeTab, onTabChange, onSettingsOpen }) {
     setCollapsed(next)
     localStorage.setItem('legacyos-sidebar-collapsed', String(next))
   }
+
+  const collabOpen = activeTab === 'collaborators'
+  const hasActiveSubItem = collabOpen && !!collaboratorFilter
 
   return (
     <aside className={`sidebar${collapsed ? ' sidebar--collapsed' : ''}`}>
@@ -40,17 +57,41 @@ export default function Sidebar({ activeTab, onTabChange, onSettingsOpen }) {
       </div>
 
       <nav className="sidebar-nav">
-        {NAV_ITEMS.map(({ key, label, Icon }) => (
-          <button
-            key={key}
-            className={`sidebar-item${activeTab === key ? ' sidebar-item--active' : ''}`}
-            data-label={label}
-            onClick={() => onTabChange(key)}
-          >
-            <Icon size={collapsed ? 20 : 18} className="sidebar-icon" />
-            {!collapsed && <span className="sidebar-label">{label}</span>}
-          </button>
-        ))}
+        {NAV_ITEMS.map(({ key, label, Icon }) => {
+          const isCollabParent = key === 'collaborators'
+          return (
+            <div key={key} className="sidebar-item-group">
+              {/* Main nav item */}
+              <button
+                className={`sidebar-item${activeTab === key ? ' sidebar-item--active' : ''}`}
+                data-label={label}
+                onClick={() => onTabChange(key)}
+              >
+                <Icon size={collapsed ? 20 : 18} className="sidebar-icon" />
+                {!collapsed && <span className="sidebar-label">{label}</span>}
+                {/* Collapsed dot when a sub-item is active */}
+                {collapsed && isCollabParent && hasActiveSubItem && (
+                  <span className="sidebar-sub-dot" />
+                )}
+              </button>
+
+              {/* Sub-items — visible when expanded + collaborators active */}
+              {isCollabParent && collabOpen && !collapsed && (
+                <div className="sidebar-sub-items">
+                  {COLLAB_SUB.map(sub => (
+                    <button
+                      key={sub.key}
+                      className={`sidebar-sub-item${collaboratorFilter === sub.key ? ' sidebar-sub-item--active' : ''}`}
+                      onClick={() => onCollaboratorFilterChange?.(sub.key)}
+                    >
+                      {sub.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </nav>
 
       <div className="sidebar-bottom">

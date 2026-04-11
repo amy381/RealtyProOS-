@@ -14,8 +14,10 @@ const CATEGORIES = [
 
 const BLANK_FORM = { first_name: '', last_name: '', company: '', phone: '', email: '', type: '', address: '' }
 
-export default function CollaboratorsTab() {
-  const [activeCat, setActiveCat]   = useState(CATEGORIES[0].id)
+export default function CollaboratorsTab({ activeCat: activeCatProp, onCatChange }) {
+  const [activeCatLocal, setActiveCatLocal] = useState(CATEGORIES[0].id)
+  const activeCat    = activeCatProp ?? activeCatLocal
+  const setActiveCat = onCatChange   ?? setActiveCatLocal
   const [records, setRecords]       = useState([])
   const [loading, setLoading]       = useState(true)
   const [modalOpen, setModalOpen]   = useState(false)

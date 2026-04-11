@@ -480,8 +480,14 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
     }
   }
 
-  // Resolve "Me" to display name
+  // Resolve "Me" to display name, then derive initials bubble
   const assigneeDisplay = task.assigned_to === 'Me' ? 'Amy Casanova' : (task.assigned_to || '')
+  const INITIALS_MAP = { 'Amy Casanova': 'AC', 'Justina Morris': 'JM', 'Victoria Lareau': 'VL' }
+  const assigneeInitials = (() => {
+    if (!assigneeDisplay) return null
+    if (INITIALS_MAP[assigneeDisplay]) return INITIALS_MAP[assigneeDisplay]
+    return assigneeDisplay.trim().slice(0, 2).toUpperCase()
+  })()
 
   // Due Status urgency indicator — plain text with colored left-border divider
   const dueStatusInfo = (() => {
@@ -696,11 +702,11 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, o
         <span
           className="gtd-grow-assignee gtd-inline-editable"
           onClick={e => { e.stopPropagation(); setEditingField('assignee') }}
-          title="Click to edit"
+          title={assigneeDisplay || 'Click to assign'}
         >
           {task.assigned_to
-            ? assigneeDisplay
-            : <span className="gtd-inline-placeholder">+ assign</span>
+            ? <span className="gtd-assignee-bubble">{assigneeInitials}</span>
+            : <span className="gtd-assignee-bubble" style={{ opacity: 0.35 }}>+</span>
           }
         </span>
       )}
@@ -2117,7 +2123,7 @@ export default function TasksTab({
               {hdr('due_date',    'Due',         'due')}
               <div className="gtd-col-hdr gtd-col-hdr--color-bar" />
               <div className="gtd-col-hdr gtd-col-hdr--due-status"></div>
-              <div className="gtd-col-hdr gtd-col-hdr--assignee">Assigned To</div>
+              <div className="gtd-col-hdr gtd-col-hdr--assignee">Assigned</div>
               <div className="gtd-col-hdr gtd-col-hdr--acts" />
             </>
           })()}

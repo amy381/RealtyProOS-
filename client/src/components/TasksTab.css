@@ -1,7 +1,7 @@
 /* ── Grid column templates ───────────────────────────────────────────────── */
 :root {
-  --gtd-grid-template:      144px minmax(0, 450px) 350px 376px 36px 110px 8px 80px 120px 28px 28px;
-  --gtd-grid-template-flat: 144px minmax(0, 450px) 350px 376px 160px 36px 110px 8px 80px 120px 28px 28px;
+  --gtd-grid-template:      144px 380px 350px 376px 30px 100px 8px 60px 30px 56px;
+  --gtd-grid-template-flat: 144px 380px 350px 376px 160px 30px 100px 8px 60px 30px 56px;
 }
 
 .tasks-tab {
@@ -1529,12 +1529,26 @@
 }
 
 .gtd-grow-assignee {
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gtd-assignee-bubble {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(168, 191, 204, 0.15);
+  border: 1px solid rgba(168, 191, 204, 0.35);
+  font-size: 11px;
+  font-weight: 600;
   color: #a8bfcc;
-  text-align: right;
-  white-space: normal;
-  word-break: break-word;
-  padding-top: 1px;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+  cursor: pointer;
 }
 
 .gtd-grow-due {

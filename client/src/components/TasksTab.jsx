@@ -24,7 +24,7 @@ const STAGE_ORDER = {
   'pending': 3, 'closed': 4, 'cancelled-expired': 5,
 }
 const STATUS_ORDER  = { open: 0, in_progress: 1, complete: 2 }
-const STATUS_LABELS = { open: 'To Do', in_progress: 'In Progress', complete: 'Completed' }
+const STATUS_LABELS = { open: 'To Do', in_progress: 'In Progress', complete: 'Complete' }
 const STATUS_NEXT   = { open: 'in_progress', in_progress: 'complete', complete: 'open' }
 const STATUS_STYLE  = {
   open:        { bg: '#f0f0f0', color: '#555555' },

@@ -1,7 +1,7 @@
 /* ── Grid column templates ───────────────────────────────────────────────── */
 :root {
   --gtd-grid-template:      126px 320px 350px 376px 60px 8px 60px 30px 28px 30px;
-  --gtd-grid-template-flat: 126px 320px 350px 376px 160px 60px 8px 60px 30px 28px 30px;
+  --gtd-grid-template-flat: 126px 320px 350px 376px 130px 60px 8px 60px 30px 28px 30px;
 }
 
 .tasks-tab {

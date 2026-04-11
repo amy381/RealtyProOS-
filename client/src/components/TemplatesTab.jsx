@@ -497,9 +497,11 @@ function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle, e
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, tcSettings = [] }) {
+export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, tcSettings = [], activeSectionProp, onSectionChange }) {
   // ── Sidebar section
-  const [sideSection,        setSideSection]        = useState('tasks')
+  const [sideSectionLocal, setSideSectionLocal] = useState('tasks')
+  const sideSection    = activeSectionProp ?? sideSectionLocal
+  const setSideSection = (s) => { setSideSectionLocal(s); onSectionChange?.(s) }
 
   // ── Task template state
   const [selectedTemplateId, setSelectedTemplateId] = useState(null)
@@ -964,91 +966,6 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   // ══════════════════════════════════════════════════════════════
   return (
     <div className="templates-tab">
-
-      {/* ── LEFT SIDEBAR ─────────────────────────────────────────────── */}
-      <aside className="templates-sidebar">
-
-        {/* Task Templates section — always visible */}
-        <div
-          className={`templates-sidebar-hdr${sideSection === 'tasks' ? ' active' : ''}`}
-          onClick={() => switchSection('tasks')}
-        >
-          Task Templates
-        </div>
-        <div className="templates-list">
-          {templates.map(t => (
-            <div
-              key={t.id}
-              className={`templates-list-item${selectedTemplateId === t.id ? ' active' : ''}`}
-              onClick={() => selectTemplate(t.id)}
-            >
-              <span className="templates-list-name">{t.name}</span>
-            </div>
-          ))}
-        </div>
-        <button className="templates-create-btn" onClick={handleCreateTemplate}>
-          + Create New Template
-        </button>
-
-        {/* Email Templates section — always visible */}
-        <div
-          className={`templates-sidebar-hdr${sideSection === 'email' ? ' active' : ''}`}
-          onClick={() => switchSection('email')}
-        >
-          Email Templates
-        </div>
-        {emailsLoading ? (
-          <div className="templates-coming-soon">Loading…</div>
-        ) : (
-          <div className="templates-list">
-            {emailTemplates.map(et => (
-              <div
-                key={et.id}
-                className={`templates-list-item${editingEmail?.id === et.id ? ' active' : ''}`}
-                onClick={() => selectEmail(et)}
-              >
-                <span className="templates-list-name">{et.name || '(Untitled)'}</span>
-              </div>
-            ))}
-            {emailTemplates.length === 0 && (
-              <div className="templates-coming-soon">No email templates yet</div>
-            )}
-          </div>
-        )}
-        <button className="templates-create-btn" onClick={newEmail}>
-          + New Email Template
-        </button>
-
-        {/* Vendor Templates section */}
-        <div
-          className={`templates-sidebar-hdr${sideSection === 'vendors' ? ' active' : ''}`}
-          onClick={() => switchSection('vendors')}
-        >
-          Vendor Templates
-        </div>
-        {vendorsLoading ? (
-          <div className="templates-coming-soon">Loading…</div>
-        ) : (
-          <div className="templates-list">
-            {vendors.map(v => (
-              <div
-                key={v.id}
-                className={`templates-list-item${selectedVendorId === v.id ? ' active' : ''}`}
-                onClick={() => { setSelectedVendorId(v.id); setSideSection('vendors') }}
-              >
-                <span className="templates-list-name">{v.name}</span>
-              </div>
-            ))}
-            {vendors.length === 0 && (
-              <div className="templates-coming-soon">No vendors yet</div>
-            )}
-          </div>
-        )}
-        <button className="templates-create-btn" onClick={handleCreateVendor}>
-          + Add Vendor
-        </button>
-
-      </aside>
 
       {/* ── MAIN CONTENT ─────────────────────────────────────────────── */}
       <div className="templates-main">

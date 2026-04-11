@@ -1,43 +1,9 @@
 .templates-tab {
-  display: flex;
   height: calc(100vh - 64px - 48px);
   min-height: 0;
   overflow: hidden;
   background: transparent;
   border-radius: 12px;
-}
-
-/* ── SIDEBAR ──────────────────────────────────────────────────────────── */
-.templates-sidebar {
-  width: 336px;
-  min-width: 336px;
-  border-right: 0.5px solid rgba(50, 200, 220, 0.18);
-  display: flex;
-  flex-direction: column;
-  background: rgba(2, 5, 18, 0.6);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border-radius: 8px 0 0 8px;
-  overflow-y: auto;
-}
-
-.templates-sidebar-hdr {
-  padding: 8px 12px;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: #50C8DC;
-  cursor: pointer;
-  background: rgba(50, 200, 220, 0.08);
-  border: 0.5px solid rgba(50, 200, 220, 0.25);
-  border-radius: 6px;
-  user-select: none;
-  transition: color 0.15s, background 0.15s;
-}
-
-.templates-sidebar-hdr:hover {
-  background: rgba(50, 200, 220, 0.13);
 }
 
 .templates-list {

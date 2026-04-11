@@ -25,12 +25,20 @@ const COLLAB_SUB = [
   { key: 'other-vendors',   label: 'Other Vendors'   },
 ]
 
+const TEMPLATES_SUB = [
+  { key: 'task-templates',   label: 'Task Templates'   },
+  { key: 'email-templates',  label: 'Email Templates'  },
+  { key: 'vendor-templates', label: 'Vendor Templates' },
+]
+
 export default function Sidebar({
   activeTab,
   onTabChange,
   onSettingsOpen,
   collaboratorFilter,
   onCollaboratorFilterChange,
+  templatesFilter,
+  onTemplatesFilterChange,
 }) {
   const [collapsed, setCollapsed] = useState(() => {
     const stored = localStorage.getItem('legacyos-sidebar-collapsed')
@@ -43,8 +51,10 @@ export default function Sidebar({
     localStorage.setItem('legacyos-sidebar-collapsed', String(next))
   }
 
-  const collabOpen = activeTab === 'collaborators'
+  const collabOpen       = activeTab === 'collaborators'
   const hasActiveSubItem = collabOpen && !!collaboratorFilter
+  const templatesOpen    = activeTab === 'templates'
+  const hasActiveTplSub  = templatesOpen && !!templatesFilter
 
   return (
     <aside className={`sidebar${collapsed ? ' sidebar--collapsed' : ''}`}>
@@ -73,9 +83,12 @@ export default function Sidebar({
                 {collapsed && isCollabParent && hasActiveSubItem && (
                   <span className="sidebar-sub-dot" />
                 )}
+                {collapsed && key === 'templates' && hasActiveTplSub && (
+                  <span className="sidebar-sub-dot" />
+                )}
               </button>
 
-              {/* Sub-items — visible when expanded + collaborators active */}
+              {/* Collaborators sub-items */}
               {isCollabParent && collabOpen && !collapsed && (
                 <div className="sidebar-sub-items">
                   {COLLAB_SUB.map(sub => (
@@ -83,6 +96,21 @@ export default function Sidebar({
                       key={sub.key}
                       className={`sidebar-sub-item${collaboratorFilter === sub.key ? ' sidebar-sub-item--active' : ''}`}
                       onClick={() => onCollaboratorFilterChange?.(sub.key)}
+                    >
+                      {sub.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Templates sub-items */}
+              {key === 'templates' && templatesOpen && !collapsed && (
+                <div className="sidebar-sub-items">
+                  {TEMPLATES_SUB.map(sub => (
+                    <button
+                      key={sub.key}
+                      className={`sidebar-sub-item${templatesFilter === sub.key ? ' sidebar-sub-item--active' : ''}`}
+                      onClick={() => onTemplatesFilterChange?.(sub.key)}
                     >
                       {sub.label}
                     </button>

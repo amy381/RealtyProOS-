@@ -84,6 +84,7 @@ export default function App() {
   })
   const [boardView,           setBoardView]           = useState(() => localStorage.getItem('boardView') || 'board')
   const [collaboratorFilter, setCollaboratorFilter]  = useState('title-escrow')
+  const [templatesFilter,    setTemplatesFilter]     = useState('task-templates')
 
   const commissionsRef = useRef({})
   const saveTimers     = useRef({})
@@ -723,6 +724,7 @@ export default function App() {
     setActiveTab(tab)
     setSelectedTransaction(null)
     if (tab === 'collaborators') setCollaboratorFilter('title-escrow')
+    if (tab === 'templates')    setTemplatesFilter('task-templates')
     window.history.replaceState({}, '', `?tab=${tab}`)
   }
 
@@ -744,6 +746,8 @@ export default function App() {
           onSettingsOpen={() => setSettingsOpen(true)}
           collaboratorFilter={collaboratorFilter}
           onCollaboratorFilterChange={setCollaboratorFilter}
+          templatesFilter={templatesFilter}
+          onTemplatesFilterChange={setTemplatesFilter}
         />
 
         <main className="app-main">
@@ -823,6 +827,12 @@ export default function App() {
               allTemplateTasks={dbTemplateTasks}
               onRefresh={handleTemplatesRefresh}
               tcSettings={tcSettings}
+              activeSectionProp={
+                { 'task-templates': 'tasks', 'email-templates': 'email', 'vendor-templates': 'vendors' }[templatesFilter] ?? 'tasks'
+              }
+              onSectionChange={(s) =>
+                setTemplatesFilter({ tasks: 'task-templates', email: 'email-templates', vendors: 'vendor-templates' }[s] ?? 'task-templates')
+              }
             />
           )}
           {activeTab === 'reporting' && (

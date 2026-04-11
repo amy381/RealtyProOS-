@@ -51,8 +51,8 @@ export default function Sidebar({
 
       <div className="sidebar-toggle" onClick={toggle}>
         {collapsed
-          ? <ChevronRight size={15} />
-          : <ChevronLeft  size={15} />
+          ? <ChevronRight size={18} />
+          : <ChevronLeft  size={18} />
         }
       </div>
 
@@ -67,7 +67,7 @@ export default function Sidebar({
                 data-label={label}
                 onClick={() => onTabChange(key)}
               >
-                <Icon size={collapsed ? 20 : 18} className="sidebar-icon" />
+                <Icon size={collapsed ? 25 : 22} className="sidebar-icon" />
                 {!collapsed && <span className="sidebar-label">{label}</span>}
                 {/* Collapsed dot when a sub-item is active */}
                 {collapsed && isCollabParent && hasActiveSubItem && (
@@ -100,7 +100,7 @@ export default function Sidebar({
           data-label="Settings"
           onClick={onSettingsOpen}
         >
-          <Cog size={collapsed ? 20 : 18} className="sidebar-icon" />
+          <Cog size={collapsed ? 25 : 22} className="sidebar-icon" />
           {!collapsed && <span className="sidebar-label">Settings</span>}
         </button>
       </div>

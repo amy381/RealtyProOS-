@@ -2404,14 +2404,29 @@ function TdlAddTaskModal({ transaction, onAdd, onClose }) {
 }
 
 // ─── Tasks & Documents — Left Column ─────────────────────────────────────────
-function TasksDocsLeft({ transactionId, transaction, onAdd, dbTemplates, dbTemplateTasks, onApplyTemplate }) {
+function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, dbTemplates, dbTemplateTasks, onApplyTemplate, taskComments = [], onAddTaskComment, onDeleteTaskComment, tcSettings = [], transactionAddr = '' }) {
+  const [localTasks,   setLocalTasks]  = useState([])
+  const [tasksLoaded,  setTasksLoaded] = useState(false)
   const [modalOpen,    setModalOpen]   = useState(false)
   const [tplDropOpen,  setTplDropOpen] = useState(false)
   const [selectedTpl,  setSelectedTpl] = useState(null)
   const [excludedIds,  setExcludedIds] = useState(new Set())
-  const [applying,     setApplying]   = useState(false)
-  const [applied,      setApplied]    = useState(false)
-  const tplDropRef  = useRef(null)
+  const [applying,     setApplying]    = useState(false)
+  const tplDropRef = useRef(null)
+
+  // Fetch tasks from DB on mount — source of truth, not relying on parent state
+  useEffect(() => {
+    if (!transactionId) { setTasksLoaded(true); return }
+    supabase
+      .from('tasks')
+      .select('*')
+      .eq('transaction_id', transactionId)
+      .order('sort_order', { ascending: true })
+      .then(({ data }) => {
+        setLocalTasks(data || [])
+        setTasksLoaded(true)
+      })
+  }, [transactionId])
 
   useEffect(() => {
     if (!tplDropOpen) return
@@ -2419,6 +2434,37 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, dbTemplates, dbTempl
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [tplDropOpen])
+
+  const refetchTasks = async () => {
+    const { data } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('transaction_id', transactionId)
+      .order('sort_order', { ascending: true })
+    setLocalTasks(data || [])
+  }
+
+  // Wrap handlers to keep localTasks in sync
+  const handleAdd = async (taskData) => {
+    await onAdd(taskData)
+    await refetchTasks()
+  }
+
+  const handleUpdate = (taskId, updates) => {
+    onUpdate(taskId, updates)
+    setLocalTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t))
+  }
+
+  const handleDelete = async (taskId) => {
+    setLocalTasks(prev => prev.filter(t => t.id !== taskId))
+    await onDelete(taskId)
+  }
+
+  // Wrapper for onApplyTemplate that re-fetches after insert
+  const handleApplyTemplateWrapped = async (txId, tplId, tx, excludedTplIds) => {
+    await onApplyTemplate(txId, tplId, tx, excludedTplIds)
+    await refetchTasks()
+  }
 
   const previewTasks = selectedTpl
     ? (dbTemplateTasks || [])
@@ -2431,7 +2477,9 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, dbTemplates, dbTempl
     setApplying(true)
     try {
       await onApplyTemplate(transactionId, selectedTpl.id, transaction, excludedIds)
-      setApplied(true)
+      await refetchTasks()
+      setSelectedTpl(null)
+      setExcludedIds(new Set())
     } finally {
       setApplying(false)
     }
@@ -2440,17 +2488,43 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, dbTemplates, dbTempl
   const selectTemplate = (tpl) => {
     setSelectedTpl(tpl)
     setExcludedIds(new Set())
-    setApplied(false)
     setTplDropOpen(false)
   }
 
+  if (!tasksLoaded) {
+    return <div className="tdl-wrap"><div className="tdl-loading">Loading tasks…</div></div>
+  }
+
+  // Tasks exist — show full spreadsheet view with Add Task + Apply Template in its toolbar
+  if (localTasks.length > 0) {
+    return (
+      <TasksSpreadsheet
+        tasks={localTasks}
+        transactionId={transactionId}
+        transaction={transaction}
+        onAdd={handleAdd}
+        onUpdate={handleUpdate}
+        onDelete={handleDelete}
+        dbTemplates={dbTemplates}
+        dbTemplateTasks={dbTemplateTasks}
+        onApplyTemplate={handleApplyTemplateWrapped}
+        taskComments={taskComments}
+        onAddTaskComment={onAddTaskComment}
+        onDeleteTaskComment={onDeleteTaskComment}
+        tcSettings={tcSettings}
+        transactionAddr={transactionAddr}
+      />
+    )
+  }
+
+  // No tasks yet — show Apply Template screen
   return (
     <div className="tdl-wrap">
       {/* ── Add Task modal ── */}
       {modalOpen && (
         <TdlAddTaskModal
           transaction={transaction}
-          onAdd={onAdd}
+          onAdd={handleAdd}
           onClose={() => setModalOpen(false)}
         />
       )}
@@ -2533,7 +2607,7 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, dbTemplates, dbTempl
               onClick={handleApply}
               disabled={applying || previewTasks.length === 0}
             >
-              {applying ? 'Adding…' : applied ? `✓ Added — ${previewTasks.length} task${previewTasks.length !== 1 ? 's' : ''} added` : `Add ${previewTasks.length} Task${previewTasks.length !== 1 ? 's' : ''}`}
+              {applying ? 'Adding…' : `Add ${previewTasks.length} Task${previewTasks.length !== 1 ? 's' : ''}`}
             </button>
           </div>
         </div>
@@ -3458,9 +3532,16 @@ export default function TransactionDetailPage({
                   transactionId={transaction.id}
                   transaction={transaction}
                   onAdd={onAddTask}
+                  onUpdate={onUpdateTask}
+                  onDelete={onDeleteTask}
                   dbTemplates={dbTemplates}
                   dbTemplateTasks={dbTemplateTasks}
                   onApplyTemplate={onApplyTemplate}
+                  taskComments={taskComments}
+                  onAddTaskComment={onAddTaskComment}
+                  onDeleteTaskComment={onDeleteTaskComment}
+                  tcSettings={tcSettings}
+                  transactionAddr={fullAddress}
                 />
               </div>
               <div className="txp-td-col">

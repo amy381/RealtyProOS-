@@ -141,6 +141,17 @@ function friendlyMime(mimeType = '') {
   return 'File'
 }
 
+// Decode body once if it was double-encoded (stored with HTML entities instead of real tags)
+function maybeDecodeHtml(html) {
+  if (!html) return ''
+  if (/<[a-zA-Z]/.test(html)) return html   // has real HTML tags — use as-is
+  if (!/&lt;/.test(html)) return html        // no encoded tags — use as-is
+  // All tags are encoded: decode entities once so dangerouslySetInnerHTML renders correctly
+  const el = document.createElement('div')
+  el.innerHTML = html
+  return el.textContent
+}
+
 // ─── Main EmailPreviewModal ───────────────────────────────────────────────────
 export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFolderId = null, onClose }) {
   const [template,     setTemplate]     = useState(null)
@@ -261,9 +272,10 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
         })
       )
 
-      const rawBody  = resolvedBody.trimStart().startsWith('<')
-        ? resolvedBody
-        : `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${resolvedBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
+      const decodedBody = maybeDecodeHtml(resolvedBody)
+      const rawBody  = decodedBody.trimStart().startsWith('<')
+        ? decodedBody
+        : `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${decodedBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
 
       const res = await fetch(`${API_BASE}/api/google/gmail-send`, {
         method:  'POST',
@@ -339,7 +351,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
             {/* Body */}
             <div
               className="epm-preview-body"
-              dangerouslySetInnerHTML={{ __html: resolvedBody || '' }}
+              dangerouslySetInnerHTML={{ __html: maybeDecodeHtml(resolvedBody) }}
             />
 
             <div className="epm-divider" />

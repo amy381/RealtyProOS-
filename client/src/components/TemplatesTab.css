@@ -1112,14 +1112,14 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #999;
+  color: rgba(168, 191, 204, 0.6);
 }
 
 .vd-delete-btn {
-  background: #fff0f0;
-  border: 1px solid #f8c8c8;
+  background: rgba(220, 50, 50, 0.12);
+  border: 1px solid rgba(220, 80, 80, 0.35);
   border-radius: 5px;
-  color: #c0392b;
+  color: rgba(220, 100, 100, 0.9);
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
@@ -1128,7 +1128,7 @@
   flex-shrink: 0;
 }
 
-.vd-delete-btn:hover { background: #ffe0e0; }
+.vd-delete-btn:hover { background: rgba(220, 50, 50, 0.22); }
 
 /* ── Fields ── */
 .vd-fields {
@@ -1143,14 +1143,14 @@
   display: flex;
   align-items: center;
   padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid rgba(168, 191, 204, 0.1);
   gap: 12px;
 }
 
 .vd-label {
   font-size: 13px;
   font-weight: 500;
-  color: #555;
+  color: rgb(168, 191, 204);
   width: 140px;
   flex-shrink: 0;
 }
@@ -1158,29 +1158,33 @@
 .vd-select {
   flex: 1;
   border: none;
-  border-bottom: 1px solid #ddd;
-  background: transparent;
+  border-bottom: 1px solid rgba(168, 191, 204, 0.25);
+  background: rgba(255, 255, 255, 0.06);
   font-size: 13px;
-  padding: 3px 0;
+  padding: 3px 6px;
   outline: none;
   cursor: pointer;
-  color: #111;
+  color: rgb(168, 191, 204);
+  border-radius: 4px 4px 0 0;
 }
 
-.vd-select:focus { border-bottom-color: #3b82f6; }
+.vd-select option { background: #0d1b2a; color: rgb(168, 191, 204); }
+.vd-select:focus { border-bottom-color: rgba(50, 200, 220, 0.6); }
 
 .vd-input {
   flex: 1;
   border: none;
-  border-bottom: 1px solid #ddd;
-  background: transparent;
+  border-bottom: 1px solid rgba(168, 191, 204, 0.25);
+  background: rgba(255, 255, 255, 0.06);
   font-size: 13px;
-  padding: 3px 4px;
+  padding: 3px 6px;
   outline: none;
-  color: #111;
+  color: rgb(168, 191, 204);
+  border-radius: 4px 4px 0 0;
 }
 
-.vd-input:focus { border-bottom-color: #3b82f6; }
+.vd-input::placeholder { color: rgba(168, 191, 204, 0.4); }
+.vd-input:focus { border-bottom-color: rgba(50, 200, 220, 0.6); }
 
 /* ── PDF upload field ── */
 .vd-field--pdf { align-items: flex-start; padding-top: 10px; padding-bottom: 10px; }
@@ -1195,7 +1199,7 @@
 
 .vd-pdf-filename {
   font-size: 13px;
-  color: #1a6fb5;
+  color: #50C8DC;
   text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
@@ -1215,33 +1219,34 @@
   font-family: inherit;
   font-weight: 500;
   padding: 4px 12px;
-  border: 1.5px solid #ccc;
+  border: 1px solid rgba(168, 191, 204, 0.2);
   border-radius: 5px;
-  background: #fff;
-  color: #333;
+  background: rgba(168, 191, 204, 0.1);
+  color: rgba(168, 191, 204, 0.8);
   cursor: pointer;
-  transition: border-color 0.1s, background 0.1s;
+  transition: border-color 0.15s, background 0.15s;
 }
-.vd-pdf-upload-btn:hover:not(:disabled) { border-color: #888; background: #f5f5f5; }
-.vd-pdf-upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.vd-pdf-upload-btn:hover:not(:disabled) { border-color: rgba(168, 191, 204, 0.35); background: rgba(168, 191, 204, 0.16); }
+.vd-pdf-upload-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .vd-pdf-remove-btn {
   font-size: 12px;
   font-family: inherit;
+  font-weight: 500;
   padding: 4px 10px;
-  border: 1.5px solid #f0c0c0;
+  border: 1px solid rgba(220, 80, 80, 0.35);
   border-radius: 5px;
-  background: #fff8f8;
-  color: #c0392b;
+  background: rgba(220, 50, 50, 0.12);
+  color: rgba(220, 100, 100, 0.9);
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background 0.15s;
 }
-.vd-pdf-remove-btn:hover { background: #ffe8e8; }
+.vd-pdf-remove-btn:hover { background: rgba(220, 50, 50, 0.22); }
 
 /* ── Field Mapping ── */
 .vd-mapping-section {
   max-width: 580px;
-  border-top: 2px solid #e8e8e8;
+  border-top: 1px solid rgba(168, 191, 204, 0.15);
   padding-top: 20px;
 }
 
@@ -1250,13 +1255,13 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #555;
+  color: rgb(168, 191, 204);
   margin-bottom: 6px;
 }
 
 .vd-mapping-desc {
   font-size: 12px;
-  color: #888;
+  color: rgba(168, 191, 204, 0.55);
   margin: 0 0 14px;
 }
 
@@ -1274,21 +1279,44 @@
   border-radius: 5px;
   cursor: pointer;
   font-size: 13px;
+  color: rgb(168, 191, 204);
 }
 
-.vd-mapping-item:hover { background: #f5f5f5; }
+.vd-mapping-item:hover { background: rgba(168, 191, 204, 0.06); }
 
 .vd-mapping-item input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
   width: 14px;
   height: 14px;
+  border: 1.5px solid rgba(168, 191, 204, 0.3);
+  border-radius: 3px;
+  background: rgba(2, 5, 18, 0.5);
   cursor: pointer;
-  accent-color: #3b5fc0;
   flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s, border-color 0.15s;
+}
+.vd-mapping-item input[type="checkbox"]:checked {
+  background: rgba(80, 200, 220, 0.25);
+  border-color: #50C8DC;
+}
+.vd-mapping-item input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0px;
+  width: 5px;
+  height: 9px;
+  border: 2px solid #a8bfcc;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
 }
 
 .vd-mapping-label {
   flex: 1;
-  color: #1a1a1a;
+  color: rgb(168, 191, 204) !important;
 }
 
 .vd-mapping-source {
@@ -1300,8 +1328,8 @@
   letter-spacing: 0.04em;
 }
 
-.vd-source--settings    { background: #ede9fe; color: #6d28d9; }
-.vd-source--transaction { background: #dbeafe; color: #1d4ed8; }
+.vd-source--settings    { background: rgba(109, 40, 217, 0.2); color: rgba(180, 140, 255, 0.9); }
+.vd-source--transaction { background: rgba(29, 78, 216, 0.2);  color: rgba(120, 170, 255, 0.9); }
 
 /* ─── RecipientField ──────────────────────────────────────────────────────────── */
 .et-recipient-field { gap: 8px; }

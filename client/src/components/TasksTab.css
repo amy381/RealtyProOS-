@@ -1352,7 +1352,7 @@
 .gtd-col-hdr--status    { text-align: left; }
 .gtd-col-hdr--task      { text-align: left; min-width: 0; }
 .gtd-col-hdr--progress  { text-align: left; }
-.gtd-col-hdr--due       { text-align: right; }
+.gtd-col-hdr--due       { text-align: right; color: rgba(168,191,204,0.6) !important; }
 .gtd-col-hdr--due-status { padding-left: 4px; }
 .gtd-col-hdr--assignee  { text-align: right; }
 .gtd-col-hdr--acts      { grid-column: span 2; }

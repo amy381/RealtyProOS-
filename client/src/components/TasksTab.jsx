@@ -661,7 +661,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, b
           {done
             ? <span className="gtd-inline-placeholder">—</span>
             : task.due_date
-              ? new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              ? new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' })
               : <span className="gtd-inline-placeholder">+ date</span>
           }
         </span>

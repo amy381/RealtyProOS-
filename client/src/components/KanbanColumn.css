@@ -24,6 +24,33 @@
   filter: brightness(1.05);
 }
 
+/* Empty card columns collapse to narrow fixed width */
+.kanban-column--medium.kanban-column--empty,
+.kanban-column--wide.kanban-column--empty,
+.kanban-column--narrow.kanban-column--empty {
+  flex: none;
+  width: 160px;
+  min-width: 160px;
+}
+
+/* Shrink header text so it fits in narrow empty columns */
+.kanban-column--empty .column-title {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+.kanban-column--empty .column-header {
+  padding: 8px 8px 7px;
+}
+
+@media (max-width: 1440px) {
+  .kanban-column--medium.kanban-column--empty,
+  .kanban-column--wide.kanban-column--empty,
+  .kanban-column--narrow.kanban-column--empty {
+    width: 140px;
+    min-width: 140px;
+  }
+}
+
 /* ── Header — dark glass ─────────────────────────────── */
 .column-header {
   padding: 10px 12px 9px;

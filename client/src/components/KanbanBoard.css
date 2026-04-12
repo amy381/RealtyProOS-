@@ -28,6 +28,11 @@
   min-height: 0;
 }
 
+/* Empty stacked panel collapses to narrow width */
+.stacked-list-panel--empty {
+  width: 160px;
+}
+
 /* Both columns fill panel width */
 .stacked-list-panel .kanban-column {
   width: 100%;
@@ -53,6 +58,12 @@
   min-height: 0;
 }
 
+
+/* ── Responsive: ≤1440px ─────────────────────────────── */
+@media (max-width: 1440px) {
+  .kanban-board { gap: 8px; }
+  .stacked-list-panel--empty { width: 140px; }
+}
 
 /* ── Drag overlay pill ────────────────────────────────── */
 .list-drag-pill {

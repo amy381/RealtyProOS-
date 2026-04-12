@@ -17,6 +17,11 @@ export default function KanbanBoard({ columns, transactions, onStatusChange, onD
 
   const mainColumns = columns.filter(c => c.id !== 'cancelled-expired')
 
+  const listTxCount = mainColumns
+    .filter(c => c.viewMode === 'list')
+    .reduce((sum, col) => sum + transactions.filter(t => t.status === col.id).length, 0)
+  const listPanelEmpty = listTxCount === 0
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor)
@@ -44,30 +49,38 @@ export default function KanbanBoard({ columns, transactions, onStatusChange, onD
 
         <div className="kanban-board">
           {/* Left stacked panel: Pre-Listing on top, Buyer-Broker below */}
-          <div className="stacked-list-panel">
-            {mainColumns.filter(c => c.viewMode === 'list').map(col => (
+          <div className={`stacked-list-panel${listPanelEmpty ? ' stacked-list-panel--empty' : ''}`}>
+            {mainColumns.filter(c => c.viewMode === 'list').map(col => {
+              const colTxs = transactions.filter(t => t.status === col.id)
+              return (
+                <KanbanColumn
+                  key={col.id}
+                  column={col}
+                  transactions={colTxs}
+                  isEmpty={colTxs.length === 0}
+                  onDelete={onDelete}
+                  onCardClick={onCardClick}
+                  commissions={commissions}
+                />
+              )
+            })}
+          </div>
+
+          {/* Card columns */}
+          {mainColumns.filter(c => c.viewMode !== 'list').map(col => {
+            const colTxs = transactions.filter(t => t.status === col.id)
+            return (
               <KanbanColumn
                 key={col.id}
                 column={col}
-                transactions={transactions.filter(t => t.status === col.id)}
+                transactions={colTxs}
+                isEmpty={colTxs.length === 0}
                 onDelete={onDelete}
                 onCardClick={onCardClick}
                 commissions={commissions}
               />
-            ))}
-          </div>
-
-          {/* Card columns */}
-          {mainColumns.filter(c => c.viewMode !== 'list').map(col => (
-            <KanbanColumn
-              key={col.id}
-              column={col}
-              transactions={transactions.filter(t => t.status === col.id)}
-              onDelete={onDelete}
-              onCardClick={onCardClick}
-              commissions={commissions}
-            />
-          ))}
+            )
+          })}
         </div>
 
       </div>

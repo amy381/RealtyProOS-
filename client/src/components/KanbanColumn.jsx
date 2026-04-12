@@ -9,7 +9,7 @@ const LIST_HEADERS = {
   'pre-listing':  ['Address', 'Listed', 'Exp'],
 }
 
-export default function KanbanColumn({ column, transactions, onDelete, onCardClick, commissions }) {
+export default function KanbanColumn({ column, transactions, onDelete, onCardClick, commissions, isEmpty }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id })
   const isListMode = column.viewMode === 'list'
   const headers = LIST_HEADERS[column.id]
@@ -17,7 +17,7 @@ export default function KanbanColumn({ column, transactions, onDelete, onCardCli
   return (
     <div
       ref={setNodeRef}
-      className={`kanban-column kanban-column--${column.viewMode} ${isOver ? 'is-over' : ''}`}
+      className={`kanban-column kanban-column--${column.viewMode}${isEmpty ? ' kanban-column--empty' : ''} ${isOver ? 'is-over' : ''}`}
       style={{ background: column.bgColor }}
     >
       <div className="column-header" style={{ borderTopColor: column.color }}>

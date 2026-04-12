@@ -1912,7 +1912,7 @@
   flex-direction: row;
   align-items: center;
   gap: 8px;
-  min-width: 392px;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -1947,7 +1947,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
-  width: 68px;
+  width: auto;
   flex-shrink: 0;
 }
 
@@ -1966,6 +1966,12 @@
 }
 .gtd-progress-date-input:hover,
 .gtd-progress-date-input:focus { border-color: rgba(50, 200, 220, 0.4); background: rgba(50, 200, 220, 0.06); }
+
+@media (max-width: 1280px) {
+  .gtd-action-progress-row .di-wrap {
+    width: 95px;
+  }
+}
 
 /* ── Transaction Address column (flat list mode) ─────────────────────────── */
 .gtd-grow-addr-col {

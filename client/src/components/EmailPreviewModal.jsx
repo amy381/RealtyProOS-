@@ -149,7 +149,7 @@ function maybeDecodeHtml(html) {
   // All tags are encoded: decode entities once so dangerouslySetInnerHTML renders correctly
   const el = document.createElement('div')
   el.innerHTML = html
-  return el.textContent
+  return el.innerHTML
 }
 
 // ─── Main EmailPreviewModal ───────────────────────────────────────────────────

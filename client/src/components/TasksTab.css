@@ -1912,7 +1912,7 @@
   flex-direction: row;
   align-items: center;
   gap: 8px;
-  min-width: 0;
+  min-width: 392px;
   overflow: hidden;
 }
 

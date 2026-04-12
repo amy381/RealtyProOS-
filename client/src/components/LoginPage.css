@@ -36,13 +36,13 @@
   border: none;
   border-radius: 8px;
   padding: 12px 32px;
-  font-size: 0.95rem;
+  font-size: 16px;
   font-weight: 500;
-  color: #3c4043;
+  color: #1a1a1a;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s, box-shadow 0.15s, opacity 0.15s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .login-google-btn:hover:not(:disabled) {

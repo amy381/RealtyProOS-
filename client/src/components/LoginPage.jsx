@@ -62,7 +62,7 @@ export default function LoginPage({ accessDenied }) {
         )}
       </div>
 
-      <div className="login-powered">Powered by LegacyOS</div>
+      <div className="login-powered">© 2026 Desert Legacy — Powered by LegacyOS</div>
     </div>
   )
 }

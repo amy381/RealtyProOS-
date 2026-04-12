@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import MeshBackground from './MeshBackground'
 import './LoginPage.css'
 
-const LOGO_URL = 'https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/login-screen.png'
+const LOGO_URL = 'https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/login-screen-v2.png'
 
 function GoogleIcon() {
   return (

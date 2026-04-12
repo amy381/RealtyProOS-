@@ -119,7 +119,12 @@ export default function TransactionCard({ transaction, onDelete, isDragging, pri
         if (!hasDragged.current) onCardClick?.(transaction)
       }}
     >
-      <div className="card-address">{streetOnly(transaction.property_address)}</div>
+      <div className="card-address-row">
+        <span className="card-address">{streetOnly(transaction.property_address)}</span>
+        {showRepBadge && (
+          <span className={`card-rep-badge ${transaction.rep_type === 'Buyer' ? 'buyer' : 'seller'}`}>{transaction.rep_type}</span>
+        )}
+      </div>
 
       <div className="card-row">
         <span className="card-client-dot" />
@@ -170,9 +175,6 @@ export default function TransactionCard({ transaction, onDelete, isDragging, pri
 
       <div className="card-footer">
         <div className="card-footer-right">
-          {showRepBadge && (
-            <span className={`card-rep-badge ${transaction.rep_type === 'Buyer' ? 'buyer' : 'seller'}`}>{transaction.rep_type}</span>
-          )}
           <div className="card-actions">
           </div>
         </div>

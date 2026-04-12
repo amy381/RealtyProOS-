@@ -1420,7 +1420,7 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
             </>
           )}
         </span>
-        <button className="sq-compose-btn" onClick={() => setComposing('new')}><Mail size={15} style={{ flexShrink: 0 }} />+ Compose Email</button>
+        <button className="sq-compose-btn" onClick={() => setComposing('new')}><Mail size={16} style={{ flexShrink: 0 }} />+ Compose Email</button>
       </div>
 
       {!gmailStatus.loading && (!gmailStatus.connected || !gmailStatus.hasGmailScope) && (

@@ -604,7 +604,7 @@
 .gtd-due               { color: #666666; }
 .gtd-due--overdue      { color: #dc2626 !important; font-weight: 700; }
 .gtd-due--today        { color: #d97706 !important; font-weight: 700; }
-.gtd-due--soon         { color: #d97706 !important; font-weight: 600; }
+.gtd-due--soon         { color: #50C8DC !important; font-weight: 600; }
 .gtd-due--upcoming     { color: #444444; }
 .gtd-due--done         { color: #b0b0b0; font-weight: 400; }
 .gtd-due--none         { color: #cccccc; }
@@ -844,15 +844,18 @@
   display: flex;
   align-items: center;
   gap: 7px;
+  appearance: none;
+  -webkit-appearance: none;
   background: rgba(212, 120, 30, 0.15);
   color: rgba(220, 135, 45, 0.95);
-  border: 1px solid rgba(220, 135, 45, 0.95);
-  padding: 7px 16px;
+  border: 1px solid rgba(220, 135, 45, 0.4);
+  padding: 6px 14px;
   border-radius: 6px;
-  font-size: 0.82rem;
+  font-size: 14px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
+  transition: background 0.15s;
 }
 
 .sq-compose-btn:hover { background: rgba(212, 120, 30, 0.25); }

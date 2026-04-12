@@ -303,7 +303,7 @@ export default function ShowingsTab({ transactions }) {
         >
           {syncing ? 'Syncing…' : 'Sync Supra'}
         </button>
-        <button className="sht-add-btn" onClick={openAdd}><Plus size={15} />Add Showing</button>
+        <button className="sht-add-btn" onClick={openAdd}><Plus size={16} />+ Add Showing</button>
       </div>
 
       {addOpen && (

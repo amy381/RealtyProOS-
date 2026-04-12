@@ -11,6 +11,14 @@
   gap: 10px;
 }
 
+/* ── Top row (search + toolbar on one line) ──────────────────────────────── */
+.gtd-top-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
 /* ── Search bar ──────────────────────────────────────────────────────────── */
 .gtd-searchbar {
   display: flex;
@@ -20,6 +28,7 @@
   border-radius: 8px;
   padding: 0 12px;
   gap: 8px;
+  width: 40%;
   flex-shrink: 0;
   transition: border-color 0.12s;
 }
@@ -99,16 +108,10 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-  flex-wrap: wrap;
-}
-
-.gtd-summary {
-  font-size: 14px;
-  color: #666666;
+  margin-left: auto;
 }
 
 .gtd-view-toggle-group {
-  margin-left: auto;
   display: flex;
   align-items: center;
   background: rgba(50, 200, 220, 0.06);

@@ -409,7 +409,7 @@ function CriticalDateRow({ task, onDelete, flatAddr }) {
       {flatAddr != null && <span className="gtd-cd-flat-addr">{flatAddr}</span>}
       <span className="gtd-cd-date">
         {task.due_date
-          ? new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          ? new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' })
           : '—'}
       </span>
       <span className={`gtd-cd-color-bar${ddl.cls ? ` gtd-color-bar--${ddl.cls}` : ''}`} />
@@ -1687,9 +1687,12 @@ function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, 
 export default function TasksTab({
   tasks, transactions, onTaskUpdate, onDeleteTask, onAddTask, onUpdateTransaction,
   tcSettings = [], onCardClick,
+  activeSubTabProp, onSubTabChange,
 }) {
-  // Sub-tab
-  const [activeSubTab,  setActiveSubTab]  = useState('tasks')
+  // Sub-tab (controlled externally via activeSubTabProp / onSubTabChange)
+  const [activeSubTabLocal, setActiveSubTabLocal] = useState('tasks')
+  const activeSubTab = activeSubTabProp ?? activeSubTabLocal
+  const setActiveSubTab = (s) => { setActiveSubTabLocal(s); onSubTabChange?.(s) }
   const [queueCount,    setQueueCount]    = useState(0)
   const tasksScrollRef  = useRef(null)
   const savedScrollTop  = useRef(0)
@@ -2076,25 +2079,6 @@ export default function TasksTab({
   return (
     <div className="tasks-tab">
 
-      {/* ── Sub-tab bar ─────────────────────────────────────────────── */}
-      <div className="gtd-subtabs">
-        <button
-          className={`gtd-subtab${activeSubTab === 'tasks' ? ' active' : ''}`}
-          onClick={() => setActiveSubTab('tasks')}
-        >Tasks</button>
-        <button
-          className={`gtd-subtab${activeSubTab === 'queue' ? ' active' : ''}`}
-          onClick={() => { if (tasksScrollRef.current) savedScrollTop.current = tasksScrollRef.current.scrollTop; setActiveSubTab('queue') }}
-        >
-          Send Queue
-          {queueCount > 0 && <span className="gtd-subtab-badge">{queueCount}</span>}
-        </button>
-        <button
-          className={`gtd-subtab${activeSubTab === 'log' ? ' active' : ''}`}
-          onClick={() => { if (tasksScrollRef.current) savedScrollTop.current = tasksScrollRef.current.scrollTop; setActiveSubTab('log') }}
-        >Sent Log</button>
-      </div>
-
       {/* ── Send Queue view ─────────────────────────────────────────── */}
       {activeSubTab === 'queue' && (
         <SendQueueView
@@ -2112,50 +2096,43 @@ export default function TasksTab({
       {activeSubTab !== 'tasks' && null}
       {activeSubTab === 'tasks' && <>
 
-      {/* ── Search bar ──────────────────────────────────────────────── */}
-      <div className="gtd-searchbar">
-        <span className="gtd-searchbar-icon">⌕</span>
-        <input
-          className="gtd-searchbar-input"
-          type="text"
-          placeholder="Search tasks or addresses…"
-          value={filters.search}
-          onChange={e => setSearch(e.target.value)}
-        />
-        {filters.search && (
-          <button className="gtd-searchbar-clear" onClick={() => setSearch('')}>✕</button>
-        )}
-      </div>
-
-      {/* ── Toolbar ─────────────────────────────────────────────────── */}
-      <div className="gtd-toolbar">
-        <span className="gtd-summary">
-          {openCount} open{doneCount > 0 ? `, ${doneCount} done` : ''}
-        </span>
-        {bulkMode ? (
-          <button className="gtd-bulk-toggle gtd-bulk-cancel" onClick={exitBulkMode}>Cancel</button>
-        ) : (
-          <button className="gtd-bulk-toggle" onClick={enterBulkMode}>Bulk Edit</button>
-        )}
-        <div className="gtd-view-toggle-group">
-          <button
-            className={`gtd-vt-btn${viewMode === 'grouped' ? ' active' : ''}`}
-            onClick={() => setViewMode('grouped')}
-          >Grouped</button>
-          <button
-            className={`gtd-vt-btn${viewMode === 'flat' ? ' active' : ''}`}
-            onClick={() => setViewMode('flat')}
-          >Flat</button>
+      {/* ── Top row: search + view toggle + filters ─────────────────── */}
+      <div className="gtd-top-row">
+        <div className="gtd-searchbar">
+          <span className="gtd-searchbar-icon">⌕</span>
+          <input
+            className="gtd-searchbar-input"
+            type="text"
+            placeholder="Search tasks or addresses…"
+            value={filters.search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {filters.search && (
+            <button className="gtd-searchbar-clear" onClick={() => setSearch('')}>✕</button>
+          )}
         </div>
-        {filterCount > 0 && (
-          <button className="gtd-fp-clear-inline" onClick={clearAll}>Clear Filters</button>
-        )}
-        <button
-          className={`gtd-filters-btn${filterCount > 0 ? ' has-filters' : ''}`}
-          onClick={openPanel}
-        >
-          Filters{filterCount > 0 ? ` (${filterCount})` : ''}
-        </button>
+
+        <div className="gtd-toolbar">
+          <div className="gtd-view-toggle-group">
+            <button
+              className={`gtd-vt-btn${viewMode === 'grouped' ? ' active' : ''}`}
+              onClick={() => setViewMode('grouped')}
+            >Grouped</button>
+            <button
+              className={`gtd-vt-btn${viewMode === 'flat' ? ' active' : ''}`}
+              onClick={() => setViewMode('flat')}
+            >Flat</button>
+          </div>
+          {filterCount > 0 && (
+            <button className="gtd-fp-clear-inline" onClick={clearAll}>Clear Filters</button>
+          )}
+          <button
+            className={`gtd-filters-btn${filterCount > 0 ? ' has-filters' : ''}`}
+            onClick={openPanel}
+          >
+            Filters{filterCount > 0 ? ` (${filterCount})` : ''}
+          </button>
+        </div>
       </div>
 
       {/* ── Active filter chips ──────────────────────────────────────── */}

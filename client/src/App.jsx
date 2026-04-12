@@ -85,6 +85,7 @@ export default function App() {
   const [boardView,           setBoardView]           = useState(() => localStorage.getItem('boardView') || 'board')
   const [collaboratorFilter, setCollaboratorFilter]  = useState('title-escrow')
   const [templatesFilter,    setTemplatesFilter]     = useState('task-templates')
+  const [tasksFilter,        setTasksFilter]         = useState('tasks')
 
   const commissionsRef = useRef({})
   const saveTimers     = useRef({})
@@ -725,6 +726,7 @@ export default function App() {
     setSelectedTransaction(null)
     if (tab === 'collaborators') setCollaboratorFilter('title-escrow')
     if (tab === 'templates')    setTemplatesFilter('task-templates')
+    if (tab === 'tasks')        setTasksFilter('tasks')
     window.history.replaceState({}, '', `?tab=${tab}`)
   }
 
@@ -748,6 +750,8 @@ export default function App() {
           onCollaboratorFilterChange={setCollaboratorFilter}
           templatesFilter={templatesFilter}
           onTemplatesFilterChange={setTemplatesFilter}
+          tasksFilter={tasksFilter}
+          onTasksFilterChange={setTasksFilter}
         />
 
         <main className="app-main">
@@ -810,6 +814,12 @@ export default function App() {
               onDeleteTaskComment={handleDeleteTaskComment}
               tcSettings={tcSettings}
               onCardClick={(tx) => openTransaction(tx, 'details', 'tasks')}
+              activeSubTabProp={
+                { 'tasks': 'tasks', 'send-queue': 'queue', 'sent-log': 'log' }[tasksFilter] ?? 'tasks'
+              }
+              onSubTabChange={(s) =>
+                setTasksFilter({ tasks: 'tasks', queue: 'send-queue', log: 'sent-log' }[s] ?? 'tasks')
+              }
             />
           )}
           {activeTab === 'collaborators' && (

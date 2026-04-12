@@ -31,6 +31,12 @@ const TEMPLATES_SUB = [
   { key: 'vendor-templates', label: 'Vendor Templates' },
 ]
 
+const TASKS_SUB = [
+  { key: 'tasks',      label: 'Tasks'      },
+  { key: 'send-queue', label: 'Send Queue' },
+  { key: 'sent-log',   label: 'Sent Log'   },
+]
+
 export default function Sidebar({
   activeTab,
   onTabChange,
@@ -39,6 +45,8 @@ export default function Sidebar({
   onCollaboratorFilterChange,
   templatesFilter,
   onTemplatesFilterChange,
+  tasksFilter,
+  onTasksFilterChange,
 }) {
   const [collapsed, setCollapsed] = useState(() => {
     const stored = localStorage.getItem('legacyos-sidebar-collapsed')
@@ -55,6 +63,8 @@ export default function Sidebar({
   const hasActiveSubItem = collabOpen && !!collaboratorFilter
   const templatesOpen    = activeTab === 'templates'
   const hasActiveTplSub  = templatesOpen && !!templatesFilter
+  const tasksOpen        = activeTab === 'tasks'
+  const hasActiveTaskSub = tasksOpen && !!tasksFilter
 
   return (
     <aside className={`sidebar${collapsed ? ' sidebar--collapsed' : ''}`}>
@@ -86,6 +96,9 @@ export default function Sidebar({
                 {collapsed && key === 'templates' && hasActiveTplSub && (
                   <span className="sidebar-sub-dot" />
                 )}
+                {collapsed && key === 'tasks' && hasActiveTaskSub && (
+                  <span className="sidebar-sub-dot" />
+                )}
               </button>
 
               {/* Collaborators sub-items */}
@@ -96,6 +109,21 @@ export default function Sidebar({
                       key={sub.key}
                       className={`sidebar-sub-item${collaboratorFilter === sub.key ? ' sidebar-sub-item--active' : ''}`}
                       onClick={() => onCollaboratorFilterChange?.(sub.key)}
+                    >
+                      {sub.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Tasks sub-items */}
+              {key === 'tasks' && tasksOpen && !collapsed && (
+                <div className="sidebar-sub-items">
+                  {TASKS_SUB.map(sub => (
+                    <button
+                      key={sub.key}
+                      className={`sidebar-sub-item${tasksFilter === sub.key ? ' sidebar-sub-item--active' : ''}`}
+                      onClick={() => onTasksFilterChange?.(sub.key)}
                     >
                       {sub.label}
                     </button>

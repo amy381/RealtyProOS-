@@ -1,0 +1,140 @@
+.di-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* The text input inherits its parent's class styles; we add padding-right for the icon */
+.di-text {
+  flex: 1;
+  min-width: 0;
+  padding-right: 28px !important;
+}
+
+.di-invalid {
+  border-color: rgba(224, 92, 92, 0.85) !important;
+  box-shadow: 0 0 0 2px rgba(224, 92, 92, 0.15) !important;
+}
+
+/* Calendar icon button */
+.di-icon-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px;
+  color: rgba(168, 191, 204, 0.4);
+  display: flex;
+  align-items: center;
+  line-height: 1;
+  transition: color 0.15s;
+  border-radius: 3px;
+}
+
+.di-icon-btn:hover {
+  color: #50C8DC;
+}
+
+/* Calendar popup */
+.di-popup {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  z-index: 9999;
+  background: rgba(2, 5, 18, 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(168, 191, 204, 0.15);
+  border-radius: 10px;
+  padding: 10px 10px 8px;
+  min-width: 228px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.55);
+}
+
+.di-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
+.di-popup-nav {
+  background: none;
+  border: none;
+  color: rgba(168, 191, 204, 0.65);
+  cursor: pointer;
+  font-size: 19px;
+  padding: 2px 7px;
+  line-height: 1;
+  border-radius: 5px;
+  transition: color 0.13s, background 0.13s;
+}
+
+.di-popup-nav:hover {
+  color: #50C8DC;
+  background: rgba(80, 200, 220, 0.1);
+}
+
+.di-popup-label {
+  color: rgba(168, 191, 204, 0.85);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.di-popup-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+
+.di-popup-dow {
+  text-align: center;
+  font-size: 10px;
+  color: rgba(168, 191, 204, 0.38);
+  padding: 4px 0 5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.di-popup-day {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: rgba(168, 191, 204, 0.78);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 5px 1px;
+  text-align: center;
+  width: 100%;
+  transition: background 0.11s, color 0.11s;
+}
+
+.di-popup-day:hover {
+  background: rgba(80, 200, 220, 0.15);
+  color: #e8f4f8;
+}
+
+.di-popup-day.sel {
+  background: #50C8DC;
+  color: #020512;
+  font-weight: 700;
+  border-color: transparent;
+}
+
+.di-popup-day.tod {
+  border-color: #D4781E;
+}
+
+.di-popup-day.sel.tod {
+  border-color: transparent;
+}
+
+.di-popup-empty {
+  display: block;
+}

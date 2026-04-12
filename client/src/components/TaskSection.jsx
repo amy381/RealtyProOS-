@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { TC_ASSIGNEES } from '../lib/taskTemplates'
 import { mouseDownIsInside } from '../lib/dragGuard'
+import DateInput from './DateInput'
 import './TaskSection.css'
 
 function fmtDue(dateStr) {
@@ -76,7 +77,7 @@ export default function TaskSection({ tasks = [], transactionId, onAdd, onUpdate
             onKeyDown={e => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') setAdding(false) }}
           />
           <div className="ts-add-row">
-            <input type="date" className="ts-input ts-date" value={newTask.due_date}
+            <DateInput className="ts-input ts-date" value={newTask.due_date}
               onChange={e => setNewTask(f => ({ ...f, due_date: e.target.value }))} />
             <select className="ts-input ts-select" value={newTask.assigned_to}
               onChange={e => setNewTask(f => ({ ...f, assigned_to: e.target.value }))}>
@@ -167,8 +168,8 @@ function DueDateRow({ task, onUpdate, onDelete }) {
           }
           <div className="ts-meta">
             {editDate
-              ? <input type="date" className="ts-meta-input" value={task.due_date || ''} autoFocus
-                  onChange={e => onUpdate('due_date', e.target.value)} onBlur={e => { if (!mouseDownIsInside(e.currentTarget)) setEditDate(false) }} />
+              ? <DateInput className="ts-meta-input" value={task.due_date || ''} autoFocus
+                  onChange={e => onUpdate('due_date', e.target.value)} onBlur={() => setEditDate(false)} />
               : <span className={`ts-due ts-${dc}`} onClick={() => setEditDate(true)}>
                   {task.due_date ? fmtDue(task.due_date) : '+ date'}
                 </span>
@@ -222,8 +223,8 @@ function TaskRow({ task, isDone, isExpanded, isEditingNotes, onToggle, onToggleE
 
           <div className="ts-meta">
             {editDate
-              ? <input type="date" className="ts-meta-input" value={task.due_date || ''} autoFocus
-                  onChange={e => onUpdate('due_date', e.target.value)} onBlur={e => { if (!mouseDownIsInside(e.currentTarget)) setEditDate(false) }} />
+              ? <DateInput className="ts-meta-input" value={task.due_date || ''} autoFocus
+                  onChange={e => onUpdate('due_date', e.target.value)} onBlur={() => setEditDate(false)} />
               : <span className={`ts-due ts-${dc}`} onClick={() => setEditDate(true)}>
                   {task.due_date ? fmtDue(task.due_date) : '+ date'}
                 </span>

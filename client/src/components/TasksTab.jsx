@@ -8,6 +8,7 @@ import VendorFormPreviewModal from './VendorFormPreviewModal'
 import EmailPreviewModal from './EmailPreviewModal'
 import { useGmailStatus } from '../lib/useGmailStatus'
 import { resolveVars } from '../lib/resolveVars'
+import DateInput from './DateInput'
 import './TasksTab.css'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -797,15 +798,13 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, b
         {task.has_progress_tracking && (
           <div className="gtd-action-progress-row">
             <span className="gtd-progress-date-label">Ordered</span>
-            <input
-              type="date"
+            <DateInput
               className="gtd-progress-date-input"
               value={task.ordered_date || ''}
               onChange={e => handleProgressDateChange('ordered_date', e.target.value)}
             />
             <span className="gtd-progress-date-label">Scheduled</span>
-            <input
-              type="date"
+            <DateInput
               className="gtd-progress-date-input"
               value={task.scheduled_date || ''}
               onChange={e => handleProgressDateChange('scheduled_date', e.target.value)}
@@ -821,14 +820,12 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, b
 
       {/* 7. Due date (inline editable) */}
       {!done && editingField === 'due' ? (
-        <input
+        <DateInput
           autoFocus
-          type="date"
           className="gtd-inline-due-input"
-          defaultValue={task.due_date || ''}
+          value={task.due_date || ''}
           onChange={e => { onUpdate(task.id, { due_date: e.target.value || null }); setEditingField(null) }}
-          onBlur={e => { if (!mouseDownIsInside(e.currentTarget)) setEditingField(null) }}
-          onClick={e => e.stopPropagation()}
+          onBlur={() => setEditingField(null)}
         />
       ) : (
         <span
@@ -956,7 +953,7 @@ function TaskEditModal({ task, tx, critDateTasks = [], onUpdate, onClose }) {
             </label>
             <label className="gtd-edit-field">
               <span className="gtd-edit-label">Due Date</span>
-              <input className="gtd-edit-input" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+              <DateInput className="gtd-edit-input" value={dueDate} onChange={e => setDueDate(e.target.value)} />
             </label>
           </div>
           <div className="gtd-edit-row">
@@ -1046,7 +1043,7 @@ function AddTaskModal({ tx, critDateTasks = [], onAdd, onClose }) {
             </label>
             <label className="gtd-edit-field">
               <span className="gtd-edit-label">Due Date</span>
-              <input className="gtd-edit-input" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+              <DateInput className="gtd-edit-input" value={dueDate} onChange={e => setDueDate(e.target.value)} />
             </label>
           </div>
           <div className="gtd-edit-row">
@@ -2322,6 +2319,9 @@ export default function TasksTab({
                   <span className="gtd-tx-coe">
                     COE: {new Date(tx.close_of_escrow + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </span>
+                )}
+                {items.length > 0 && completedCount === items.length && (
+                  <span className="gtd-all-complete-badge">✓ All Complete</span>
                 )}
                 <span className="gtd-tx-header-spacer" />
                 {!isCollapsed && completedCount > 0 && (

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import { useSyncSupraShowings } from '../hooks/useSyncSupraShowings'
+import DateInput from './DateInput'
 import './ShowingsTab.css'
 
 function fmtDate(d) {
@@ -337,8 +338,7 @@ export default function ShowingsTab({ transactions }) {
               )}
 
               <label className="sht-modal-label">Showing Date</label>
-              <input
-                type="date"
+              <DateInput
                 className="sht-modal-input"
                 value={addForm.showing_date}
                 onChange={e => setAddForm(p => ({ ...p, showing_date: e.target.value }))}

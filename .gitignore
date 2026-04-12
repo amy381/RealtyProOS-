@@ -6,3 +6,4 @@ client/.env
 server/.env
 dist/
 client/dist/
+.vercel

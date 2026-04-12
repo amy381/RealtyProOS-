@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { uploadToDrive, syncDriveFolder, CONTRACT_DOCS } from '../lib/googleDrive'
 import toast from 'react-hot-toast'
+import DateInput from './DateInput'
 import './ListView.css'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -206,8 +207,7 @@ function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, 
             <div className="lv-fpanel-row">
               <div className="lv-fpanel-field">
                 <label className="lv-fpanel-field-label">From</label>
-                <input
-                  type="date"
+                <DateInput
                   className="lv-fpanel-input"
                   value={draft.coeFrom}
                   onChange={e => set('coeFrom', e.target.value)}
@@ -215,8 +215,7 @@ function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, 
               </div>
               <div className="lv-fpanel-field">
                 <label className="lv-fpanel-field-label">To</label>
-                <input
-                  type="date"
+                <DateInput
                   className="lv-fpanel-input"
                   value={draft.coeTo}
                   onChange={e => set('coeTo', e.target.value)}

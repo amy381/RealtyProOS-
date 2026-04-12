@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { TC_OPTIONS } from '../lib/columnFields'
+import DateInput from './DateInput'
 import './IntakeModal.css'
 
 const COLUMN_OPTIONS = [
@@ -455,16 +456,16 @@ export default function IntakeModal({ onSave, onClose }) {
               <div className="intake-row">
                 <div className="intake-group">
                   <label>Listing Contract</label>
-                  <input type="date" value={form.listing_contract} onChange={e => setField('listing_contract', e.target.value)} />
+                  <DateInput value={form.listing_contract} onChange={e => setField('listing_contract', e.target.value)} />
                 </div>
                 <div className="intake-group">
                   <label>Listing Expiration</label>
-                  <input type="date" value={form.listing_expiration_date} onChange={e => setField('listing_expiration_date', e.target.value)} />
+                  <DateInput value={form.listing_expiration_date} onChange={e => setField('listing_expiration_date', e.target.value)} />
                 </div>
               </div>
               <div className="intake-group half">
                 <label>Target Live</label>
-                <input type="date" value={form.target_live_date} onChange={e => setField('target_live_date', e.target.value)} />
+                <DateInput value={form.target_live_date} onChange={e => setField('target_live_date', e.target.value)} />
               </div>
             </>
           )}
@@ -496,7 +497,7 @@ export default function IntakeModal({ onSave, onClose }) {
               {form.has_contingency && (
                 <div className="intake-group intake-contingency-date">
                   <label>Contingency Fulfilled Date</label>
-                  <input type="date" value={form.contingency_fulfilled_date} onChange={e => setField('contingency_fulfilled_date', e.target.value)} />
+                  <DateInput value={form.contingency_fulfilled_date} onChange={e => setField('contingency_fulfilled_date', e.target.value)} />
                 </div>
               )}
             </div>

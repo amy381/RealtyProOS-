@@ -1,7 +1,7 @@
 /* ── Grid column templates ───────────────────────────────────────────────── */
 :root {
-  --gtd-grid-template:      126px 320px 120px 376px 60px 8px 60px 30px 24px 26px;
-  --gtd-grid-template-flat: 126px 320px 120px 376px 130px 60px 8px 60px 30px 24px 26px;
+  --gtd-grid-template:      126px 1fr 120px 376px 60px 8px 60px 30px 24px 26px;
+  --gtd-grid-template-flat: 126px 1fr 120px 376px 100px 60px 6px 60px 30px 24px 26px;
 }
 
 .tasks-tab {
@@ -1284,6 +1284,17 @@
   flex-shrink: 0;
 }
 
+.gtd-all-complete-badge {
+  background: rgba(50, 200, 220, 0.12);
+  color: #50C8DC;
+  border: 1px solid rgba(50, 200, 220, 0.3);
+  border-radius: 12px;
+  font-size: 11px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .gtd-tx-header-spacer { flex: 1; }
 
 .gtd-show-completed-btn {
@@ -1320,7 +1331,7 @@
   column-gap: 10px;
   align-items: center;
   padding: 7px 14px;
-  background: rgba(2, 5, 18, 0.7);
+  background: rgb(2, 5, 18) !important;
   border: none;
   border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
   border-radius: 8px;
@@ -1909,17 +1920,17 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .gtd-progress-date-label {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   color: rgba(168, 191, 204, 0.7);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
-  width: 54px;
+  width: 48px;
   flex-shrink: 0;
 }
 
@@ -1933,7 +1944,8 @@
   background: rgba(255, 255, 255, 0.06);
   cursor: pointer;
   outline: none;
-  width: 100%;
+  width: 100px;
+  flex-shrink: 0;
 }
 .gtd-progress-date-input:hover,
 .gtd-progress-date-input:focus { border-color: rgba(50, 200, 220, 0.4); background: rgba(50, 200, 220, 0.06); }
@@ -2387,4 +2399,26 @@
 
 .gtd-vem-body * {
   color: inherit !important;
+}
+
+/* ── Large screen font sizes (Tasks tab only) ────────────────────────────── */
+@media (min-width: 1600px) {
+  .gtd-grow, .gtd-col-header-row {
+    font-size: 14px;
+  }
+  .gtd-status-rect-btn {
+    font-size: 13px;
+  }
+  .gtd-progress-date-label {
+    font-size: 10px;
+  }
+  .gtd-due-status-text {
+    font-size: 13px;
+  }
+  .gtd-col-hdr {
+    font-size: 13px;
+  }
+  .gtd-tx-header {
+    font-size: 14px;
+  }
 }

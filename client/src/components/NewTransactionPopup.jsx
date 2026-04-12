@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { TC_OPTIONS } from '../lib/columnFields'
+import DateInput from './DateInput'
 import './NewTransactionPopup.css'
 
 const SELLER_STAGES = [
@@ -361,34 +362,34 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
             <div className="ntp-row-2">
               <div className="ntp-field">
                 <label>Listing Contract</label>
-                <input type="date" value={listingContract} onChange={e => setListingContract(e.target.value)} />
+                <DateInput value={listingContract} onChange={e => setListingContract(e.target.value)} />
               </div>
               <div className="ntp-field">
                 <label>Listing Expiration</label>
-                <input type="date" value={listingExp} onChange={e => setListingExp(e.target.value)} />
+                <DateInput value={listingExp} onChange={e => setListingExp(e.target.value)} />
               </div>
             </div>
 
             <div className="ntp-field ntp-half">
               <label>Target Live</label>
-              <input type="date" value={targetLive} onChange={e => setTargetLive(e.target.value)} />
+              <DateInput value={targetLive} onChange={e => setTargetLive(e.target.value)} />
             </div>
 
             <div className="ntp-field ntp-half">
               <label>Photography Date</label>
-              <input type="date" value={photographyDate} onChange={e => setPhotographyDate(e.target.value)} />
+              <DateInput value={photographyDate} onChange={e => setPhotographyDate(e.target.value)} />
             </div>
 
             <div className="ntp-section-divider">Key Dates</div>
 
             <div className="ntp-field ntp-half">
               <label>Close of Escrow</label>
-              <input type="date" value={sellerCloseOfEscrow} onChange={e => setSellerCloseOfEscrow(e.target.value)} />
+              <DateInput value={sellerCloseOfEscrow} onChange={e => setSellerCloseOfEscrow(e.target.value)} />
             </div>
 
             <div className="ntp-field ntp-half">
               <label>Contract Acceptance</label>
-              <input type="date" value={sellerContractAccept} onChange={e => setSellerContractAccept(e.target.value)} />
+              <DateInput value={sellerContractAccept} onChange={e => setSellerContractAccept(e.target.value)} />
             </div>
           </>)}
 
@@ -398,50 +399,50 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
 
             <div className="ntp-field ntp-half">
               <label>Close of Escrow</label>
-              <input type="date" value={closeOfEscrow} onChange={e => setCloseOfEscrow(e.target.value)} />
+              <DateInput value={closeOfEscrow} onChange={e => setCloseOfEscrow(e.target.value)} />
             </div>
 
             <div className="ntp-row-2">
               <div className="ntp-field">
                 <label>BBA Contract</label>
-                <input type="date" value={bbaContract} onChange={e => setBbaContract(e.target.value)} />
+                <DateInput value={bbaContract} onChange={e => setBbaContract(e.target.value)} />
               </div>
               <div className="ntp-field">
                 <label>BBA Expiration</label>
-                <input type="date" value={bbaExp} onChange={e => setBbaExp(e.target.value)} />
+                <DateInput value={bbaExp} onChange={e => setBbaExp(e.target.value)} />
               </div>
             </div>
 
             <div className="ntp-field ntp-half">
               <label>Contract Acceptance</label>
-              <input type="date" value={contractAcceptDate} onChange={e => setContractAcceptDate(e.target.value)} />
+              <DateInput value={contractAcceptDate} onChange={e => setContractAcceptDate(e.target.value)} />
             </div>
 
             <div className="ntp-row-2">
               <div className="ntp-field">
                 <label>Inspection Period End</label>
-                <input type="date" value={ipeDate} onChange={e => setIpeDate(e.target.value)} />
+                <DateInput value={ipeDate} onChange={e => setIpeDate(e.target.value)} />
               </div>
               <div className="ntp-field">
                 <label>Home Inspection</label>
-                <input type="date" value={homeInspectionDate} onChange={e => setHomeInspectionDate(e.target.value)} />
+                <DateInput value={homeInspectionDate} onChange={e => setHomeInspectionDate(e.target.value)} />
               </div>
             </div>
 
             <div className="ntp-row-2">
               <div className="ntp-field">
                 <label>Appraisal Date</label>
-                <input type="date" value={appraisalDate} onChange={e => setAppraisalDate(e.target.value)} />
+                <DateInput value={appraisalDate} onChange={e => setAppraisalDate(e.target.value)} />
               </div>
               <div className="ntp-field">
                 <label>BINSR Submitted</label>
-                <input type="date" value={binsrSubmittedDate} onChange={e => setBinsrSubmittedDate(e.target.value)} />
+                <DateInput value={binsrSubmittedDate} onChange={e => setBinsrSubmittedDate(e.target.value)} />
               </div>
             </div>
 
             <div className="ntp-field ntp-half">
               <label>Contingency Fulfilled</label>
-              <input type="date" value={contingencyFulfilledDate} onChange={e => setContingencyFulfilledDate(e.target.value)} />
+              <DateInput value={contingencyFulfilledDate} onChange={e => setContingencyFulfilledDate(e.target.value)} />
             </div>
           </>)}
 

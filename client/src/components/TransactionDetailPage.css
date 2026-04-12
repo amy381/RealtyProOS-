@@ -1197,10 +1197,12 @@ select.txp-input { cursor: pointer; }
   top: calc(100% - 4px);
   left: 18px;
   right: 18px;
-  background: #ffffff;
-  border: 1px solid #e0e0e0;
+  background: rgba(2, 5, 18, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(168, 191, 204, 0.15);
   border-radius: 8px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.13);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   z-index: 500;
   overflow: hidden;
 }
@@ -1210,31 +1212,31 @@ select.txp-input { cursor: pointer; }
   width: 100%;
   background: none;
   border: none;
-  border-bottom: 1px solid #f2f2f2;
+  border-bottom: 1px solid rgba(168, 191, 204, 0.08);
   text-align: left;
-  padding: 9px 14px;
+  padding: 8px 12px;
   font-size: 16px;
   font-weight: 500;
   font-family: inherit;
-  color: #1a1a1a;
+  color: rgba(168, 191, 204, 0.85);
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background 0.1s, color 0.1s;
 }
 .txp-mention-option:last-child { border-bottom: none; }
-.txp-mention-option:hover { background: rgba(50, 200, 220, 0.05); }
+.txp-mention-option:hover { background: rgba(50, 200, 220, 0.1); color: #50C8DC; }
 
 /* Highlighted @mention in saved note cards */
 .txp-mention {
   font-weight: 700;
-  color: #2563eb;
-  background: #eff6ff;
+  color: #50C8DC;
+  background: rgba(50, 200, 220, 0.1);
   border-radius: 3px;
   padding: 1px 4px;
 }
 
 .txp-note-card {
-  background: #f9f9f9;
-  border: 1px solid #eeeeee;
+  background: rgba(2, 5, 18, 0.4);
+  border: 1px solid rgba(168, 191, 204, 0.1);
   border-radius: 8px;
   padding: 11px 13px;
 }
@@ -1242,7 +1244,7 @@ select.txp-input { cursor: pointer; }
 .txp-note-text {
   font-size: 17px;
   font-weight: 400;
-  color: #1a1a1a;
+  color: rgba(168, 191, 204, 0.9);
   line-height: 1.55;
   cursor: pointer;
   border-radius: 4px;
@@ -1258,12 +1260,12 @@ select.txp-input { cursor: pointer; }
   align-items: center;
   margin-top: 8px;
 }
-.txp-note-info { font-size: 15px; color: #bbbbbb; }
+.txp-note-info { font-size: 15px; color: rgba(168, 191, 204, 0.45); }
 .txp-note-del {
-  background: none; border: none; color: #dddddd; cursor: pointer;
+  background: none; border: none; color: rgba(168, 191, 204, 0.4); cursor: pointer;
   font-size: 16px; padding: 2px 6px; border-radius: 4px; transition: color 0.12s, background 0.12s;
 }
-.txp-note-del:hover { color: #888888; background: #eeeeee; }
+.txp-note-del:hover { color: rgba(168, 191, 204, 0.8); background: rgba(168, 191, 204, 0.08); }
 
 /* ─── Tasks Spreadsheet ───────────────────────────────────────────────────────── */
 .txp-tasks-block {

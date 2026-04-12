@@ -10,6 +10,7 @@ import { TC_OPTIONS } from '../lib/columnFields'
 import { toast } from 'react-hot-toast'
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts'
 import { useGmailStatus } from '../lib/useGmailStatus'
+import DateInput from './DateInput'
 import './TransactionDetailPage.css'
 
 const SECTIONS = [
@@ -263,14 +264,16 @@ async function sendMentionEmails(mentions, noteText, transactionAddr, tcSettings
       }
       console.log('[Mention] Sending to:', person.email, '(', person.name, ')')
       try {
-        const app_url = `https://realty-pro-os.vercel.app/transaction/${transactionId}`
+        const app_url = transactionId
+          ? `https://realty-pro-os.vercel.app/?tab=board&tx=${transactionId}`
+          : 'https://realty-pro-os.vercel.app/?tab=board'
         const result = await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
           to_email:         person.email,
           to_name:          person.name,
-          subject:          `You were mentioned in ${transactionAddr || '(No address)'}`,
+          subject:          `You were mentioned in a note — ${transactionAddr || '(No address)'}`,
           transaction_addr: transactionAddr || '(No address)',
           mention_notes:    noteText,
-          task_title:       'You were mentioned in a note',
+          mentioner_name:   'Amy Casanova',
           app_url,
         }, PUBLIC_KEY)
         console.log('[Mention] EmailJS success for', person.email, ':', result)
@@ -454,10 +457,7 @@ function TxField({ label, value, displayValue, type, options, onSave, placeholde
   useEffect(() => {
     if (editing && inputRef.current) {
       inputRef.current.focus()
-      if (type === 'date') {
-        // Fix 1: open the calendar popup immediately when clicking the date value
-        try { inputRef.current.showPicker() } catch {}
-      } else if (type !== 'select' && inputRef.current.select) {
+      if (type !== 'select' && type !== 'date' && inputRef.current.select) {
         inputRef.current.select()
       }
     }
@@ -489,6 +489,17 @@ function TxField({ label, value, displayValue, type, options, onSave, placeholde
       <span className={`txp-field-label${required ? ' required' : ''}`}>{label}</span>
       {readOnly ? (
         <span className="txp-field-readonly" tabIndex={tabIndex ?? -1}>{shown || '—'}</span>
+      ) : type === 'date' ? (
+        <DateInput
+          className="txp-input"
+          value={value || ''}
+          onChange={e => {
+            const v = e.target.value || null
+            if (String(v ?? '') !== String(value ?? '')) onSave(v)
+          }}
+          placeholder={placeholder}
+          tabIndex={tabIndex}
+        />
       ) : editing ? (
         type === 'select' ? (
           <select
@@ -788,12 +799,11 @@ function TaskRow({ task, onUpdate, onDelete, commentCount = 0, onOpenComments })
       </td>
       <td className="txp-task-td txp-task-td-date">
         {editDate ? (
-          <input
-            type="date"
+          <DateInput
             className="txp-task-inline-input"
             value={task.due_date || ''}
             autoFocus
-            onChange={e => { onUpdate(task.id, { due_date: e.target.value }); setEditDate(false) }}
+            onChange={e => onUpdate(task.id, { due_date: e.target.value || null })}
             onBlur={() => setEditDate(false)}
           />
         ) : (() => {
@@ -1218,7 +1228,6 @@ function buildTransactionSummary(transaction, column, fullAddress) {
     { key: 'bba_expiration',           label: 'BBA Expiration'         },
     { key: 'contract_acceptance_date', label: 'Contract Acceptance'    },
     { key: 'ipe_date',                 label: 'Inspection Period End'  },
-    { key: 'binsr_submitted_date',     label: 'BINSR Submitted'        },
     { key: 'close_of_escrow',          label: 'Close of Escrow'        },
     { key: 'contingency_fulfilled_date', label: 'Contingency Fulfilled' },
   ]
@@ -1696,8 +1705,6 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
   const pendingContractFields = [
     { key: 'contract_acceptance_date', label: 'Contract Acceptance'   },
     { key: 'home_inspection_date',     label: 'Inspection Date'        },
-    { key: 'appraisal_date',           label: 'Appraisal Date'         },
-    { key: 'binsr_submitted_date',     label: 'BINSR Submitted'        },
     { key: 'ipe_date',                 label: 'Inspection Period End'  },
     { key: 'close_of_escrow',          label: 'Close of Escrow'        },
   ]
@@ -2052,10 +2059,10 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
             ))}
           </div>
 
-          {/* PENDING CONTRACT DATES */}
-          {isPending && (
+          {/* CONTRACT DATES */}
+          {isPendingOrBeyond && (
             <div className="txp-section txp-pending-dates-section">
-              <div className="txp-section-title txp-pending-dates-title">Pending Contract Dates</div>
+              <div className="txp-section-title txp-pending-dates-title">Contract Dates</div>
               {pendingContractFields.map(({ key, label }, i) => (
                 <TxField
                   key={key}
@@ -2381,7 +2388,7 @@ function TdlAddTaskModal({ transaction, onAdd, onClose }) {
             </label>
             <label className="tdl-modal-field">
               <span className="tdl-modal-label">Due Date</span>
-              <input className="tdl-modal-input" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+              <DateInput className="tdl-modal-input" value={dueDate} onChange={e => setDueDate(e.target.value)} />
             </label>
           </div>
           <label className="tdl-modal-field">
@@ -3334,9 +3341,8 @@ function ShowingsSection({ transaction }) {
                 onChange={e => setEditing(p => ({ ...p, agent_email: e.target.value }))}
               />
               <label className="sh-modal-label">Date</label>
-              <input
+              <DateInput
                 className="sh-modal-input"
-                type="date"
                 value={editing.showing_date}
                 onChange={e => setEditing(p => ({ ...p, showing_date: e.target.value }))}
               />

@@ -209,3 +209,43 @@
 }
 
 .back-move-yes:hover { background: rgba(210,120,30,0.25); }
+
+/* ── Responsive: ≤1440px — force sidebar collapsed ──────────────────────── */
+@media (max-width: 1440px) {
+  /* Force collapsed width regardless of JS state */
+  .sidebar {
+    width: 65px !important;
+  }
+
+  /* Hide text labels and sub-items */
+  .sidebar-label,
+  .sidebar-sub-items {
+    display: none !important;
+  }
+
+  /* Re-center items as if collapsed */
+  .sidebar-item {
+    justify-content: center !important;
+    padding: 0 !important;
+  }
+
+  /* Hide the expand/collapse toggle */
+  .sidebar-toggle {
+    display: none !important;
+  }
+}
+
+/* ── Responsive: ≤1280px — tighter grid columns + full-width main ────────── */
+@media (max-width: 1280px) {
+  /* Tighter task grid columns */
+  :root {
+    --gtd-grid-template:      110px 260px 120px 320px 60px 8px 60px 30px 28px 30px !important;
+    --gtd-grid-template-flat: 110px 260px 120px 320px 130px 60px 8px 60px 30px 28px 30px !important;
+  }
+
+  /* Main content fills remaining space after 65px sidebar */
+  .app-main {
+    width: calc(100vw - 65px) !important;
+    min-width: 0;
+  }
+}

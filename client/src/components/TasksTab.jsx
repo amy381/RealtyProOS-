@@ -421,18 +421,93 @@ function CriticalDateRow({ task, onDelete, flatAddr }) {
   )
 }
 
-// ─── Vendor Select Modal — wraps vendor selection + form/email flow ───────────
+// ─── Vendor Select Modal — vendor dropdown + inline email preview ─────────────
+const API_BASE_TASKS = import.meta.env.DEV ? 'http://localhost:3001' : ''
+
 function VendorSelectModal({ matchedVendors, task, tx, tcSettings, onUpdate, onClose }) {
   const [selectedVendorId, setSelectedVendorId] = useState(task.selected_vendor_id || '')
   const [vendorFormOpen,   setVendorFormOpen]   = useState(false)
-  const [vendorEmailOpen,  setVendorEmailOpen]  = useState(false)
   const [vendorPdfOpen,    setVendorPdfOpen]    = useState(false)
 
+  // Email preview state
+  const [tplLoading,  setTplLoading]  = useState(false)
+  const [tplSubject,  setTplSubject]  = useState('')
+  const [tplBody,     setTplBody]     = useState('')
+  const [tplMissing,  setTplMissing]  = useState(false)
+  const [sending,     setSending]     = useState(false)
+  const [queuing,     setQueuing]     = useState(false)
+
   const selectedVendor = matchedVendors.find(v => v.id === selectedVendorId) || null
+
+  const isEmailVendor = selectedVendor &&
+    (selectedVendor.contact_method === 'Email Only' ||
+     selectedVendor.contact_method === 'PDF Form + Email')
+
+  // Load email template whenever vendor changes
+  useEffect(() => {
+    if (!selectedVendor || !isEmailVendor) { setTplSubject(''); setTplBody(''); setTplMissing(false); return }
+    if (!selectedVendor.email_template_id) { setTplMissing(true); setTplSubject(''); setTplBody(''); return }
+    setTplLoading(true)
+    setTplMissing(false)
+    supabase.from('email_templates').select('subject,body').eq('id', selectedVendor.email_template_id).single()
+      .then(({ data }) => {
+        if (data) {
+          setTplSubject(resolveVars(data.subject || '', tx, tcSettings))
+          setTplBody(resolveVars(data.body || '', tx, tcSettings))
+        } else {
+          setTplMissing(true)
+        }
+        setTplLoading(false)
+      })
+  }, [selectedVendorId]) // eslint-disable-line
 
   const handleVendorChange = (id) => {
     setSelectedVendorId(id)
     onUpdate(task.id, { selected_vendor_id: id || null })
+  }
+
+  const handleSendEmail = async () => {
+    if (!selectedVendor?.email) { toast.error('No email address for this vendor'); return }
+    setSending(true)
+    const htmlBody = /<[a-zA-Z]/.test(tplBody)
+      ? tplBody
+      : `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${tplBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
+    try {
+      const res = await fetch(`${API_BASE_TASKS}/api/google/gmail-send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: selectedVendor.email,
+          subject: tplSubject,
+          body: wrapEmailBody(htmlBody),
+          transactionId: tx?.id || undefined,
+        }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || 'Send failed')
+      toast.success(`Sent to ${selectedVendor.name}`)
+      onClose()
+    } catch (err) {
+      toast.error('Send failed: ' + err.message)
+    } finally { setSending(false) }
+  }
+
+  const handleQueue = async () => {
+    if (!selectedVendor?.email) return
+    setQueuing(true)
+    const { error } = await supabase.from('email_queue').insert({
+      transaction_id: tx?.id || null,
+      to_email: selectedVendor.email,
+      to_name: selectedVendor.name,
+      subject: tplSubject,
+      body: tplBody,
+      status: 'pending',
+      prepared_by: 'Me',
+    })
+    setQueuing(false)
+    if (error) { toast.error('Failed to add to queue'); return }
+    toast.success('Added to Send Queue')
+    onClose()
   }
 
   return (
@@ -442,7 +517,9 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, onUpdate, onC
           <span className="gtd-vendor-modal-title">Select Vendor</span>
           <button className="gtd-vendor-modal-close" onClick={onClose}>✕</button>
         </div>
+
         <div className="gtd-vendor-modal-body">
+          {/* Vendor dropdown */}
           <select
             className="gtd-vendor-modal-select"
             value={selectedVendorId}
@@ -452,41 +529,76 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, onUpdate, onC
             {matchedVendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
           </select>
 
-          {selectedVendor && (
+          {/* Website / Text vendors */}
+          {selectedVendor && selectedVendor.contact_method === 'Website' && selectedVendor.website_url && (
             <div className="gtd-vendor-modal-actions">
-              {selectedVendor.contact_method === 'PDF Form + Email' && (
-                <button className="gtd-vendor-action-btn" onClick={() => setVendorPdfOpen(true)}>
-                  Preview Form ↗
-                </button>
-              )}
-              {selectedVendor.contact_method === 'Website' && selectedVendor.website_url && (
-                <a className="gtd-vendor-action-btn" href={selectedVendor.website_url} target="_blank" rel="noreferrer">
-                  Open Website ↗
-                </a>
-              )}
-              {selectedVendor.contact_method === 'Text' && selectedVendor.phone && (
-                <a
-                  className="gtd-vendor-action-btn"
-                  href={`sms:${selectedVendor.phone}?body=${encodeURIComponent(`Hi, I'd like to schedule for ${tx?.property_address || 'the property'}. Please let me know your availability.`)}`}
-                >
-                  Send Text ↗
-                </a>
-              )}
-              {(selectedVendor.contact_method === 'Email Only' || selectedVendor.contact_method === 'PDF Form + Email') && (
-                <button className="gtd-vendor-action-btn" onClick={() => setVendorEmailOpen(true)}>
-                  Send Email ↗
-                </button>
-              )}
-              {selectedVendor.contact_method === 'PDF Form + Email' && (
-                <button className="gtd-vendor-action-btn" onClick={() => {
-                  setVendorFormOpen(true)
-                }}>
-                  Fill & Send Form ↗
-                </button>
+              <a className="gtd-vendor-action-btn" href={selectedVendor.website_url} target="_blank" rel="noreferrer">
+                Open Website ↗
+              </a>
+            </div>
+          )}
+          {selectedVendor && selectedVendor.contact_method === 'Text' && selectedVendor.phone && (
+            <div className="gtd-vendor-modal-actions">
+              <a
+                className="gtd-vendor-action-btn"
+                href={`sms:${selectedVendor.phone}?body=${encodeURIComponent(`Hi, I'd like to schedule for ${tx?.property_address || 'the property'}. Please let me know your availability.`)}`}
+              >
+                Send Text ↗
+              </a>
+            </div>
+          )}
+
+          {/* PDF Form vendor */}
+          {selectedVendor && selectedVendor.contact_method === 'PDF Form + Email' && (
+            <div className="gtd-vendor-modal-actions">
+              <button className="gtd-vendor-action-btn" onClick={() => setVendorPdfOpen(true)}>
+                Preview Form ↗
+              </button>
+              <button className="gtd-vendor-action-btn" onClick={() => setVendorFormOpen(true)}>
+                Fill & Send Form ↗
+              </button>
+            </div>
+          )}
+
+          {/* Email preview */}
+          {isEmailVendor && (
+            <div className="gtd-vem-preview">
+              {tplLoading ? (
+                <div className="gtd-vem-loading">Loading template…</div>
+              ) : tplMissing ? (
+                <div className="gtd-vem-missing">No email template linked to this vendor</div>
+              ) : (
+                <>
+                  <div className="gtd-vem-meta-row">
+                    <span className="gtd-vem-meta-label">To</span>
+                    <span className="gtd-vem-meta-value">{selectedVendor.email || '(no email on file)'}</span>
+                  </div>
+                  <div className="gtd-vem-meta-row">
+                    <span className="gtd-vem-meta-label">Subject</span>
+                    <span className="gtd-vem-meta-value gtd-vem-subject">{tplSubject || '(no subject)'}</span>
+                  </div>
+                  <div className="gtd-vem-divider" />
+                  <div
+                    className="gtd-vem-body"
+                    dangerouslySetInnerHTML={{ __html: tplBody }}
+                  />
+                </>
               )}
             </div>
           )}
         </div>
+
+        {/* Footer actions for email vendors */}
+        {isEmailVendor && !tplMissing && !tplLoading && (
+          <div className="gtd-vendor-modal-footer">
+            <button className="gtd-vendor-action-btn" onClick={handleQueue} disabled={queuing}>
+              {queuing ? 'Adding…' : 'Add to Queue'}
+            </button>
+            <button className="gtd-vendor-send-btn" onClick={handleSendEmail} disabled={sending}>
+              {sending ? 'Sending…' : '✓ Send Email'}
+            </button>
+          </div>
+        )}
 
         {vendorFormOpen && selectedVendor && (
           <VendorFormModal
@@ -496,13 +608,6 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, onUpdate, onC
             tcSettings={tcSettings}
             onClose={() => setVendorFormOpen(false)}
             onTaskUpdate={onUpdate}
-          />
-        )}
-        {vendorEmailOpen && selectedVendor && (
-          <VendorEmailModal
-            vendor={selectedVendor}
-            tx={tx}
-            onClose={() => setVendorEmailOpen(false)}
           />
         )}
         {vendorPdfOpen && selectedVendor && (

@@ -34,6 +34,18 @@ export function wrapEmailBody(body) {
           </tr>
         </table>
 
+        <!-- Signature -->
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;">
+          <tr>
+            <td style="padding:0 24px 24px;">
+              <br><br>
+              <div style="margin-top:16px;">
+                <img src="https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/email-signature.png" alt="Amy Casanova - Keller Williams Realty" style="max-width:600px;width:100%;display:block;" />
+              </div>
+            </td>
+          </tr>
+        </table>
+
         <!-- Footer -->
         <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#697175;border-radius:0 0 8px 8px;">
           <tr>

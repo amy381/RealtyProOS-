@@ -512,7 +512,7 @@ function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle, e
       </td>
       {!bulkMode && (
         <td className="tt-actions-cell">
-          <button className="tt-row-btn" onClick={() => onEdit(task)} title="Edit">✏️</button>
+          <button className="tt-row-edit-btn" onClick={() => onEdit(task)} title="Edit"><Pencil size={16} /></button>
           <button className="tt-row-btn tt-delete-btn" onClick={() => onDelete(task.id)} title="Delete">✕</button>
         </td>
       )}

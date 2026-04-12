@@ -281,11 +281,11 @@
 /* ── Modal read-only field ───────────────────────────────────────────────── */
 .sht-modal-readonly {
   padding: 9px 11px;
-  border: 1px solid #eee;
+  border: 1px solid rgba(168, 191, 204, 0.15);
   border-radius: 8px;
   font-size: 0.875rem;
-  color: #888;
-  background: #fafafa;
+  color: rgba(168, 191, 204, 0.5);
+  background: rgba(168, 191, 204, 0.04);
 }
 
 /* ── Add Showing button ──────────────────────────────────────────────────── */
@@ -313,7 +313,7 @@
 .sht-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -321,11 +321,14 @@
 }
 
 .sht-modal {
-  background: #fff;
+  background: rgba(2, 5, 18, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(168, 191, 204, 0.15);
   border-radius: 12px;
   width: 420px;
   max-width: calc(100vw - 32px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4);
   overflow: hidden;
 }
 
@@ -334,22 +337,24 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid #e8e8e8;
+  border-bottom: 1px solid rgba(168, 191, 204, 0.12);
   font-size: 0.95rem;
   font-weight: 700;
+  color: rgba(168, 191, 204, 1);
 }
 
 .sht-modal-close {
   background: none;
   border: none;
   cursor: pointer;
-  color: #aaa;
+  color: rgba(168, 191, 204, 0.5);
   font-size: 0.8rem;
   padding: 4px 6px;
   border-radius: 4px;
+  transition: color 0.1s;
 }
 
-.sht-modal-close:hover { color: #333; background: #f0f0f0; }
+.sht-modal-close:hover { color: rgba(168, 191, 204, 0.9); background: rgba(168, 191, 204, 0.08); }
 
 .sht-modal-body {
   padding: 18px 20px;
@@ -363,7 +368,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #888;
+  color: rgba(168, 191, 204, 0.85);
   margin-bottom: -4px;
 }
 
@@ -372,21 +377,24 @@
 .sht-modal-textarea {
   width: 100%;
   padding: 9px 11px;
-  border: 1px solid #ddd;
+  border: 1px solid rgba(168, 191, 204, 0.2);
   border-radius: 8px;
   font-size: 0.875rem;
   font-family: inherit;
-  color: #111;
-  background: #fff;
+  color: rgba(168, 191, 204, 0.9);
+  background: rgba(255, 255, 255, 0.06);
   box-sizing: border-box;
   transition: border-color 0.15s;
 }
+
+.sht-modal-input::placeholder,
+.sht-modal-textarea::placeholder { color: rgba(168, 191, 204, 0.4); }
 
 .sht-modal-input:focus,
 .sht-modal-select:focus,
 .sht-modal-textarea:focus {
   outline: none;
-  border-color: #111;
+  border-color: rgba(50, 200, 220, 0.4);
 }
 
 .sht-modal-textarea { resize: vertical; }
@@ -399,22 +407,23 @@
 }
 
 .sht-modal-cancel {
-  background: #f5f5f5;
-  border: none;
+  background: rgba(168, 191, 204, 0.1);
+  border: 1px solid rgba(168, 191, 204, 0.15);
   border-radius: 8px;
   padding: 9px 16px;
   font-size: 0.875rem;
   font-family: inherit;
   cursor: pointer;
-  color: #444;
+  color: rgba(168, 191, 204, 0.85);
+  transition: background 0.15s;
 }
 
-.sht-modal-cancel:hover { background: #ebebeb; }
+.sht-modal-cancel:hover { background: rgba(168, 191, 204, 0.16); }
 
 .sht-modal-save {
-  background: #111;
-  color: #fff;
-  border: none;
+  background: rgba(50, 200, 220, 0.15);
+  color: #50C8DC;
+  border: 1px solid rgba(50, 200, 220, 0.3);
   border-radius: 8px;
   padding: 9px 18px;
   font-size: 0.875rem;
@@ -424,5 +433,5 @@
   transition: background 0.15s;
 }
 
-.sht-modal-save:hover:not(:disabled) { background: #333; }
+.sht-modal-save:hover:not(:disabled) { background: rgba(50, 200, 220, 0.25); }
 .sht-modal-save:disabled { opacity: 0.5; cursor: not-allowed; }

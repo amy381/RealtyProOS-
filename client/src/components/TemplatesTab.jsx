@@ -861,7 +861,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     const currentBody = bodyRef.current?.innerHTML ?? editingEmail.body ?? ''
     const subject = applyTestVars(editingEmail.subject || '(no subject)')
     const rawBody = applyTestVars(currentBody)
-    const htmlBody = rawBody.trimStart().startsWith('<')
+    const htmlBody = /<[a-zA-Z]/.test(rawBody)
       ? rawBody
       : `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${rawBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
 

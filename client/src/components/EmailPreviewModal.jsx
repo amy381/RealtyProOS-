@@ -273,7 +273,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
       )
 
       const decodedBody = maybeDecodeHtml(resolvedBody)
-      const rawBody  = decodedBody.trimStart().startsWith('<')
+      const rawBody  = /<[a-zA-Z]/.test(decodedBody)
         ? decodedBody
         : `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${decodedBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
 

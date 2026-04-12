@@ -1925,9 +1925,19 @@
 .gtd-action-progress-row .di-wrap {
   width: 120px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  overflow: hidden;
 }
-.gtd-action-progress-row .di-text {
-  width: calc(100% - 24px);
+.gtd-action-progress-row .di-wrap .di-text {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+.gtd-action-progress-row .di-wrap .di-icon-btn {
+  flex-shrink: 0;
+  width: 20px;
 }
 
 .gtd-progress-date-label {

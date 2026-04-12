@@ -12,10 +12,10 @@
 
 /* ─── Popup shell ─────────────────────────────────────────────────────────── */
 .ntp-popup {
-  background: rgba(10, 20, 40, 0.95);
+  background: rgba(30, 32, 36, 0.97);
   border: 1px solid rgba(168, 191, 204, 0.25);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 12px;
   box-shadow: 0 0 40px rgba(50, 200, 220, 0.08), 0 20px 60px rgba(0, 0, 0, 0.5);
   width: 100%;

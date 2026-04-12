@@ -1,7 +1,7 @@
 /* ── Grid column templates ───────────────────────────────────────────────── */
 :root {
-  --gtd-grid-template:      126px 320px 120px 376px 60px 8px 60px 30px 28px 30px;
-  --gtd-grid-template-flat: 126px 320px 120px 376px 130px 60px 8px 60px 30px 28px 30px;
+  --gtd-grid-template:      126px 320px 120px 376px 60px 8px 60px 30px 24px 26px;
+  --gtd-grid-template-flat: 126px 320px 120px 376px 130px 60px 8px 60px 30px 24px 26px;
 }
 
 .tasks-tab {
@@ -1655,37 +1655,37 @@
 }
 
 .gtd-cd-date {
-  grid-column: 6;
+  grid-column: 5;
   font-size: 12px;
   color: #2c5aa0;
   font-weight: 400;
   text-align: right;
   white-space: nowrap;
 }
-.gtd-cd-row--flat .gtd-cd-date { grid-column: 7; }
+.gtd-cd-row--flat .gtd-cd-date { grid-column: 6; }
 
 .gtd-cd-color-bar {
-  grid-column: 7;
+  grid-column: 6;
   align-self: stretch;
 }
-.gtd-cd-row--flat .gtd-cd-color-bar { grid-column: 8; }
+.gtd-cd-row--flat .gtd-cd-color-bar { grid-column: 7; }
 
 .gtd-cd-countdown {
-  grid-column: 8;
+  grid-column: 7;
   font-size: 12px;
   font-weight: 400;
   color: #1a3d82;
   white-space: nowrap;
 }
-.gtd-cd-row--flat .gtd-cd-countdown { grid-column: 9; }
+.gtd-cd-row--flat .gtd-cd-countdown { grid-column: 8; }
 
 .gtd-cd-del-btn {
-  grid-column: 11;
+  grid-column: 10;
   opacity: 0;
   transition: opacity 0.1s;
   justify-self: center;
 }
-.gtd-cd-row--flat .gtd-cd-del-btn { grid-column: 12; }
+.gtd-cd-row--flat .gtd-cd-del-btn { grid-column: 11; }
 .gtd-cd-row:hover .gtd-cd-del-btn { opacity: 1; }
 
 /* ── Add task row ───────────────────────────────────────────────────────── */

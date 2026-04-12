@@ -1361,23 +1361,42 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
 
   const handleSaveCompose = async (entry) => {
     if (entry.id) {
-      const { id, created_at, ...updates } = entry
+      const { id, created_at, ...rest } = entry
+      const updates = {
+        ...rest,
+        transaction_id: rest.transaction_id || null,
+        template_id:    rest.template_id    || null,
+      }
       const { error } = await supabase.from('email_queue').update(updates).eq('id', id)
-      if (error) { toast.error('Save failed'); return }
+      if (error) { console.error('email_queue update error:', JSON.stringify(error, null, 2)); toast.error('Save failed'); return }
       setQueue(prev => prev.map(q => q.id === id ? { ...q, ...updates } : q))
     } else {
       const now = new Date().toISOString()
+      const payload = {
+        // UUID fields: empty string → null so Postgres doesn't reject the type
+        transaction_id: entry.transaction_id || null,
+        template_id:    entry.template_id    || null,
+        template_name:  entry.template_name  || '',
+        to_email:       entry.to_email       || '',
+        to_name:        entry.to_name        || '',
+        subject:        entry.subject        || '',
+        body:           entry.body           || '',
+        cc:             entry.cc             || '',
+        status:         'pending',
+        prepared_by:    'Amy Casanova',
+        prepared_at:    now,
+        created_at:     now,
+      }
+      console.log('email_queue insert payload:', payload)
       const { data, error } = await supabase
         .from('email_queue')
-        .insert({
-          ...entry,
-          status:      'pending',
-          prepared_by: 'Amy Casanova',
-          prepared_at: now,
-          created_at:  now,
-        })
+        .insert(payload)
         .select().single()
-      if (error) { console.error('email_queue insert error:', error); toast.error('Failed to add to queue'); return }
+      if (error) {
+        console.error('email_queue insert error (full):', JSON.stringify(error, null, 2))
+        toast.error('Failed to add to queue')
+        return
+      }
       const next = [data, ...queue]
       setQueue(next)
       onQueueCountChange?.(next.length)

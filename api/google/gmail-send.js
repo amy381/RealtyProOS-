@@ -206,7 +206,7 @@ module.exports = async function handler(req, res) {
       subject,
       body,
       cc:               ccStr,
-      sent_by:          'Me',
+      sent_by:          'Amy Casanova',
       sent_via:         'gmail',
       gmail_message_id: gmailData.id,
       ...(transactionId ? { transaction_id: transactionId } : {}),

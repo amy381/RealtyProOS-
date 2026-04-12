@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import { mouseDownIsInside } from '../lib/dragGuard'
-import { Mail, FileText } from 'lucide-react'
+import { Mail, FileText, Pencil } from 'lucide-react'
 import VendorFormPreviewModal from './VendorFormPreviewModal'
 import EmailPreviewModal from './EmailPreviewModal'
 import { useGmailStatus } from '../lib/useGmailStatus'
@@ -262,11 +262,19 @@ function VendorEmailModal({ vendor, tx, onClose }) {
   }
 
   const handleQueue = async () => {
+    const now = new Date().toISOString()
     const { error } = await supabase.from('email_queue').insert({
-      transaction_id: tx?.id || null, to_email: vendor.email, to_name: vendor.name,
-      subject, body, status: 'pending', prepared_by: 'Me',
+      transaction_id: tx?.id || null,
+      to_email:       vendor.email,
+      to_name:        vendor.name,
+      subject,
+      body,
+      status:         'pending',
+      prepared_by:    'Amy Casanova',
+      prepared_at:    now,
+      created_at:     now,
     })
-    if (error) { toast.error('Failed to add to queue'); return }
+    if (error) { console.error('email_queue insert error:', error); toast.error('Failed to add to queue'); return }
     toast.success('Added to Send Queue')
     onClose()
   }
@@ -351,6 +359,7 @@ function VendorFormModal({ vendor, tx, task, tcSettings, onClose, onTaskUpdate }
 
   const handleQueue = async () => {
     const subject = `${vendor.name} — ${tx?.property_address || 'Property'}`
+    const now = new Date().toISOString()
     const { error } = await supabase.from('email_queue').insert({
       transaction_id: tx?.id || null,
       to_email:       vendor.email,
@@ -358,9 +367,11 @@ function VendorFormModal({ vendor, tx, task, tcSettings, onClose, onTaskUpdate }
       subject,
       body:           buildBody(),
       status:         'pending',
-      prepared_by:    'Me',
+      prepared_by:    'Amy Casanova',
+      prepared_at:    now,
+      created_at:     now,
     })
-    if (error) { toast.error('Failed to add to queue'); return }
+    if (error) { console.error('email_queue insert error:', error); toast.error('Failed to add to queue'); return }
     toast.success('Added to Send Queue')
     onClose()
   }
@@ -495,17 +506,20 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, onUpdate, onC
   const handleQueue = async () => {
     if (!selectedVendor?.email) return
     setQueuing(true)
+    const now = new Date().toISOString()
     const { error } = await supabase.from('email_queue').insert({
       transaction_id: tx?.id || null,
-      to_email: selectedVendor.email,
-      to_name: selectedVendor.name,
-      subject: tplSubject,
-      body: tplBody,
-      status: 'pending',
-      prepared_by: 'Me',
+      to_email:       selectedVendor.email,
+      to_name:        selectedVendor.name,
+      subject:        tplSubject,
+      body:           tplBody,
+      status:         'pending',
+      prepared_by:    'Amy Casanova',
+      prepared_at:    now,
+      created_at:     now,
     })
     setQueuing(false)
-    if (error) { toast.error('Failed to add to queue'); return }
+    if (error) { console.error('email_queue insert error:', error); toast.error('Failed to add to queue'); return }
     toast.success('Added to Send Queue')
     onClose()
   }
@@ -866,7 +880,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, b
       )}
 
       {/* 9. Edit */}
-      <button className="gtd-grow-edit-btn" onClick={e => { e.stopPropagation(); onOpenEdit() }} title="Edit task">✎</button>
+      <button className="gtd-grow-edit-btn" onClick={e => { e.stopPropagation(); onOpenEdit() }} title="Edit task"><Pencil size={16} /></button>
 
       {/* 10. Remove */}
       <button className="gtd-grow-del-btn" onClick={e => { e.stopPropagation(); onDelete(task.id) }} title="Delete task">✕</button>
@@ -1352,11 +1366,18 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
       if (error) { toast.error('Save failed'); return }
       setQueue(prev => prev.map(q => q.id === id ? { ...q, ...updates } : q))
     } else {
+      const now = new Date().toISOString()
       const { data, error } = await supabase
         .from('email_queue')
-        .insert({ ...entry, status: 'pending', prepared_by: 'Me' })
+        .insert({
+          ...entry,
+          status:      'pending',
+          prepared_by: 'Amy Casanova',
+          prepared_at: now,
+          created_at:  now,
+        })
         .select().single()
-      if (error) { toast.error('Failed to add to queue'); return }
+      if (error) { console.error('email_queue insert error:', error); toast.error('Failed to add to queue'); return }
       const next = [data, ...queue]
       setQueue(next)
       onQueueCountChange?.(next.length)
@@ -1380,7 +1401,7 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
             </>
           )}
         </span>
-        <button className="sq-compose-btn" onClick={() => setComposing('new')}>+ Compose Email</button>
+        <button className="sq-compose-btn" onClick={() => setComposing('new')}><Mail size={15} style={{ flexShrink: 0 }} />+ Compose Email</button>
       </div>
 
       {!gmailStatus.loading && (!gmailStatus.connected || !gmailStatus.hasGmailScope) && (
@@ -1431,7 +1452,7 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
                       >
                         {sending === row.id ? '…' : isFailed ? 'Retry' : 'Send'}
                       </button>
-                      <button className="sq-btn sq-btn--edit" onClick={() => setComposing(row)} disabled={!!sending}>Edit</button>
+                      <button className="sq-btn sq-btn--edit" onClick={() => setComposing(row)} disabled={!!sending} title="Edit"><Pencil size={16} /></button>
                       <button className="sq-btn sq-btn--discard" onClick={() => handleDiscard(row.id)} disabled={!!sending}>Discard</button>
                     </td>
                   </tr>
@@ -1544,7 +1565,7 @@ function SentLogView({ transactions }) {
                   <td className="sq-col-tx">{txById[row.transaction_id]?.property_address?.split(',')[0] || '—'}</td>
                   <td className="sq-col-tmpl">{row.template_name || '—'}</td>
                   <td className="sq-col-date">{row.sent_at ? new Date(row.sent_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'}</td>
-                  <td>{row.sent_by || '—'}</td>
+                  <td>{row.sent_by === 'Me' ? 'Amy Casanova' : (row.sent_by || '—')}</td>
                 </tr>
               ))}
             </tbody>

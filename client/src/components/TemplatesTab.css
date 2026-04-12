@@ -348,7 +348,6 @@
   width: 280px;
 }
 
-.tt-tpl-edit-btn,
 .tt-tpl-delete-btn {
   border-radius: 6px;
   cursor: pointer;
@@ -358,12 +357,19 @@
 }
 
 .tt-tpl-edit-btn {
-  background: rgba(2, 5, 18, 0.6);
-  border: 0.5px solid rgba(50, 200, 220, 0.25);
-  color: #a8bfcc;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(168, 191, 204, 0.08);
+  border: 1px solid rgba(168, 191, 204, 0.15);
+  color: rgba(168, 191, 204, 0.7);
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
 }
 
-.tt-tpl-edit-btn:hover { background: rgba(50, 200, 220, 0.1); border-color: rgba(50, 200, 220, 0.4); }
+.tt-tpl-edit-btn:hover { background: rgba(168, 191, 204, 0.15); color: rgba(168, 191, 204, 1); }
 
 .tt-tpl-delete-btn {
   background: rgba(220, 50, 50, 0.12);
@@ -374,9 +380,12 @@
 .tt-tpl-delete-btn:hover { background: rgba(220, 50, 50, 0.22); }
 
 .templates-add-task-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   background: rgba(212, 120, 30, 0.15);
-  color: #D4781E;
-  border: 0.5px solid rgba(212, 120, 30, 0.5);
+  color: rgba(220, 135, 45, 0.95);
+  border: 1px solid rgba(220, 135, 45, 0.4);
   padding: 8px 18px;
   border-radius: 6px;
   font-size: 0.85rem;
@@ -385,6 +394,7 @@
   font-family: inherit;
   white-space: nowrap;
   flex-shrink: 0;
+  transition: background 0.15s;
 }
 
 .templates-add-task-btn:hover {

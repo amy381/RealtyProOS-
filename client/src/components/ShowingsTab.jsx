@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { Plus, Pencil } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
@@ -302,7 +303,7 @@ export default function ShowingsTab({ transactions }) {
         >
           {syncing ? 'Syncing…' : 'Sync Supra'}
         </button>
-        <button className="sht-add-btn" onClick={openAdd}>+ Add Showing</button>
+        <button className="sht-add-btn" onClick={openAdd}><Plus size={15} />Add Showing</button>
       </div>
 
       {addOpen && (
@@ -448,7 +449,7 @@ export default function ShowingsTab({ transactions }) {
                       className="sht-edit-btn"
                       onClick={() => openEdit(s)}
                       title="Edit showing"
-                    >✏</button>
+                    ><Pencil size={16} /></button>
                     <button
                       className="sht-del-btn"
                       onClick={() => handleDelete(s.id)}

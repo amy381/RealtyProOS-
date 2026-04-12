@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { Pencil } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { formatPhone, formatApn } from '../lib/formatters'
@@ -2943,7 +2944,7 @@ function DocsRequiredSection({ transaction, commissions, onTransactionUpdate }) 
               className="txp-drive-folder-edit-btn"
               onClick={() => { setLinkDraft(''); setLinkOpen(true) }}
               title="Change folder"
-            >✏</button>
+            ><Pencil size={16} /></button>
           </>
         ) : linkOpen ? (
           <div className="txp-drive-link-form">

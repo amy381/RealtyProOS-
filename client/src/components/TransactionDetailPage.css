@@ -1626,18 +1626,20 @@ select.txp-input { cursor: pointer; }
 .txp-drive-folder-link:hover { color: #a8e8f0; }
 
 .txp-drive-folder-edit-btn {
-  background: none;
-  border: none;
-  color: rgba(168, 191, 204, 0.45);
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(168, 191, 204, 0.08);
+  border: 1px solid rgba(168, 191, 204, 0.15);
+  color: rgba(168, 191, 204, 0.7);
   cursor: pointer;
-  padding: 2px 5px;
-  border-radius: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
   transition: color 0.12s, background 0.12s;
 }
 .txp-drive-folder-edit-btn:hover {
-  color: #a8bfcc;
-  background: rgba(255, 255, 255, 0.06);
+  color: rgba(168, 191, 204, 1);
+  background: rgba(168, 191, 204, 0.15);
 }
 
 .txp-drive-link-btn {

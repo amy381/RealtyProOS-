@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Pencil } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
 import { formatPhone } from '../lib/formatters'
@@ -128,7 +129,7 @@ export default function CollaboratorsTab({ activeCat: activeCatProp, onCatChange
                   <td>{r.phone || '—'}</td>
                   <td>{r.email || '—'}</td>
                   <td className="collab-actions">
-                    <button className="collab-edit-btn" onClick={() => openEdit(r)}>Edit</button>
+                    <button className="collab-edit-btn" onClick={() => openEdit(r)} title="Edit"><Pencil size={16} /></button>
                     <button className="collab-del-btn"  onClick={() => handleDelete(r)}>Delete</button>
                   </td>
                 </tr>

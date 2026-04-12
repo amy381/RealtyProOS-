@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { Plus, Pencil } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -1372,7 +1373,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                       {selectedTemplate.stage} · {selectedTemplate.rep_type || 'Both'}
                       {' · '}{taskRows.length} task{taskRows.length !== 1 ? 's' : ''}
                     </div>
-                    <button className="tt-tpl-edit-btn" onClick={() => startRename(selectedTemplate)} title="Rename template">✏ Rename</button>
+                    <button className="tt-tpl-edit-btn" onClick={() => startRename(selectedTemplate)} title="Rename template"><Pencil size={16} /></button>
                     <button className="tt-tpl-delete-btn" onClick={() => handleDeleteTemplate(selectedTemplate.id)} title="Delete template">✕ Delete</button>
                   </div>
                 </div>
@@ -1401,7 +1402,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                       className="templates-add-task-btn"
                       onClick={() => setEditingTask({ ...EMPTY_TASK, template_id: selectedTemplateId })}
                     >
-                      + Add Task
+                      <Plus size={15} />Add Task
                     </button>
                   )}
                 </div>

@@ -106,14 +106,16 @@ function computeAllRows(transactions, commissions) {
 
   for (const t of capYearSorted) {
     const c           = commissions[t.id] || {}
-    const { gci }     = calcRow(t, c)
+    const _rate0      = parseFloat(c.commission_rate)
+    const hasRate     = !!c.commission_rate && !isNaN(_rate0)
+    const { gci }     = hasRate ? calcRow(t, c) : { gci: 0 }
     const refPct      = Number(t.referral_pct) || 0
     const gciAfterRef = gci - gci * refPct / 100
 
-    const capThisTx = c.cap_deduction
+    const capThisTx = hasRate && c.cap_deduction
       ? Math.min(gciAfterRef * CAP_RATE,    Math.max(0, CAP_LIMIT     - capPaidYTD))
       : 0
-    const royaltyThisTx = c.royalty_deduction
+    const royaltyThisTx = hasRate && c.royalty_deduction
       ? Math.min(gciAfterRef * ROYALTY_RATE, Math.max(0, ROYALTY_LIMIT - royaltyPaidYTD))
       : 0
 
@@ -124,9 +126,11 @@ function computeAllRows(transactions, commissions) {
   }
 
   const rows = transactions.map(t => {
-    const c        = commissions[t.id] || {}
-    const { gci, referralAmt, net, tcFeeAmt } = calcRow(t, c)
-    const refPct   = Number(t.referral_pct) || 0
+    const c           = commissions[t.id] || {}
+    const _rate1      = parseFloat(c.commission_rate)
+    const hasRate     = !!c.commission_rate && !isNaN(_rate1)
+    const { gci, referralAmt, net, tcFeeAmt } = hasRate ? calcRow(t, c) : {}
+    const refPct      = Number(t.referral_pct) || 0
 
     return {
       id:          t.id,
@@ -135,13 +139,13 @@ function computeAllRows(transactions, commissions) {
       coe:         t.close_of_escrow  || '',
       sale_price:  Number(t.price)    || 0,
       comp:        c.commission_rate  || '—',
-      gci,
-      net,
-      ref_percent: refPct  || '—',
-      ref_dollar:  referralAmt,
-      cap:         capByTx[t.id]     ?? 0,
-      royalty:     royaltyByTx[t.id] ?? 0,
-      tc_fee:      tcFeeAmt,
+      gci:         hasRate ? gci         : null,
+      net:         hasRate ? net         : null,
+      ref_percent: hasRate ? (refPct || '—') : '—',
+      ref_dollar:  hasRate ? referralAmt  : null,
+      cap:         hasRate ? (capByTx[t.id]     ?? 0) : null,
+      royalty:     hasRate ? (royaltyByTx[t.id] ?? 0) : null,
+      tc_fee:      hasRate ? tcFeeAmt     : null,
       status:      statusFromStage(t.status),
     }
   })
@@ -188,13 +192,13 @@ export default function CommissionsTab({ transactions, commissions, onDeleteComm
   }), [visibleRows, sortKey, sortDir])
 
   const totals = visibleRows.reduce((acc, r) => ({
-    sale_price: acc.sale_price + r.sale_price,
-    gci:        acc.gci        + r.gci,
-    ref_dollar: acc.ref_dollar + r.ref_dollar,
-    cap:        acc.cap        + r.cap,
-    royalty:    acc.royalty    + r.royalty,
-    net:        acc.net        + r.net,
-    tc_fee:     acc.tc_fee     + r.tc_fee,
+    sale_price: acc.sale_price + (r.sale_price || 0),
+    gci:        acc.gci        + (r.gci        || 0),
+    ref_dollar: acc.ref_dollar + (r.ref_dollar || 0),
+    cap:        acc.cap        + (r.cap        || 0),
+    royalty:    acc.royalty    + (r.royalty    || 0),
+    net:        acc.net        + (r.net        || 0),
+    tc_fee:     acc.tc_fee     + (r.tc_fee     || 0),
   }), { sale_price: 0, gci: 0, ref_dollar: 0, cap: 0, royalty: 0, net: 0, tc_fee: 0 })
 
   const capPct     = Math.min(capPaidYTD     / CAP_LIMIT     * 100, 100)

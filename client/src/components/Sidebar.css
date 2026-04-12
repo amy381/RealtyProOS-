@@ -16,6 +16,10 @@
 
 .sidebar--collapsed {
   width: 65px;
+  overflow: visible;
+}
+.sidebar--collapsed .sidebar-nav {
+  overflow: visible;
 }
 
 /* ── Toggle button ─────────────────────────────────────────────────────────── */

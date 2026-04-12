@@ -1920,7 +1920,14 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+}
+.gtd-action-progress-row .di-wrap {
+  width: 120px;
+  flex-shrink: 0;
+}
+.gtd-action-progress-row .di-text {
+  width: calc(100% - 24px);
 }
 
 .gtd-progress-date-label {

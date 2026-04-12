@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import { mouseDownIsInside } from '../lib/dragGuard'
+import { Mail, FileText } from 'lucide-react'
 import VendorFormPreviewModal from './VendorFormPreviewModal'
 import EmailPreviewModal from './EmailPreviewModal'
 import { useGmailStatus } from '../lib/useGmailStatus'
@@ -420,6 +421,103 @@ function CriticalDateRow({ task, onDelete, flatAddr }) {
   )
 }
 
+// ─── Vendor Select Modal — wraps vendor selection + form/email flow ───────────
+function VendorSelectModal({ matchedVendors, task, tx, tcSettings, onUpdate, onClose }) {
+  const [selectedVendorId, setSelectedVendorId] = useState(task.selected_vendor_id || '')
+  const [vendorFormOpen,   setVendorFormOpen]   = useState(false)
+  const [vendorEmailOpen,  setVendorEmailOpen]  = useState(false)
+  const [vendorPdfOpen,    setVendorPdfOpen]    = useState(false)
+
+  const selectedVendor = matchedVendors.find(v => v.id === selectedVendorId) || null
+
+  const handleVendorChange = (id) => {
+    setSelectedVendorId(id)
+    onUpdate(task.id, { selected_vendor_id: id || null })
+  }
+
+  return (
+    <div className="gtd-modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="gtd-vendor-modal">
+        <div className="gtd-vendor-modal-header">
+          <span className="gtd-vendor-modal-title">Select Vendor</span>
+          <button className="gtd-vendor-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="gtd-vendor-modal-body">
+          <select
+            className="gtd-vendor-modal-select"
+            value={selectedVendorId}
+            onChange={e => handleVendorChange(e.target.value)}
+          >
+            <option value="">— Select Vendor —</option>
+            {matchedVendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+          </select>
+
+          {selectedVendor && (
+            <div className="gtd-vendor-modal-actions">
+              {selectedVendor.contact_method === 'PDF Form + Email' && (
+                <button className="gtd-vendor-action-btn" onClick={() => setVendorPdfOpen(true)}>
+                  Preview Form ↗
+                </button>
+              )}
+              {selectedVendor.contact_method === 'Website' && selectedVendor.website_url && (
+                <a className="gtd-vendor-action-btn" href={selectedVendor.website_url} target="_blank" rel="noreferrer">
+                  Open Website ↗
+                </a>
+              )}
+              {selectedVendor.contact_method === 'Text' && selectedVendor.phone && (
+                <a
+                  className="gtd-vendor-action-btn"
+                  href={`sms:${selectedVendor.phone}?body=${encodeURIComponent(`Hi, I'd like to schedule for ${tx?.property_address || 'the property'}. Please let me know your availability.`)}`}
+                >
+                  Send Text ↗
+                </a>
+              )}
+              {(selectedVendor.contact_method === 'Email Only' || selectedVendor.contact_method === 'PDF Form + Email') && (
+                <button className="gtd-vendor-action-btn" onClick={() => setVendorEmailOpen(true)}>
+                  Send Email ↗
+                </button>
+              )}
+              {selectedVendor.contact_method === 'PDF Form + Email' && (
+                <button className="gtd-vendor-action-btn" onClick={() => {
+                  setVendorFormOpen(true)
+                }}>
+                  Fill & Send Form ↗
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {vendorFormOpen && selectedVendor && (
+          <VendorFormModal
+            vendor={selectedVendor}
+            tx={tx}
+            task={task}
+            tcSettings={tcSettings}
+            onClose={() => setVendorFormOpen(false)}
+            onTaskUpdate={onUpdate}
+          />
+        )}
+        {vendorEmailOpen && selectedVendor && (
+          <VendorEmailModal
+            vendor={selectedVendor}
+            tx={tx}
+            onClose={() => setVendorEmailOpen(false)}
+          />
+        )}
+        {vendorPdfOpen && selectedVendor && (
+          <VendorFormPreviewModal
+            taskId={task.id}
+            vendorId={selectedVendor.id}
+            tx={tx}
+            onClose={() => setVendorPdfOpen(false)}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
 function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [], emailTemplateMap = {}, isEven = false, txAddress = null }) {
   const done      = task.status === 'complete'
   const statusKey = task.status || 'open'
@@ -427,9 +525,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, b
   // Inline editing state
   const [editingField,      setEditingField]      = useState(null) // 'title' | 'due' | 'assignee'
   const [titleDraft,        setTitleDraft]        = useState(task.title || '')
-  const [vendorFormOpen,    setVendorFormOpen]    = useState(false)
-  const [vendorEmailOpen,   setVendorEmailOpen]   = useState(false)
-  const [vendorPdfOpen,     setVendorPdfOpen]     = useState(false)
+  const [vendorSelectOpen,  setVendorSelectOpen]  = useState(false)
   const [emailPreviewOpen,  setEmailPreviewOpen]  = useState(false)
   useEffect(() => { setTitleDraft(task.title || '') }, [task.title])
 
@@ -561,56 +657,19 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, b
         )}
       </div>
 
-      {/* 3. Action — email preview (for Email tasks) + vendor dropdown */}
+      {/* 3. Action — compact icon buttons */}
       <div className="gtd-grow-action-col" onClick={e => e.stopPropagation()}>
         {task.task_type === 'Email' && task.email_template_id && (
-          <div className="gtd-action-email-row">
-            <span className="gtd-email-tmpl-name" title={emailTemplateMap[task.email_template_id]?.name}>
-              {emailTemplateMap[task.email_template_id]?.name || '—'}
-            </span>
-            <button className="gtd-vendor-action" onClick={() => setEmailPreviewOpen(true)}>
-              Preview Email ↗
-            </button>
-          </div>
+          <button className="gtd-action-icon-btn gtd-action-email-btn" onClick={() => setEmailPreviewOpen(true)}>
+            <Mail size={16} />
+            <span>Email</span>
+          </button>
         )}
         {matchedVendors.length > 0 && (
-          <div className="gtd-action-vendor-row">
-            <select
-              className="gtd-vendor-select"
-              value={task.selected_vendor_id || ''}
-              onChange={e => onUpdate(task.id, { selected_vendor_id: e.target.value || null })}
-            >
-              <option value="">— vendor —</option>
-              {matchedVendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-            </select>
-            {selectedVendor && (
-              <>
-                {selectedVendor.contact_method === 'PDF Form + Email' && (
-                  <button className="gtd-vendor-action" onClick={() => setVendorPdfOpen(true)}>
-                    Preview Form ↗
-                  </button>
-                )}
-                {selectedVendor.contact_method === 'Website' && selectedVendor.website_url && (
-                  <a className="gtd-vendor-action" href={selectedVendor.website_url} target="_blank" rel="noreferrer">
-                    Open Website ↗
-                  </a>
-                )}
-                {selectedVendor.contact_method === 'Text' && selectedVendor.phone && (
-                  <a
-                    className="gtd-vendor-action"
-                    href={`sms:${selectedVendor.phone}?body=${encodeURIComponent(`Hi, I'd like to schedule for ${tx?.property_address || 'the property'}. Please let me know your availability.`)}`}
-                  >
-                    Send Text ↗
-                  </a>
-                )}
-                {selectedVendor.contact_method === 'Email Only' && (
-                  <button className="gtd-vendor-action" onClick={() => setVendorEmailOpen(true)}>
-                    Preview Email ↗
-                  </button>
-                )}
-              </>
-            )}
-          </div>
+          <button className="gtd-action-icon-btn gtd-action-form-btn" onClick={() => setVendorSelectOpen(true)}>
+            <FileText size={16} />
+            <span>Form</span>
+          </button>
         )}
       </div>
 
@@ -707,29 +766,14 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, b
       {/* 10. Remove */}
       <button className="gtd-grow-del-btn" onClick={e => { e.stopPropagation(); onDelete(task.id) }} title="Delete task">✕</button>
 
-      {vendorFormOpen && selectedVendor && (
-        <VendorFormModal
-          vendor={selectedVendor}
-          tx={tx}
+      {vendorSelectOpen && matchedVendors.length > 0 && (
+        <VendorSelectModal
+          matchedVendors={matchedVendors}
           task={task}
+          tx={tx}
           tcSettings={tcSettings}
-          onClose={() => setVendorFormOpen(false)}
-          onTaskUpdate={onUpdate}
-        />
-      )}
-      {vendorEmailOpen && selectedVendor && (
-        <VendorEmailModal
-          vendor={selectedVendor}
-          tx={tx}
-          onClose={() => setVendorEmailOpen(false)}
-        />
-      )}
-      {vendorPdfOpen && selectedVendor && (
-        <VendorFormPreviewModal
-          taskId={task.id}
-          vendorId={selectedVendor.id}
-          tx={tx}
-          onClose={() => setVendorPdfOpen(false)}
+          onUpdate={onUpdate}
+          onClose={() => setVendorSelectOpen(false)}
         />
       )}
       {emailPreviewOpen && (

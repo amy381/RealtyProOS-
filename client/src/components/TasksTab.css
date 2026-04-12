@@ -1,7 +1,7 @@
 /* ── Grid column templates ───────────────────────────────────────────────── */
 :root {
-  --gtd-grid-template:      126px 320px 350px 376px 60px 8px 60px 30px 28px 30px;
-  --gtd-grid-template-flat: 126px 320px 350px 376px 130px 60px 8px 60px 30px 28px 30px;
+  --gtd-grid-template:      126px 320px 120px 376px 60px 8px 60px 30px 28px 30px;
+  --gtd-grid-template-flat: 126px 320px 120px 376px 130px 60px 8px 60px 30px 28px 30px;
 }
 
 .tasks-tab {
@@ -2151,4 +2151,133 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 120px;
+}
+
+/* ── Action column icon buttons ──────────────────────────────────────────── */
+.gtd-action-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  border: 0.5px solid;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.gtd-action-email-btn {
+  background: rgba(50, 200, 220, 0.1);
+  border-color: rgba(50, 200, 220, 0.5);
+  color: #50C8DC;
+}
+.gtd-action-email-btn:hover {
+  background: rgba(50, 200, 220, 0.2);
+  border-color: rgba(50, 200, 220, 0.8);
+}
+
+.gtd-action-form-btn {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #f59e0b;
+}
+.gtd-action-form-btn:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.8);
+}
+
+/* ── Vendor Select Modal ─────────────────────────────────────────────────── */
+.gtd-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gtd-vendor-modal {
+  background: rgba(8, 15, 40, 0.97);
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
+  border-radius: 12px;
+  width: 420px;
+  max-width: 95vw;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+}
+
+.gtd-vendor-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.15);
+}
+
+.gtd-vendor-modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #c8d4e0;
+}
+
+.gtd-vendor-modal-close {
+  background: none;
+  border: none;
+  color: rgba(168, 191, 204, 0.5);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.gtd-vendor-modal-close:hover { color: #a8bfcc; }
+
+.gtd-vendor-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gtd-vendor-modal-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 0.5px solid rgba(50, 200, 220, 0.3);
+  border-radius: 6px;
+  background: rgba(2, 5, 18, 0.7);
+  color: #c8d4e0;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+}
+.gtd-vendor-modal-select:focus { border-color: rgba(50, 200, 220, 0.6); }
+
+.gtd-vendor-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gtd-vendor-action-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 0.5px solid rgba(50, 200, 220, 0.4);
+  background: rgba(50, 200, 220, 0.08);
+  color: #50C8DC;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+.gtd-vendor-action-btn:hover {
+  background: rgba(50, 200, 220, 0.18);
 }

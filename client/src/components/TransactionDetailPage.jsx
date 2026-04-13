@@ -1661,8 +1661,20 @@ function CollaboratorSearch({ label, value, category, onSave, onSelect, placehol
 }
 
 // ─── Details Section ───────────────────────────────────────────────────────────
-function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onNoteAdded, transactionAddr, tcSettings }) {
+function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, onStatusChange, onNoteAdded, transactionAddr, tcSettings }) {
   const save   = (field) => (value) => onFieldSave(field, value)
+
+  // Saves all 4 property-feature fields in one atomic Supabase update to avoid race conditions.
+  const savePropFeature = (changedField) => (value) => {
+    const clean = (f, v) => f === 'square_ft' ? (String(v || '').replace(/,/g, '') || null) : (v || null)
+    onMultiFieldSave({
+      bedrooms:   clean('bedrooms',   changedField === 'bedrooms'   ? value : transaction.bedrooms),
+      bathrooms:  clean('bathrooms',  changedField === 'bathrooms'  ? value : transaction.bathrooms),
+      square_ft:  clean('square_ft',  changedField === 'square_ft'  ? value : transaction.square_ft),
+      year_built: clean('year_built', changedField === 'year_built' ? value : transaction.year_built),
+    })
+  }
+
   const column = columns.find(c => c.id === transaction.status)
   const [parcelsChecked, setParcelsChecked] = useState(!!transaction.additional_parcels)
   const [parcelsText,    setParcelsText]    = useState(
@@ -1879,10 +1891,10 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
               <div className="txp-section-title">Property Features</div>
               {/* Seller numeric fields */}
               {!isBuyer && !isVacantLand && (<>
-                <TxField label="Bedrooms"   value={String(transaction.bedrooms   ?? '')} type="text" onSave={save('bedrooms')}   placeholder="e.g. 3"    tabIndex={19} />
-                <TxField label="Bathrooms"  value={String(transaction.bathrooms  ?? '')} type="text" onSave={save('bathrooms')}  placeholder="e.g. 2"    tabIndex={20} />
-                <TxField label="Square Ft"  value={String(transaction.square_ft  ?? '')} type="text" onSave={save('square_ft')}  placeholder="e.g. 1800" tabIndex={21} />
-                <TxField label="Year Built" value={String(transaction.year_built  ?? '')} type="text" onSave={save('year_built')} placeholder="e.g. 1998" tabIndex={22} />
+                <TxField label="Bedrooms"   value={String(transaction.bedrooms   ?? '')} type="text" onSave={savePropFeature('bedrooms')}   placeholder="e.g. 3"    tabIndex={19} />
+                <TxField label="Bathrooms"  value={String(transaction.bathrooms  ?? '')} type="text" onSave={savePropFeature('bathrooms')}  placeholder="e.g. 2"    tabIndex={20} />
+                <TxField label="Square Ft"  value={String(transaction.square_ft  ?? '')} type="text" onSave={savePropFeature('square_ft')}  placeholder="e.g. 1800" tabIndex={21} />
+                <TxField label="Year Built" value={String(transaction.year_built  ?? '')} type="text" onSave={savePropFeature('year_built')} placeholder="e.g. 1998" tabIndex={22} />
               </>)}
               <div className="txp-checks-row">
                 <label className="txp-checkbox-item">
@@ -1941,11 +1953,13 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                   category="title-escrow"
                   onSave={() => {}}
                   onSelect={c => {
-                    save('title_collaborator_id')(c.id)
-                    save('title_company')(c.company || null)
-                    save('title_contact_name')([c.first_name, c.last_name].filter(Boolean).join(' ') || null)
-                    save('title_company_email')(c.email || null)
-                    save('title_company_phone')(c.phone || null)
+                    onMultiFieldSave({
+                      title_collaborator_id: c.id,
+                      title_company:         c.company || null,
+                      title_contact_name:    [c.first_name, c.last_name].filter(Boolean).join(' ') || null,
+                      title_company_email:   c.email || null,
+                      title_company_phone:   c.phone || null,
+                    })
                     setTitleCollab(c)
                   }}
                   placeholder="Search title contacts…"
@@ -1980,7 +1994,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
                 onSave={save('financing_type')}
                 tabIndex={37}
               />
-              {transaction.financing_type !== 'Cash' && (<>
+              {transaction.financing_type !== 'Cash' && transaction.financing_type !== 'Owner Financing' && (<>
                 <CollaboratorSearch
                   label="Lender"
                   value={transaction.lender_name || ''}
@@ -3475,6 +3489,7 @@ export default function TransactionDetailPage({
   tcSettings,
   onBack,
   onFieldSave,
+  onMultiFieldSave,
   onCommissionChange,
   onDelete,
   onAddTask,
@@ -3620,6 +3635,7 @@ export default function TransactionDetailPage({
               transaction={transaction}
               columns={columns}
               onFieldSave={handleFieldSave}
+              onMultiFieldSave={onMultiFieldSave}
               onStatusChange={handleStatusChange}
               onNoteAdded={handleNoteAdded}
               transactionAddr={fullAddress}

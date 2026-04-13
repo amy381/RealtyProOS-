@@ -472,6 +472,21 @@ export default function App() {
     }
   }
 
+  // ── Multi-field atomic save (avoids race conditions with multiple save() calls) ──
+  const handleMultiFieldSave = useCallback(async (updates) => {
+    if (!selectedTransaction) return
+    const txId = selectedTransaction.id
+    setTransactions(prev => prev.map(t => t.id === txId ? { ...t, ...updates } : t))
+    setSelectedTransaction(prev => ({ ...prev, ...updates }))
+    const { error } = await supabase.from('transactions').update(updates).eq('id', txId)
+    if (error) {
+      console.error('[handleMultiFieldSave]', error)
+      toast.error(`Failed to save: ${error.message}`)
+    } else {
+      toast.success('Saved', { duration: 900 })
+    }
+  }, [selectedTransaction])
+
   // ── Delete transaction ──────────────────────────────────────────────────────
   const handleDelete = async (transactionId) => {
     setTransactions(prev => prev.filter(t => t.id !== transactionId))
@@ -876,6 +891,7 @@ export default function App() {
             if (from === 'tasks') setActiveTab('tasks')
           }}
           onFieldSave={handleFieldSave}
+          onMultiFieldSave={handleMultiFieldSave}
           onCommissionChange={handleCommissionChange}
           onDelete={handleDelete}
           onAddTask={handleAddTask}

@@ -1,7 +1,6 @@
 import { useDroppable } from '@dnd-kit/core'
 import TransactionCard from './TransactionCard'
 import CompactListRow from './CompactListRow'
-import ColumnFooter from './ColumnFooter'
 import './KanbanColumn.css'
 
 const LIST_HEADERS = {
@@ -69,7 +68,6 @@ export default function KanbanColumn({ column, transactions, onDelete, onCardCli
         </div>
       )}
 
-      <ColumnFooter transactions={transactions} commissions={commissions} columnLabel={column.label} />
     </div>
   )
 }

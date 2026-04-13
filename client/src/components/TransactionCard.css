@@ -5,12 +5,12 @@
   -webkit-backdrop-filter: blur(6px);
   box-shadow: 0 4px 28px rgba(0,0,0,0.5), inset 0 1px 0 rgba(180,210,230,0.04);
   border-radius: 13px;
-  padding: 10px 11px;
+  padding: 7px 10px;
   cursor: grab;
   transition: all 0.2s;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
@@ -29,14 +29,14 @@
 
 /* Wide (Pending) */
 .transaction-card.card--wide {
-  padding: 11px 12px;
-  gap: 6px;
+  padding: 7px 10px;
+  gap: 3px;
 }
 
 /* Narrow (Closed) */
 .transaction-card.card--narrow {
-  padding: 9px 10px;
-  gap: 5px;
+  padding: 7px 10px;
+  gap: 3px;
 }
 
 .card-address-row {
@@ -92,8 +92,8 @@
   gap: 6px;
   flex-wrap: wrap;
   border-top: 1px solid rgba(150,180,200,0.05);
-  padding-top: 4px;
-  margin-top: 1px;
+  padding-top: 2px;
+  margin-top: 0;
 }
 
 .card-field-label {

@@ -2624,11 +2624,67 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, 
   )
 }
 
+// ─── Uploaded Documents Row ───────────────────────────────────────────────────
+function getFileIcon(ext) {
+  if (ext === 'pdf')                                        return '📄'
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return '🖼'
+  if (['doc', 'docx'].includes(ext))                        return '📝'
+  if (['xls', 'xlsx', 'csv'].includes(ext))                 return '📊'
+  return '📎'
+}
+
+function fmtShortDate(d) {
+  if (!d) return ''
+  const dt = new Date(d)
+  return `${String(dt.getMonth() + 1).padStart(2, '0')}/${String(dt.getDate()).padStart(2, '0')}/${String(dt.getFullYear()).slice(-2)}`
+}
+
+function UploadedDocRow({ doc, onDelete }) {
+  const [showPreview, setShowPreview] = useState(false)
+  const name = doc.filename || doc.doc_name || 'Untitled'
+  const ext  = name.split('.').pop().toLowerCase()
+  const isImage    = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)
+  const thumbUrl   = doc.drive_id ? `https://drive.google.com/thumbnail?id=${doc.drive_id}&sz=w200` : null
+
+  return (
+    <div className="txp-udoc-row">
+      <span className="txp-udoc-icon">{getFileIcon(ext)}</span>
+      <span className="txp-udoc-name-wrap">
+        <a
+          href={doc.drive_link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="txp-udoc-name"
+          onMouseEnter={() => setShowPreview(true)}
+          onMouseLeave={() => setShowPreview(false)}
+        >
+          {name}
+        </a>
+        {showPreview && (
+          <div className="txp-udoc-preview">
+            {isImage && thumbUrl
+              ? <img src={thumbUrl} alt={name} className="txp-udoc-preview-img" />
+              : <span className="txp-udoc-preview-label">{getFileIcon(ext)} {ext.toUpperCase()}</span>
+            }
+          </div>
+        )}
+      </span>
+      <span className="txp-udoc-date">{fmtShortDate(doc.created_at)}</span>
+      <button
+        className="txp-udoc-del"
+        onClick={() => onDelete(doc.id)}
+        title="Remove upload"
+      >✕</button>
+    </div>
+  )
+}
+
 // ─── Documents Required (with Google Drive upload) ────────────────────────────
 function DocsRequiredSection({ transaction, commissions, onTransactionUpdate }) {
-  const [docStatuses, setDocStatuses] = useState({})   // { docName: { checked, filename, drive_id, drive_link } }
-  const [uploading,   setUploading]   = useState({})
-  const [customDocs,  setCustomDocs]  = useState({ buyer: [], listing: [], pending: [] })
+  const [docStatuses,  setDocStatuses]  = useState({})   // { docName: { checked, filename, drive_id, drive_link } }
+  const [uploading,    setUploading]    = useState({})
+  const [customDocs,   setCustomDocs]   = useState({ buyer: [], listing: [], pending: [] })
+  const [uploadedDocs, setUploadedDocs] = useState([])
   const customInputRefs = useRef({ buyer: null, listing: null, pending: null })
   const [folderIds,   setFolderIds]   = useState({
     drive_folder_id:         transaction.drive_folder_id         || null,
@@ -2667,6 +2723,17 @@ function DocsRequiredSection({ transaction, commissions, onTransactionUpdate }) 
     }
   }
 
+  const handleDeleteUpload = async (id) => {
+    const { error } = await supabase.from('document_uploads').delete().eq('id', id)
+    if (error) { toast.error('Failed to remove document'); return }
+    setUploadedDocs(prev => prev.filter(d => d.id !== id))
+    setDocStatuses(prev => {
+      const next = { ...prev }
+      Object.keys(next).forEach(key => { if (next[key].id === id) delete next[key] })
+      return next
+    })
+  }
+
   // Keep folderIds in sync
   useEffect(() => {
     setFolderIds({
@@ -2684,14 +2751,17 @@ function DocsRequiredSection({ transaction, commissions, onTransactionUpdate }) 
         if (!data) return
         const map = {}
         const customs = { buyer: [], listing: [], pending: [] }
+        const uploaded = []
         data.forEach(r => {
           map[r.doc_name] = r
           if (r.is_custom && r.section && customs[r.section]) {
             customs[r.section].push(r.doc_name)
           }
+          if (r.drive_link) uploaded.push(r)
         })
         setDocStatuses(map)
         setCustomDocs(customs)
+        setUploadedDocs(uploaded.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)))
       })
   }, [transaction.id])
 
@@ -2993,6 +3063,20 @@ function DocsRequiredSection({ transaction, commissions, onTransactionUpdate }) 
         <DocSection title="Pending Documents" docs={PENDING_DOCS}
           customList={customDocs.pending} sectionKey="pending" />
       )}
+
+      {/* Uploaded Documents */}
+      <div className="txp-uploaded-docs">
+        <div className="txp-uploaded-docs-title">Uploaded Documents</div>
+        {uploadedDocs.length === 0 ? (
+          <div className="txp-uploaded-docs-empty">No documents uploaded yet</div>
+        ) : (
+          <div className="txp-uploaded-docs-list">
+            {uploadedDocs.map(doc => (
+              <UploadedDocRow key={doc.id} doc={doc} onDelete={handleDeleteUpload} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

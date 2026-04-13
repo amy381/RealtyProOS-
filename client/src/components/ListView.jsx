@@ -32,15 +32,6 @@ const SECTIONS = [
   { id: 'google-drive', label: 'Google Drive'        },
 ]
 
-const ALL_DOCS = [
-  'Listing Agreement', 'Seller Disclosure Statement', 'Property Condition Report',
-  'HOA Documents', 'Transfer Disclosure Statement', 'Natural Hazard Disclosure',
-  'Preliminary Title Report', 'Pest Inspection Report', 'Home Inspection Report',
-  'Solar / Septic / Well Documentation', 'Buyer Broker Agreement',
-  'Pre-Approval Letter', 'Purchase & Sale Agreement', 'Contingency Removal',
-  'Appraisal Report', 'Loan Commitment Letter',
-  'Final Walkthrough Verification', 'Closing Disclosure',
-]
 
 const TC_NAMES = ['Justina Morris', 'Victoria Lareau']
 
@@ -330,24 +321,14 @@ function GoToDropdown({ tx, onOpenSection }) {
 }
 
 // ─── Upload Button ────────────────────────────────────────────────────────────
-function UploadButton({ tx }) {
-  const [open, setOpen]           = useState(false)
-  const [docType, setDocType]     = useState('')
+function UploadButton({ tx, uploadCount, onUploadDone }) {
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef(null)
-  const ref     = useRef(null)
-
-  useEffect(() => {
-    const close = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
-  }, [])
 
   const handleUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     e.target.value = ''
-    if (!docType) { toast.error('Select a document type first'); return }
     setUploading(true)
     try {
       let folderId = tx.drive_folder_id
@@ -363,54 +344,42 @@ function UploadButton({ tx }) {
         })
         folderId = created.drive_folder_id
       }
-      const isContract = CONTRACT_DOCS.has(docType)
-      const targetId   = isContract && tx.drive_under_contract_id ? tx.drive_under_contract_id : folderId
-      if (!targetId) { toast.error('No Drive folder connected'); setUploading(false); return }
-      await uploadToDrive(file, targetId)
-      toast.success(`${docType} uploaded`)
-      setOpen(false); setDocType('')
+      if (!folderId) { toast.error('✗ No Drive folder connected'); setUploading(false); return }
+      const result = await uploadToDrive(file, folderId)
+      await supabase.from('document_uploads').insert({
+        transaction_id: tx.id,
+        doc_name:       file.name,
+        filename:       file.name,
+        drive_id:       result.id,
+        drive_link:     result.webViewLink,
+        is_custom:      true,
+        section:        'general',
+      })
+      toast.success('✓ Document uploaded')
+      onUploadDone?.(tx.id)
     } catch (err) {
-      toast.error(`Upload failed: ${err.message}`)
+      toast.error(`✗ Upload failed: ${err.message}`)
     }
     setUploading(false)
   }
 
   return (
-    <div className="lv-upload-wrap" ref={ref}>
+    <div className="lv-upload-wrap">
       <button
         className="lv-action-btn lv-upload-btn"
-        onClick={e => { e.stopPropagation(); setOpen(v => !v) }}
+        onClick={e => { e.stopPropagation(); fileRef.current?.click() }}
         disabled={uploading}
         title="Upload document"
       >
-        {uploading ? '…' : '↑'}
+        {uploading ? '…' : uploadCount > 0 ? `↑ ${uploadCount}` : '↑'}
       </button>
-      {open && (
-        <div className="lv-upload-menu">
-          <select
-            className="lv-upload-sel"
-            value={docType}
-            onChange={e => setDocType(e.target.value)}
-          >
-            <option value="">Select document type…</option>
-            {ALL_DOCS.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-          <button
-            className="lv-upload-go"
-            disabled={!docType}
-            onClick={() => fileRef.current?.click()}
-          >
-            Choose File
-          </button>
-          <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={handleUpload} />
-        </div>
-      )}
+      <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={handleUpload} />
     </div>
   )
 }
 
 // ─── List Row ─────────────────────────────────────────────────────────────────
-function ListRow({ tx, stageLabel, onCardClick, onOpenSection }) {
+function ListRow({ tx, stageLabel, onCardClick, onOpenSection, uploadCount, onUploadDone }) {
   const c1 = [tx.client_first_name, tx.client_last_name].filter(Boolean).join(' ') || tx.client_name || '—'
   const c2 = [tx.client2_first_name, tx.client2_last_name].filter(Boolean).join(' ')
   const price        = getPrice(tx)
@@ -420,7 +389,7 @@ function ListRow({ tx, stageLabel, onCardClick, onOpenSection }) {
     <tr className="lv-row" onClick={() => onCardClick(tx)}>
       <td className="lv-td lv-td-actions" onClick={e => e.stopPropagation()}>
         <GoToDropdown tx={tx} onOpenSection={onOpenSection} />
-        <UploadButton tx={tx} />
+        <UploadButton tx={tx} uploadCount={uploadCount} onUploadDone={onUploadDone} />
       </td>
       <td className="lv-td lv-td-addr">{tx.property_address || '—'}</td>
       <td className="lv-td lv-td-client">
@@ -460,6 +429,7 @@ export default function ListView({ transactions, commissions, columns, onCardCli
   const [savedViews,   setSavedViews]   = useState([])
   const [activeViewId, setActiveViewId] = useState(null)
   const [saving,       setSaving]       = useState(false)
+  const [uploadCounts, setUploadCounts] = useState({})
 
   // Load saved views on mount
   useEffect(() => {
@@ -467,6 +437,32 @@ export default function ListView({ transactions, commissions, columns, onCardCli
       if (data) setSavedViews(data)
     })
   }, [])
+
+  // Load upload counts for all transactions
+  useEffect(() => {
+    if (!transactions || transactions.length === 0) return
+    const ids = transactions.map(t => t.id)
+    supabase
+      .from('document_uploads')
+      .select('transaction_id')
+      .in('transaction_id', ids)
+      .not('drive_link', 'is', null)
+      .then(({ data }) => {
+        if (!data) return
+        const counts = {}
+        data.forEach(r => { counts[r.transaction_id] = (counts[r.transaction_id] || 0) + 1 })
+        setUploadCounts(counts)
+      })
+  }, [transactions])
+
+  const refreshUploadCount = async (txId) => {
+    const { data } = await supabase
+      .from('document_uploads')
+      .select('transaction_id')
+      .eq('transaction_id', txId)
+      .not('drive_link', 'is', null)
+    if (data) setUploadCounts(prev => ({ ...prev, [txId]: data.length }))
+  }
 
   const openPanel = () => {
     setDraft(filters)
@@ -761,6 +757,8 @@ export default function ListView({ transactions, commissions, columns, onCardCli
                   stageLabel={stageLabel}
                   onCardClick={onCardClick}
                   onOpenSection={onOpenSection}
+                  uploadCount={uploadCounts[tx.id] || 0}
+                  onUploadDone={refreshUploadCount}
                 />
               ))
             )}

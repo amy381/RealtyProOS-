@@ -684,7 +684,7 @@
 .lv-goto-item:last-child { border-bottom: none; }
 .lv-goto-item:hover { background: #f5f5f5; }
 
-/* ─── Upload dropdown ─────────────────────────────────────────────────────── */
+/* ─── Upload button ───────────────────────────────────────────────────────── */
 .lv-upload-wrap {
   position: relative;
   display: inline-block;

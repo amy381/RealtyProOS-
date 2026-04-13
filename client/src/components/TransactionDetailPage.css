@@ -2851,3 +2851,127 @@ select.txp-input { cursor: pointer; }
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* ─── Uploaded Documents ──────────────────────────────────────────────────── */
+.txp-uploaded-docs {
+  margin-top: 24px;
+  padding-top: 4px;
+}
+
+.txp-uploaded-docs-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+  color: rgba(168, 191, 204, 0.5);
+  text-transform: uppercase;
+  padding-bottom: 8px;
+  border-top: 0.5px solid rgba(168, 191, 204, 0.1);
+  padding-top: 12px;
+  margin-bottom: 4px;
+}
+
+.txp-uploaded-docs-empty {
+  font-size: 12px;
+  color: rgba(168, 191, 204, 0.35);
+  padding: 8px 4px;
+  font-style: italic;
+}
+
+.txp-uploaded-docs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.txp-udoc-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  transition: background 0.12s;
+  position: relative;
+}
+
+.txp-udoc-row:hover {
+  background: rgba(168, 191, 204, 0.06);
+}
+
+.txp-udoc-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.txp-udoc-name-wrap {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.txp-udoc-name {
+  font-size: 13px;
+  color: rgba(168, 191, 204, 0.85);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  transition: color 0.12s;
+}
+
+.txp-udoc-name:hover {
+  color: #50C8DC;
+}
+
+.txp-udoc-preview {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 200;
+  background: rgba(20, 22, 28, 0.97);
+  border: 0.5px solid rgba(50, 200, 220, 0.2);
+  border-radius: 6px;
+  padding: 8px;
+  pointer-events: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.txp-udoc-preview-img {
+  width: 180px;
+  height: auto;
+  border-radius: 4px;
+  display: block;
+}
+
+.txp-udoc-preview-label {
+  font-size: 12px;
+  color: rgba(168, 191, 204, 0.7);
+  white-space: nowrap;
+}
+
+.txp-udoc-date {
+  font-size: 11px;
+  color: rgba(168, 191, 204, 0.45);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.txp-udoc-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: rgba(168, 191, 204, 0.4);
+  padding: 2px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color 0.12s, background 0.12s;
+  line-height: 1;
+  font-family: inherit;
+}
+
+.txp-udoc-del:hover {
+  color: rgba(220, 80, 80, 0.9);
+  background: rgba(220, 80, 80, 0.08);
+}

@@ -1699,6 +1699,7 @@ select.txp-input { cursor: pointer; }
 /* Per-section wrapper */
 .txp-docs-section {
   border-top: 1px solid rgba(50, 200, 220, 0.1);
+  font-size: 14px;
 }
 .txp-docs-section:first-of-type { border-top: none; }
 
@@ -1731,6 +1732,7 @@ select.txp-input { cursor: pointer; }
 .txp-doc-row {
   border-bottom: 1px solid rgba(50, 200, 220, 0.07);
   transition: background 0.1s;
+  font-size: 14px;
 }
 .txp-doc-row:last-child { border-bottom: none; }
 .txp-doc-row:hover { background: rgba(50, 200, 220, 0.04); }
@@ -1760,9 +1762,10 @@ select.txp-input { cursor: pointer; }
 
 /* Col 2 — document name, fills remaining space */
 .txp-doc-td-name {
-  padding: 11px 16px 11px 10px;
+  padding: 6px 16px 6px 10px;
   color: #a8bfcc;
   font-weight: 500;
+  font-size: 14px;
   vertical-align: middle;
 }
 
@@ -1824,7 +1827,7 @@ select.txp-input { cursor: pointer; }
   border-radius: 5px;
   white-space: nowrap;
 }
-.txp-doc-badge--pending  { background: rgba(212, 120, 30, 0.15); color: rgba(212, 160, 80, 0.8); border: 0.5px solid rgba(212, 120, 30, 0.3); }
+.txp-doc-badge--pending  { background: rgba(212, 120, 30, 0.15); color: rgba(212, 160, 80, 0.8); border: 0.5px solid rgba(212, 120, 30, 0.3); font-size: 11px; padding: 2px 6px; }
 .txp-doc-badge--uploaded { background: rgba(16, 185, 129, 0.15); color: rgb(16, 185, 129); border: 0.5px solid rgba(16, 185, 129, 0.4); }
 
 /* Col 4 — upload button, fixed width, right-aligned */
@@ -1839,9 +1842,9 @@ select.txp-input { cursor: pointer; }
   background: rgba(2, 5, 18, 0.6);
   border: 0.5px solid rgba(50, 200, 220, 0.25);
   color: #a8bfcc;
-  padding: 4px 12px;
+  padding: 3px 8px;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;

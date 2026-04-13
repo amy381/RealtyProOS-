@@ -33,7 +33,7 @@ function fmtDate(d) {
 }
 
 function calcGCI(t, c) {
-  const price     = Number(t.price) || 0
+  const price     = Number(t.contract_price || t.price) || 0
   const scFlat    = c.seller_concession_flat     != null ? Number(c.seller_concession_flat)     : null
   const scPct     = Number(c.seller_concession_percent)  || 0
   const bcFlat    = c.buyer_contribution_flat    != null ? Number(c.buyer_contribution_flat)    : null
@@ -161,7 +161,7 @@ function computeAllRows(transactions, commissions) {
       address:     t.property_address || '—',
       rep:         t.rep_type         || '—',
       coe:         t.close_of_escrow  || '',
-      sale_price:  Number(t.price)    || 0,
+      sale_price:  Number(t.contract_price || t.price) || 0,
       comp:        deriveComp(c),
       gci:         hasCm ? gci         : null,
       net:         hasCm ? net         : null,

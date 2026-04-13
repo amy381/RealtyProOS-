@@ -2063,6 +2063,17 @@ function DetailsSection({ transaction, columns, onFieldSave, onStatusChange, onN
           {isPendingOrBeyond && (
             <div className="txp-section txp-pending-dates-section">
               <div className="txp-section-title txp-pending-dates-title">Contract Dates</div>
+              {!isBuyer && (
+                <TxField
+                  label="Contract Price"
+                  value={String(transaction.contract_price || '')}
+                  displayValue={fmtWhole(transaction.contract_price)}
+                  type="text"
+                  onSave={save('contract_price')}
+                  placeholder="$0"
+                  tabIndex={49}
+                />
+              )}
               {pendingContractFields.map(({ key, label }, i) => (
                 <TxField
                   key={key}

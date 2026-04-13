@@ -82,6 +82,32 @@ const COLS = [
   { key: '_delete',     label: ''                    },
 ]
 
+// True when a commissions record has enough data to compute GCI.
+// commission_rate was never wired to a UI input — gate on concession fields instead.
+function hasCommissionData(c) {
+  return (
+    (c.commission_rate != null && !isNaN(parseFloat(c.commission_rate))) ||
+    c.seller_concession_percent != null ||
+    c.seller_concession_flat    != null ||
+    c.buyer_contribution_percent != null ||
+    c.buyer_contribution_flat    != null
+  )
+}
+
+// Derive a Comp display string: explicit commission_rate wins; fall back to
+// summing the two concession percentages if no flat amounts were used.
+function deriveComp(c) {
+  if (c.commission_rate != null && !isNaN(parseFloat(c.commission_rate))) {
+    return String(c.commission_rate)
+  }
+  if (c.seller_concession_flat == null && c.buyer_contribution_flat == null) {
+    const pct = (Number(c.seller_concession_percent) || 0) +
+                (Number(c.buyer_contribution_percent) || 0)
+    if (pct > 0) return `${pct}%`
+  }
+  return '—'
+}
+
 function computeAllRows(transactions, commissions) {
   const capYearStart = getCapYearStart()
 
@@ -105,17 +131,16 @@ function computeAllRows(transactions, commissions) {
   const capByTx = {}, royaltyByTx = {}
 
   for (const t of capYearSorted) {
-    const c           = commissions[t.id] || {}
-    const _rate0      = parseFloat(c.commission_rate)
-    const hasRate     = !!c.commission_rate && !isNaN(_rate0)
-    const { gci }     = hasRate ? calcRow(t, c) : { gci: 0 }
-    const refPct      = Number(t.referral_pct) || 0
+    const c       = commissions[t.id] || {}
+    const hasCm   = hasCommissionData(c)
+    const { gci } = hasCm ? calcRow(t, c) : { gci: 0 }
+    const refPct  = Number(t.referral_pct) || 0
     const gciAfterRef = gci - gci * refPct / 100
 
-    const capThisTx = hasRate && c.cap_deduction
+    const capThisTx = hasCm && c.cap_deduction
       ? Math.min(gciAfterRef * CAP_RATE,    Math.max(0, CAP_LIMIT     - capPaidYTD))
       : 0
-    const royaltyThisTx = hasRate && c.royalty_deduction
+    const royaltyThisTx = hasCm && c.royalty_deduction
       ? Math.min(gciAfterRef * ROYALTY_RATE, Math.max(0, ROYALTY_LIMIT - royaltyPaidYTD))
       : 0
 
@@ -126,11 +151,10 @@ function computeAllRows(transactions, commissions) {
   }
 
   const rows = transactions.map(t => {
-    const c           = commissions[t.id] || {}
-    const _rate1      = parseFloat(c.commission_rate)
-    const hasRate     = !!c.commission_rate && !isNaN(_rate1)
-    const { gci, referralAmt, net, tcFeeAmt } = hasRate ? calcRow(t, c) : {}
-    const refPct      = Number(t.referral_pct) || 0
+    const c     = commissions[t.id] || {}
+    const hasCm = hasCommissionData(c)
+    const { gci, referralAmt, net, tcFeeAmt } = hasCm ? calcRow(t, c) : {}
+    const refPct = Number(t.referral_pct) || 0
 
     return {
       id:          t.id,
@@ -138,14 +162,14 @@ function computeAllRows(transactions, commissions) {
       rep:         t.rep_type         || '—',
       coe:         t.close_of_escrow  || '',
       sale_price:  Number(t.price)    || 0,
-      comp:        c.commission_rate  || '—',
-      gci:         hasRate ? gci         : null,
-      net:         hasRate ? net         : null,
-      ref_percent: hasRate ? (refPct || '—') : '—',
-      ref_dollar:  hasRate ? referralAmt  : null,
-      cap:         hasRate ? (capByTx[t.id]     ?? 0) : null,
-      royalty:     hasRate ? (royaltyByTx[t.id] ?? 0) : null,
-      tc_fee:      hasRate ? tcFeeAmt     : null,
+      comp:        deriveComp(c),
+      gci:         hasCm ? gci         : null,
+      net:         hasCm ? net         : null,
+      ref_percent: hasCm ? (refPct || '—') : '—',
+      ref_dollar:  hasCm ? referralAmt  : null,
+      cap:         hasCm ? (capByTx[t.id]     ?? 0) : null,
+      royalty:     hasCm ? (royaltyByTx[t.id] ?? 0) : null,
+      tc_fee:      hasCm ? tcFeeAmt     : null,
       status:      statusFromStage(t.status),
     }
   })

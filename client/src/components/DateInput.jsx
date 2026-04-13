@@ -48,6 +48,14 @@ function parseTyped(str) {
     return null
   }
 
+  // MMDDYYYY — 8 digits, no separators: e.g. 02022026
+  m = s.match(/^(\d{2})(\d{2})(\d{4})$/)
+  if (m) return buildDate(m[3], m[1], m[2])
+
+  // MMDDYY — 6 digits, no separators: e.g. 020226
+  m = s.match(/^(\d{2})(\d{2})(\d{2})$/)
+  if (m) return buildDate(m[3], m[1], m[2])
+
   return null
 }
 

@@ -709,7 +709,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, b
     if (done || !task.due_date) return null
     const today = new Date(); today.setHours(0,0,0,0)
     const diff  = Math.ceil((new Date(task.due_date + 'T00:00:00') - today) / 86400000)
-    if (diff < 0)   return { label: 'Overdue',                              cls: 'overdue' }
+    if (diff < 0)   return { label: `${diff} day${diff !== -1 ? 's' : ''}`, cls: 'overdue' }
     if (diff === 0) return { label: 'Today',                                cls: 'soon'    }
     if (diff <= 3)  return { label: `${diff} day${diff !== 1 ? 's' : ''}`, cls: 'soon'    }
     return           { label: `${diff} days`,                               cls: 'future'  }

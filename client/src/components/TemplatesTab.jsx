@@ -1596,14 +1596,16 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                     </select>
                   )}
                 </div>
-                <label className="tt-modal-cd-toggle">
-                  <input
-                    type="checkbox"
-                    checked={!!editingTask.has_progress_tracking}
-                    onChange={e => setEditingTask(p => ({ ...p, has_progress_tracking: e.target.checked }))}
-                  />
-                  <span>Track Progress Dates (Ordered / Scheduled)</span>
-                </label>
+                <div className="tt-modal-cd-section">
+                  <label className="tt-modal-cd-toggle">
+                    <input
+                      type="checkbox"
+                      checked={!!editingTask.has_progress_tracking}
+                      onChange={e => setEditingTask(p => ({ ...p, has_progress_tracking: e.target.checked }))}
+                    />
+                    <span>Track Progress Dates (Ordered / Scheduled)</span>
+                  </label>
+                </div>
               </>)}
             </div>
             <div className="tt-modal-actions">

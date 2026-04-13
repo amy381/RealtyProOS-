@@ -676,44 +676,21 @@ export default function ListView({ transactions, commissions, columns, onCardCli
   return (
     <div className="lv-wrap">
 
-      {/* Summary boxes */}
-      <div className="lv-summary">
-        <div className="lv-summary-box">
-          <span className="lv-summary-val">{closed.length}</span>
-          <span className="lv-summary-label">Closed</span>
+      {/* Search + Filters row */}
+      <div className="lv-search-row">
+        <div className="lv-searchbar">
+          <span className="lv-searchbar-icon">⌕</span>
+          <input
+            className="lv-searchbar-input"
+            type="text"
+            placeholder="Search address or client name…"
+            value={filters.search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {filters.search && (
+            <button className="lv-searchbar-clear" onClick={() => setSearch('')}>✕</button>
+          )}
         </div>
-        <div className="lv-summary-box">
-          <span className="lv-summary-val">{pending.length}</span>
-          <span className="lv-summary-label">Pending</span>
-        </div>
-        <div className="lv-summary-box">
-          <span className="lv-summary-val">{closedGCI > 0 ? fmtMoney(closedGCI) : '—'}</span>
-          <span className="lv-summary-label">Closed GCI</span>
-        </div>
-        <div className="lv-summary-box">
-          <span className="lv-summary-val">{pendingGCI > 0 ? fmtMoney(pendingGCI) : '—'}</span>
-          <span className="lv-summary-label">Pending GCI</span>
-        </div>
-      </div>
-
-      {/* Search bar */}
-      <div className="lv-searchbar">
-        <span className="lv-searchbar-icon">⌕</span>
-        <input
-          className="lv-searchbar-input"
-          type="text"
-          placeholder="Search address or client name…"
-          value={filters.search}
-          onChange={e => setSearch(e.target.value)}
-        />
-        {filters.search && (
-          <button className="lv-searchbar-clear" onClick={() => setSearch('')}>✕</button>
-        )}
-      </div>
-
-      {/* Toolbar */}
-      <div className="lv-toolbar">
-        <span className="lv-result-count">{sorted.length} transaction{sorted.length !== 1 ? 's' : ''}</span>
         {filterCount > 0 && (
           <button className="lv-clear-btn" onClick={clearAll}>Clear All</button>
         )}

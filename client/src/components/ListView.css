@@ -44,6 +44,18 @@
   color: rgba(168, 191, 204, 0.6);
 }
 
+/* ─── Search + Filters row ────────────────────────────────────────────────── */
+.lv-search-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.lv-search-row .lv-searchbar {
+  width: 60%;
+}
+
 /* ─── Search bar ──────────────────────────────────────────────────────────── */
 .lv-searchbar {
   display: flex;

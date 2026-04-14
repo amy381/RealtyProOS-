@@ -27,6 +27,8 @@ const ALLOWED_EMAILS = (import.meta.env.VITE_ALLOWED_EMAILS || '')
   .split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
 
 const STAGE_ORDER = ['pre-listing', 'buyer-broker', 'active-listing', 'pending', 'closed', 'cancelled-expired']
+const DEFAULT_BOARD_FILTERS = { year: '2026', tcs: [], repType: 'All' }
+const TC_OPTIONS = ['Amy Casanova', 'Justina Morris', 'Victoria Lareau']
 
 function stageName(s) {
   return { 'pre-listing': 'Pre-Listing', 'buyer-broker': 'Buyer-Broker', 'active-listing': 'Active Listing',
@@ -86,6 +88,9 @@ export default function App() {
   const [collaboratorFilter, setCollaboratorFilter]  = useState('title-escrow')
   const [templatesFilter,    setTemplatesFilter]     = useState('task-templates')
   const [tasksFilter,        setTasksFilter]         = useState('tasks')
+  const [boardFilters,        setBoardFilters]        = useState(DEFAULT_BOARD_FILTERS)
+  const [boardFilterOpen,     setBoardFilterOpen]     = useState(false)
+  const boardFilterRef = useRef(null)
 
   const commissionsRef = useRef({})
   const saveTimers     = useRef({})
@@ -763,7 +768,58 @@ export default function App() {
     if (tab === 'collaborators') setCollaboratorFilter('title-escrow')
     if (tab === 'templates')    setTemplatesFilter('task-templates')
     if (tab === 'tasks')        setTasksFilter('tasks')
+    if (tab !== 'board')        { setBoardFilters(DEFAULT_BOARD_FILTERS); setBoardFilterOpen(false) }
     window.history.replaceState({}, '', `?tab=${tab}`)
+  }
+
+  // Close filter panel on outside click
+  useEffect(() => {
+    if (!boardFilterOpen) return
+    const handler = (e) => { if (!boardFilterRef.current?.contains(e.target)) setBoardFilterOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [boardFilterOpen])
+
+  // Derive available years from transactions' key dates
+  const boardFilterYears = (() => {
+    const yrs = new Set()
+    transactions.forEach(t => {
+      ;[t.close_of_escrow, t.listing_contract, t.contract_acceptance_date].forEach(d => {
+        if (d) { const y = d.slice(0, 4); if (y) yrs.add(y) }
+      })
+    })
+    return [...yrs].sort().reverse()
+  })()
+
+  // Apply board filters to transactions
+  const boardFilteredTx = transactions.filter(t => {
+    // Year
+    if (boardFilters.year !== 'All') {
+      const yr = boardFilters.year
+      const inYear = [t.close_of_escrow, t.listing_contract, t.contract_acceptance_date]
+        .some(d => d && d.startsWith(yr))
+      if (!inYear) return false
+    }
+    // TC
+    if (boardFilters.tcs.length > 0) {
+      if (!boardFilters.tcs.includes(t.assigned_tc || '')) return false
+    }
+    // Rep Type
+    if (boardFilters.repType !== 'All') {
+      if (t.rep_type !== boardFilters.repType) return false
+    }
+    return true
+  })
+
+  const boardFilterCount = (boardFilters.year !== '2026' ? 1 : 0)
+    + (boardFilters.tcs.length > 0 ? 1 : 0)
+    + (boardFilters.repType !== 'All' ? 1 : 0)
+
+  const toggleBoardTc = (tc) => {
+    setBoardFilters(f => ({
+      ...f,
+      tcs: f.tcs.includes(tc) ? f.tcs.filter(x => x !== tc) : [...f.tcs, tc],
+    }))
   }
 
   return (
@@ -804,6 +860,62 @@ export default function App() {
                 <button className={`bvt-btn${boardView === 'board' ? ' active' : ''}`} onClick={() => switchBoardView('board')}>Board</button>
                 <button className={`bvt-btn${boardView === 'list'  ? ' active' : ''}`} onClick={() => switchBoardView('list')}>List</button>
               </div>
+              <div className="board-filter-wrap" ref={boardFilterRef}>
+                <button
+                  className={`board-filter-btn${boardFilterCount > 0 ? ' has-filters' : ''}`}
+                  onClick={() => setBoardFilterOpen(o => !o)}
+                >
+                  Filters{boardFilterCount > 0 ? ` (${boardFilterCount})` : ''}
+                </button>
+                {boardFilterOpen && (
+                  <div className="board-filter-panel">
+                    {/* Year */}
+                    <div className="bfp-row">
+                      <span className="bfp-label">Year</span>
+                      <div className="bfp-opts">
+                        {['All', ...boardFilterYears.filter(y => !['All'].includes(y))].map(y => (
+                          <button
+                            key={y}
+                            className={`bfp-opt${boardFilters.year === y ? ' active' : ''}`}
+                            onClick={() => setBoardFilters(f => ({ ...f, year: y }))}
+                          >{y}</button>
+                        ))}
+                      </div>
+                    </div>
+                    {/* TC */}
+                    <div className="bfp-row">
+                      <span className="bfp-label">TC</span>
+                      <div className="bfp-opts">
+                        {TC_OPTIONS.map(tc => (
+                          <button
+                            key={tc}
+                            className={`bfp-opt${boardFilters.tcs.includes(tc) ? ' active' : ''}`}
+                            onClick={() => toggleBoardTc(tc)}
+                          >{tc.split(' ')[0]}</button>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Rep Type */}
+                    <div className="bfp-row">
+                      <span className="bfp-label">Rep Type</span>
+                      <div className="bfp-opts">
+                        {['All', 'Buyer', 'Seller'].map(rt => (
+                          <button
+                            key={rt}
+                            className={`bfp-opt${boardFilters.repType === rt ? ' active' : ''}`}
+                            onClick={() => setBoardFilters(f => ({ ...f, repType: rt }))}
+                          >{rt}</button>
+                        ))}
+                      </div>
+                    </div>
+                    {boardFilterCount > 0 && (
+                      <button className="bfp-clear" onClick={() => setBoardFilters(DEFAULT_BOARD_FILTERS)}>
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
               <button className="btn-new-transaction" onClick={() => setNewTxOpen(true)}>
                 + New Transaction
               </button>
@@ -813,7 +925,7 @@ export default function App() {
           {activeTab === 'board' && boardView === 'board' && (
             <KanbanBoard
               columns={COLUMNS}
-              transactions={transactions}
+              transactions={boardFilteredTx}
               onStatusChange={handleStatusChange}
               onDelete={handleDelete}
               onCardClick={(tx) => openTransaction(tx)}
@@ -823,7 +935,7 @@ export default function App() {
 
           {activeTab === 'board' && boardView === 'list' && (
             <ListView
-              transactions={transactions}
+              transactions={boardFilteredTx}
               commissions={commissions}
               columns={COLUMNS}
               onCardClick={(tx) => openTransaction(tx)}

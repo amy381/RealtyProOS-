@@ -48,6 +48,119 @@
   flex-shrink: 0;
 }
 
+/* ── Board filter button + panel ───────────────────────────────────────────── */
+.board-filter-wrap {
+  position: relative;
+}
+
+.board-filter-btn {
+  border: 0.5px solid rgba(50, 200, 220, 0.2);
+  border-radius: 6px;
+  background: rgba(2, 5, 18, 0.6);
+  padding: 7px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #a8bfcc;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.board-filter-btn:hover {
+  border-color: rgba(50, 200, 220, 0.45);
+  background: rgba(50, 200, 220, 0.08);
+  color: #c8d4e0;
+}
+.board-filter-btn.has-filters {
+  border-color: rgba(50, 200, 220, 0.6);
+  background: rgba(50, 200, 220, 0.12);
+  color: #50C8DC;
+}
+.board-filter-btn.has-filters:hover {
+  background: rgba(50, 200, 220, 0.18);
+}
+
+.board-filter-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 500;
+  background: rgba(2, 5, 18, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 0.5px solid rgba(50, 200, 220, 0.22);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  padding: 16px;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bfp-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bfp-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(168, 191, 204, 0.55);
+  width: 68px;
+  flex-shrink: 0;
+}
+
+.bfp-opts {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bfp-opt {
+  padding: 4px 11px;
+  border-radius: 5px;
+  border: 0.5px solid rgba(50, 200, 220, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(168, 191, 204, 0.7);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+.bfp-opt:hover {
+  background: rgba(50, 200, 220, 0.08);
+  border-color: rgba(50, 200, 220, 0.35);
+  color: #c8d4e0;
+}
+.bfp-opt.active {
+  background: rgba(50, 200, 220, 0.15);
+  border-color: rgba(50, 200, 220, 0.55);
+  color: #50C8DC;
+  font-weight: 600;
+}
+
+.bfp-clear {
+  margin-top: 2px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 0.5px solid rgba(210, 120, 30, 0.35);
+  background: rgba(210, 120, 30, 0.1);
+  color: rgba(220, 135, 45, 0.85);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background 0.1s;
+}
+.bfp-clear:hover { background: rgba(210, 120, 30, 0.18); }
+
 /* ── Board view toggle ──────────────────────────────────── */
 .board-view-toggle {
   display: flex;

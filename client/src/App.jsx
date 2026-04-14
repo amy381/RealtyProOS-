@@ -590,8 +590,23 @@ export default function App() {
     const tplTaskRows = dbTemplateTasks.filter(t => t.template_id === templateId && !excludedTplIds.has(t.id))
     const builtTasks  = buildTemplateTasksFromDB(tplTaskRows, transaction)
     if (!builtTasks.length) return
+
+    // Fetch existing task titles for this transaction so we never duplicate or overwrite
+    const { data: existingTasks } = await supabase
+      .from('tasks')
+      .select('title')
+      .eq('transaction_id', transactionId)
+    const existingTitles = new Set(
+      (existingTasks || []).map(t => (t.title || '').toLowerCase().trim())
+    )
+    const newTasks = builtTasks.filter(t => !existingTitles.has((t.title || '').toLowerCase().trim()))
+    if (!newTasks.length) {
+      toast('All tasks from this template already exist', { duration: 2000 })
+      return
+    }
+
     // Strip internal mapping fields before inserting into tasks table
-    const toInsert = builtTasks.map(({ _template_task_id, resolves_critical_date, ...rest }) => ({
+    const toInsert = newTasks.map(({ _template_task_id, resolves_critical_date, ...rest }) => ({
       ...rest, transaction_id: transactionId, template_key: templateId,
     }))
     const { data: inserted, error } = await supabase.from('tasks').insert(toInsert).select()
@@ -599,11 +614,11 @@ export default function App() {
     if (inserted) {
       // Build map: template_task_id → actual inserted task id
       const tplToActual = {}
-      builtTasks.forEach((bt, i) => {
+      newTasks.forEach((bt, i) => {
         if (bt._template_task_id) tplToActual[bt._template_task_id] = inserted[i].id
       })
       // Resolve resolves_critical_date from template task ids → actual task ids
-      const linkUpdates = builtTasks
+      const linkUpdates = newTasks
         .map((bt, i) => ({ bt, actual: inserted[i] }))
         .filter(({ bt }) => bt.resolves_critical_date && tplToActual[bt.resolves_critical_date])
       if (linkUpdates.length) {
@@ -614,14 +629,14 @@ export default function App() {
         ))
         // Reflect the resolved links in local state
         const finalInserted = inserted.map((task, i) => {
-          const rcd = builtTasks[i].resolves_critical_date
+          const rcd = newTasks[i].resolves_critical_date
           return rcd && tplToActual[rcd] ? { ...task, resolves_critical_date: tplToActual[rcd] } : task
         })
         setTasks(prev => [...prev, ...finalInserted])
       } else {
         setTasks(prev => [...prev, ...inserted])
       }
-      toast.success(`${inserted.length} tasks added`, { duration: 2000 })
+      toast.success(`${inserted.length} task${inserted.length !== 1 ? 's' : ''} added`, { duration: 2000 })
     }
   }, [dbTemplateTasks])
 

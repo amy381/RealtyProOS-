@@ -160,6 +160,14 @@ export default function App() {
     }
   }, [])
 
+  // Close board filter panel on outside click
+  useEffect(() => {
+    if (!boardFilterOpen) return
+    const handler = (e) => { if (!boardFilterRef.current?.contains(e.target)) setBoardFilterOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [boardFilterOpen])
+
   // Apply a partial update to a transaction in local state (used by Drive callbacks)
   const handleTransactionUpdate = useCallback((transactionId, updates) => {
     setTransactions(prev => prev.map(t => t.id === transactionId ? { ...t, ...updates } : t))
@@ -771,14 +779,6 @@ export default function App() {
     if (tab !== 'board')        { setBoardFilters(DEFAULT_BOARD_FILTERS); setBoardFilterOpen(false) }
     window.history.replaceState({}, '', `?tab=${tab}`)
   }
-
-  // Close filter panel on outside click
-  useEffect(() => {
-    if (!boardFilterOpen) return
-    const handler = (e) => { if (!boardFilterRef.current?.contains(e.target)) setBoardFilterOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [boardFilterOpen])
 
   // Derive available years from transactions' key dates
   const boardFilterYears = (() => {

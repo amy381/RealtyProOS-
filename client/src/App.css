@@ -1,8 +1,7 @@
 .app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
   position: relative;
 }
 
@@ -12,8 +11,8 @@
   flex-direction: row;
   flex: 1;
   margin-top: 64px;
-  height: calc(100vh - 64px);
-  overflow: hidden;
+  min-height: calc(100vh - 64px);
+  overflow: visible;
   position: relative;
   z-index: 2;
 }
@@ -32,7 +31,7 @@
 .app-main {
   flex: 1;
   padding: 24px;
-  overflow: hidden;
+  overflow: visible;
   background: transparent;
   display: flex;
   flex-direction: column;

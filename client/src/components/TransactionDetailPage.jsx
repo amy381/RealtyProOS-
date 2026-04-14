@@ -69,7 +69,6 @@ const DIFF_FIELDS = {
   price:                     'Price',
   rep_type:                  'Transaction Type',
   status:                    'Stage',
-  assigned_tc:               'TC',
   property_type:             'Property Type',
   apn:                       'APN',
   mls_number:                'MLS Number',
@@ -79,12 +78,10 @@ const DIFF_FIELDS = {
   square_ft:                 'Square Ft',
   year_built:                'Year Built',
   new_construction:          'New Construction',
-  access:                    'Access',
   client_first_name:         'Client 1 First Name',
   client_last_name:          'Client 1 Last Name',
   client2_first_name:        'Client 2 First Name',
   client2_last_name:         'Client 2 Last Name',
-  opposite_party_name:       'Opposite Party',
   opposite_party_agent:      'Opposite Party Agent',
   listing_contract:          'Listing Contract',
   listing_expiration_date:   'Listing Expiration',
@@ -113,7 +110,6 @@ const DIFF_FIELDS = {
   has_hoa:                   'HOA',
   has_lbp:                   'LBP',
   lockbox:                   'Lockbox',
-  has_sign:                  'Sign',
   referring_agent:           'Referring Agent',
   referring_agent_email:     'Referring Agent Email',
   referring_agent_phone:     'Referring Agent Phone',
@@ -122,6 +118,17 @@ const DIFF_FIELDS = {
   additional_terms:          'Additional Terms',
   additional_parcels:        'Additional Parcel(s)',
 }
+
+// Fields that are boolean flags — show only the label in the Notify modal, no value
+const DIFF_BOOLEAN_FIELDS = new Set([
+  'new_construction',
+  'has_contingency',
+  'has_septic',
+  'has_solar',
+  'has_well',
+  'has_hoa',
+  'has_lbp',
+])
 
 const FINANCING_TYPE_OPTIONS = [
   { value: '',               label: '—'             },
@@ -291,6 +298,15 @@ function formatTimestamp(isoStr) {
   return new Date(isoStr).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
   })
+}
+
+function formatNoteDate(isoStr) {
+  if (!isoStr) return ''
+  const d = new Date(isoStr)
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const yy = String(d.getFullYear()).slice(-2)
+  return `${mm}/${dd}/${yy}`
 }
 
 // Due date countdown label for open tasks; completion date for done tasks
@@ -726,7 +742,7 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
               </div>
             )}
             <div className="txp-note-meta">
-              <span className="txp-note-info">{formatTimestamp(note.created_at)}</span>
+              <span className="txp-note-info">{formatNoteDate(note.created_at)}</span>
               <button className="txp-note-del" onClick={() => handleDelete(note.id)}>✕</button>
             </div>
           </div>
@@ -1277,11 +1293,11 @@ function buildTransactionSummary(transaction, column, fullAddress) {
 // ─── Notify Modal ─────────────────────────────────────────────────────────────
 function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) {
   const isBuyer  = transaction.rep_type === 'Buyer'
-  const justina  = (tcSettings || []).find(t => t.name === 'Justina Morris') || { name: 'Justina Morris', email: '' }
-  const victoria = (tcSettings || []).find(t => t.name === 'Victoria Lareau') || { name: 'Victoria Lareau', email: '' }
+  const justina  = { ...((tcSettings || []).find(t => t.name === 'Justina Morris') || { email: '' }), name: 'Justina' }
+  const victoria = { ...((tcSettings || []).find(t => t.name === 'Victoria Lareau') || { email: '' }), name: 'Victoria' }
   const amy      = { name: 'Amy', email: 'amy@desert-legacy.com' }
 
-  const [checked,     setChecked]     = useState({ justina: !isBuyer, victoria: !!isBuyer, amy: false })
+  const [checked,     setChecked]     = useState({ justina: false, victoria: false, amy: false })
   const [subject,     setSubject]     = useState(`${transaction.property_address || 'Property'} — Update`)
   const [note,        setNote]        = useState('')
   const [changes,     setChanges]     = useState([])
@@ -1305,11 +1321,12 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
       const diffs = Object.entries(DIFF_FIELDS)
         .filter(([field]) => String(baseline[field] ?? '') !== String(transaction[field] ?? ''))
         .map(([field, label]) => ({
-          key:    field,
+          key:       field,
           label,
-          oldVal: String(baseline[field] ?? ''),
-          newVal: String(transaction[field] ?? ''),
-          checked: true,
+          oldVal:    String(baseline[field] ?? ''),
+          newVal:    String(transaction[field] ?? ''),
+          checked:   false,
+          isBoolean: DIFF_BOOLEAN_FIELDS.has(field),
         }))
       setChanges(diffs)
       setLoadingDiff(false)
@@ -1331,14 +1348,15 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
     setSending(true)
     setSendError(null)
 
-    const summary        = buildTransactionSummary(transaction, column, fullAddress)
     const checkedChanges = changes.filter(c => c.checked)
 
     let changeBlock = ''
     if (checkedChanges.length) {
       changeBlock = 'CHANGES\n' + '─'.repeat(44) + '\n'
         + checkedChanges.map(c =>
-            c.oldVal ? `${c.label}: "${c.oldVal}" → "${c.newVal}"` : `${c.label}: "${c.newVal}"`
+            c.isBoolean
+              ? c.label
+              : c.oldVal ? `${c.label}: "${c.oldVal}" → "${c.newVal}"` : `${c.label}: "${c.newVal}"`
           ).join('\n')
         + '\n\n'
     }
@@ -1346,7 +1364,7 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
     let noteBlock = ''
     if (note.trim()) noteBlock = 'NOTE\n' + '─'.repeat(44) + '\n' + note.trim() + '\n\n'
 
-    const plainBody = `${changeBlock}${noteBlock}${summary}`
+    const plainBody = `${changeBlock}${noteBlock}`.trimEnd()
     const htmlBody  = `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${plainBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
 
     const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
@@ -1398,8 +1416,27 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
     // }
   }
 
-  const summary  = buildTransactionSummary(transaction, column, fullAddress)
   const anyChecked = checked.justina || checked.victoria || checked.amy
+
+  // Live preview — mirrors exactly what handleSend will put in the email
+  const checkedChanges = changes.filter(c => c.checked)
+  const previewLines = []
+  if (checkedChanges.length) {
+    previewLines.push('CHANGES')
+    previewLines.push('─'.repeat(44))
+    checkedChanges.forEach(c => {
+      if (c.isBoolean) { previewLines.push(c.label) }
+      else if (c.oldVal) { previewLines.push(`${c.label}: "${c.oldVal}" → "${c.newVal}"`) }
+      else { previewLines.push(`${c.label}: "${c.newVal}"`) }
+    })
+    previewLines.push('')
+  }
+  if (note.trim()) {
+    previewLines.push('NOTE')
+    previewLines.push('─'.repeat(44))
+    previewLines.push(note.trim())
+  }
+  const previewText = previewLines.join('\n')
 
   return (
     <div className="notify-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
@@ -1457,7 +1494,15 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
 
           {/* CHANGES */}
           <section className="notify-section">
-            <div className="notify-section-label">CHANGES</div>
+            <div className="notify-section-label-row">
+              <span className="notify-section-label">CHANGES</span>
+              {!loadingDiff && changes.length > 0 && (
+                <div className="notify-check-all-btns">
+                  <button className="notify-check-all-btn" onClick={() => setChanges(p => p.map(c => ({ ...c, checked: true })))}>Check All</button>
+                  <button className="notify-check-all-btn" onClick={() => setChanges(p => p.map(c => ({ ...c, checked: false })))}>Uncheck All</button>
+                </div>
+              )}
+            </div>
             {loadingDiff ? (
               <div className="notify-dim">Detecting changes…</div>
             ) : changes.length === 0 ? (
@@ -1471,21 +1516,30 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
                       checked={c.checked}
                       onChange={() => toggleChange(c.key)}
                     />
-                    <span className="notify-change-field">{c.label}:</span>
-                    <span className="notify-change-val">
-                      {c.oldVal ? <><s className="notify-change-old">{c.oldVal}</s>{' → '}</> : ''}
-                      <strong>{c.newVal || '(empty)'}</strong>
-                    </span>
+                    {c.isBoolean ? (
+                      <span className="notify-change-field">{c.label}</span>
+                    ) : (
+                      <>
+                        <span className="notify-change-field">{c.label}:</span>
+                        <span className="notify-change-val">
+                          {c.oldVal ? <><s className="notify-change-old">{c.oldVal}</s>{' → '}</> : ''}
+                          <strong>{c.newVal || '(empty)'}</strong>
+                        </span>
+                      </>
+                    )}
                   </label>
                 ))}
               </div>
             )}
           </section>
 
-          {/* TRANSACTION SUMMARY */}
+          {/* EMAIL PREVIEW */}
           <section className="notify-section">
-            <div className="notify-section-label">TRANSACTION SUMMARY</div>
-            <pre className="notify-summary">{summary}</pre>
+            <div className="notify-section-label">EMAIL PREVIEW</div>
+            {previewText
+              ? <pre className="notify-summary">{previewText}</pre>
+              : <div className="notify-dim">Nothing selected — check items above to include them in the email.</div>
+            }
           </section>
         </div>
 
@@ -1731,15 +1785,16 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
           {/* PROPERTY DETAILS */}
           <div className="txp-section">
             <div className="txp-section-title">Property Details</div>
-            <TxField label="Street" value={transaction.property_address || ''} type="text" onSave={save('property_address')} placeholder="Street address" tabIndex={1} />
-            <div className="txp-field">
-              <span className="txp-field-label">City / ZIP</span>
-              <div className="txp-csz-row">
-                <CszField value={transaction.city || ''} onSave={save('city')} placeholder="City" style={{ flex: 1 }} tabIndex={2} />
-                <span className="txp-csz-state">AZ</span>
-                <CszField value={transaction.zip || ''} onSave={save('zip')} placeholder="ZIP" style={{ width: 68 }} tabIndex={3} />
-              </div>
+
+            {/* Address row: Street / City / AZ / ZIP on one line */}
+            <div className="txp-addr-row">
+              <span className="txp-field-label">Street</span>
+              <CszField value={transaction.property_address || ''} onSave={save('property_address')} placeholder="Street address" style={{ flex: 5 }} tabIndex={1} />
+              <CszField value={transaction.city || ''} onSave={save('city')} placeholder="City" style={{ flex: 2.5 }} tabIndex={2} />
+              <span className="txp-csz-state">AZ</span>
+              <CszField value={transaction.zip || ''} onSave={save('zip')} placeholder="ZIP" style={{ flex: 2 }} tabIndex={3} />
             </div>
+
             <TxField
               label="Property Type"
               value={transaction.property_type || ''}
@@ -1749,22 +1804,14 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
               tabIndex={4}
             />
 
-            {/* Seller: APN always visible */}
-            {!isBuyer && (
-              <TxField label="APN" value={transaction.apn || ''} type="text" onSave={v => save('apn')(formatApn(v))} placeholder="000-000-000" tabIndex={5} />
-            )}
+            {/* Seller: APN + Access always visible */}
+            {!isBuyer && (<>
+              <TxField label="APN"    value={transaction.apn    || ''} type="text" onSave={v => save('apn')(formatApn(v))} placeholder="000-000-000" tabIndex={5} />
+              <TxField label="Access" value={transaction.access || ''} type="text" onSave={save('access')} placeholder="e.g. lockbox code, call agent" tabIndex={8} />
+            </>)}
 
-            {/* Buyer pending+ property fields */}
+            {/* Buyer pending+: APN, Access */}
             {isBuyer && isPendingOrBeyond && (<>
-              <TxField
-                label="Purchase Price"
-                value={String(transaction.price || '')}
-                displayValue={fmtWhole(transaction.price)}
-                type="text"
-                onSave={save('price')}
-                placeholder="$0"
-                tabIndex={5}
-              />
               <TxField label="APN"    value={transaction.apn    || ''} type="text" onSave={v => save('apn')(formatApn(v))}    placeholder="000-000-000" tabIndex={6} />
               <TxField label="Access" value={transaction.access || ''} type="text" onSave={save('access')} placeholder="e.g. lockbox code, call agent" tabIndex={7} />
             </>)}
@@ -1789,8 +1836,225 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
             />
           </div>
 
+          {/* LISTING DETAILS — Seller only */}
+          {!isBuyer && (
+            <div className="txp-section">
+              <div className="txp-section-title">Listing Details</div>
+              <div className="txp-listing-grid">
+                {/* Left column: List Price / MLS # / Lockbox / Sign */}
+                <div className="txp-listing-col">
+                  <TxField
+                    label="List Price"
+                    value={String(transaction.price || '')}
+                    displayValue={fmtWhole(transaction.price)}
+                    type="text"
+                    onSave={save('price')}
+                    placeholder="$0"
+                    tabIndex={14}
+                  />
+                  <TxField label="MLS #" value={transaction.mls_number || ''} type="text" onSave={save('mls_number')} placeholder="MLS #" tabIndex={15} />
+                  <TxField
+                    label="Lockbox"
+                    value={transaction.lockbox || ''}
+                    type="select"
+                    options={LOCKBOX_OPTIONS}
+                    onSave={save('lockbox')}
+                    tabIndex={17}
+                  />
+                  <div className="txp-field">
+                    <span className="txp-field-label">Sign</span>
+                    <label className="txp-checkbox-item">
+                      <input type="checkbox" tabIndex={18} checked={!!transaction.has_sign} onChange={e => save('has_sign')(e.target.checked)} />
+                    </label>
+                  </div>
+                </div>
+                {/* Right column: Bedrooms / Bathrooms / Square Ft / Year Built */}
+                <div className="txp-listing-col">
+                  {!isVacantLand && (<>
+                    <TxField label="Bedrooms"   value={String(transaction.bedrooms   ?? '')} type="text" onSave={savePropFeature('bedrooms')}   placeholder="e.g. 3"    tabIndex={19} />
+                    <TxField label="Bathrooms"  value={String(transaction.bathrooms  ?? '')} type="text" onSave={savePropFeature('bathrooms')}  placeholder="e.g. 2"    tabIndex={20} />
+                    <TxField label="Square Ft"  value={String(transaction.square_ft  ?? '')} type="text" onSave={savePropFeature('square_ft')}  placeholder="e.g. 1800" tabIndex={21} />
+                    <TxField label="Year Built" value={String(transaction.year_built ?? '')}  type="text" onSave={savePropFeature('year_built')} placeholder="e.g. 1998" tabIndex={22} />
+                  </>)}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PROPERTY FEATURES — Seller: always; Buyer: Pending+ only */}
+          {(!isBuyer || isPendingOrBeyond) && (
+            <div className="txp-section">
+              <div className="txp-section-title">Property Features</div>
+              <div className="txp-checks-row">
+                <label className="txp-checkbox-item">
+                  <input type="checkbox" tabIndex={22} checked={!!transaction.has_septic} onChange={e => save('has_septic')(e.target.checked)} />
+                  <span>Septic</span>
+                </label>
+                <label className="txp-checkbox-item">
+                  <input type="checkbox" tabIndex={23} checked={!!transaction.has_solar} onChange={e => save('has_solar')(e.target.checked)} />
+                  <span>Solar</span>
+                </label>
+                <label className="txp-checkbox-item">
+                  <input type="checkbox" tabIndex={24} checked={!!transaction.has_well} onChange={e => save('has_well')(e.target.checked)} />
+                  <span>Well</span>
+                </label>
+                <label className="txp-checkbox-item">
+                  <input type="checkbox" tabIndex={25} checked={!!transaction.has_hoa} onChange={e => save('has_hoa')(e.target.checked)} />
+                  <span>HOA</span>
+                </label>
+                <label className="txp-checkbox-item">
+                  <input type="checkbox" tabIndex={26} checked={!!transaction.has_lbp} onChange={e => save('has_lbp')(e.target.checked)} />
+                  <span>LBP</span>
+                </label>
+                <label className="txp-checkbox-item">
+                  <input type="checkbox" tabIndex={27} checked={!!transaction.new_construction} onChange={e => save('new_construction')(e.target.checked)} />
+                  <span>New Construction</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* CONTRACT DETAILS — Pending, Closed, Cancelled/Expired only */}
+          {isPendingOrBeyond && (
+            <div className="txp-section">
+              <div className="txp-section-title">Contract Details</div>
+
+              <TxField
+                label="Purchase Price"
+                value={String(transaction.contract_price || '')}
+                displayValue={fmtWhole(transaction.contract_price)}
+                type="text"
+                onSave={save('contract_price')}
+                placeholder="$0"
+                tabIndex={31}
+              />
+
+              {titleCollab ? (
+                <div className="txp-field">
+                  <span className="txp-field-label">Title Contact</span>
+                  <div className="txp-title-linked">
+                    <span className="txp-title-linked-name">
+                      {[titleCollab.first_name, titleCollab.last_name].filter(Boolean).join(' ')}
+                    </span>
+                    <button
+                      className="txp-title-clear-btn"
+                      title="Clear selection"
+                      onClick={() => {
+                        save('title_collaborator_id')(null)
+                        setTitleCollab(null)
+                      }}
+                    >✕</button>
+                  </div>
+                </div>
+              ) : (
+                <CollaboratorSearch
+                  label="Title Contact"
+                  value=""
+                  category="title-escrow"
+                  onSave={() => {}}
+                  onSelect={c => {
+                    onMultiFieldSave({
+                      title_collaborator_id: c.id,
+                      title_company:         c.company || null,
+                      title_contact_name:    [c.first_name, c.last_name].filter(Boolean).join(' ') || null,
+                      title_company_email:   c.email || null,
+                      title_company_phone:   c.phone || null,
+                    })
+                    setTitleCollab(c)
+                  }}
+                  placeholder="Search title contacts…"
+                  tabIndex={32}
+                />
+              )}
+
+              <TxField label="Company" value={titleCollab?.company || transaction.title_company || ''} type="text" readOnly={!!titleCollab} onSave={save('title_company')} placeholder="Title company name" tabIndex={33} />
+
+              <TxField label="Title Email" value={titleCollab?.email || transaction.title_company_email || ''} type="text" readOnly={!!titleCollab} onSave={save('title_company_email')} placeholder="title@company.com" tabIndex={34} />
+
+              <TxField label="Title Phone" value={titleCollab?.phone || transaction.title_company_phone || ''} type="text" readOnly={!!titleCollab} onSave={v => save('title_company_phone')(v ? formatPhone(v) : null)} placeholder="(555) 000-0000" tabIndex={35} />
+
+              <TxField label="Escrow Number" value={transaction.escrow_number || ''} type="text" onSave={save('escrow_number')} placeholder="Escrow #" tabIndex={36} />
+
+              <TxField label="Co-op Agent" value={transaction.co_op_agent || ''} type="text" onSave={save('co_op_agent')} placeholder="Agent name" tabIndex={37} />
+
+              <TxField label={isBuyer ? "Seller's Name" : "Buyer's Name"} value={transaction.opposite_party_name || ''} type="text" onSave={save('opposite_party_name')} placeholder={isBuyer ? 'Seller name' : 'Buyer name'} tabIndex={38} />
+
+              <TxField
+                label="Financing Type"
+                value={transaction.financing_type || ''}
+                type="select"
+                options={FINANCING_TYPE_OPTIONS}
+                onSave={save('financing_type')}
+                tabIndex={39}
+              />
+
+              {transaction.financing_type !== 'Cash' && transaction.financing_type !== 'Owner Financing' && (<>
+                <CollaboratorSearch
+                  label="Lender"
+                  value={transaction.lender_name || ''}
+                  category="lenders"
+                  onSave={save('lender_name')}
+                  onSelect={c => {
+                    if (c.email) save('lender_email')(c.email)
+                    if (c.phone) save('lender_phone')(c.phone)
+                  }}
+                  placeholder="Lender name"
+                  tabIndex={40}
+                />
+                <TxField label="Lender Email" value={transaction.lender_email || ''} type="text" onSave={save('lender_email')} placeholder="lender@company.com" tabIndex={41} />
+                <TxField label="Lender Phone" value={transaction.lender_phone || ''} type="text" onSave={v => save('lender_phone')(v ? formatPhone(v) : null)} placeholder="(555) 000-0000" tabIndex={42} />
+              </>)}
+
+              <div className="txp-field txp-additional-parcel-row">
+                <span className="txp-field-label">Additional Parcel</span>
+                <div className="txp-additional-parcel-inner">
+                  <input
+                    type="checkbox"
+                    className="txp-additional-parcel-check"
+                    tabIndex={43}
+                    checked={parcelsChecked}
+                    onChange={e => {
+                      setParcelsChecked(e.target.checked)
+                      if (!e.target.checked) save('additional_parcels')(null)
+                    }}
+                  />
+                  {parcelsChecked && (
+                    <input
+                      type="text"
+                      className="txp-additional-parcel-text"
+                      value={parcelsText}
+                      placeholder="Parcel APN(s)…"
+                      tabIndex={44}
+                      onChange={e => setParcelsText(e.target.value)}
+                      onBlur={() => {
+                        const val = parcelsText.trim() || null
+                        if (String(val ?? '') !== String(transaction.additional_parcels ?? '')) save('additional_parcels')(val)
+                      }}
+                      onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+                    />
+                  )}
+                </div>
+              </div>
+
+              <TxField
+                label="Add. Terms & Conditions"
+                value={transaction.additional_terms || ''}
+                type="textarea"
+                onSave={save('additional_terms')}
+                placeholder="Enter any additional terms or conditions…"
+                tabIndex={45}
+              />
+
+            </div>
+          )}
+
+        </div>{/* end left */}
+
+        {/* RIGHT COLUMN */}
+        <div className="txp-col-right">
+
           {/* CLIENT */}
-          <div className="txp-section">
+          <div className="txp-section" style={{ paddingBottom: '2px' }}>
             <div className="txp-section-title">Client</div>
             <ClientRow
               label="Client 1"
@@ -1846,218 +2110,8 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
             />
           </div>
 
-          {/* LISTING DETAILS — Seller only */}
-          {!isBuyer && (
-            <div className="txp-section">
-              <div className="txp-section-title">Listing Details</div>
-              <TxField
-                label="List Price"
-                value={String(transaction.price || '')}
-                displayValue={fmtWhole(transaction.price)}
-                type="text"
-                onSave={save('price')}
-                placeholder="$0"
-                tabIndex={14}
-              />
-              <TxField label="MLS Number" value={transaction.mls_number || ''} type="text" onSave={save('mls_number')} placeholder="MLS #" tabIndex={15} />
-              <TxField
-                label="Vacant or Occupied"
-                value={transaction.vacant_or_occupied || ''}
-                type="select"
-                options={VACANT_OPTIONS}
-                onSave={save('vacant_or_occupied')}
-                tabIndex={16}
-              />
-              <TxField
-                label="Lockbox"
-                value={transaction.lockbox || ''}
-                type="select"
-                options={LOCKBOX_OPTIONS}
-                onSave={save('lockbox')}
-                tabIndex={17}
-              />
-              <div className="txp-field">
-                <span className="txp-field-label">Sign</span>
-                <label className="txp-checkbox-item">
-                  <input type="checkbox" tabIndex={18} checked={!!transaction.has_sign} onChange={e => save('has_sign')(e.target.checked)} />
-                </label>
-              </div>
-            </div>
-          )}
-
-          {/* PROPERTY FEATURES — Seller: always; Buyer: Pending+ only */}
-          {(!isBuyer || isPendingOrBeyond) && (
-            <div className="txp-section">
-              <div className="txp-section-title">Property Features</div>
-              {/* Seller numeric fields */}
-              {!isBuyer && !isVacantLand && (<>
-                <TxField label="Bedrooms"   value={String(transaction.bedrooms   ?? '')} type="text" onSave={savePropFeature('bedrooms')}   placeholder="e.g. 3"    tabIndex={19} />
-                <TxField label="Bathrooms"  value={String(transaction.bathrooms  ?? '')} type="text" onSave={savePropFeature('bathrooms')}  placeholder="e.g. 2"    tabIndex={20} />
-                <TxField label="Square Ft"  value={String(transaction.square_ft  ?? '')} type="text" onSave={savePropFeature('square_ft')}  placeholder="e.g. 1800" tabIndex={21} />
-                <TxField label="Year Built" value={String(transaction.year_built  ?? '')} type="text" onSave={savePropFeature('year_built')} placeholder="e.g. 1998" tabIndex={22} />
-              </>)}
-              <div className="txp-checks-row">
-                <label className="txp-checkbox-item">
-                  <input type="checkbox" tabIndex={22} checked={!!transaction.has_septic} onChange={e => save('has_septic')(e.target.checked)} />
-                  <span>Septic</span>
-                </label>
-                <label className="txp-checkbox-item">
-                  <input type="checkbox" tabIndex={23} checked={!!transaction.has_solar} onChange={e => save('has_solar')(e.target.checked)} />
-                  <span>Solar</span>
-                </label>
-                <label className="txp-checkbox-item">
-                  <input type="checkbox" tabIndex={24} checked={!!transaction.has_well} onChange={e => save('has_well')(e.target.checked)} />
-                  <span>Well</span>
-                </label>
-                <label className="txp-checkbox-item">
-                  <input type="checkbox" tabIndex={25} checked={!!transaction.has_hoa} onChange={e => save('has_hoa')(e.target.checked)} />
-                  <span>HOA</span>
-                </label>
-                <label className="txp-checkbox-item">
-                  <input type="checkbox" tabIndex={26} checked={!!transaction.has_lbp} onChange={e => save('has_lbp')(e.target.checked)} />
-                  <span>LBP</span>
-                </label>
-                <label className="txp-checkbox-item">
-                  <input type="checkbox" tabIndex={27} checked={!!transaction.new_construction} onChange={e => save('new_construction')(e.target.checked)} />
-                  <span>New Construction</span>
-                </label>
-              </div>
-            </div>
-          )}
-
-          {/* CONTRACT DETAILS — Pending, Closed, Cancelled/Expired only */}
-          {isPendingOrBeyond && (
-            <div className="txp-section">
-              <div className="txp-section-title">Contract Details</div>
-              {titleCollab ? (
-                <div className="txp-field">
-                  <span className="txp-field-label">Title Contact</span>
-                  <div className="txp-title-linked">
-                    <span className="txp-title-linked-name">
-                      {[titleCollab.first_name, titleCollab.last_name].filter(Boolean).join(' ')}
-                    </span>
-                    <button
-                      className="txp-title-clear-btn"
-                      title="Clear selection"
-                      onClick={() => {
-                        save('title_collaborator_id')(null)
-                        setTitleCollab(null)
-                      }}
-                    >✕</button>
-                  </div>
-                </div>
-              ) : (
-                <CollaboratorSearch
-                  label="Title Contact"
-                  value=""
-                  category="title-escrow"
-                  onSave={() => {}}
-                  onSelect={c => {
-                    onMultiFieldSave({
-                      title_collaborator_id: c.id,
-                      title_company:         c.company || null,
-                      title_contact_name:    [c.first_name, c.last_name].filter(Boolean).join(' ') || null,
-                      title_company_email:   c.email || null,
-                      title_company_phone:   c.phone || null,
-                    })
-                    setTitleCollab(c)
-                  }}
-                  placeholder="Search title contacts…"
-                  tabIndex={32}
-                />
-              )}
-              <TxField label="Company"     value={titleCollab?.company           || transaction.title_company        || ''} type="text" readOnly={!!titleCollab} onSave={save('title_company')}        placeholder="Title company name" tabIndex={33} />
-              <TxField label="Title Email" value={titleCollab?.email             || transaction.title_company_email  || ''} type="text" readOnly={!!titleCollab} onSave={save('title_company_email')} placeholder="title@company.com"  tabIndex={34} />
-              <TxField label="Title Phone" value={titleCollab?.phone             || transaction.title_company_phone  || ''} type="text" readOnly={!!titleCollab} onSave={v => save('title_company_phone')(formatPhone(v))} placeholder="(555) 000-0000" tabIndex={35} />
-              <TxField label="Escrow Number"  value={transaction.escrow_number       || ''} type="text" onSave={save('escrow_number')}       placeholder="Escrow #"         tabIndex={35} />
-              <CollaboratorSearch
-                label="Co-op Agent"
-                value={transaction.co_op_agent || ''}
-                category="coop-agents"
-                onSave={save('co_op_agent')}
-                placeholder="Agent name"
-                tabIndex={35}
-              />
-              <TxField
-                label={isBuyer ? "Seller's Name" : "Buyer's Name"}
-                value={transaction.opposite_party_name || ''}
-                type="text"
-                onSave={save('opposite_party_name')}
-                placeholder={isBuyer ? 'Seller name' : 'Buyer name'}
-                tabIndex={36}
-              />
-              <TxField
-                label="Financing Type"
-                value={transaction.financing_type || ''}
-                type="select"
-                options={FINANCING_TYPE_OPTIONS}
-                onSave={save('financing_type')}
-                tabIndex={37}
-              />
-              {transaction.financing_type !== 'Cash' && transaction.financing_type !== 'Owner Financing' && (<>
-                <CollaboratorSearch
-                  label="Lender"
-                  value={transaction.lender_name || ''}
-                  category="lenders"
-                  onSave={save('lender_name')}
-                  onSelect={c => {
-                    if (c.email) save('lender_email')(c.email)
-                    if (c.phone) save('lender_phone')(c.phone)
-                  }}
-                  placeholder="Lender name"
-                  tabIndex={38}
-                />
-                <TxField label="Lender Email" value={transaction.lender_email || ''} type="text" onSave={save('lender_email')} placeholder="lender@company.com" tabIndex={39} />
-                <TxField label="Lender Phone" value={transaction.lender_phone || ''} type="text" onSave={v => save('lender_phone')(formatPhone(v))} placeholder="(555) 000-0000"    tabIndex={40} />
-              </>)}
-              <div className="txp-field txp-additional-parcel-row">
-                <span className="txp-field-label">Additional Parcel</span>
-                <div className="txp-additional-parcel-inner">
-                  <input
-                    type="checkbox"
-                    className="txp-additional-parcel-check"
-                    tabIndex={41}
-                    checked={parcelsChecked}
-                    onChange={e => {
-                      setParcelsChecked(e.target.checked)
-                      if (!e.target.checked) save('additional_parcels')(null)
-                    }}
-                  />
-                  {parcelsChecked && (
-                    <input
-                      type="text"
-                      className="txp-additional-parcel-text"
-                      value={parcelsText}
-                      placeholder="Parcel APN(s)…"
-                      tabIndex={42}
-                      onChange={e => setParcelsText(e.target.value)}
-                      onBlur={() => {
-                        const val = parcelsText.trim() || null
-                        if (String(val ?? '') !== String(transaction.additional_parcels ?? '')) save('additional_parcels')(val)
-                      }}
-                      onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
-                    />
-                  )}
-                </div>
-              </div>
-              <TxField
-                label="Additional Terms & Conditions"
-                value={transaction.additional_terms || ''}
-                type="textarea"
-                onSave={save('additional_terms')}
-                placeholder="Enter any additional terms or conditions…"
-                tabIndex={43}
-              />
-            </div>
-          )}
-
-        </div>{/* end left */}
-
-        {/* RIGHT COLUMN */}
-        <div className="txp-col-right">
-
           {/* KEY DATES */}
-          <div className="txp-section">
+          <div className="txp-section txp-key-dates-section" style={{ paddingBottom: '2px' }}>
             <div className="txp-section-title">Key Dates</div>
             {dateFields.map(({ key, label, required }, i) => (
               <TxField
@@ -2073,21 +2127,18 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
             ))}
           </div>
 
+          {/* NOTES */}
+          <NotesSection
+            transactionId={transaction.id}
+            transactionAddr={transactionAddr}
+            onNoteAdded={onNoteAdded}
+            tcSettings={tcSettings}
+          />
+
           {/* CONTRACT DATES */}
           {isPendingOrBeyond && (
             <div className="txp-section txp-pending-dates-section">
               <div className="txp-section-title txp-pending-dates-title">Contract Dates</div>
-              {!isBuyer && (
-                <TxField
-                  label="Contract Price"
-                  value={String(transaction.contract_price || '')}
-                  displayValue={fmtWhole(transaction.contract_price)}
-                  type="text"
-                  onSave={save('contract_price')}
-                  placeholder="$0"
-                  tabIndex={49}
-                />
-              )}
               {pendingContractFields.map(({ key, label }, i) => (
                 <TxField
                   key={key}
@@ -2122,14 +2173,6 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
               )}
             </div>
           )}
-
-          {/* NOTES (right column, below Key Dates) */}
-          <NotesSection
-            transactionId={transaction.id}
-            transactionAddr={transactionAddr}
-            onNoteAdded={onNoteAdded}
-            tcSettings={tcSettings}
-          />
 
           {/* REFERRALS */}
           <div className="txp-section">
@@ -2166,7 +2209,7 @@ function CommissionSection({ transaction, commissions, onCommissionChange, onAdd
     setBcFlatDraft(commission.buyer_contribution_flat   != null ? String(commission.buyer_contribution_flat)    : '')
   }, [transaction.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const price = Number(transaction.price) || 0
+  const price = Number(transaction.contract_price || transaction.price) || 0
   const referralPct = Number(transaction.referral_pct) || 0
 
   // GCI computed from live draft values — updates as user types

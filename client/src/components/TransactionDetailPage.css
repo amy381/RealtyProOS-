@@ -195,6 +195,40 @@
   margin-bottom: 10px;
 }
 
+.notify-section-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.notify-section-label-row .notify-section-label {
+  margin-bottom: 0;
+}
+
+.notify-check-all-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.notify-check-all-btn {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.notify-check-all-btn:hover {
+  border-color: #aaa;
+  color: #222;
+}
+
 .notify-optional {
   font-weight: 400;
   text-transform: none;
@@ -836,6 +870,11 @@
 }
 
 /* ─── Pending Contract Dates section ────────────────────────────────────────── */
+.txp-pending-dates-section .di-wrap {
+  max-width: 50%;
+  width: auto;
+}
+
 .txp-pending-dates-section {
   background: rgba(2, 5, 18, 0.45);
   border: 0.5px solid rgba(50, 200, 220, 0.18);
@@ -1162,7 +1201,7 @@ select.txp-input { cursor: pointer; }
 
 .txp-note-compose-input {
   width: 100%;
-  font-size: 17px;
+  font-size: 16px;
   font-family: inherit;
   font-weight: 400;
   color: #a8bfcc;
@@ -1241,7 +1280,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-note-text {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 400;
   color: rgba(168, 191, 204, 0.9);
   line-height: 1.55;
@@ -1855,6 +1894,102 @@ select.txp-input { cursor: pointer; }
 .txp-doc-upload-btn--done          { border-color: rgba(16, 185, 129, 0.3); color: rgb(16, 185, 129); }
 .txp-doc-upload-btn--done:hover    { background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.5); }
 
+/* ─── Listing Details 2-column grid ────────────────────────────────────────────── */
+.txp-listing-grid {
+  display: flex;
+  align-items: stretch;
+}
+
+.txp-listing-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Invisible divider between the two listing columns */
+.txp-listing-col + .txp-listing-col {
+  border-left: 0.5px solid rgba(168, 191, 204, 0.08);
+}
+
+/* Narrower labels to fit in half the section width */
+.txp-listing-col .txp-field-label {
+  width: 82px;
+}
+
+/* Pair-item values: never wrap; truncate with ellipsis if too long */
+.txp-pair-item .txp-csz-val {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.txp-pair-item .txp-csz-input {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+/* ─── Inline labeled pair row (two labeled fields side by side, each label-left) ─ */
+.txp-pair-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-bottom: 0.5px solid rgba(168, 191, 204, 0.08);
+  padding: 0 18px;
+  min-height: 38px;
+  transition: background 0.1s;
+}
+.txp-pair-row:hover { background: rgba(50, 200, 220, 0.05); }
+.txp-section > .txp-pair-row:last-child { border-bottom: none; }
+
+.txp-pair-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.txp-pair-item + .txp-pair-item {
+  margin-left: 8px;
+}
+
+.txp-pair-label {
+  display: block;
+  width: 120px;
+  flex-shrink: 0;
+  font-size: 14px;
+  font-variant: small-caps;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(168, 191, 204, 0.85);
+  user-select: none;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* ─── Key Dates — compact date inputs ────────────────────────────────────────── */
+.txp-key-dates-section .di-wrap {
+  max-width: 50%;
+  width: auto;
+}
+
+/* ─── Full-width address row (Street / City / AZ / ZIP) ────────────────────────── */
+.txp-addr-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  border-bottom: 0.5px solid rgba(168, 191, 204, 0.08);
+  padding: 4px 18px;
+  transition: background 0.1s;
+  min-width: 0;
+}
+.txp-addr-row:hover { background: rgba(50, 200, 220, 0.05); }
+
 /* ─── City / State / ZIP inline address row ─────────────────────────────────────── */
 .txp-csz-row {
   display: flex;
@@ -2279,30 +2414,32 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-tpl-btn {
-  border: 1px solid #ddd;
-  background: #fff;
+  background: rgba(2, 5, 18, 0.15);
+  border: 0.5px solid rgba(50, 200, 220, 0.18);
+  color: #a8bfcc;
+  border-radius: 6px;
   padding: 6px 13px;
-  border-radius: 7px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  color: #333;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.13s, color 0.13s;
   white-space: nowrap;
 }
 
 .txp-tpl-btn:hover {
-  border-color: #999;
-  background: #fafafa;
+  border-color: rgba(50, 200, 220, 0.4);
+  color: #c8d4e0;
 }
 
 .txp-tpl-menu {
   /* position/top/right set via inline style (position:fixed) to escape overflow:hidden ancestors */
-  background: #fff;
-  border: 1px solid #e0e0e0;
+  background: rgba(8, 12, 28, 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 0.5px solid rgba(50, 200, 220, 0.2);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   min-width: 200px;
   z-index: 9999;
   overflow: hidden;
@@ -2317,20 +2454,21 @@ select.txp-input { cursor: pointer; }
   border: none;
   font-size: 13px;
   font-family: inherit;
-  color: #222;
+  color: #c8d4e0;
   cursor: pointer;
   transition: background 0.1s;
 }
 
 .txp-tpl-item:hover {
-  background: #f5f5f5;
+  background: rgba(50, 200, 220, 0.08);
+  color: #e8f4f8;
 }
 
 /* Preview modal */
 .txp-tpl-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2338,7 +2476,10 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-tpl-modal {
-  background: #fff;
+  background: rgba(5, 10, 25, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 0.5px solid rgba(50, 200, 220, 0.15);
   border-radius: 12px;
   width: 660px;
   max-width: 95vw;
@@ -2346,7 +2487,7 @@ select.txp-input { cursor: pointer; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
 }
 
 .txp-tpl-modal-header {
@@ -2354,20 +2495,20 @@ select.txp-input { cursor: pointer; }
   align-items: flex-start;
   justify-content: space-between;
   padding: 18px 20px 14px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 0.5px solid rgba(168, 191, 204, 0.1);
   gap: 12px;
 }
 
 .txp-tpl-modal-title {
   font-size: 15px;
   font-weight: 700;
-  color: #111;
+  color: #c8d4e0;
   margin: 0 0 2px;
 }
 
 .txp-tpl-modal-sub {
   font-size: 12px;
-  color: #888;
+  color: rgba(168, 191, 204, 0.5);
   margin: 0;
 }
 
@@ -2376,14 +2517,14 @@ select.txp-input { cursor: pointer; }
   border: none;
   font-size: 16px;
   cursor: pointer;
-  color: #999;
+  color: rgba(168, 191, 204, 0.5);
   padding: 2px 6px;
   border-radius: 4px;
   flex-shrink: 0;
   line-height: 1;
 }
 
-.txp-tpl-modal-close:hover { color: #111; }
+.txp-tpl-modal-close:hover { color: #c8d4e0; }
 
 .txp-tpl-modal-body {
   flex: 1;
@@ -2404,29 +2545,29 @@ select.txp-input { cursor: pointer; }
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #888;
-  border-bottom: 2px solid #e0e0e0;
+  color: rgba(168, 191, 204, 0.45);
+  border-bottom: 0.5px solid rgba(168, 191, 204, 0.12);
 }
 
 .txp-tpl-preview-table td {
   padding: 8px 10px;
-  border-bottom: 1px solid #f0f0f0;
-  color: #222;
+  border-bottom: 0.5px solid rgba(168, 191, 204, 0.07);
+  color: #c8d4e0;
 }
 
 .txp-tpl-preview-num {
   width: 28px;
-  color: #bbb;
+  color: rgba(168, 191, 204, 0.35);
   font-size: 11px;
   text-align: center;
 }
 
 .txp-tpl-preview-timing {
-  color: #555;
+  color: rgba(168, 191, 204, 0.65);
 }
 
 .txp-tpl-preview-assign {
-  color: #555;
+  color: rgba(168, 191, 204, 0.65);
 }
 
 .txp-tpl-preview-remove {
@@ -2438,15 +2579,15 @@ select.txp-input { cursor: pointer; }
   background: none;
   border: none;
   cursor: pointer;
-  color: #aaa;
+  color: rgba(168, 191, 204, 0.35);
   font-size: 12px;
   padding: 2px 4px;
   border-radius: 3px;
 }
 
 .txp-tpl-preview-remove-btn:hover {
-  color: #e53e3e;
-  background: #fff0f0;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
 }
 
 .txp-tpl-preview-type {
@@ -2459,18 +2600,18 @@ select.txp-input { cursor: pointer; }
   border-radius: 99px;
   font-size: 11px;
   font-weight: 700;
-  background: #ddeaff;
-  color: #1a3d82;
+  background: rgba(80, 120, 220, 0.18);
+  color: #7eaaff;
   letter-spacing: 0.02em;
 }
 
 .txp-tpl-type-label {
   font-size: 12px;
-  color: #888;
+  color: rgba(168, 191, 204, 0.5);
 }
 
 .txp-tpl-preview-critical td {
-  background: #f0f5ff;
+  background: rgba(80, 120, 220, 0.06);
 }
 
 .txp-tpl-modal-actions {
@@ -2478,12 +2619,13 @@ select.txp-input { cursor: pointer; }
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 20px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 0.5px solid rgba(168, 191, 204, 0.1);
 }
 
 .txp-tpl-cancel {
-  background: #f5f5f5;
-  border: none;
+  background: rgba(168, 191, 204, 0.08);
+  border: 0.5px solid rgba(168, 191, 204, 0.15);
+  color: #a8bfcc;
   padding: 8px 18px;
   border-radius: 8px;
   font-size: 14px;
@@ -2492,12 +2634,12 @@ select.txp-input { cursor: pointer; }
   font-family: inherit;
 }
 
-.txp-tpl-cancel:hover { background: #ebebeb; }
+.txp-tpl-cancel:hover { background: rgba(168, 191, 204, 0.14); }
 
 .txp-tpl-confirm {
-  background: #111;
-  color: #fff;
-  border: none;
+  background: rgba(50, 200, 220, 0.15);
+  color: #50C8DC;
+  border: 0.5px solid rgba(50, 200, 220, 0.3);
   padding: 8px 22px;
   border-radius: 8px;
   font-size: 14px;
@@ -2506,10 +2648,10 @@ select.txp-input { cursor: pointer; }
   font-family: inherit;
 }
 
-.txp-tpl-confirm:not(:disabled):hover { background: #333; }
+.txp-tpl-confirm:not(:disabled):hover { background: rgba(50, 200, 220, 0.25); }
 
 .txp-tpl-confirm:disabled {
-  opacity: 0.45;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 

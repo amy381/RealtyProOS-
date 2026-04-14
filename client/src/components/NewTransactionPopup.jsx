@@ -144,14 +144,15 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
   const [sellerCloseOfEscrow,    setSellerCloseOfEscrow]    = useState('')
 
   // Buyer fields
+  const [buyerAddress,           setBuyerAddress]           = useState('')
+  const [buyerCity,              setBuyerCity]              = useState('')
+  const [buyerZip,               setBuyerZip]              = useState('')
   const [bbaContract,            setBbaContract]            = useState('')
   const [bbaExp,                 setBbaExp]                 = useState('')
   const [contractAcceptDate,     setContractAcceptDate]     = useState('')
   const [closeOfEscrow,          setCloseOfEscrow]          = useState('')
   const [ipeDate,                setIpeDate]                = useState('')
   const [homeInspectionDate,     setHomeInspectionDate]     = useState('')
-  const [appraisalDate,          setAppraisalDate]          = useState('')
-  const [binsrSubmittedDate,     setBinsrSubmittedDate]     = useState('')
   const [contingencyFulfilledDate, setContingencyFulfilledDate] = useState('')
 
   const isSeller = repType === 'Seller'
@@ -229,14 +230,16 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
       tx.contract_acceptance_date  = sellerContractAccept || null
       tx.close_of_escrow           = sellerCloseOfEscrow  || null
     } else {
+      tx.property_address            = buyerAddress             || null
+      tx.city                        = buyerCity                || null
+      tx.state                       = 'AZ'
+      tx.zip                         = buyerZip                 || null
       tx.bba_contract                = bbaContract              || null
       tx.bba_expiration              = bbaExp                   || null
       tx.contract_acceptance_date    = contractAcceptDate       || null
       tx.close_of_escrow             = closeOfEscrow            || null
       tx.ipe_date                    = ipeDate                  || null
       tx.home_inspection_date        = homeInspectionDate       || null
-      tx.appraisal_date              = appraisalDate            || null
-      tx.binsr_submitted_date        = binsrSubmittedDate       || null
       tx.contingency_fulfilled_date  = contingencyFulfilledDate || null
     }
 
@@ -395,6 +398,28 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
 
           {/* ── Buyer fields ── */}
           {!isSeller && (<>
+            <div className="ntp-section-divider">Property</div>
+
+            <div className="ntp-field">
+              <label>Street Address</label>
+              <input type="text" placeholder="123 Main St" value={buyerAddress} onChange={e => setBuyerAddress(e.target.value)} />
+            </div>
+
+            <div className="ntp-row-addr">
+              <div className="ntp-field">
+                <label>City</label>
+                <input type="text" placeholder="Kingman" value={buyerCity} onChange={e => setBuyerCity(e.target.value)} />
+              </div>
+              <div className="ntp-field ntp-state-field">
+                <label>State</label>
+                <input type="text" value="AZ" readOnly className="ntp-readonly" />
+              </div>
+              <div className="ntp-field ntp-zip-field">
+                <label>ZIP</label>
+                <input type="text" placeholder="86401" value={buyerZip} onChange={e => setBuyerZip(e.target.value)} />
+              </div>
+            </div>
+
             <div className="ntp-section-divider">Key Dates</div>
 
             <div className="ntp-field ntp-half">
@@ -426,17 +451,6 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
               <div className="ntp-field">
                 <label>Home Inspection</label>
                 <DateInput value={homeInspectionDate} onChange={e => setHomeInspectionDate(e.target.value)} />
-              </div>
-            </div>
-
-            <div className="ntp-row-2">
-              <div className="ntp-field">
-                <label>Appraisal Date</label>
-                <DateInput value={appraisalDate} onChange={e => setAppraisalDate(e.target.value)} />
-              </div>
-              <div className="ntp-field">
-                <label>BINSR Submitted</label>
-                <DateInput value={binsrSubmittedDate} onChange={e => setBinsrSubmittedDate(e.target.value)} />
               </div>
             </div>
 

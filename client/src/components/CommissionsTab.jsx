@@ -161,7 +161,8 @@ function computeAllRows(transactions, commissions) {
       address:     t.property_address || '—',
       rep:         t.rep_type         || '—',
       coe:         t.close_of_escrow  || '',
-      sale_price:  Number(t.contract_price || t.price) || 0,
+      sale_price:         Number(t.contract_price || t.price) || 0,
+      sale_price_is_list: !t.contract_price && !!t.price,
       comp:        deriveComp(c),
       gci:         hasCm ? gci         : null,
       net:         hasCm ? net         : null,
@@ -299,7 +300,10 @@ export default function CommissionsTab({ transactions, commissions, onDeleteComm
                 <td className="addr-cell">{row.address}</td>
                 <td className="computed">{row.rep}</td>
                 <td className="computed">{fmtDate(row.coe)}</td>
-                <td className="computed">{fmt(row.sale_price)}</td>
+                <td className="computed">
+                  {fmt(row.sale_price)}
+                  {row.sale_price_is_list && <span className="sale-list-flag">L</span>}
+                </td>
                 <td className="computed">{row.comp}</td>
                 <td className="computed">{fmtCents(row.gci)}</td>
                 <td className="computed net-cell">{fmtCents(row.net)}</td>

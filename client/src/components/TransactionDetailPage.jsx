@@ -464,6 +464,60 @@ function ClientRow({ label, first, last, email, phone, onFubSelect, onUnlink, on
   )
 }
 
+// ─── Access Field (dropdown + free-text inline) ───────────────────────────────
+function AccessField({ transaction, isSeller, onFieldSave, onMultiFieldSave, tabIndex }) {
+  const parseAccess = (val) => {
+    if (!val) return { type: 'Vacant', detail: '' }
+    if (val.startsWith('Occupied')) {
+      const rest = val.replace(/^Occupied\s*[–\-]\s*/, '')
+      return { type: 'Occupied', detail: rest === 'Occupied' ? '' : rest }
+    }
+    const rest = val.replace(/^Vacant\s*[–\-]\s*/, '')
+    return { type: 'Vacant', detail: rest === 'Vacant' ? '' : rest }
+  }
+
+  const parsed              = parseAccess(transaction.access)
+  const [type, setType]     = useState(parsed.type)
+  const [detail, setDetail] = useState(parsed.detail)
+
+  const commit = () => {
+    const combined = detail.trim() ? `${type} \u2013 ${detail.trim()}` : type
+    if (isSeller) {
+      onMultiFieldSave({ access: combined || null, vacant_or_occupied: type })
+    } else {
+      onFieldSave('access', combined || null)
+    }
+  }
+
+  return (
+    <div className="txp-field">
+      <span className="txp-field-label">Access</span>
+      <div className="txp-access-inputs">
+        <select
+          className="txp-input txp-access-type"
+          value={type}
+          onChange={e => { setType(e.target.value) }}
+          onBlur={commit}
+          tabIndex={tabIndex}
+        >
+          <option value="Vacant">Vacant</option>
+          <option value="Occupied">Occupied</option>
+        </select>
+        <input
+          type="text"
+          className="txp-input txp-access-detail"
+          value={detail}
+          placeholder="e.g. Supra, Coded, Call Agent..."
+          onChange={e => setDetail(e.target.value)}
+          onBlur={commit}
+          onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
+          tabIndex={tabIndex != null ? tabIndex + 1 : undefined}
+        />
+      </div>
+    </div>
+  )
+}
+
 // ─── Inline Editable Field ─────────────────────────────────────────────────────
 function TxField({ label, value, displayValue, type, options, onSave, placeholder, required, readOnly, tabIndex }) {
   const [editing, setEditing] = useState(false)
@@ -1806,14 +1860,14 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
 
             {/* Seller: APN + Access always visible */}
             {!isBuyer && (<>
-              <TxField label="APN"    value={transaction.apn    || ''} type="text" onSave={v => save('apn')(formatApn(v))} placeholder="000-000-000" tabIndex={5} />
-              <TxField label="Access" value={transaction.access || ''} type="text" onSave={save('access')} placeholder="e.g. lockbox code, call agent" tabIndex={8} />
+              <TxField label="APN" value={transaction.apn || ''} type="text" onSave={v => save('apn')(formatApn(v))} placeholder="000-000-000" tabIndex={5} />
+              <AccessField transaction={transaction} isSeller={true} onFieldSave={onFieldSave} onMultiFieldSave={onMultiFieldSave} tabIndex={8} />
             </>)}
 
             {/* Buyer pending+: APN, Access */}
             {isBuyer && isPendingOrBeyond && (<>
-              <TxField label="APN"    value={transaction.apn    || ''} type="text" onSave={v => save('apn')(formatApn(v))}    placeholder="000-000-000" tabIndex={6} />
-              <TxField label="Access" value={transaction.access || ''} type="text" onSave={save('access')} placeholder="e.g. lockbox code, call agent" tabIndex={7} />
+              <TxField label="APN" value={transaction.apn || ''} type="text" onSave={v => save('apn')(formatApn(v))} placeholder="000-000-000" tabIndex={6} />
+              <AccessField transaction={transaction} isSeller={false} onFieldSave={onFieldSave} onMultiFieldSave={onMultiFieldSave} tabIndex={7} />
             </>)}
 
             <TxField label="Transaction Type" value={transaction.rep_type || '—'} readOnly tabIndex={-1} />

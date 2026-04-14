@@ -378,11 +378,6 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
               <DateInput value={targetLive} onChange={e => setTargetLive(e.target.value)} />
             </div>
 
-            <div className="ntp-field ntp-half">
-              <label>Photography Date</label>
-              <DateInput value={photographyDate} onChange={e => setPhotographyDate(e.target.value)} />
-            </div>
-
             <div className="ntp-section-divider">Key Dates</div>
 
             <div className="ntp-field ntp-half">

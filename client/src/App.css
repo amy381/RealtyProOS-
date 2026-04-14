@@ -31,7 +31,7 @@
 .app-main {
   flex: 1;
   padding: 24px;
-  overflow: visible;
+  overflow: hidden;
   background: transparent;
   display: flex;
   flex-direction: column;

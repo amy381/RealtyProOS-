@@ -1318,11 +1318,11 @@ select.txp-input { cursor: pointer; }
 
 /* ─── Tasks Spreadsheet ───────────────────────────────────────────────────────── */
 .txp-tasks-block {
-  margin-top: 20px;
-  background: #ffffff;
-  border: 1px solid #e4e4e4;
+  background: rgba(2, 5, 18, 0.2);
+  border: 0.5px solid rgba(50, 200, 220, 0.18);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   overflow: hidden;
 }
 
@@ -1331,10 +1331,10 @@ select.txp-input { cursor: pointer; }
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px;
-  border-bottom: 1px solid #eeeeee;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.12);
   gap: 12px;
   flex-wrap: wrap;
-  background: #fafafa;
+  background: rgba(2, 5, 18, 0.3);
 }
 
 .txp-tasks-title {
@@ -1342,7 +1342,7 @@ select.txp-input { cursor: pointer; }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #aaaaaa;
+  color: rgba(168, 191, 204, 0.6);
   white-space: nowrap;
 }
 
@@ -1354,62 +1354,62 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-task-search {
-  font-size: 16px;
+  font-size: 14px;
   font-family: inherit;
-  color: #1a1a1a;
-  border: 1.5px solid #e4e4e4;
+  color: #c8d4e0;
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
   border-radius: 5px;
-  padding: 6px 10px;
+  padding: 5px 10px;
   outline: none;
-  width: 170px;
-  background: #ffffff;
+  width: 150px;
+  background: rgba(2, 5, 18, 0.5);
   transition: border-color 0.12s;
 }
-.txp-task-search:focus { border-color: #aaaaaa; }
-.txp-task-search::placeholder { color: #bbbbbb; }
+.txp-task-search:focus { border-color: rgba(50, 200, 220, 0.5); }
+.txp-task-search::placeholder { color: rgba(168, 191, 204, 0.35); font-style: italic; }
 
 .txp-task-filter {
-  font-size: 16px;
+  font-size: 14px;
   font-family: inherit;
-  color: #555555;
-  border: 1.5px solid #e4e4e4;
+  color: #a8bfcc;
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
   border-radius: 5px;
-  padding: 6px 9px;
+  padding: 5px 9px;
   outline: none;
-  background: #ffffff;
+  background: rgba(2, 5, 18, 0.5);
   cursor: pointer;
   transition: border-color 0.12s;
 }
-.txp-task-filter:focus { border-color: #aaaaaa; }
+.txp-task-filter:focus { border-color: rgba(50, 200, 220, 0.5); }
 
 .txp-task-sort-btn {
-  font-size: 16px;
+  font-size: 14px;
   font-family: inherit;
-  color: #555555;
-  border: 1.5px solid #e4e4e4;
+  color: #a8bfcc;
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
   border-radius: 5px;
-  padding: 6px 12px;
-  background: #ffffff;
+  padding: 5px 12px;
+  background: rgba(2, 5, 18, 0.5);
   cursor: pointer;
   transition: all 0.12s;
   white-space: nowrap;
 }
-.txp-task-sort-btn:hover { background: #f4f4f4; border-color: #cccccc; }
+.txp-task-sort-btn:hover { background: rgba(50, 200, 220, 0.08); border-color: rgba(50, 200, 220, 0.4); }
 
 .txp-task-add-btn {
-  font-size: 16px;
+  font-size: 14px;
   font-family: inherit;
   font-weight: 600;
-  color: #ffffff;
-  background: #1a1a1a;
-  border: none;
+  color: rgba(220, 135, 45, 0.95);
+  background: rgba(210, 120, 30, 0.12);
+  border: 0.5px solid rgba(210, 120, 30, 0.4);
   border-radius: 5px;
-  padding: 6px 14px;
+  padding: 5px 14px;
   cursor: pointer;
   transition: background 0.12s;
   white-space: nowrap;
 }
-.txp-task-add-btn:hover { background: #000000; }
+.txp-task-add-btn:hover { background: rgba(210, 120, 30, 0.2); }
 
 /* Task table */
 .txp-task-table {
@@ -1420,14 +1420,14 @@ select.txp-input { cursor: pointer; }
 
 .txp-task-th {
   text-align: left;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #aaaaaa;
+  color: rgba(168, 191, 204, 0.5);
   padding: 9px 13px;
-  border-bottom: 1px solid #eeeeee;
-  background: #fafafa;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.12);
+  background: rgba(2, 5, 18, 0.25);
   white-space: nowrap;
 }
 .txp-task-th-check { width: 40px; padding: 9px 8px 9px 16px; }
@@ -1435,7 +1435,7 @@ select.txp-input { cursor: pointer; }
 
 .txp-task-td {
   padding: 9px 13px;
-  border-bottom: 1px solid #f4f4f4;
+  border-bottom: 0.5px solid rgba(168, 191, 204, 0.06);
   vertical-align: middle;
 }
 .txp-task-td-check  { width: 40px; padding: 9px 6px 9px 16px; }
@@ -1447,20 +1447,20 @@ select.txp-input { cursor: pointer; }
 
 /* Alternating row shading */
 .txp-task-row { transition: background 0.08s; }
-.txp-task-row:nth-child(even) { background: #fafafa; }
+.txp-task-row:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
 .txp-task-row:hover { background: rgba(50, 200, 220, 0.05); }
 .txp-task-row:last-child td { border-bottom: none; }
 
-/* Completed rows: muted but not invisible */
-.txp-task-done { background: #fafafa !important; }
+/* Completed rows: muted */
+.txp-task-done { background: rgba(0, 0, 0, 0.08) !important; }
 .txp-task-done .txp-task-date,
 .txp-task-done .txp-task-assignee-text,
-.txp-task-done .txp-task-del-btn { color: #d0d0d0; }
+.txp-task-done .txp-task-del-btn { color: rgba(168, 191, 204, 0.3); }
 
 /* Completion date shown below the badge */
 .txp-task-completed-at {
   font-size: 14px;
-  color: #b0b0b0;
+  color: rgba(168, 191, 204, 0.4);
   margin-top: 3px;
   white-space: nowrap;
 }
@@ -1468,24 +1468,24 @@ select.txp-input { cursor: pointer; }
 .txp-task-check {
   width: 19px;
   height: 19px;
-  border: 1.5px solid #d0d0d0;
+  border: 1.5px solid rgba(168, 191, 204, 0.3);
   border-radius: 4px;
-  background: #ffffff;
+  background: rgba(2, 5, 18, 0.4);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  color: #ffffff;
+  color: #50C8DC;
   transition: all 0.12s;
   flex-shrink: 0;
 }
-.txp-task-check.checked { background: #1a1a1a; border-color: #1a1a1a; }
+.txp-task-check.checked { background: rgba(50, 200, 220, 0.15); border-color: rgba(50, 200, 220, 0.5); }
 
 .txp-task-name-text {
   font-size: 17px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: #c8d4e0;
   cursor: pointer;
   border-radius: 4px;
   padding: 2px 5px;
@@ -1493,27 +1493,26 @@ select.txp-input { cursor: pointer; }
   display: inline-block;
   transition: background 0.08s;
 }
-.txp-task-name-text:hover { background: rgba(50, 200, 220, 0.05); }
-.txp-task-name-text.done { text-decoration: line-through; color: #aaaaaa; cursor: default; }
+.txp-task-name-text:hover { background: rgba(50, 200, 220, 0.06); }
+.txp-task-name-text.done { text-decoration: line-through; color: rgba(168, 191, 204, 0.35); cursor: default; }
 
 .txp-task-inline-input {
   font-size: 17px;
   font-family: inherit;
   font-weight: 500;
-  color: #1a1a1a;
-  background: #ffffff;
-  border: 1.5px solid #1a1a1a;
+  color: #c8d4e0;
+  background: rgba(2, 5, 18, 0.6);
+  border: 0.5px solid rgba(50, 200, 220, 0.45);
   border-radius: 5px;
   padding: 4px 8px;
   outline: none;
   width: 100%;
   box-sizing: border-box;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
 }
 
 .txp-task-date {
   font-size: 16px;
-  color: #555555;
+  color: #a8bfcc;
   cursor: pointer;
   border-radius: 4px;
   padding: 2px 5px;
@@ -1521,15 +1520,15 @@ select.txp-input { cursor: pointer; }
   display: inline-block;
   transition: background 0.08s;
 }
-.txp-task-date:hover { background: rgba(50, 200, 220, 0.05); }
-.txp-task-date.overdue { color: #dc2626; font-weight: 600; }
-.txp-task-date.today   { color: #d97706; font-weight: 600; }
-.txp-task-date.soon    { color: #0284c7; }
-.txp-task-no-date { color: #cccccc; font-style: italic; font-size: 16px; }
+.txp-task-date:hover { background: rgba(50, 200, 220, 0.06); }
+.txp-task-date.overdue { color: #f87171; font-weight: 600; }
+.txp-task-date.today   { color: #fbbf24; font-weight: 600; }
+.txp-task-date.soon    { color: #38bdf8; }
+.txp-task-no-date { color: rgba(168, 191, 204, 0.3); font-style: italic; font-size: 16px; }
 
 .txp-task-assignee-text {
   font-size: 16px;
-  color: #555555;
+  color: #a8bfcc;
   cursor: pointer;
   border-radius: 4px;
   padding: 2px 5px;
@@ -1537,7 +1536,7 @@ select.txp-input { cursor: pointer; }
   display: inline-block;
   transition: background 0.08s;
 }
-.txp-task-assignee-text:hover { background: rgba(50, 200, 220, 0.05); }
+.txp-task-assignee-text:hover { background: rgba(50, 200, 220, 0.06); }
 
 .txp-task-status-badge {
   font-size: 15px;
@@ -1556,20 +1555,20 @@ select.txp-input { cursor: pointer; }
 .txp-task-del-btn {
   background: none;
   border: none;
-  color: #cccccc;
+  color: rgba(168, 191, 204, 0.3);
   cursor: pointer;
   font-size: 17px;
   padding: 3px 7px;
   border-radius: 4px;
   transition: color 0.12s, background 0.12s;
 }
-.txp-task-del-btn:hover { color: #666666; background: #f0f0f0; }
+.txp-task-del-btn:hover { color: rgba(220, 80, 80, 0.7); background: rgba(220, 80, 80, 0.08); }
 
 .txp-task-empty {
   text-align: center;
   padding: 24px;
   font-size: 17px;
-  color: #c0c0c0;
+  color: rgba(168, 191, 204, 0.35);
   font-style: italic;
 }
 

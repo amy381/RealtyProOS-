@@ -182,6 +182,7 @@ export default function CommissionsTab({ transactions, commissions, onDeleteComm
   const [sortKey,      setSortKey]      = useState('coe')
   const [sortDir,      setSortDir]      = useState('asc')
   const [activeFilter, setActiveFilter] = useState('All')
+  const [yearFilter,   setYearFilter]   = useState('2026')
 
   const handleSort = key => {
     if (key === '_delete') return
@@ -199,15 +200,23 @@ export default function CommissionsTab({ transactions, commissions, onDeleteComm
     [eligibleTx, commissions]
   )
 
+  const yearOptions = useMemo(() => {
+    const yrs = new Set()
+    rows.forEach(r => { if (r.coe) { const y = r.coe.slice(0, 4); if (y) yrs.add(y) } })
+    return ['All', ...[...yrs].sort().reverse()]
+  }, [rows])
+
   const visibleRows = useMemo(() => {
+    let result = rows
+    if (yearFilter !== 'All') result = result.filter(r => r.coe && r.coe.startsWith(yearFilter))
     switch (activeFilter) {
-      case 'Pending': return rows.filter(r => r.status === 'Pending')
-      case 'Closed':  return rows.filter(r => r.status === 'Closed')
-      case 'Buyer':   return rows.filter(r => r.rep    === 'Buyer')
-      case 'Seller':  return rows.filter(r => r.rep    === 'Seller')
-      default:        return rows
+      case 'Pending': return result.filter(r => r.status === 'Pending')
+      case 'Closed':  return result.filter(r => r.status === 'Closed')
+      case 'Buyer':   return result.filter(r => r.rep    === 'Buyer')
+      case 'Seller':  return result.filter(r => r.rep    === 'Seller')
+      default:        return result
     }
-  }, [rows, activeFilter])
+  }, [rows, activeFilter, yearFilter])
 
   const sorted = useMemo(() => [...visibleRows].sort((a, b) => {
     const av = a[sortKey] ?? ''; const bv = b[sortKey] ?? ''
@@ -257,16 +266,25 @@ export default function CommissionsTab({ transactions, commissions, onDeleteComm
         </div>
       </div>
 
-      <div className="commissions-filter-bar">
-        {FILTERS.map(f => (
-          <button
-            key={f}
-            className={`commissions-filter-btn${activeFilter === f ? ' active' : ''}`}
-            onClick={() => setActiveFilter(f)}
-          >
-            {f}
-          </button>
-        ))}
+      <div className="commissions-filter-row">
+        <div className="commissions-filter-bar">
+          {FILTERS.map(f => (
+            <button
+              key={f}
+              className={`commissions-filter-btn${activeFilter === f ? ' active' : ''}`}
+              onClick={() => setActiveFilter(f)}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+        <select
+          className="commissions-year-select"
+          value={yearFilter}
+          onChange={e => setYearFilter(e.target.value)}
+        >
+          {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
       </div>
 
       <div className="commissions-scroll">

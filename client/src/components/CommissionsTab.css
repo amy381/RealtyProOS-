@@ -64,6 +64,14 @@
 .cap-fill     { background: rgba(50, 200, 220, 0.7); }
 .royalty-fill { background: rgba(168, 191, 204, 0.5); }
 
+.commissions-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
 .commissions-filter-bar {
   display: flex;
   gap: 4px;
@@ -72,8 +80,29 @@
   border: 0.5px solid rgba(50, 200, 220, 0.15);
   padding: 4px;
   border-radius: 8px;
-  align-self: flex-start;
 }
+
+.commissions-year-select {
+  background: rgba(2, 5, 18, 0.5);
+  border: 0.5px solid rgba(50, 200, 220, 0.15);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  color: rgba(168, 191, 204, 0.5);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s, color 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 22px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='rgba(168,191,204,0.4)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+.commissions-year-select:hover { border-color: rgba(50, 200, 220, 0.3); color: #a8bfcc; }
+.commissions-year-select option { background: #0a0f1e; color: #a8bfcc; }
 
 .commissions-filter-btn {
   background: transparent;

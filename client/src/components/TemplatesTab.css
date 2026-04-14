@@ -762,6 +762,7 @@
 
 .et-form-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 20px 24px 24px;
   display: flex;
@@ -1031,6 +1032,7 @@
 .et-vars {
   width: 224px;
   min-width: 224px;
+  min-height: 0;
   border-left: 1px solid rgba(168, 191, 204, 0.15);
   background: rgba(255, 255, 255, 0.04);
   display: flex;
@@ -1060,6 +1062,7 @@
 
 .et-vars-scroll {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 8px 0 16px;
 }

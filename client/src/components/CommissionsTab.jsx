@@ -178,7 +178,7 @@ function computeAllRows(transactions, commissions) {
   return { rows, capPaidYTD, royaltyPaidYTD }
 }
 
-export default function CommissionsTab({ transactions, commissions, onDeleteCommission }) {
+export default function CommissionsTab({ transactions, commissions, onDeleteCommission, onNavigate }) {
   const [sortKey,      setSortKey]      = useState('coe')
   const [sortDir,      setSortDir]      = useState('asc')
   const [activeFilter, setActiveFilter] = useState('All')
@@ -315,7 +315,12 @@ export default function CommissionsTab({ transactions, commissions, onDeleteComm
           <tbody>
             {sorted.map(row => (
               <tr key={row.id} className={`row-${row.status.toLowerCase()}`}>
-                <td className="addr-cell">{row.address}</td>
+                <td className="addr-cell">
+                  <span
+                    className="addr-link"
+                    onClick={() => onNavigate?.(row.id)}
+                  >{row.address}</span>
+                </td>
                 <td className="computed">{row.rep}</td>
                 <td className="computed">{fmtDate(row.coe)}</td>
                 <td className="computed">

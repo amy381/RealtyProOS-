@@ -183,6 +183,14 @@
   color: #c8d4e0;
 }
 
+.addr-link {
+  cursor: pointer;
+}
+.addr-link:hover {
+  color: #50C8DC;
+  text-decoration: underline;
+}
+
 .commissions-table td.computed { color: #c8d4e0; font-weight: 600; }
 
 .sale-list-flag {

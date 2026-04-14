@@ -947,6 +947,10 @@ export default function App() {
               transactions={transactions}
               commissions={commissions}
               onDeleteCommission={handleDeleteCommission}
+              onNavigate={(txId) => {
+                const tx = transactions.find(t => t.id === txId)
+                if (tx) openTransaction(tx, 'commission')
+              }}
             />
           )}
           {activeTab === 'tasks' && (

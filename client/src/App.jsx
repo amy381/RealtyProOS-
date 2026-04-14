@@ -541,7 +541,13 @@ export default function App() {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t))
 
     const { error } = await supabase.from('tasks').update(updates).eq('id', taskId)
-    if (error) { console.error('Task update error:', error); return }
+    if (error) {
+      console.error('Task update error:', error)
+      toast.error(`Failed to save task: ${error.message}`)
+      // Revert local state so UI doesn't show a false save
+      setTasks(prev => prev.map(t => t.id === taskId ? tasks.find(orig => orig.id === taskId) || t : t))
+      return
+    }
 
     // Handle @mention notifications when notes change
     if (updates.notes !== undefined) {

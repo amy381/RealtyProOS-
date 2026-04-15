@@ -2250,16 +2250,16 @@ function CommissionSection({ transaction, commissions, onCommissionChange, onAdd
   const saveCm = field => value => onCommissionChange(transaction.id, field, value)
 
   // Draft states live here so GCI can be computed from live-typed values
-  const [scPctDraft,  setScPctDraft]  = useState(commission.seller_concession_percent  != null ? String(commission.seller_concession_percent)  : '')
+  const [scPctDraft,  setScPctDraft]  = useState(commission.commission_rate != null ? String(commission.commission_rate) : '')
   const [scFlatDraft, setScFlatDraft] = useState(commission.seller_concession_flat     != null ? String(commission.seller_concession_flat)     : '')
-  const [bcPctDraft,  setBcPctDraft]  = useState(commission.buyer_contribution_percent != null ? String(commission.buyer_contribution_percent) : '')
+  const [bcPctDraft,  setBcPctDraft]  = useState(commission.commission_rate != null ? String(commission.commission_rate) : '')
   const [bcFlatDraft, setBcFlatDraft] = useState(commission.buyer_contribution_flat    != null ? String(commission.buyer_contribution_flat)    : '')
 
   // Sync drafts when transaction changes (e.g. user opens a different transaction)
   useEffect(() => {
-    setScPctDraft(commission.seller_concession_percent  != null ? String(commission.seller_concession_percent)  : '')
+    setScPctDraft(commission.commission_rate != null ? String(commission.commission_rate) : '')
     setScFlatDraft(commission.seller_concession_flat    != null ? String(commission.seller_concession_flat)     : '')
-    setBcPctDraft(commission.buyer_contribution_percent != null ? String(commission.buyer_contribution_percent) : '')
+    setBcPctDraft(commission.commission_rate != null ? String(commission.commission_rate) : '')
     setBcFlatDraft(commission.buyer_contribution_flat   != null ? String(commission.buyer_contribution_flat)    : '')
   }, [transaction.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -2334,7 +2334,7 @@ function CommissionSection({ transaction, commissions, onCommissionChange, onAdd
               value={scPctDraft}
               disabled={scFlatDraft.trim() !== ''}
               onChange={e => setScPctDraft(e.target.value)}
-              onBlur={() => { const v = scPctDraft.trim() === '' ? null : Number(scPctDraft); saveCm('seller_concession_percent')(isNaN(v) ? null : v) }}
+              onBlur={() => { const v = scPctDraft.trim() === '' ? null : Number(scPctDraft); saveCm('commission_rate')(isNaN(v) ? null : v) }}
               onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
             />
             <span className="txp-cm-split-unit">%</span>
@@ -2366,7 +2366,7 @@ function CommissionSection({ transaction, commissions, onCommissionChange, onAdd
               value={bcPctDraft}
               disabled={bcFlatDraft.trim() !== ''}
               onChange={e => setBcPctDraft(e.target.value)}
-              onBlur={() => { const v = bcPctDraft.trim() === '' ? null : Number(bcPctDraft); saveCm('buyer_contribution_percent')(isNaN(v) ? null : v) }}
+              onBlur={() => { const v = bcPctDraft.trim() === '' ? null : Number(bcPctDraft); saveCm('commission_rate')(isNaN(v) ? null : v) }}
               onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
             />
             <span className="txp-cm-split-unit">%</span>

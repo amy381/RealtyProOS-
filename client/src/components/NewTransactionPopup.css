@@ -19,7 +19,7 @@
   border-radius: 12px;
   box-shadow: 0 0 40px rgba(50, 200, 220, 0.08), 0 20px 60px rgba(0, 0, 0, 0.5);
   width: 100%;
-  max-width: 520px;
+  max-width: 800px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -146,7 +146,7 @@
 }
 
 /* ─── Layout helpers ──────────────────────────────────────────────────────── */
-.ntp-half { max-width: 240px; }
+.ntp-half { max-width: 370px; }
 
 .ntp-row-2 {
   display: grid;

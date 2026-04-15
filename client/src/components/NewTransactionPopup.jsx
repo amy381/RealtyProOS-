@@ -362,6 +362,8 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
               />
             </div>
 
+            <div className="ntp-section-divider">Key Dates</div>
+
             <div className="ntp-row-2">
               <div className="ntp-field">
                 <label>Listing Contract</label>
@@ -376,18 +378,6 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
             <div className="ntp-field ntp-half">
               <label>Target Live</label>
               <DateInput value={targetLive} onChange={e => setTargetLive(e.target.value)} />
-            </div>
-
-            <div className="ntp-section-divider">Key Dates</div>
-
-            <div className="ntp-field ntp-half">
-              <label>Close of Escrow</label>
-              <DateInput value={sellerCloseOfEscrow} onChange={e => setSellerCloseOfEscrow(e.target.value)} />
-            </div>
-
-            <div className="ntp-field ntp-half">
-              <label>Contract Acceptance</label>
-              <DateInput value={sellerContractAccept} onChange={e => setSellerContractAccept(e.target.value)} />
             </div>
           </>)}
 
@@ -417,11 +407,6 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
 
             <div className="ntp-section-divider">Key Dates</div>
 
-            <div className="ntp-field ntp-half">
-              <label>Close of Escrow</label>
-              <DateInput value={closeOfEscrow} onChange={e => setCloseOfEscrow(e.target.value)} />
-            </div>
-
             <div className="ntp-row-2">
               <div className="ntp-field">
                 <label>BBA Contract</label>
@@ -433,26 +418,19 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
               </div>
             </div>
 
-            <div className="ntp-field ntp-half">
-              <label>Contract Acceptance</label>
-              <DateInput value={contractAcceptDate} onChange={e => setContractAcceptDate(e.target.value)} />
-            </div>
-
-            <div className="ntp-row-2">
-              <div className="ntp-field">
-                <label>Inspection Period End</label>
-                <DateInput value={ipeDate} onChange={e => setIpeDate(e.target.value)} />
+            {(status === 'pending' || status === 'closed') && (
+              <div className="ntp-field ntp-half">
+                <label>Contract Acceptance</label>
+                <DateInput value={contractAcceptDate} onChange={e => setContractAcceptDate(e.target.value)} />
               </div>
-              <div className="ntp-field">
-                <label>Home Inspection</label>
-                <DateInput value={homeInspectionDate} onChange={e => setHomeInspectionDate(e.target.value)} />
-              </div>
-            </div>
+            )}
 
-            <div className="ntp-field ntp-half">
-              <label>Contingency Fulfilled</label>
-              <DateInput value={contingencyFulfilledDate} onChange={e => setContingencyFulfilledDate(e.target.value)} />
-            </div>
+            {(status === 'pending' || status === 'closed') && (
+              <div className="ntp-field ntp-half">
+                <label>Close of Escrow</label>
+                <DateInput value={closeOfEscrow} onChange={e => setCloseOfEscrow(e.target.value)} />
+              </div>
+            )}
           </>)}
 
         </div>{/* end ntp-body */}

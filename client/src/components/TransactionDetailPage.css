@@ -490,7 +490,7 @@
   min-width: 0;
 }
 .txp-td-col--tasks {
-  flex: 3;
+  flex: 2.1;
 }
 
 /* ─── Tasks & Documents left column ─────────────────────────────────────────────── */
@@ -1627,19 +1627,12 @@ select.txp-input { cursor: pointer; }
 
 /* ─── Documents Required ────────────────────────────────────────────────────────── */
 
-/* Right column container */
-.txp-td-col:last-child > .txp-section {
-  background: rgba(2, 5, 18, 0.45);
-  border: 0.5px solid rgba(50, 200, 220, 0.18) !important;
-  border-radius: 8px;
-  backdrop-filter: blur(6px);
-  padding: 16px;
+/* Right column stacked-cards container */
+.txp-docs-col-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   color: #a8bfcc;
-}
-
-.txp-td-col:last-child > .txp-section .txp-section-title {
-  background: transparent;
-  border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
 }
 
 /* ── Drive Folder row (top of Documents Required section) ─────────────────── */
@@ -1731,23 +1724,25 @@ select.txp-input { cursor: pointer; }
   padding-left: 2px;
 }
 
-/* Per-section wrapper */
+/* Per-section wrapper — glassmorphic card */
 .txp-docs-section {
-  border-top: 1px solid rgba(50, 200, 220, 0.1);
-  font-size: 14px;
+  background: rgba(2, 5, 18, 0.3);
+  border: 1px solid rgba(50, 200, 220, 0.1);
+  border-radius: 8px;
+  font-size: 12px;
+  overflow: hidden;
 }
-.txp-docs-section:first-of-type { border-top: none; }
 
-/* Sub-section header (Buyer / Listing / Pending) */
+/* Sub-section header */
 .txp-docs-section-header {
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  color: rgba(168, 191, 204, 0.6);
-  padding: 12px 18px 10px;
+  letter-spacing: 0.08em;
+  color: rgba(168, 191, 204, 0.5);
+  padding: 6px 8px 4px;
   background: transparent;
-  border-bottom: 1px solid rgba(50, 200, 220, 0.08);
+  border-bottom: none;
 }
 
 /* Empty state */
@@ -1774,8 +1769,8 @@ select.txp-input { cursor: pointer; }
 
 /* Col 1 — checkbox icon, narrow */
 .txp-doc-td-check {
-  width: 36px;
-  padding: 11px 0 11px 18px;
+  width: 28px;
+  padding: 3px 0 3px 8px;
   vertical-align: middle;
 }
 .txp-doc-check-btn {
@@ -1797,10 +1792,10 @@ select.txp-input { cursor: pointer; }
 
 /* Col 2 — document name, fills remaining space */
 .txp-doc-td-name {
-  padding: 6px 16px 6px 10px;
+  padding: 3px 8px;
   color: #a8bfcc;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 12px;
   vertical-align: middle;
 }
 
@@ -1845,8 +1840,8 @@ select.txp-input { cursor: pointer; }
 
 /* Col 3 — status badge, fixed width, right-aligned */
 .txp-doc-td-status {
-  width: 90px;
-  padding: 11px 10px;
+  width: 72px;
+  padding: 3px 6px;
   text-align: right;
   vertical-align: middle;
   white-space: nowrap;
@@ -1867,8 +1862,8 @@ select.txp-input { cursor: pointer; }
 
 /* Col 4 — upload button, fixed width, right-aligned */
 .txp-doc-td-action {
-  width: 80px;
-  padding: 11px 18px 11px 8px;
+  width: 68px;
+  padding: 3px 8px 3px 4px;
   text-align: right;
   vertical-align: middle;
 }
@@ -3005,21 +3000,21 @@ select.txp-input { cursor: pointer; }
 
 /* ─── Uploaded Documents ──────────────────────────────────────────────────── */
 .txp-uploaded-docs {
-  margin-top: 24px;
-  padding-top: 4px;
+  background: rgba(2, 5, 18, 0.3);
+  border: 1px solid rgba(50, 200, 220, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 0;
 }
 
 .txp-uploaded-docs-title {
-  font-size: 0.68rem;
+  font-size: 10px;
   font-weight: 700;
-  font-variant: small-caps;
   letter-spacing: 0.08em;
   color: rgba(168, 191, 204, 0.5);
   text-transform: uppercase;
-  padding-bottom: 8px;
-  border-top: 0.5px solid rgba(168, 191, 204, 0.1);
-  padding-top: 12px;
-  margin-bottom: 4px;
+  padding: 6px 8px 4px;
+  margin-bottom: 0;
 }
 
 .txp-uploaded-docs-empty {
@@ -3032,15 +3027,16 @@ select.txp-input { cursor: pointer; }
 .txp-uploaded-docs-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
+  padding-bottom: 4px;
 }
 
 .txp-udoc-row {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 8px;
-  border-radius: 6px;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 0;
   transition: background 0.12s;
   position: relative;
 }
@@ -3061,12 +3057,12 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-udoc-name {
-  font-size: 13px;
+  font-size: 11px;
   color: rgba(168, 191, 204, 0.85);
   text-decoration: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  word-break: break-word;
   display: block;
   transition: color 0.12s;
 }

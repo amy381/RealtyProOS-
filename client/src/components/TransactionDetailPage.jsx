@@ -3035,8 +3035,7 @@ function DocsRequiredSection({ transaction, commissions, onTransactionUpdate }) 
   )
 
   return (
-    <div className="txp-section">
-      <div className="txp-section-title">Documents Required</div>
+    <div className="txp-docs-col-wrap">
 
       {/* Drive Folder row */}
       <div className="txp-drive-folder-row">

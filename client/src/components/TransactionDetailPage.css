@@ -2442,15 +2442,17 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-tpl-menu {
-  /* position/top/right set via inline style (position:fixed) to escape overflow:hidden ancestors */
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
   background: rgba(8, 12, 28, 0.97);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 0.5px solid rgba(50, 200, 220, 0.2);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  min-width: 200px;
-  z-index: 9999;
+  min-width: 180px;
+  z-index: 200;
   overflow: hidden;
 }
 

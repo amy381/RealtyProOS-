@@ -907,13 +907,11 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
   const [newTitle, setNewTitle]     = useState('')
   const newInputRef                 = useRef(null)
   const [tplDropOpen,    setTplDropOpen]    = useState(false)
-  const [tplMenuPos,     setTplMenuPos]     = useState({ top: 0, right: 0 })
   const [previewTpl,     setPreviewTpl]     = useState(null)
   const [excludedTplIds, setExcludedTplIds] = useState(new Set())
   const [applying,       setApplying]       = useState(false)
   const [commentTaskId,  setCommentTaskId]  = useState(null)
   const tplDropRef = useRef(null)
-  const tplBtnRef  = useRef(null)
 
   useEffect(() => {
     if (!tplDropOpen) return
@@ -979,23 +977,13 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
           {dbTemplates?.length > 0 && (
             <div className="txp-tpl-wrap" ref={tplDropRef}>
               <button
-                ref={tplBtnRef}
                 className="txp-tpl-btn"
-                onClick={() => {
-                  if (!tplDropOpen && tplBtnRef.current) {
-                    const r = tplBtnRef.current.getBoundingClientRect()
-                    setTplMenuPos({ top: r.bottom + 4, right: window.innerWidth - r.right })
-                  }
-                  setTplDropOpen(o => !o)
-                }}
+                onClick={() => setTplDropOpen(o => !o)}
               >
                 Apply Template ▾
               </button>
               {tplDropOpen && (
-                <div
-                  className="txp-tpl-menu"
-                  style={{ position: 'fixed', top: tplMenuPos.top, right: tplMenuPos.right, left: 'auto' }}
-                >
+                <div className="txp-tpl-menu">
                   {dbTemplates.map(tpl => (
                     <button
                       key={tpl.id}

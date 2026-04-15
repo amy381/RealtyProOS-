@@ -975,22 +975,7 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
   return (
     <div className="txp-tasks-block">
       <div className="txp-tasks-header">
-        <span className="txp-tasks-title">Tasks</span>
         <div className="txp-tasks-toolbar">
-          <input className="txp-task-search" placeholder="Search tasks…" value={search} onChange={e => setSearch(e.target.value)} />
-          <select className="txp-task-filter" value={filterAssign} onChange={e => setAssign(e.target.value)}>
-            <option value="All">All assignees</option>
-            {TASK_ASSIGNEES.map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
-          <select className="txp-task-filter" value={filterStatus} onChange={e => setStatus(e.target.value)}>
-            <option value="All">All statuses</option>
-            <option>To Do</option>
-            <option>In Progress</option>
-            <option>Completed</option>
-          </select>
-          <button className="txp-task-sort-btn" onClick={() => setSortAsc(a => !a)}>
-            Due {sortAsc ? '↑' : '↓'}
-          </button>
           {dbTemplates?.length > 0 && (
             <div className="txp-tpl-wrap" ref={tplDropRef}>
               <button
@@ -3668,7 +3653,7 @@ export default function TransactionDetailPage({
 
           {activeSection === 'docs-req' && (
             <div className="txp-td-wrap">
-              <div className="txp-td-col">
+              <div className="txp-td-col txp-td-col--tasks">
                 <TasksDocsLeft
                   transactionId={transaction.id}
                   transaction={transaction}

@@ -486,8 +486,11 @@
 }
 
 .txp-td-col {
-  flex: 1;
+  flex: 7;
   min-width: 0;
+}
+.txp-td-col--tasks {
+  flex: 3;
 }
 
 /* ─── Tasks & Documents left column ─────────────────────────────────────────────── */

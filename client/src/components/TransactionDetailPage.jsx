@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Pencil } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
@@ -1058,8 +1059,8 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
         )
       })()}
 
-      {/* Apply Template preview modal */}
-      {previewTpl && (
+      {/* Apply Template preview modal — rendered via portal to escape backdrop-filter containing block */}
+      {previewTpl && createPortal(
         <div className="txp-tpl-overlay" onMouseDown={e => { if (e.target === e.currentTarget) { setPreviewTpl(null); setExcludedTplIds(new Set()) } }}>
           <div className="txp-tpl-modal">
             <div className="txp-tpl-modal-header">
@@ -1119,7 +1120,8 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

@@ -1326,7 +1326,6 @@ select.txp-input { cursor: pointer; }
   border-radius: 8px;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  overflow: hidden;
 }
 
 .txp-tasks-header {

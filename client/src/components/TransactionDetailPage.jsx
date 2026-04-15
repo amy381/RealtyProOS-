@@ -843,11 +843,6 @@ function TaskRow({ task, onUpdate, onDelete, commentCount = 0, onOpenComments })
 
   return (
     <tr className={`txp-task-row${isDone ? ' txp-task-done' : ''}`}>
-      <td className="txp-task-td txp-task-td-check">
-        <button className={`txp-task-check${isDone ? ' checked' : ''}`} onClick={toggleDone}>
-          {isDone && '✓'}
-        </button>
-      </td>
       <td className="txp-task-td txp-task-td-name">
         {editTitle ? (
           <input
@@ -866,60 +861,6 @@ function TaskRow({ task, onUpdate, onDelete, commentCount = 0, onOpenComments })
             {task.title}
           </span>
         )}
-      </td>
-      <td className="txp-task-td txp-task-td-date">
-        {editDate ? (
-          <DateInput
-            className="txp-task-inline-input"
-            value={task.due_date || ''}
-            autoFocus
-            onChange={e => onUpdate(task.id, { due_date: e.target.value || null })}
-            onBlur={() => setEditDate(false)}
-          />
-        ) : (() => {
-          const ddl = dueDateLabel(task.due_date, isDone, task.completed_at)
-          return (
-            <span className={`txp-task-date txp-task-date--${ddl.cls || 'none'}`} onClick={() => !isDone && setEditDate(true)}>
-              {ddl.text ?? <span className="txp-task-no-date">+ date</span>}
-            </span>
-          )
-        })()}
-      </td>
-      <td className="txp-task-td txp-task-td-assign">
-        {editAssign ? (
-          <select
-            className="txp-task-inline-input"
-            value={task.assigned_to}
-            autoFocus
-            onChange={e => { onUpdate(task.id, { assigned_to: e.target.value }); setAssign(false) }}
-            onBlur={() => setAssign(false)}
-          >
-            {TASK_ASSIGNEES.map(a => <option key={a}>{a}</option>)}
-          </select>
-        ) : (
-          <span className="txp-task-assignee-text" onClick={() => setAssign(true)}>
-            {task.assigned_to === 'Me' ? 'Me' : (task.assigned_to || '').split(' ')[0]}
-          </span>
-        )}
-      </td>
-      <td className="txp-task-td txp-task-td-status">
-        <button
-          className="txp-task-status-badge"
-          style={{ background: statusStyle.bg, color: statusStyle.color }}
-          onClick={cycleStatus}
-          title="Click to advance status"
-        >
-          {statusLabel}
-        </button>
-      </td>
-      <td className="txp-task-td txp-task-td-cmt" onClick={e => e.stopPropagation()}>
-        <button
-          className={`txp-cmt-btn${commentCount > 0 ? ' active' : ''}`}
-          onClick={onOpenComments}
-          title={commentCount > 0 ? `${commentCount} comment${commentCount !== 1 ? 's' : ''}` : 'Add comment'}
-        >
-          💬{commentCount > 0 && <span className="txp-cmt-count">{commentCount}</span>}
-        </button>
       </td>
       <td className="txp-task-td txp-task-td-del">
         <button className="txp-task-del-btn" onClick={() => onDelete(task.id)}>✕</button>
@@ -1088,22 +1029,10 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
       </div>
 
       <table className="txp-task-table">
-        <thead>
-          <tr>
-            <th className="txp-task-th txp-task-th-check"></th>
-            <th className="txp-task-th">Task</th>
-            <th className="txp-task-th">Due Date</th>
-            <th className="txp-task-th">Assigned To</th>
-            <th className="txp-task-th">Status</th>
-            <th className="txp-task-th txp-task-th-cmt"></th>
-            <th className="txp-task-th txp-task-th-del"></th>
-          </tr>
-        </thead>
         <tbody>
           {adding && (
             <tr className="txp-task-row">
-              <td className="txp-task-td txp-task-td-check"><span className="txp-task-check"></span></td>
-              <td className="txp-task-td txp-task-td-name" colSpan={5}>
+              <td className="txp-task-td txp-task-td-name">
                 <input
                   ref={newInputRef}
                   className="txp-task-inline-input"
@@ -1119,22 +1048,19 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
               </td>
             </tr>
           )}
-          {filtered.map(t => {
-            const cCount = taskComments.filter(c => c.task_id === t.id).length
-            return (
-              <TaskRow
-                key={t.id}
-                task={t}
-                onUpdate={onUpdate}
-                onDelete={onDelete}
-                commentCount={cCount}
-                onOpenComments={() => setCommentTaskId(t.id)}
-              />
-            )
-          })}
+          {filtered.map(t => (
+            <TaskRow
+              key={t.id}
+              task={t}
+              onUpdate={onUpdate}
+              onDelete={onDelete}
+              commentCount={0}
+              onOpenComments={() => {}}
+            />
+          ))}
           {filtered.length === 0 && !adding && (
             <tr>
-              <td className="txp-task-empty" colSpan={7}>
+              <td className="txp-task-empty" colSpan={2}>
                 No tasks yet — click + Add Task to create one
               </td>
             </tr>

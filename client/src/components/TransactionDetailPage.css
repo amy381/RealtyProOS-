@@ -1415,40 +1415,20 @@ select.txp-input { cursor: pointer; }
 .txp-task-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 17px;
+  font-size: 15px;
 }
-
-.txp-task-th {
-  text-align: left;
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: rgba(168, 191, 204, 0.5);
-  padding: 9px 13px;
-  border-bottom: 0.5px solid rgba(50, 200, 220, 0.12);
-  background: rgba(2, 5, 18, 0.25);
-  white-space: nowrap;
-}
-.txp-task-th-check { width: 40px; padding: 9px 8px 9px 16px; }
-.txp-task-th-del   { width: 36px; }
 
 .txp-task-td {
-  padding: 9px 13px;
-  border-bottom: 0.5px solid rgba(168, 191, 204, 0.06);
+  padding: 4px 8px;
+  border-bottom: 0.5px solid rgba(168, 191, 204, 0.04);
   vertical-align: middle;
 }
-.txp-task-td-check  { width: 40px; padding: 9px 6px 9px 16px; }
-.txp-task-td-name   { min-width: 180px; }
-.txp-task-td-date   { width: 120px; white-space: nowrap; }
-.txp-task-td-assign { width: 110px; }
-.txp-task-td-status { width: 120px; }
-.txp-task-td-del    { width: 36px; text-align: center; }
+.txp-task-td-name { width: 100%; }
+.txp-task-td-del  { width: 28px; text-align: center; padding: 4px 4px; }
 
-/* Alternating row shading */
+/* Row hover */
 .txp-task-row { transition: background 0.08s; }
-.txp-task-row:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
-.txp-task-row:hover { background: rgba(50, 200, 220, 0.05); }
+.txp-task-row:hover { background: rgba(168, 191, 204, 0.04); }
 .txp-task-row:last-child td { border-bottom: none; }
 
 /* Completed rows: muted */
@@ -1483,28 +1463,30 @@ select.txp-input { cursor: pointer; }
 .txp-task-check.checked { background: rgba(50, 200, 220, 0.15); border-color: rgba(50, 200, 220, 0.5); }
 
 .txp-task-name-text {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 500;
   color: #c8d4e0;
   cursor: pointer;
   border-radius: 4px;
-  padding: 2px 5px;
-  margin: -2px -5px;
+  padding: 2px 4px;
+  margin: -2px -4px;
   display: inline-block;
   transition: background 0.08s;
+  width: 100%;
+  box-sizing: border-box;
 }
 .txp-task-name-text:hover { background: rgba(50, 200, 220, 0.06); }
 .txp-task-name-text.done { text-decoration: line-through; color: rgba(168, 191, 204, 0.35); cursor: default; }
 
 .txp-task-inline-input {
-  font-size: 17px;
+  font-size: 15px;
   font-family: inherit;
   font-weight: 500;
   color: #c8d4e0;
   background: rgba(2, 5, 18, 0.6);
   border: 0.5px solid rgba(50, 200, 220, 0.45);
   border-radius: 5px;
-  padding: 4px 8px;
+  padding: 2px 6px;
   outline: none;
   width: 100%;
   box-sizing: border-box;
@@ -1555,14 +1537,15 @@ select.txp-input { cursor: pointer; }
 .txp-task-del-btn {
   background: none;
   border: none;
-  color: rgba(168, 191, 204, 0.3);
+  color: rgba(168, 191, 204, 0.4);
   cursor: pointer;
-  font-size: 17px;
-  padding: 3px 7px;
+  font-size: 13px;
+  padding: 2px 5px;
   border-radius: 4px;
   transition: color 0.12s, background 0.12s;
+  line-height: 1;
 }
-.txp-task-del-btn:hover { color: rgba(220, 80, 80, 0.7); background: rgba(220, 80, 80, 0.08); }
+.txp-task-del-btn:hover { color: rgba(220, 80, 80, 0.8); background: rgba(220, 80, 80, 0.08); }
 
 .txp-task-empty {
   text-align: center;

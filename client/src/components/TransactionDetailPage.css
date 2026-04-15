@@ -2487,10 +2487,10 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-tpl-modal {
-  background: rgba(5, 10, 25, 0.96);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 0.5px solid rgba(50, 200, 220, 0.15);
+  background: rgba(2, 5, 18, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(50, 200, 220, 0.25);
   border-radius: 12px;
   width: 660px;
   max-width: 95vw;
@@ -2498,7 +2498,7 @@ select.txp-input { cursor: pointer; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 .txp-tpl-modal-header {
@@ -2506,14 +2506,14 @@ select.txp-input { cursor: pointer; }
   align-items: flex-start;
   justify-content: space-between;
   padding: 18px 20px 14px;
-  border-bottom: 0.5px solid rgba(168, 191, 204, 0.1);
+  border-bottom: 1px solid rgba(168, 191, 204, 0.1);
   gap: 12px;
 }
 
 .txp-tpl-modal-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: #c8d4e0;
+  font-size: 16px;
+  font-weight: 400;
+  color: rgba(168, 191, 204, 0.9);
   margin: 0 0 2px;
 }
 
@@ -2528,19 +2528,20 @@ select.txp-input { cursor: pointer; }
   border: none;
   font-size: 16px;
   cursor: pointer;
-  color: rgba(168, 191, 204, 0.5);
+  color: rgba(168, 191, 204, 0.6);
   padding: 2px 6px;
   border-radius: 4px;
   flex-shrink: 0;
   line-height: 1;
+  transition: color 0.12s;
 }
 
-.txp-tpl-modal-close:hover { color: #c8d4e0; }
+.txp-tpl-modal-close:hover { color: rgba(168, 191, 204, 1); }
 
 .txp-tpl-modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 20px;
+  padding: 0 20px 8px;
 }
 
 .txp-tpl-preview-table {
@@ -2551,19 +2552,26 @@ select.txp-input { cursor: pointer; }
 
 .txp-tpl-preview-table th {
   text-align: left;
-  padding: 6px 10px;
+  padding: 8px 10px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(168, 191, 204, 0.45);
-  border-bottom: 0.5px solid rgba(168, 191, 204, 0.12);
+  color: rgba(168, 191, 204, 0.5);
+  border-bottom: 1px solid rgba(168, 191, 204, 0.1);
+  position: sticky;
+  top: 0;
+  background: rgba(2, 5, 18, 0.95);
 }
 
 .txp-tpl-preview-table td {
-  padding: 8px 10px;
-  border-bottom: 0.5px solid rgba(168, 191, 204, 0.07);
-  color: #c8d4e0;
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(168, 191, 204, 0.06);
+  color: rgba(168, 191, 204, 0.85);
+}
+
+.txp-tpl-preview-table tbody tr:hover td {
+  background: rgba(168, 191, 204, 0.04);
 }
 
 .txp-tpl-preview-num {
@@ -2590,10 +2598,11 @@ select.txp-input { cursor: pointer; }
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(168, 191, 204, 0.35);
+  color: rgba(168, 191, 204, 0.4);
   font-size: 12px;
   padding: 2px 4px;
   border-radius: 3px;
+  transition: color 0.1s, background 0.1s;
 }
 
 .txp-tpl-preview-remove-btn:hover {
@@ -2602,7 +2611,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-tpl-preview-type {
-  min-width: 72px;
+  min-width: 80px;
 }
 
 .txp-tpl-critical-badge {
@@ -2610,19 +2619,29 @@ select.txp-input { cursor: pointer; }
   padding: 2px 7px;
   border-radius: 99px;
   font-size: 11px;
-  font-weight: 700;
-  background: rgba(80, 120, 220, 0.18);
-  color: #7eaaff;
+  font-weight: 600;
+  background: rgba(168, 191, 204, 0.12);
+  color: rgba(168, 191, 204, 0.8);
   letter-spacing: 0.02em;
 }
 
 .txp-tpl-type-label {
-  font-size: 12px;
-  color: rgba(168, 191, 204, 0.5);
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(50, 200, 220, 0.12);
+  color: #50C8DC;
+}
+
+.txp-tpl-type-label--email {
+  background: rgba(212, 120, 30, 0.15);
+  color: rgba(212, 160, 80, 0.9);
 }
 
 .txp-tpl-preview-critical td {
-  background: rgba(80, 120, 220, 0.06);
+  background: transparent;
 }
 
 .txp-tpl-modal-actions {
@@ -2630,19 +2649,20 @@ select.txp-input { cursor: pointer; }
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 20px;
-  border-top: 0.5px solid rgba(168, 191, 204, 0.1);
+  border-top: 1px solid rgba(168, 191, 204, 0.1);
 }
 
 .txp-tpl-cancel {
   background: rgba(168, 191, 204, 0.08);
-  border: 0.5px solid rgba(168, 191, 204, 0.15);
-  color: #a8bfcc;
+  border: 1px solid rgba(168, 191, 204, 0.2);
+  color: rgba(168, 191, 204, 0.8);
   padding: 8px 18px;
   border-radius: 8px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   cursor: pointer;
   font-family: inherit;
+  transition: background 0.12s;
 }
 
 .txp-tpl-cancel:hover { background: rgba(168, 191, 204, 0.14); }
@@ -2650,13 +2670,14 @@ select.txp-input { cursor: pointer; }
 .txp-tpl-confirm {
   background: rgba(50, 200, 220, 0.15);
   color: #50C8DC;
-  border: 0.5px solid rgba(50, 200, 220, 0.3);
+  border: 1px solid rgba(50, 200, 220, 0.3);
   padding: 8px 22px;
   border-radius: 8px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   cursor: pointer;
   font-family: inherit;
+  transition: background 0.12s;
 }
 
 .txp-tpl-confirm:not(:disabled):hover { background: rgba(50, 200, 220, 0.25); }

@@ -1092,7 +1092,7 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
                         <td className="txp-tpl-preview-type">
                           {isCritical
                             ? <span className="txp-tpl-critical-badge">Critical Date</span>
-                            : <span className="txp-tpl-type-label">{t.task_type || 'Task'}</span>}
+                            : <span className={`txp-tpl-type-label txp-tpl-type-label--${(t.task_type || 'Task').toLowerCase()}`}>{t.task_type || 'Task'}</span>}
                         </td>
                         <td className="txp-tpl-preview-timing">{fmtTemplateTiming(t.timing_type, t.timing_days)}</td>
                         <td className="txp-tpl-preview-assign">{t.auto_assign_to}</td>

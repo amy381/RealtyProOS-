@@ -1652,18 +1652,20 @@ select.txp-input { cursor: pointer; }
   min-width: 0;
 }
 
-/* ── Drive Folder row (top of Documents Required section) ─────────────────── */
+/* ── Drive Folder card ─────────────────────────────────────────────────────── */
 .txp-drive-folder-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
-  border-bottom: 1px solid rgba(50, 200, 220, 0.08);
+  padding: 10px 14px;
   flex-wrap: wrap;
+  background: rgba(2, 5, 18, 0.3);
+  border: 1px solid rgba(50, 200, 220, 0.25);
+  border-radius: 8px;
 }
 
 .txp-drive-folder-link {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   color: #50C8DC;
   text-decoration: none;
@@ -1689,10 +1691,10 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-drive-link-btn {
-  background: rgba(2, 5, 18, 0.6);
-  border: 0.5px solid rgba(50, 200, 220, 0.25);
-  color: #a8bfcc;
-  font-size: 13px;
+  background: rgba(212, 120, 30, 0.12);
+  border: 0.5px solid rgba(212, 150, 50, 0.4);
+  color: rgba(212, 160, 80, 0.9);
+  font-size: 15px;
   font-weight: 500;
   font-family: inherit;
   padding: 5px 12px;
@@ -1701,9 +1703,9 @@ select.txp-input { cursor: pointer; }
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 .txp-drive-link-btn:hover {
-  background: rgba(50, 200, 220, 0.08);
-  border-color: rgba(50, 200, 220, 0.4);
-  color: #c8d4e0;
+  background: rgba(212, 120, 30, 0.2);
+  border-color: rgba(212, 150, 50, 0.6);
+  color: rgba(230, 180, 100, 1);
 }
 
 .txp-drive-link-form {

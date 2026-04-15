@@ -3037,78 +3037,83 @@ function DocsRequiredSection({ transaction, commissions, onTransactionUpdate }) 
   return (
     <div className="txp-docs-col-wrap">
 
-      {/* Drive Folder row */}
-      <div className="txp-drive-folder-row">
-        {folderIds.drive_folder_id && !linkOpen ? (
-          <>
-            <a
-              href={`https://drive.google.com/drive/folders/${folderIds.drive_folder_id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="txp-drive-folder-link"
-            >
-              📁 Open Drive Folder
-            </a>
-            <button
-              className="txp-drive-folder-edit-btn"
-              onClick={() => { setLinkDraft(''); setLinkOpen(true) }}
-              title="Change folder"
-            ><Pencil size={16} /></button>
-          </>
-        ) : linkOpen ? (
-          <div className="txp-drive-link-form">
-            <div className="txp-drive-link-inputs">
-              <input
-                className="txp-drive-link-input"
-                placeholder="Paste Drive folder URL or ID…"
-                value={linkDraft}
-                onChange={e => setLinkDraft(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleSaveFolder(); if (e.key === 'Escape') setLinkOpen(false) }}
-                autoFocus
-              />
-              <button className="txp-doc-upload-btn" onClick={handleSaveFolder} disabled={linkSaving || !linkDraft.trim()}>
-                {linkSaving ? 'Saving…' : 'Save'}
-              </button>
-              <button className="txp-drive-folder-edit-btn" onClick={() => setLinkOpen(false)}>Cancel</button>
+      {/* Column 2 — Buyer/Listing + Pending doc sections */}
+      <div className="txp-docs-col-inner">
+        <div className="txp-drive-folder-row">
+          {folderIds.drive_folder_id && !linkOpen ? (
+            <>
+              <a
+                href={`https://drive.google.com/drive/folders/${folderIds.drive_folder_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="txp-drive-folder-link"
+              >
+                📁 Open Drive Folder
+              </a>
+              <button
+                className="txp-drive-folder-edit-btn"
+                onClick={() => { setLinkDraft(''); setLinkOpen(true) }}
+                title="Change folder"
+              ><Pencil size={16} /></button>
+            </>
+          ) : linkOpen ? (
+            <div className="txp-drive-link-form">
+              <div className="txp-drive-link-inputs">
+                <input
+                  className="txp-drive-link-input"
+                  placeholder="Paste Drive folder URL or ID…"
+                  value={linkDraft}
+                  onChange={e => setLinkDraft(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSaveFolder(); if (e.key === 'Escape') setLinkOpen(false) }}
+                  autoFocus
+                />
+                <button className="txp-doc-upload-btn" onClick={handleSaveFolder} disabled={linkSaving || !linkDraft.trim()}>
+                  {linkSaving ? 'Saving…' : 'Save'}
+                </button>
+                <button className="txp-drive-folder-edit-btn" onClick={() => setLinkOpen(false)}>Cancel</button>
+              </div>
+              <div className="txp-drive-link-hint">Tip: Folder naming convention — Street Name, Street Address — Last Name</div>
             </div>
-            <div className="txp-drive-link-hint">Tip: Folder naming convention — Street Name, Street Address — Last Name</div>
-          </div>
-        ) : (
-          <button className="txp-drive-link-btn" onClick={() => setLinkOpen(true)}>
-            🔗 Link Drive Folder
-          </button>
+          ) : (
+            <button className="txp-drive-link-btn" onClick={() => setLinkOpen(true)}>
+              🔗 Link Drive Folder
+            </button>
+          )}
+        </div>
+
+        {!showBuyerSection && !showListingSection && !showPendingSection && (
+          <div className="txp-docs-empty">No document sections apply to this transaction&rsquo;s type and stage.</div>
+        )}
+        {showBuyerSection && (
+          <DocSection title="Buyer Documents" docs={BUYER_DOCS}
+            customList={customDocs.buyer} sectionKey="buyer" />
+        )}
+        {showListingSection && (
+          <DocSection title="Listing Documents" docs={LISTING_DOCS}
+            customList={customDocs.listing} sectionKey="listing" />
+        )}
+        {showPendingSection && (
+          <DocSection title="Pending Documents" docs={PENDING_DOCS}
+            customList={customDocs.pending} sectionKey="pending" />
         )}
       </div>
 
-      {!showBuyerSection && !showListingSection && !showPendingSection && (
-        <div className="txp-docs-empty">No document sections apply to this transaction&rsquo;s type and stage.</div>
-      )}
-      {showBuyerSection && (
-        <DocSection title="Buyer Documents" docs={BUYER_DOCS}
-          customList={customDocs.buyer} sectionKey="buyer" />
-      )}
-      {showListingSection && (
-        <DocSection title="Listing Documents" docs={LISTING_DOCS}
-          customList={customDocs.listing} sectionKey="listing" />
-      )}
-      {showPendingSection && (
-        <DocSection title="Pending Documents" docs={PENDING_DOCS}
-          customList={customDocs.pending} sectionKey="pending" />
-      )}
-
-      {/* Uploaded Documents */}
-      <div className="txp-uploaded-docs">
-        <div className="txp-uploaded-docs-title">Uploaded Documents</div>
-        {uploadedDocs.length === 0 ? (
-          <div className="txp-uploaded-docs-empty">No documents uploaded yet</div>
-        ) : (
-          <div className="txp-uploaded-docs-list">
-            {uploadedDocs.map(doc => (
-              <UploadedDocRow key={doc.id} doc={doc} onDelete={handleDeleteUpload} />
-            ))}
-          </div>
-        )}
+      {/* Column 3 — Uploaded Documents */}
+      <div className="txp-docs-col-uploaded">
+        <div className="txp-uploaded-docs">
+          <div className="txp-uploaded-docs-title">Uploaded Documents</div>
+          {uploadedDocs.length === 0 ? (
+            <div className="txp-uploaded-docs-empty">No documents uploaded yet</div>
+          ) : (
+            <div className="txp-uploaded-docs-list">
+              {uploadedDocs.map(doc => (
+                <UploadedDocRow key={doc.id} doc={doc} onDelete={handleDeleteUpload} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
     </div>
   )
 }
@@ -3669,13 +3674,11 @@ export default function TransactionDetailPage({
                   transactionAddr={fullAddress}
                 />
               </div>
-              <div className="txp-td-col">
-                <DocsRequiredSection
-                  transaction={transaction}
-                  commissions={commissions}
-                  onTransactionUpdate={onTransactionUpdate}
-                />
-              </div>
+              <DocsRequiredSection
+                transaction={transaction}
+                commissions={commissions}
+                onTransactionUpdate={onTransactionUpdate}
+              />
             </div>
           )}
 

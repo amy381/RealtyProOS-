@@ -490,7 +490,7 @@
   min-width: 0;
 }
 .txp-td-col--tasks {
-  flex: 2.1;
+  flex: 2;
 }
 
 /* ─── Tasks & Documents left column ─────────────────────────────────────────────── */
@@ -1321,9 +1321,9 @@ select.txp-input { cursor: pointer; }
 
 /* ─── Tasks Spreadsheet ───────────────────────────────────────────────────────── */
 .txp-tasks-block {
-  background: rgba(2, 5, 18, 0.2);
-  border: 0.5px solid rgba(50, 200, 220, 0.18);
-  border-radius: 10px;
+  background: rgba(2, 5, 18, 0.3);
+  border: 1px solid rgba(50, 200, 220, 0.25);
+  border-radius: 8px;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   overflow: hidden;
@@ -1627,12 +1627,29 @@ select.txp-input { cursor: pointer; }
 
 /* ─── Documents Required ────────────────────────────────────────────────────────── */
 
-/* Right column stacked-cards container */
+/* Cols 2+3 combined — sits directly in txp-td-wrap as a flex row */
 .txp-docs-col-wrap {
+  flex: 8;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  color: #a8bfcc;
+}
+
+/* Column 2 — buyer/listing + pending doc section cards */
+.txp-docs-col-inner {
+  flex: 5;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  color: #a8bfcc;
+}
+
+/* Column 3 — uploaded documents card */
+.txp-docs-col-uploaded {
+  flex: 3;
+  min-width: 0;
 }
 
 /* ── Drive Folder row (top of Documents Required section) ─────────────────── */
@@ -1727,9 +1744,9 @@ select.txp-input { cursor: pointer; }
 /* Per-section wrapper — glassmorphic card */
 .txp-docs-section {
   background: rgba(2, 5, 18, 0.3);
-  border: 1px solid rgba(50, 200, 220, 0.1);
+  border: 1px solid rgba(50, 200, 220, 0.25);
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 14px;
   overflow: hidden;
 }
 
@@ -1795,7 +1812,7 @@ select.txp-input { cursor: pointer; }
   padding: 3px 8px;
   color: #a8bfcc;
   font-weight: 500;
-  font-size: 12px;
+  font-size: 14px;
   vertical-align: middle;
 }
 
@@ -3001,7 +3018,7 @@ select.txp-input { cursor: pointer; }
 /* ─── Uploaded Documents ──────────────────────────────────────────────────── */
 .txp-uploaded-docs {
   background: rgba(2, 5, 18, 0.3);
-  border: 1px solid rgba(50, 200, 220, 0.1);
+  border: 1px solid rgba(50, 200, 220, 0.25);
   border-radius: 8px;
   overflow: hidden;
   padding: 0;
@@ -3057,7 +3074,7 @@ select.txp-input { cursor: pointer; }
 }
 
 .txp-udoc-name {
-  font-size: 11px;
+  font-size: 13px;
   color: rgba(168, 191, 204, 0.85);
   text-decoration: none;
   white-space: normal;

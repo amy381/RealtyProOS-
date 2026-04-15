@@ -42,9 +42,9 @@ function fmtDate(d) {
 }
 
 function getYear(tx) {
-  const d = tx.close_of_escrow || tx.updated_at?.slice(0, 10)
+  const d = tx.close_of_escrow
   if (!d) return null
-  return new Date(d + (d.length === 10 ? 'T00:00:00' : '')).getFullYear()
+  return new Date(d + 'T00:00:00').getFullYear()
 }
 
 function getQuarter(tx) {
@@ -159,15 +159,15 @@ export default function MissionControl({ transactions, commissions }) {
     const closed = transactions.filter(t => t.status === 'closed' && getYear(t) === currentYear)
     let vol = 0, gciSum = 0
     for (const t of closed) {
-      vol    += Number(t.price) || 0
-      gciSum += calcNet(t, commissions[t.id])
+      vol    += Number(t.contract_price || t.price) || 0
+      gciSum += calcGCI(t, commissions[t.id])
     }
     const units    = closed.length
     const avgPrice = units > 0 ? vol / units : 0
 
     const quarters = [1, 2, 3, 4].map(q => {
       const txns = closed.filter(t => getQuarter(t) === q)
-      const qGci = txns.reduce((s, t) => s + calcNet(t, commissions[t.id]), 0)
+      const qGci = txns.reduce((s, t) => s + calcGCI(t, commissions[t.id]), 0)
       return { q, units: txns.length, gci: qGci }
     })
 

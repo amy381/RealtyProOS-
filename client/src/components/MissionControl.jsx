@@ -5,13 +5,14 @@ import './MissionControl.css'
 // ─── Commission calculation (mirrors CommissionsTab / GoalsDashboard) ─────────
 function calcGCI(t, c) {
   if (!c) return 0
-  const price = Number(t.contract_price || t.price) || 0
-  const flat  = c.seller_concession_flat  != null ? Number(c.seller_concession_flat)
-              : c.buyer_contribution_flat != null ? Number(c.buyer_contribution_flat)
-              : null
-  // commission_rate is canonical; fall back to old concession fields for legacy records
-  const pct   = Number(c.commission_rate) || Number(c.seller_concession_percent) || Number(c.buyer_contribution_percent) || 0
-  return flat != null ? flat : pct / 100 * price
+  const price     = Number(t.contract_price || t.price) || 0
+  const scFlat    = c.seller_concession_flat  != null ? Number(c.seller_concession_flat)  : null
+  const scPct     = Number(c.seller_concession_percent) || 0
+  const bcFlat    = c.buyer_contribution_flat != null ? Number(c.buyer_contribution_flat) : null
+  const bcPct     = Number(c.buyer_contribution_percent) || 0
+  const sellerGCI = scFlat != null ? scFlat : scPct / 100 * price
+  const buyerGCI  = bcFlat != null ? bcFlat : bcPct / 100 * price
+  return sellerGCI + buyerGCI
 }
 
 function calcNet(t, c) {

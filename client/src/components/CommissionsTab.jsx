@@ -83,29 +83,40 @@ const COLS = [
 ]
 
 // True when a commissions record has enough data to compute GCI.
-// commission_rate was never wired to a UI input — gate on concession fields instead.
 function hasCommissionData(c) {
   return (
-    (c.commission_rate != null && !isNaN(parseFloat(c.commission_rate))) ||
-    c.seller_concession_percent != null ||
-    c.seller_concession_flat    != null ||
+    c.seller_concession_percent  != null ||
+    c.seller_concession_flat     != null ||
     c.buyer_contribution_percent != null ||
     c.buyer_contribution_flat    != null
   )
 }
 
-// Derive a Comp display string: explicit commission_rate wins; fall back to
-// summing the two concession percentages if no flat amounts were used.
+// Derive a Comp display string from split fields only.
+// If both sides have flat amounts, show each side as "$X / $X".
+// If both sides have percent amounts (and no flats), sum them as "X%".
+// If mixed, show each side separately.
+// If all fields are null/empty, return "—".
 function deriveComp(c) {
-  if (c.commission_rate != null && !isNaN(parseFloat(c.commission_rate))) {
-    return String(c.commission_rate)
+  const scFlat = c.seller_concession_flat  != null ? Number(c.seller_concession_flat)  : null
+  const bcFlat = c.buyer_contribution_flat != null ? Number(c.buyer_contribution_flat) : null
+  const scPct  = c.seller_concession_percent  != null ? Number(c.seller_concession_percent)  : null
+  const bcPct  = c.buyer_contribution_percent != null ? Number(c.buyer_contribution_percent) : null
+
+  const hasAny = scFlat != null || bcFlat != null || scPct != null || bcPct != null
+  if (!hasAny) return '—'
+
+  // If any flat amounts exist, show flat display
+  if (scFlat != null || bcFlat != null) {
+    const parts = []
+    if (scFlat != null) parts.push(`$${scFlat.toLocaleString()}`)
+    if (bcFlat != null) parts.push(`$${bcFlat.toLocaleString()}`)
+    return parts.join(' / ')
   }
-  if (c.seller_concession_flat == null && c.buyer_contribution_flat == null) {
-    const pct = (Number(c.seller_concession_percent) || 0) +
-                (Number(c.buyer_contribution_percent) || 0)
-    if (pct > 0) return `${pct}%`
-  }
-  return '—'
+
+  // Percent-only path: sum them
+  const total = (scPct || 0) + (bcPct || 0)
+  return total > 0 ? `${total}%` : '—'
 }
 
 function computeAllRows(transactions, commissions) {

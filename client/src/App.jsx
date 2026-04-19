@@ -793,12 +793,9 @@ export default function App() {
 
   // Apply board filters to transactions
   const boardFilteredTx = transactions.filter(t => {
-    // Year
-    if (boardFilters.year !== 'All') {
-      const yr = boardFilters.year
-      const inYear = [t.close_of_escrow, t.listing_contract, t.contract_acceptance_date]
-        .some(d => d && d.startsWith(yr))
-      if (!inYear) return false
+    // Year — only filter closed transactions by close_of_escrow; all other statuses show regardless
+    if (boardFilters.year !== 'All' && t.status === 'closed') {
+      if (!t.close_of_escrow || !t.close_of_escrow.startsWith(boardFilters.year)) return false
     }
     // TC
     if (boardFilters.tcs.length > 0) {

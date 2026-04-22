@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { resolveVars } from '../lib/resolveVars'
@@ -7,6 +7,15 @@ import { useGmailStatus } from '../lib/useGmailStatus'
 import './EmailPreviewModal.css'
 
 const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
+
+// Coerce a CC/To entry that may be a string or unexpected object → clean email string
+function coerceEmailStr(entry) {
+  if (typeof entry === 'string') return entry.trim()
+  if (entry && typeof entry === 'object') {
+    return (entry.email || entry.value || JSON.stringify(entry)).trim()
+  }
+  return String(entry).trim()
+}
 
 // ─── Resolve a recipients/cc_recipients JSONB array → email strings ────────────
 // titleContact is the collaborator record (or null) fetched from collaborators table
@@ -146,7 +155,7 @@ function maybeDecodeHtml(html) {
   if (!html) return ''
   if (/<[a-zA-Z]/.test(html)) return html   // has real HTML tags — use as-is
   if (!/&lt;/.test(html)) return html        // no encoded tags — use as-is
-  // All tags are encoded: decode entities once so dangerouslySetInnerHTML renders correctly
+  // All tags are encoded: decode entities once so innerHTML renders correctly
   const el = document.createElement('div')
   el.innerHTML = html
   return el.innerHTML
@@ -160,6 +169,15 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
   const [driveOpen,    setDriveOpen]    = useState(false)
   const [attachments,  setAttachments]  = useState([])  // { id, name, mimeType }
   const [sending,      setSending]      = useState(false)
+
+  // Local-only editable fields — never persisted back to the template
+  const [editableTo,      setEditableTo]      = useState('')
+  const [editableCc,      setEditableCc]      = useState('')
+  const [editableSubject, setEditableSubject] = useState('')
+  const [editableBody,    setEditableBody]    = useState('')
+  const seededRef = useRef(false)
+  const bodyRef   = useRef(null)
+
   const gmailStatus = useGmailStatus()
 
   // Load template
@@ -186,6 +204,41 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
       .single()
       .then(({ data }) => setTitleContact(data || null))
   }, [tx?.title_collaborator_id])
+
+  // Resolve recipients/CC — safe when template is null (returns empty arrays)
+  const recipientsResult = resolveRecipients(template?.recipients || [], tx, titleContact)
+  const ccResult         = resolveRecipients(template?.cc_recipients || [], tx, titleContact)
+  const allWarnings = [...recipientsResult.warnings, ...ccResult.warnings]
+
+  const toEmails = recipientsResult.emails
+  const ccEmails = ccResult.emails.length > 0
+    ? ccResult.emails.map(coerceEmailStr)
+    : template?.cc
+      ? resolveVars(template.cc, tx, tcSettings).split(',').map(coerceEmailStr).filter(Boolean)
+      : []
+
+  const resolvedSubject = resolveVars(template?.subject || '', tx, tcSettings)
+  const resolvedBody    = resolveVars(template?.body    || '', tx, tcSettings)
+
+  // Seed editable fields once when template data arrives; re-seed if template changes
+  useEffect(() => {
+    if (!seededRef.current && resolvedSubject) {
+      const decodedBody = maybeDecodeHtml(resolvedBody)
+      setEditableTo(toEmails.join(', '))
+      setEditableCc(ccEmails.join(', '))
+      setEditableSubject(resolvedSubject)
+      setEditableBody(decodedBody)
+      if (bodyRef.current) {
+        bodyRef.current.innerHTML = decodedBody
+      }
+      seededRef.current = true
+    }
+  }, [resolvedSubject, resolvedBody, toEmails, ccEmails])
+
+  // Reset seed flag when template ID changes so a fresh open always re-seeds
+  useEffect(() => {
+    seededRef.current = false
+  }, [task.email_template_id])
 
   const gmailReady = !gmailStatus.loading && gmailStatus.connected && gmailStatus.hasGmailScope
 
@@ -215,23 +268,6 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
     )
   }
 
-  // Resolve recipients/CC
-  const recipientsResult = resolveRecipients(template.recipients || [], tx, titleContact)
-  const ccResult         = resolveRecipients(template.cc_recipients || [], tx, titleContact)
-  const allWarnings = [...recipientsResult.warnings, ...ccResult.warnings]
-
-  // Legacy fallback: if no structured recipients/cc_recipients, fall back to resolved cc text
-  const toEmails = recipientsResult.emails
-  const ccEmails = ccResult.emails.length > 0
-    ? ccResult.emails
-    : template.cc
-      ? resolveVars(template.cc, tx, tcSettings).split(',').map(s => s.trim()).filter(Boolean)
-      : []
-
-  // Resolve subject and body
-  const resolvedSubject = resolveVars(template.subject || '', tx, tcSettings)
-  const resolvedBody    = resolveVars(template.body    || '', tx, tcSettings)
-
   const toggleAttachment = (file) => {
     setAttachments(prev =>
       prev.some(f => f.id === file.id)
@@ -241,13 +277,14 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
   }
 
   const handleSend = async () => {
-    if (toEmails.length === 0) {
+    const toArr = editableTo.split(',').map(s => s.trim()).filter(Boolean)
+    if (toArr.length === 0) {
       toast.error('No recipients resolved — add recipients to the email template')
       return
     }
+    const ccArr = editableCc.split(',').map(s => s.trim()).filter(Boolean)
     setSending(true)
     try {
-      // For Drive attachments, fetch each file's content via the Drive API
       const resolvedAttachments = await Promise.all(
         attachments.map(async (file) => {
           const tokenRes = await fetch(`${API_BASE}/api/google/token`)
@@ -272,19 +309,14 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
         })
       )
 
-      const decodedBody = maybeDecodeHtml(resolvedBody)
-      const rawBody  = /<[a-zA-Z]/.test(decodedBody)
-        ? decodedBody
-        : `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${decodedBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
-
       const res = await fetch(`${API_BASE}/api/google/gmail-send`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to:            toEmails,
-          cc:            ccEmails.length > 0 ? ccEmails : undefined,
-          subject:       resolvedSubject,
-          body:          wrapEmailBody(rawBody),
+          to:            toArr,
+          cc:            ccArr.length > 0 ? ccArr : undefined,
+          subject:       editableSubject,
+          body:          wrapEmailBody(editableBody),
           transactionId: tx?.id || undefined,
           attachments:   resolvedAttachments.length > 0 ? resolvedAttachments : undefined,
         }),
@@ -298,6 +330,18 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
     } finally {
       setSending(false)
     }
+  }
+
+  const fieldInputStyle = {
+    background:   'rgba(15,25,40,0.6)',
+    border:       '1px solid rgba(80,200,220,0.2)',
+    borderRadius: '6px',
+    color:        '#a8bfcc',
+    padding:      '4px 8px',
+    fontSize:     '13px',
+    width:        '100%',
+    outline:      'none',
+    fontFamily:   'inherit',
   }
 
   return (
@@ -324,34 +368,59 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
             {/* To */}
             <div className="epm-meta-row">
               <span className="epm-meta-label">To</span>
-              <span className="epm-meta-value">
-                {toEmails.length > 0
-                  ? toEmails.join(', ')
-                  : <em className="epm-meta-empty">No recipients — add recipients to this template</em>
-                }
-              </span>
+              <input
+                type="text"
+                value={editableTo}
+                onChange={e => setEditableTo(e.target.value)}
+                placeholder="recipient@email.com"
+                style={fieldInputStyle}
+              />
             </div>
 
             {/* CC */}
-            {ccEmails.length > 0 && (
-              <div className="epm-meta-row">
-                <span className="epm-meta-label">CC</span>
-                <span className="epm-meta-value">{ccEmails.join(', ')}</span>
-              </div>
-            )}
+            <div className="epm-meta-row">
+              <span className="epm-meta-label">CC</span>
+              <input
+                type="text"
+                value={editableCc}
+                onChange={e => setEditableCc(e.target.value)}
+                placeholder="cc@email.com"
+                style={fieldInputStyle}
+              />
+            </div>
 
             {/* Subject */}
             <div className="epm-meta-row">
               <span className="epm-meta-label">Subject</span>
-              <span className="epm-meta-value epm-subject">{resolvedSubject || '(no subject)'}</span>
+              <input
+                type="text"
+                value={editableSubject}
+                onChange={e => setEditableSubject(e.target.value)}
+                style={fieldInputStyle}
+              />
             </div>
 
             <div className="epm-divider" />
 
-            {/* Body */}
+            {/* Body — contentEditable with imperative innerHTML; no dangerouslySetInnerHTML to avoid cursor reset */}
             <div
-              className="epm-preview-body"
-              dangerouslySetInnerHTML={{ __html: maybeDecodeHtml(resolvedBody) }}
+              ref={bodyRef}
+              contentEditable
+              suppressContentEditableWarning
+              onInput={() => setEditableBody(bodyRef.current.innerHTML)}
+              style={{
+                background:   'rgba(15,25,40,0.6)',
+                border:       '1px solid rgba(80,200,220,0.2)',
+                borderRadius: '6px',
+                color:        '#a8bfcc',
+                padding:      '12px',
+                fontSize:     '13px',
+                minHeight:    '200px',
+                overflowY:    'auto',
+                outline:      'none',
+                fontFamily:   'inherit',
+                lineHeight:   '1.5',
+              }}
             />
 
             <div className="epm-divider" />
@@ -388,7 +457,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
               <button
                 className="epm-btn epm-btn-primary"
                 onClick={handleSend}
-                disabled={sending || toEmails.length === 0}
+                disabled={sending || editableTo.trim() === ''}
               >
                 {sending ? 'Sending…' : 'Send'}
               </button>

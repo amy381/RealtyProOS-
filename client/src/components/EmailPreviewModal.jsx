@@ -333,7 +333,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
   }
 
   const fieldInputStyle = {
-    background:   'rgba(15,25,40,0.6)',
+    background:   'rgba(255,255,255,0.08)',
     border:       '1px solid rgba(80,200,220,0.2)',
     borderRadius: '6px',
     color:        '#a8bfcc',
@@ -409,7 +409,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
               suppressContentEditableWarning
               onInput={() => setEditableBody(bodyRef.current.innerHTML)}
               style={{
-                background:   'rgba(15,25,40,0.6)',
+                background:   'rgba(255,255,255,0.08)',
                 border:       '1px solid rgba(80,200,220,0.2)',
                 borderRadius: '6px',
                 color:        '#a8bfcc',

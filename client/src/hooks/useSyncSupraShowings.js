@@ -36,10 +36,6 @@ function extractPlainText(payload) {
   return ''
 }
 
-function normalizeAddress(addr) {
-  return (addr || '').trim().toLowerCase().split(',')[0].replace(/\s+/g, ' ')
-}
-
 export function useSyncSupraShowings(transactions) {
   const [syncing, setSyncing] = useState(false)
 
@@ -74,9 +70,6 @@ export function useSyncSupraShowings(transactions) {
         .not('gmail_message_id', 'is', null)
       const existingIds = new Set((existing || []).map(s => s.gmail_message_id))
 
-      // Seller transactions for address matching
-      const sellerTx = transactions.filter(t => t.rep_type === 'Seller')
-
       let inserted = 0
       const unmatched = []
 
@@ -92,18 +85,35 @@ export function useSyncSupraShowings(transactions) {
         if (!match) continue
 
         const [, agent_name, agent_phone, agent_email, address, date, time] = match
-        const normalAddr = normalizeAddress(address)
 
-        // Case-insensitive address match against seller transactions
-        const tx = sellerTx.find(t => {
-          const txNorm = normalizeAddress(t.property_address)
-          return txNorm === normalAddr
-            || txNorm.startsWith(normalAddr)
-            || normalAddr.startsWith(txNorm)
-        })
+        // Strip city/state/zip — DB stores only the street portion
+        const streetAddr = address.split(',')[0].trim()
+
+        // Exact ILIKE match against active/pending seller transactions
+        const STATUS_FILTER = ['active-listing', 'pending']
+        let { data: txMatches } = await supabase
+          .from('transactions')
+          .select('id')
+          .eq('rep_type', 'Seller')
+          .in('status', STATUS_FILTER)
+          .ilike('property_address', streetAddr)
+
+        // Fallback: match on street number only if exactly one result
+        if (!txMatches?.length) {
+          const streetNumber = streetAddr.split(' ')[0]
+          const { data: fallback } = await supabase
+            .from('transactions')
+            .select('id')
+            .eq('rep_type', 'Seller')
+            .in('status', STATUS_FILTER)
+            .ilike('property_address', `${streetNumber}%`)
+          txMatches = fallback?.length === 1 ? fallback : []
+        }
+
+        const tx = txMatches?.[0] ?? null
 
         if (!tx) {
-          unmatched.push(address.trim())
+          unmatched.push(streetAddr)
           continue
         }
 

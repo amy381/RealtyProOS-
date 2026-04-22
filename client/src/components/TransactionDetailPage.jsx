@@ -627,23 +627,29 @@ function TxField({ label, value, displayValue, type, options, onSave, placeholde
   )
 }
 
-// ─── Notes: single-line compose with @ mentions, fixed-height scroll list ──────
+// ─── Notes: single-line compose with @ mentions, threading, fixed-height scroll ─
 function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings }) {
-  const [notes, setNotes]           = useState([])
-  const [newText, setNewText]       = useState('')
-  const [editingId, setEditing]     = useState(null)
-  const [editDraft, setDraft]       = useState('')
-  const [loaded, setLoaded]         = useState(false)
-  const [mentionOpen, setMention]   = useState(false)
-  const [mentionFilter, setFilter]  = useState('')
-  const inputRef     = useRef(null)
-  const composeRef   = useRef(null)
+  const [notes, setNotes]                     = useState([])
+  const [newText, setNewText]                 = useState('')
+  const [editingId, setEditing]               = useState(null)
+  const [editDraft, setDraft]                 = useState('')
+  const [loaded, setLoaded]                   = useState(false)
+  const [mentionOpen, setMention]             = useState(false)
+  const [mentionFilter, setFilter]            = useState('')
+  const [replyToId, setReplyToId]             = useState(null)
+  const [replyText, setReplyText]             = useState('')
+  const [replyMentOpen, setReplyMentOpen]     = useState(false)
+  const [replyMentFilter, setReplyMentFilter] = useState('')
+  const inputRef    = useRef(null)
+  const composeRef  = useRef(null)
+  const replyInputRef = useRef(null)
+  const replyRef    = useRef(null)
 
   useEffect(() => {
     if (!transactionId) { setLoaded(true); return }
     supabase
       .from('transaction_notes')
-      .select('id, note_text, created_at')
+      .select('id, note_text, created_at, parent_id, author')
       .eq('transaction_id', transactionId)
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
@@ -653,10 +659,11 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
       })
   }, [transactionId])
 
-  // Close mention dropdown on outside click
+  // Close mention dropdowns on outside click
   useEffect(() => {
     const handler = (e) => {
       if (composeRef.current && !composeRef.current.contains(e.target)) setMention(false)
+      if (replyRef.current && !replyRef.current.contains(e.target)) setReplyMentOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -669,6 +676,15 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
     const atMatch = val.slice(0, cursor).match(/@(\w*)$/)
     if (atMatch) { setMention(true); setFilter(atMatch[1].toLowerCase()) }
     else setMention(false)
+  }
+
+  const handleReplyInputChange = (e) => {
+    const val    = e.target.value
+    const cursor = e.target.selectionStart
+    setReplyText(val)
+    const atMatch = val.slice(0, cursor).match(/@(\w*)$/)
+    if (atMatch) { setReplyMentOpen(true); setReplyMentFilter(atMatch[1].toLowerCase()) }
+    else setReplyMentOpen(false)
   }
 
   const insertMention = (handle) => {
@@ -688,9 +704,29 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
     })
   }
 
-  const mentionPeople   = buildMentionPeople(tcSettings)
-  const visibleMentions = mentionPeople.filter(p =>
+  const insertReplyMention = (handle) => {
+    const cursor = replyInputRef.current?.selectionStart ?? replyText.length
+    const before = replyText.slice(0, replyText.slice(0, cursor).lastIndexOf('@'))
+    const after  = replyText.slice(cursor)
+    const next   = before + handle + ' ' + after
+    setReplyText(next)
+    setReplyMentOpen(false)
+    setReplyMentFilter('')
+    requestAnimationFrame(() => {
+      if (replyInputRef.current) {
+        const pos = (before + handle + ' ').length
+        replyInputRef.current.focus()
+        replyInputRef.current.setSelectionRange(pos, pos)
+      }
+    })
+  }
+
+  const mentionPeople        = buildMentionPeople(tcSettings)
+  const visibleMentions      = mentionPeople.filter(p =>
     p.handle.slice(1).toLowerCase().startsWith(mentionFilter)
+  )
+  const visibleReplyMentions = mentionPeople.filter(p =>
+    p.handle.slice(1).toLowerCase().startsWith(replyMentFilter)
   )
 
   const handleAdd = () => {
@@ -698,18 +734,18 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
     if (!text) return
     const mentions = extractMentions(text)
     console.log('[Notes] handleAdd fired — text:', text, '| mentions:', mentions, '| tcSettings:', tcSettings)
-    const now      = new Date().toISOString()
-    const tempId   = `tmp-${Date.now()}`
+    const now    = new Date().toISOString()
+    const tempId = `tmp-${Date.now()}`
 
-    setNotes(prev => [{ id: tempId, note_text: text, created_at: now }, ...prev])
+    setNotes(prev => [{ id: tempId, note_text: text, created_at: now, parent_id: null, author: 'Amy Casanova' }, ...prev])
     setNewText('')
     setMention(false)
     inputRef.current?.focus()
 
     supabase
       .from('transaction_notes')
-      .insert({ transaction_id: transactionId, note_text: text, created_at: now })
-      .select('id, note_text, created_at')
+      .insert({ transaction_id: transactionId, note_text: text, created_at: now, author: 'Amy Casanova' })
+      .select('id, note_text, created_at, parent_id, author')
       .single()
       .then(({ data: saved, error }) => {
         if (error) { console.error('[Notes] save error:', error.message); return }
@@ -718,6 +754,28 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
 
     onNoteAdded?.(text, mentions)
     if (mentions.length > 0) sendMentionEmails(mentions, text, transactionAddr, tcSettings, transactionId)
+  }
+
+  const handleAddReply = (parentId) => {
+    const text = replyText.trim()
+    if (!text) return
+    const now    = new Date().toISOString()
+    const tempId = `tmp-reply-${Date.now()}`
+
+    setNotes(prev => [...prev, { id: tempId, note_text: text, created_at: now, parent_id: parentId, author: 'Amy Casanova' }])
+    setReplyText('')
+    setReplyToId(null)
+    setReplyMentOpen(false)
+
+    supabase
+      .from('transaction_notes')
+      .insert({ transaction_id: transactionId, note_text: text, created_at: now, parent_id: parentId, author: 'Amy Casanova' })
+      .select('id, note_text, created_at, parent_id, author')
+      .single()
+      .then(({ data: saved, error }) => {
+        if (error) { console.error('[Notes] reply save error:', error.message); return }
+        if (saved) setNotes(prev => prev.map(n => n.id === tempId ? saved : n))
+      })
   }
 
   const handleSaveEdit = (id) => {
@@ -734,6 +792,9 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
     supabase.from('transaction_notes').delete().eq('id', id)
       .then(({ error }) => { if (error) console.error('[Notes] delete error:', error.message) })
   }
+
+  const topNotes = notes.filter(n => !n.parent_id)
+  const replies  = notes.filter(n =>  n.parent_id)
 
   return (
     <div className="txp-section">
@@ -770,38 +831,103 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
 
       {/* Fixed-height scroll area — never grows beyond 200px */}
       <div className="txp-notes-list">
-        {loaded && notes.length === 0 && (
+        {loaded && topNotes.length === 0 && (
           <div className="txp-empty-state" style={{ padding: '8px 0' }}>No notes yet.</div>
         )}
-        {notes.map(note => (
-          <div key={note.id} className="txp-note-card">
-            {editingId === note.id ? (
-              <input
-                className="txp-note-compose-input"
-                type="text"
-                value={editDraft}
-                autoFocus
-                onChange={e => setDraft(e.target.value)}
-                onBlur={() => handleSaveEdit(note.id)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter')  { e.preventDefault(); handleSaveEdit(note.id) }
-                  if (e.key === 'Escape') setEditing(null)
-                }}
-              />
-            ) : (
-              <div
-                className="txp-note-text"
-                onClick={() => { setEditing(note.id); setDraft(note.note_text) }}
-              >
-                {renderNoteText(note.note_text)}
+        {topNotes.map(note => {
+          const noteReplies = replies
+            .filter(r => r.parent_id === note.id)
+            .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+
+          return (
+            <div key={note.id} className="txp-note-card">
+              {editingId === note.id ? (
+                <input
+                  className="txp-note-compose-input"
+                  type="text"
+                  value={editDraft}
+                  autoFocus
+                  onChange={e => setDraft(e.target.value)}
+                  onBlur={() => handleSaveEdit(note.id)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter')  { e.preventDefault(); handleSaveEdit(note.id) }
+                    if (e.key === 'Escape') setEditing(null)
+                  }}
+                />
+              ) : (
+                <div className="txp-note-text-row">
+                  <div
+                    className="txp-note-text"
+                    onClick={() => { setEditing(note.id); setDraft(note.note_text) }}
+                  >
+                    {renderNoteText(note.note_text)}
+                  </div>
+                  <span className="txp-note-date">{formatNoteDate(note.created_at)}</span>
+                </div>
+              )}
+              <div className="txp-note-meta">
+                <button
+                  className="txp-note-reply-btn"
+                  onClick={() => { setReplyToId(replyToId === note.id ? null : note.id); setReplyText('') }}
+                >
+                  Reply
+                </button>
+                <button className="txp-note-del" onClick={() => handleDelete(note.id)}>✕</button>
               </div>
-            )}
-            <div className="txp-note-meta">
-              <span className="txp-note-info">{formatNoteDate(note.created_at)}</span>
-              <button className="txp-note-del" onClick={() => handleDelete(note.id)}>✕</button>
+
+              {/* Threaded replies */}
+              {noteReplies.map(reply => (
+                <div key={reply.id} className="txp-reply-card">
+                  <div className="txp-reply-text-row">
+                    <div className="txp-reply-body">
+                      {reply.author && <span className="txp-reply-author">{reply.author} </span>}
+                      <span className="txp-reply-text">{renderNoteText(reply.note_text)}</span>
+                    </div>
+                    <span className="txp-note-date">{formatNoteDate(reply.created_at)}</span>
+                  </div>
+                </div>
+              ))}
+
+              {/* Inline reply compose */}
+              {replyToId === note.id && (
+                <div className="txp-reply-compose" ref={replyRef}>
+                  <input
+                    ref={replyInputRef}
+                    className="txp-reply-compose-input"
+                    type="text"
+                    autoFocus
+                    placeholder="Write a reply… use @ to mention"
+                    value={replyText}
+                    onChange={handleReplyInputChange}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter')  { e.preventDefault(); handleAddReply(note.id) }
+                      if (e.key === 'Escape') { setReplyToId(null); setReplyMentOpen(false) }
+                    }}
+                  />
+                  <button
+                    className="txp-reply-send-btn"
+                    onMouseDown={e => { e.preventDefault(); handleAddReply(note.id) }}
+                  >
+                    Send
+                  </button>
+                  {replyMentOpen && visibleReplyMentions.length > 0 && (
+                    <div className="txp-mention-dropdown txp-mention-dropdown--reply">
+                      {visibleReplyMentions.map(p => (
+                        <button
+                          key={p.handle}
+                          className="txp-mention-option"
+                          onMouseDown={e => { e.preventDefault(); insertReplyMention(p.handle) }}
+                        >
+                          {p.handle}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

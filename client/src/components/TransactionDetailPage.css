@@ -1319,6 +1319,113 @@ select.txp-input { cursor: pointer; }
 }
 .txp-note-del:hover { color: rgba(168, 191, 204, 0.8); background: rgba(168, 191, 204, 0.08); }
 
+/* Note text + date on one row */
+.txp-note-text-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.txp-note-date {
+  font-size: 12px;
+  color: #697175;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-top: 3px;
+}
+
+/* Reply button */
+.txp-note-reply-btn {
+  background: none;
+  border: none;
+  color: rgba(168, 191, 204, 0.4);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.12s;
+}
+.txp-note-reply-btn:hover { color: #50C8DC; }
+
+/* Threaded reply cards */
+.txp-reply-card {
+  margin-top: 8px;
+  margin-left: 24px;
+  padding: 7px 10px;
+  background: rgba(2, 5, 18, 0.3);
+  border-left: 2px solid rgba(80, 200, 220, 0.25);
+  border-radius: 0 6px 6px 0;
+}
+.txp-reply-text-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.txp-reply-body {
+  font-size: 13px;
+  color: rgba(168, 191, 204, 0.85);
+  line-height: 1.5;
+  flex: 1;
+}
+.txp-reply-author {
+  font-size: 12px;
+  font-weight: 700;
+  color: #50C8DC;
+  margin-right: 4px;
+}
+
+/* Inline reply compose */
+.txp-reply-compose {
+  margin-top: 8px;
+  margin-left: 24px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  position: relative;
+}
+.txp-reply-compose-input {
+  flex: 1;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 400;
+  color: #a8bfcc;
+  background: rgba(2, 5, 18, 0.4);
+  border: 0.5px solid rgba(50, 200, 220, 0.15);
+  border-radius: 6px;
+  padding: 5px 10px;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.txp-reply-compose-input:focus {
+  border-color: rgba(50, 200, 220, 0.4);
+  background: rgba(2, 5, 18, 0.5);
+}
+.txp-reply-send-btn {
+  background: rgba(50, 200, 220, 0.12);
+  border: 1px solid rgba(50, 200, 220, 0.25);
+  border-radius: 6px;
+  color: #50C8DC;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+.txp-reply-send-btn:hover { background: rgba(50, 200, 220, 0.22); }
+
+/* Reply mention dropdown — anchored to reply compose row */
+.txp-mention-dropdown--reply {
+  top: auto;
+  bottom: calc(100% + 4px);
+  left: 0;
+  right: auto;
+  min-width: 180px;
+}
+
 /* ─── Tasks Spreadsheet ───────────────────────────────────────────────────────── */
 .txp-tasks-block {
   background: rgba(2, 5, 18, 0.3);

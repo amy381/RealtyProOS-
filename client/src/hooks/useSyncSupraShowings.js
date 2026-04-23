@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 
 const API_BASE       = import.meta.env.DEV ? 'http://localhost:3001' : ''
 const SUPRA_SENDER   = 'suprashowing@suprasystems.com'
-const SUPRA_LABEL_ID = 'Label_53'
+const SUPRA_LABEL_ID = 'processed-supra'
 const SHOWING_REGEX  = /The showing by (.+?) \(([^)]+)\) \( ?([^)]+)\) at (.+?) \(KeyBox#[^)]+\) began (\d{2}\/\d{2}\/\d{4}) (\d+:\d+[AP]M)/
 
 function parseShowingDate(dateStr) {

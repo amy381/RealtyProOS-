@@ -24,14 +24,12 @@ function decodeBase64Url(str) {
 
 function extractPlainText(payload) {
   if (!payload) return ''
-  if (payload.mimeType === 'text/plain' && payload.body?.data) {
-    return decodeBase64Url(payload.body.data)
-  }
+  // Simple message — body data sits directly on the payload
+  if (payload.body?.data) return decodeBase64Url(payload.body.data)
+  // Multipart — find the first text/plain part
   if (payload.parts) {
-    for (const part of payload.parts) {
-      const text = extractPlainText(part)
-      if (text) return text
-    }
+    const plainPart = payload.parts.find(p => p.mimeType === 'text/plain' && p.body?.data)
+    if (plainPart) return decodeBase64Url(plainPart.body.data)
   }
   return ''
 }
@@ -88,8 +86,8 @@ export function useSyncSupraShowings(transactions) {
         // Fetch full message for body parsing
         const full = await gmail(`/messages/${msgId}?format=full`)
         console.log('[SupraSync] Message snippet:', full.snippet)
-        const body = extractPlainText(full.payload)
-        console.log('[SupraSync] Raw body text:', body)
+        const body = extractPlainText(full.payload) || full.snippet || ''
+        console.log('[SupraSync] Decoded body text:', body)
         const match = body.match(SHOWING_REGEX)
 
         if (!match) {

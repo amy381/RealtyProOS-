@@ -16,7 +16,8 @@ module.exports = async function handler(req, res) {
     response_type: 'code',
     // drive — move files across any folder in the user's Drive / Shared Drive
     // gmail.send — send email as the authenticated user via Gmail API
-    scope:         'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/gmail.send',
+    // gmail.readonly — read/search Gmail messages (e.g. Supra showing sync)
+    scope:         'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.readonly',
     access_type:   'offline',
     prompt:        'consent', // force refresh_token to be returned every time
   })

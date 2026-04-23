@@ -11,29 +11,6 @@ function parseShowingDate(dateStr) {
   return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`
 }
 
-function decodeBase64Url(str) {
-  const base64 = str.replace(/-/g, '+').replace(/_/g, '/')
-  try {
-    return decodeURIComponent(
-      atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
-    )
-  } catch {
-    return atob(base64)
-  }
-}
-
-function extractPlainText(payload) {
-  if (!payload) return ''
-  // Simple message — body data sits directly on the payload
-  if (payload.body?.data) return decodeBase64Url(payload.body.data)
-  // Multipart — find the first text/plain part
-  if (payload.parts) {
-    const plainPart = payload.parts.find(p => p.mimeType === 'text/plain' && p.body?.data)
-    if (plainPart) return decodeBase64Url(plainPart.body.data)
-  }
-  return ''
-}
-
 export function useSyncSupraShowings(transactions) {
   const [syncing, setSyncing] = useState(false)
 
@@ -83,11 +60,10 @@ export function useSyncSupraShowings(transactions) {
           continue
         }
 
-        // Fetch full message for body parsing
-        const full = await gmail(`/messages/${msgId}?format=full`)
-        console.log('[SupraSync] Message snippet:', full.snippet)
-        const body = extractPlainText(full.payload) || full.snippet || ''
-        console.log('[SupraSync] Decoded body text:', body)
+        // Fetch minimal message — snippet contains the full Supra showing text
+        const full = await gmail(`/messages/${msgId}?format=minimal`)
+        const body = full.snippet || ''
+        console.log('[SupraSync] Body text (from snippet):', body)
         const match = body.match(SHOWING_REGEX)
 
         if (!match) {

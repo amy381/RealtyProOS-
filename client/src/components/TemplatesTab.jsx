@@ -107,6 +107,7 @@ const RECIPIENT_VARIABLE_OPTIONS = [
   { value: 'lender',        label: 'Lender'        },
   { value: 'title_contact', label: 'Title Contact' },
   { value: 'co_op_agent',   label: 'Co-op Agent'   },
+  { value: 'tc',            label: 'TC'            },
 ]
 
 const TRIGGER_OPTIONS = [
@@ -222,6 +223,7 @@ function RecipientField({ label, value = [], onChange, hint }) {
           placeholder="custom@email.com — press Enter to add"
           value={customInput}
           onChange={e => setCustomInput(e.target.value)}
+          onBlur={addCustom}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustom() } }}
         />
         <button type="button" className="et-recipient-add-btn" onClick={addCustom}>Add</button>

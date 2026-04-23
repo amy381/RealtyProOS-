@@ -59,6 +59,13 @@ function resolveRecipients(entries = [], tx, titleContact) {
           else warnings.push('Co-op Agent email not set')
           break
         }
+        case 'tc': {
+          const email = tx?.rep_type === 'Buyer'
+            ? 'victoria.lareau@kw.com'
+            : 'justinamorris@kw.com'
+          resolved.push(email)
+          break
+        }
         default:
           warnings.push(`Unknown variable: ${entry.value}`)
       }

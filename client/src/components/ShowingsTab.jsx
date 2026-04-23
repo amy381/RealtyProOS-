@@ -357,7 +357,7 @@ export default function ShowingsTab({ transactions }) {
 
               <label className="sht-modal-label">Agent Email</label>
               <input
-                type="email"
+                type="text"
                 className="sht-modal-input"
                 placeholder="agent@email.com"
                 value={addForm.agent_email}

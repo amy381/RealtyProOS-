@@ -16,6 +16,9 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
   })
   const [agentId, setAgentId] = useState(null)
 
+  const [googleConnected, setGoogleConnected] = useState(false)
+  const [googleLoading,   setGoogleLoading]   = useState(true)
+
   useEffect(() => {
     supabase
       .from('agent_settings')
@@ -34,6 +37,23 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
         }
       })
   }, [])
+
+  useEffect(() => {
+    supabase
+      .from('google_auth')
+      .select('access_token')
+      .limit(1)
+      .single()
+      .then(({ data }) => {
+        setGoogleConnected(!!(data?.access_token))
+        setGoogleLoading(false)
+      })
+  }, [])
+
+  const handleGoogleDisconnect = async () => {
+    await supabase.from('google_auth').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    setGoogleConnected(false)
+  }
 
   const setEmail = (idx, email) => {
     setDraft(prev => prev.map((t, i) => i === idx ? { ...t, email } : t))
@@ -133,6 +153,39 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
                 </label>
               </div>
             ))}
+          </div>
+
+          <div className="settings-section-label" style={{ marginTop: 6 }}>Google Account</div>
+
+          <div className="settings-google-row">
+            {googleLoading ? (
+              <span className="settings-google-status">Checking…</span>
+            ) : googleConnected ? (
+              <>
+                <span className="settings-google-status">
+                  <span className="settings-google-dot settings-google-dot--connected" />
+                  Connected as amy@desert-legacy.com
+                </span>
+                <div className="settings-google-actions">
+                  <button className="settings-google-btn settings-google-btn--disconnect" onClick={handleGoogleDisconnect}>
+                    Disconnect
+                  </button>
+                  <a className="settings-google-btn settings-google-btn--reconnect" href="/api/google/auth">
+                    Reconnect
+                  </a>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="settings-google-status">
+                  <span className="settings-google-dot settings-google-dot--disconnected" />
+                  Not connected
+                </span>
+                <a className="settings-google-btn settings-google-btn--connect" href="/api/google/auth">
+                  Connect Google Account
+                </a>
+              </>
+            )}
           </div>
 
           <div className="settings-email-note">

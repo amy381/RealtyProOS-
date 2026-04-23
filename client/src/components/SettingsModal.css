@@ -256,3 +256,69 @@
 .settings-save:hover {
   background: rgba(212, 120, 30, 0.25);
 }
+
+/* ── Google Account section ─────────────────────────────────────── */
+.settings-google-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(2, 5, 18, 0.4);
+  border: 0.5px solid rgba(50, 200, 220, 0.15);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-google-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  color: rgba(168, 191, 204, 0.85);
+}
+
+.settings-google-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.settings-google-dot--connected    { background: #4caf7d; box-shadow: 0 0 5px rgba(76, 175, 80, 0.6); }
+.settings-google-dot--disconnected { background: rgba(168, 191, 204, 0.35); }
+
+.settings-google-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.settings-google-btn {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s, border-color 0.12s;
+}
+.settings-google-btn--connect,
+.settings-google-btn--reconnect {
+  background: rgba(50, 200, 220, 0.1);
+  border: 0.5px solid rgba(50, 200, 220, 0.35);
+  color: #50C8DC;
+}
+.settings-google-btn--connect:hover,
+.settings-google-btn--reconnect:hover {
+  background: rgba(50, 200, 220, 0.2);
+}
+.settings-google-btn--disconnect {
+  background: none;
+  border: 0.5px solid rgba(192, 57, 43, 0.4);
+  color: rgba(192, 57, 43, 0.8);
+}
+.settings-google-btn--disconnect:hover {
+  background: rgba(192, 57, 43, 0.08);
+  border-color: rgba(192, 57, 43, 0.7);
+}

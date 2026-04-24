@@ -49,6 +49,12 @@
   flex-shrink: 0;
 }
 
+.board-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* ── Board filter button + panel ───────────────────────────────────────────── */
 .board-filter-wrap {
   position: relative;

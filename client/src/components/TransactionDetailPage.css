@@ -409,10 +409,10 @@
   background: #1a1a1a;
   color: #ffffff;
   border: none;
-  padding: 8px 22px;
-  border-radius: 7px;
-  font-size: 16px;
-  font-weight: 600;
+  padding: 5px 13px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   font-family: inherit;
   transition: background 0.15s, transform 0.1s;
@@ -423,11 +423,11 @@
 
 .txp-topbar-delete-btn {
   background: none;
-  border: 1.5px solid #e0e0e0;
+  border: 1px solid rgba(200, 200, 200, 0.3);
   color: #aaaaaa;
-  padding: 7px 16px;
-  border-radius: 7px;
-  font-size: 16px;
+  padding: 5px 13px;
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;

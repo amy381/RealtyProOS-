@@ -857,6 +857,7 @@ export default function App() {
                 <button className={`bvt-btn${boardView === 'board' ? ' active' : ''}`} onClick={() => switchBoardView('board')}>Board</button>
                 <button className={`bvt-btn${boardView === 'list'  ? ' active' : ''}`} onClick={() => switchBoardView('list')}>List</button>
               </div>
+              <div className="board-toolbar-right">
               <div className="board-filter-wrap" ref={boardFilterRef}>
                 <button
                   className={`board-filter-btn${boardFilterCount > 0 ? ' has-filters' : ''}`}
@@ -916,6 +917,7 @@ export default function App() {
               <button className="btn-new-transaction" onClick={() => setNewTxOpen(true)}>
                 + New Transaction
               </button>
+              </div>
             </div>
           )}
 

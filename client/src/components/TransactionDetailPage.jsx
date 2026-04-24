@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { Pencil } from 'lucide-react'
+import { Pencil, ListChecks, LayoutDashboard } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { formatPhone, formatApn } from '../lib/formatters'
@@ -3494,6 +3494,8 @@ export default function TransactionDetailPage({
   onAddTaskComment,
   onDeleteTaskComment,
   initialSection = 'details',
+  onGoToTasks,
+  onGoToBoard,
 }) {
   const [activeSection, setActiveSection]   = useState(initialSection)
   const [sessionHistory, setSessionHistory] = useState([])
@@ -3600,6 +3602,19 @@ export default function TransactionDetailPage({
           <span className="txp-topbar-address">{fullAddress || '—'}</span>
         </div>
         <div className="txp-topbar-right">
+          {onGoToBoard && (
+            <button className="txp-nav-btn" onClick={onGoToBoard} title="Back to Board">
+              <LayoutDashboard size={14} />
+              Board
+            </button>
+          )}
+          {onGoToTasks && (
+            <button className="txp-nav-btn" onClick={onGoToTasks} title="Go to All Tasks">
+              <ListChecks size={14} />
+              All Tasks
+            </button>
+          )}
+          <span className="txp-topbar-divider" />
           <button className="txp-share-btn" onClick={() => setNotifyOpen(true)}>Notify</button>
           <button className="txp-topbar-delete-btn" onClick={handleDelete}>Delete</button>
         </div>

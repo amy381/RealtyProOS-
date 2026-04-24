@@ -1024,6 +1024,16 @@ export default function App() {
             setSelectedTransaction(null)
             if (from === 'tasks') setActiveTab('tasks')
           }}
+          onGoToBoard={() => {
+            setActiveTab('board')
+            window.history.replaceState({}, '', '?tab=board')
+            setSelectedTransaction(null)
+          }}
+          onGoToTasks={() => {
+            setActiveTab('tasks')
+            window.history.replaceState({}, '', '?tab=tasks')
+            setSelectedTransaction(null)
+          }}
           onFieldSave={handleFieldSave}
           onMultiFieldSave={handleMultiFieldSave}
           onCommissionChange={handleCommissionChange}

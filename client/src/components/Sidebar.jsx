@@ -8,7 +8,7 @@ import './Sidebar.css'
 
 const NAV_ITEMS = [
   { key: 'dashboard',     label: 'Mission Control', Icon: Rocket           },
-  { key: 'board',         label: 'Board',           Icon: LayoutDashboard  },
+  { key: 'board',         label: 'Start to Close',  Icon: LayoutDashboard  },
   { key: 'tasks',         label: 'Tasks',           Icon: ListChecks       },
   { key: 'commissions',   label: 'Commissions',     Icon: CircleDollarSign },
   { key: 'collaborators', label: 'Collaborators',   Icon: Users            },
@@ -85,7 +85,7 @@ export default function Sidebar({
               data-label={label}
               onClick={() => onTabChange(key)}
             >
-              <Icon size={18} className="sidebar-icon" />
+              <Icon size={20} className="sidebar-icon" />
               {!collapsed && <span className="sidebar-label">{label}</span>}
               {collapsed && key === 'collaborators' && hasActiveSubItem && (
                 <span className="sidebar-sub-dot" />

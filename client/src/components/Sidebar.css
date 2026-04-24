@@ -56,15 +56,15 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   width: 100%;
-  height: 38px;
-  padding: 0 14px;
+  min-height: 40px;
+  padding: 10px 14px;
   background: none;
   border: none;
   border-left: 3px solid transparent;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: #697175;
   cursor: pointer;
@@ -98,7 +98,7 @@
 }
 
 .sidebar-label {
-  font-size: 13px;
+  font-size: 14px;
   color: #a8bfcc;
   overflow: hidden;
   text-overflow: ellipsis;

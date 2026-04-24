@@ -3577,7 +3577,7 @@ export default function TransactionDetailPage({
 
   return (
     <div className="txp-page">
-      {/* Top Bar */}
+      {/* Combined header + tab bar */}
       <div className="txp-topbar">
         <div className="txp-topbar-left">
           <button className="txp-back-btn" onClick={onBack} title={from === 'tasks' ? 'Back to Tasks (Esc)' : 'Back to Start to Close (Esc)'}>←</button>
@@ -3597,27 +3597,23 @@ export default function TransactionDetailPage({
               >›</button>
             </div>
           )}
-        </div>
-        <div className="txp-topbar-center">
           <span className="txp-topbar-address">{fullAddress || '—'}</span>
+        </div>
+        <div className="txp-topbar-tabs">
+          {SECTIONS.filter(s => !s.sellerOnly || transaction.rep_type === 'Seller').map(s => (
+            <button
+              key={s.id}
+              className={`txp-tab${activeSection === s.id ? ' txp-tab--active' : ''}`}
+              onClick={() => setActiveSection(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
         </div>
         <div className="txp-topbar-right">
           <button className="txp-share-btn" onClick={() => setNotifyOpen(true)}>Notify</button>
           <button className="txp-topbar-delete-btn" onClick={handleDelete}>Delete</button>
         </div>
-      </div>
-
-      {/* Section tab bar */}
-      <div className="txp-tabs">
-        {SECTIONS.filter(s => !s.sellerOnly || transaction.rep_type === 'Seller').map(s => (
-          <button
-            key={s.id}
-            className={`txp-tab${activeSection === s.id ? ' txp-tab--active' : ''}`}
-            onClick={() => setActiveSection(s.id)}
-          >
-            {s.label}
-          </button>
-        ))}
       </div>
 
       {/* Body */}

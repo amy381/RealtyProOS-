@@ -10,8 +10,8 @@
   display: flex;
   flex-direction: row;
   flex: 1;
-  margin-top: 64px;
-  min-height: calc(100vh - 64px);
+  margin-top: 90px;
+  min-height: calc(100vh - 90px);
   overflow: visible;
   position: relative;
   z-index: 2;

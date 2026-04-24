@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Rocket, LayoutDashboard, ListChecks, CircleDollarSign,
   Users, FileText, LockKeyhole, SquareLibrary, Settings,
@@ -52,6 +52,10 @@ export default function Sidebar({
     const stored = localStorage.getItem('legacyos-sidebar-collapsed')
     return stored !== null ? stored === 'true' : true
   })
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--sidebar-w', collapsed ? '52px' : '180px')
+  }, [collapsed])
 
   const toggle = () => {
     const next = !collapsed

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { Pencil, ListChecks, LayoutDashboard } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { formatPhone, formatApn } from '../lib/formatters'
@@ -3602,38 +3602,26 @@ export default function TransactionDetailPage({
           <span className="txp-topbar-address">{fullAddress || '—'}</span>
         </div>
         <div className="txp-topbar-right">
-          {onGoToBoard && (
-            <button className="txp-nav-btn" onClick={onGoToBoard} title="Back to Board">
-              <LayoutDashboard size={14} />
-              Board
-            </button>
-          )}
-          {onGoToTasks && (
-            <button className="txp-nav-btn" onClick={onGoToTasks} title="Go to All Tasks">
-              <ListChecks size={14} />
-              All Tasks
-            </button>
-          )}
-          <span className="txp-topbar-divider" />
           <button className="txp-share-btn" onClick={() => setNotifyOpen(true)}>Notify</button>
           <button className="txp-topbar-delete-btn" onClick={handleDelete}>Delete</button>
         </div>
       </div>
 
+      {/* Section tab bar */}
+      <div className="txp-tabs">
+        {SECTIONS.filter(s => !s.sellerOnly || transaction.rep_type === 'Seller').map(s => (
+          <button
+            key={s.id}
+            className={`txp-tab${activeSection === s.id ? ' txp-tab--active' : ''}`}
+            onClick={() => setActiveSection(s.id)}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       {/* Body */}
       <div className="txp-body">
-        <aside className="txp-sidebar">
-          {SECTIONS.filter(s => !s.sellerOnly || transaction.rep_type === 'Seller').map(s => (
-            <button
-              key={s.id}
-              className={`txp-nav-item${activeSection === s.id ? ' active' : ''}`}
-              onClick={() => setActiveSection(s.id)}
-            >
-              {s.label}
-            </button>
-          ))}
-        </aside>
-
         <main className="txp-content">
           {activeSection === 'details' && (
             <DetailsSection

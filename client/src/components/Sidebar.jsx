@@ -85,7 +85,7 @@ export default function Sidebar({
               data-label={label}
               onClick={() => onTabChange(key)}
             >
-              <Icon size={20} className="sidebar-icon" />
+              <Icon size={22} className="sidebar-icon" />
               {!collapsed && <span className="sidebar-label">{label}</span>}
               {collapsed && key === 'collaborators' && hasActiveSubItem && (
                 <span className="sidebar-sub-dot" />

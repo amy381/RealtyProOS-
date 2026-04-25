@@ -68,6 +68,8 @@
   font-weight: 500;
   color: #697175;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
   transition: color 0.15s, background 0.15s;
   text-align: left;
 }

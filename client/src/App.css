@@ -5,6 +5,12 @@
   position: relative;
 }
 
+/* Prevent background from scrolling while a transaction page is open */
+.app.tx-open {
+  overflow: hidden;
+  height: 100vh;
+}
+
 /* Row container: sidebar + main — sits below the fixed header */
 .app-layout {
   display: flex;

@@ -500,6 +500,12 @@ export default function App() {
     }
   }, [selectedTransaction])
 
+  // ── Lock body scroll when a transaction is open ────────────────────────────
+  useEffect(() => {
+    document.body.style.overflow = selectedTransaction ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [selectedTransaction])
+
   // ── Delete transaction ──────────────────────────────────────────────────────
   const handleDelete = async (transactionId) => {
     setTransactions(prev => prev.filter(t => t.id !== transactionId))
@@ -820,7 +826,7 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app${selectedTransaction ? ' tx-open' : ''}`}>
       <MeshBackground />
       <Toaster position="top-right" />
 

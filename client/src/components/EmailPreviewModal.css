@@ -214,6 +214,8 @@
 
 .epm-attach-btn { font-size: 12px; padding: 4px 10px; }
 
+.email-body-editor * { color: inherit; }
+
 .epm-reconnect-btn { background: #f59e0b; color: #fff; }
 .epm-reconnect-btn:hover { background: #d97706; }
 

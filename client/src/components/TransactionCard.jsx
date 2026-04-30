@@ -136,15 +136,21 @@ export default function TransactionCard({ transaction, onDelete, isDragging, pri
         </span>
       </div>
 
-      {priceLabel !== null && (transaction.contract_price || transaction.price) && (
+      {priceLabel !== null && (isPending ? transaction.contract_price : (transaction.contract_price || transaction.price)) && (
         <div className="card-price">
           <span className="card-price-label">
-            {transaction.rep_type === 'Seller' && transaction.contract_price ? 'Contract Price' : priceLabel}:{' '}
+            {isPending
+              ? 'Purchase Price'
+              : transaction.rep_type === 'Seller' && transaction.contract_price
+                ? 'Contract Price'
+                : priceLabel}:{' '}
           </span>
           {Number(
-            transaction.rep_type === 'Seller' && transaction.contract_price
+            isPending
               ? transaction.contract_price
-              : transaction.price
+              : transaction.rep_type === 'Seller' && transaction.contract_price
+                ? transaction.contract_price
+                : transaction.price
           ).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
         </div>
       )}

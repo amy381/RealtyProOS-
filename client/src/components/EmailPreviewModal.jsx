@@ -174,7 +174,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
   const [loading,      setLoading]      = useState(true)
   const [titleContact, setTitleContact] = useState(null)
   const [driveOpen,    setDriveOpen]    = useState(false)
-  const [attachments,  setAttachments]  = useState([])  // { id, name, mimeType }
+  const [attachments,  setAttachments]  = useState([])  // Drive: { id, name, mimeType } | Local: { id, name, mimeType, data }
   const [sending,      setSending]      = useState(false)
 
   // Local-only editable fields — never persisted back to the template
@@ -182,8 +182,9 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
   const [editableCc,      setEditableCc]      = useState('')
   const [editableSubject, setEditableSubject] = useState('')
   const [editableBody,    setEditableBody]    = useState('')
-  const seededRef = useRef(false)
-  const bodyRef   = useRef(null)
+  const seededRef     = useRef(false)
+  const bodyRef       = useRef(null)
+  const fileInputRef  = useRef(null)
 
   const gmailStatus = useGmailStatus()
 
@@ -283,6 +284,26 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
     )
   }
 
+  const handleLocalFiles = async (e) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+    const newAttachments = await Promise.all(
+      files.map(file => new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload  = () => resolve({
+          id:       `local-${Date.now()}-${file.name}`,
+          name:     file.name,
+          mimeType: file.type || 'application/octet-stream',
+          data:     reader.result.split(',')[1],
+        })
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      }))
+    )
+    setAttachments(prev => [...prev, ...newAttachments])
+    e.target.value = ''
+  }
+
   const handleSend = async () => {
     const toArr = editableTo.split(',').map(s => s.trim()).filter(Boolean)
     if (toArr.length === 0) {
@@ -294,6 +315,15 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
     try {
       const resolvedAttachments = await Promise.all(
         attachments.map(async (file) => {
+          // Local file — already base64-encoded at selection time
+          if (file.data) {
+            return {
+              filename:    file.name,
+              contentType: file.mimeType || 'application/octet-stream',
+              data:        file.data,
+            }
+          }
+          // Drive file — fetch content from Drive API
           const tokenRes = await fetch(`${API_BASE}/api/google/token`)
           const { access_token } = await tokenRes.json()
           const contentRes = await fetch(
@@ -304,7 +334,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
           const blob = await contentRes.blob()
           const data = await new Promise((resolve, reject) => {
             const reader = new FileReader()
-            reader.onload  = () => resolve(reader.result.split(',')[1]) // base64 part
+            reader.onload  = () => resolve(reader.result.split(',')[1])
             reader.onerror = reject
             reader.readAsDataURL(blob)
           })
@@ -412,6 +442,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
             {/* Body — contentEditable with imperative innerHTML; no dangerouslySetInnerHTML to avoid cursor reset */}
             <div
               ref={bodyRef}
+              className="email-body-editor"
               contentEditable
               suppressContentEditableWarning
               onInput={() => setEditableBody(bodyRef.current.innerHTML)}
@@ -419,7 +450,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
                 background:   'rgba(255,255,255,0.08)',
                 border:       '1px solid rgba(80,200,220,0.2)',
                 borderRadius: '6px',
-                color:        '#a8bfcc',
+                color:        '#d0d8e0',
                 padding:      '12px',
                 fontSize:     '13px',
                 minHeight:    '200px',
@@ -448,11 +479,18 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
                   </div>
                 )
               }
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                style={{ display: 'none' }}
+                onChange={handleLocalFiles}
+              />
               <button
                 className="epm-btn epm-btn-outline epm-attach-btn"
-                onClick={() => setDriveOpen(true)}
+                onClick={() => fileInputRef.current?.click()}
               >
-                + Attach from Drive
+                + Attach File
               </button>
             </div>
 

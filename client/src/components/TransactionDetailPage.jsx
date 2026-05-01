@@ -2155,6 +2155,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
                 save('client_last_name')(null)
                 save('client_phone')(null)
                 save('client_email')(null)
+                save('fub_contact_id')(null)
               }}
               onFubSelect={(result) => {
                 const p = result?.client1
@@ -2163,6 +2164,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
                 save('client_last_name')(p.last_name   || '')
                 save('client_phone')(p.phone            || '')
                 save('client_email')(p.email            || '')
+                save('fub_contact_id')(p.id             || null)
               }}
               onRelatedParty={(related) => {
                 const r = related[0]
@@ -2171,6 +2173,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
                 save('client2_last_name')(r.last_name   || '')
                 save('client2_phone')(r.phone            || '')
                 save('client2_email')(r.email            || '')
+                save('fub_contact_id_2')(r.id            || null)
               }}
             />
             <ClientRow
@@ -2185,6 +2188,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
                 save('client2_last_name')(null)
                 save('client2_phone')(null)
                 save('client2_email')(null)
+                save('fub_contact_id_2')(null)
               }}
               onFubSelect={(result) => {
                 const p = result._isRelationship ? result.client2 : result?.client1
@@ -2193,6 +2197,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
                 save('client2_last_name')(p.last_name   || '')
                 save('client2_phone')(p.phone            || '')
                 save('client2_email')(p.email            || '')
+                save('fub_contact_id_2')(p.id            || null)
               }}
             />
           </div>

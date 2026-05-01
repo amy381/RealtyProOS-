@@ -304,7 +304,10 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
       toast.error('No recipients resolved — add recipients to the email template')
       return
     }
-    const ccArr = editableCc.split(',').map(s => s.trim()).filter(Boolean)
+    const ccArr = editableCc.split(',').map(s => {
+      if (typeof s === 'object' && s !== null) return s.email || s.value || ''
+      return String(s).trim()
+    }).filter(Boolean)
 
     const localFiles = attachments.filter(f => f._file)
     const driveFiles = attachments.filter(f => !f._file)

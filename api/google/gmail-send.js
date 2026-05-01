@@ -25,7 +25,10 @@ function chunkBase64(b64) {
 
 function buildMimeMessage({ to, cc, bcc, subject, body, replyTo, attachments }) {
   const toStr  = [].concat(to  || []).join(', ')
-  const ccStr  = [].concat(cc  || []).join(', ')
+  const ccStr  = (Array.isArray(cc) ? cc : []).map(entry => {
+    if (typeof entry === 'object' && entry !== null) return entry.email || entry.value || ''
+    return String(entry).trim()
+  }).filter(Boolean).join(', ')
   const bccStr = [].concat(bcc || []).join(', ')
 
   const headers = [

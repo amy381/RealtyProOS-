@@ -176,6 +176,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
   const [driveOpen,    setDriveOpen]    = useState(false)
   const [attachments,  setAttachments]  = useState([])  // Drive: { id, name, mimeType } | Local: { id, name, mimeType, data }
   const [sending,      setSending]      = useState(false)
+  const [sendPhase,    setSendPhase]    = useState(null)    // 'uploading' | 'sending' | null
 
   // Local-only editable fields — never persisted back to the template
   const [editableTo,      setEditableTo]      = useState('')
@@ -284,22 +285,15 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
     )
   }
 
-  const handleLocalFiles = async (e) => {
+  const handleLocalFiles = (e) => {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
-    const newAttachments = await Promise.all(
-      files.map(file => new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload  = () => resolve({
-          id:       `local-${Date.now()}-${file.name}`,
-          name:     file.name,
-          mimeType: file.type || 'application/octet-stream',
-          data:     reader.result.split(',')[1],
-        })
-        reader.onerror = reject
-        reader.readAsDataURL(file)
-      }))
-    )
+    const newAttachments = files.map(file => ({
+      id:       `local-${Date.now()}-${file.name}`,
+      name:     file.name,
+      mimeType: file.type || 'application/octet-stream',
+      _file:    file,
+    }))
     setAttachments(prev => [...prev, ...newAttachments])
     e.target.value = ''
   }
@@ -311,19 +305,38 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
       return
     }
     const ccArr = editableCc.split(',').map(s => s.trim()).filter(Boolean)
+
+    const localFiles = attachments.filter(f => f._file)
+    const driveFiles = attachments.filter(f => !f._file)
+
+    const totalBytes = localFiles.reduce((sum, f) => sum + (f._file.size || 0), 0)
+    if (totalBytes > 20 * 1024 * 1024) {
+      toast.error('Attachments exceed 20 MB — please remove some files and try again')
+      return
+    }
+
     setSending(true)
+    let uploadedPaths = []
     try {
-      const resolvedAttachments = await Promise.all(
-        attachments.map(async (file) => {
-          // Local file — already base64-encoded at selection time
-          if (file.data) {
-            return {
-              filename:    file.name,
-              contentType: file.mimeType || 'application/octet-stream',
-              data:        file.data,
-            }
-          }
-          // Drive file — fetch content from Drive API
+      // Upload local files to Supabase storage to avoid Vercel's 4.5 MB body limit
+      if (localFiles.length > 0) {
+        setSendPhase('uploading')
+        uploadedPaths = await Promise.all(
+          localFiles.map(async (att) => {
+            const path = `${Date.now()}_${att.name}`
+            const { error } = await supabase.storage
+              .from('email-attachments')
+              .upload(path, att._file, { contentType: att.mimeType, upsert: false })
+            if (error) throw new Error(`Upload failed for ${att.name}: ${error.message}`)
+            return { path, filename: att.name, contentType: att.mimeType || 'application/octet-stream' }
+          })
+        )
+      }
+
+      // Resolve Drive attachments inline (fetched in browser, sent as base64)
+      setSendPhase('sending')
+      const driveAttachments = await Promise.all(
+        driveFiles.map(async (file) => {
           const tokenRes = await fetch(`${API_BASE}/api/google/token`)
           const { access_token } = await tokenRes.json()
           const contentRes = await fetch(
@@ -338,11 +351,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
             reader.onerror = reject
             reader.readAsDataURL(blob)
           })
-          return {
-            filename:    file.name,
-            contentType: file.mimeType || 'application/octet-stream',
-            data,
-          }
+          return { filename: file.name, contentType: file.mimeType || 'application/octet-stream', data }
         })
       )
 
@@ -355,17 +364,27 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
           subject:       editableSubject,
           body:          wrapEmailBody(editableBody),
           transactionId: tx?.id || undefined,
-          attachments:   resolvedAttachments.length > 0 ? resolvedAttachments : undefined,
+          storagePaths:  uploadedPaths.length > 0 ? uploadedPaths : undefined,
+          attachments:   driveAttachments.length > 0 ? driveAttachments : undefined,
         }),
       })
       const result = await res.json()
-      if (!res.ok) throw new Error(result.error || 'Send failed')
+      if (!res.ok) {
+        if (uploadedPaths.length > 0) {
+          await supabase.storage.from('email-attachments').remove(uploadedPaths.map(p => p.path)).catch(() => {})
+        }
+        throw new Error(result.error || 'Send failed')
+      }
       toast.success('Email sent')
       onClose()
     } catch (err) {
+      if (uploadedPaths.length > 0) {
+        await supabase.storage.from('email-attachments').remove(uploadedPaths.map(p => p.path)).catch(() => {})
+      }
       toast.error('Send failed: ' + err.message)
     } finally {
       setSending(false)
+      setSendPhase(null)
     }
   }
 
@@ -504,7 +523,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
                 onClick={handleSend}
                 disabled={sending || editableTo.trim() === ''}
               >
-                {sending ? 'Sending…' : 'Send'}
+                {sending ? (sendPhase === 'uploading' ? 'Uploading…' : 'Sending…') : 'Send'}
               </button>
             ) : (
               <a href="/api/google/auth" className="epm-btn epm-btn-primary epm-reconnect-btn">

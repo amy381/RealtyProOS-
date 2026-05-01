@@ -157,6 +157,7 @@ module.exports = async function handler(req, res) {
     body,
     replyTo,
     attachments   = [],
+    storagePaths  = [],
     transactionId = null,
   } = req.body
 
@@ -168,7 +169,28 @@ module.exports = async function handler(req, res) {
     const tokenRow    = await getTokenRow()
     let   accessToken = await getAccessToken(tokenRow)
 
-    const rawMessage = buildMimeMessage({ to, cc, bcc, subject, body, replyTo, attachments })
+    // Download files that were pre-uploaded to Supabase storage (bypasses Vercel's 4.5 MB body limit)
+    let allAttachments = [...attachments]
+    if (storagePaths.length > 0) {
+      const storageClient = getSupabase()
+      const storageItems  = await Promise.all(
+        storagePaths.map(async ({ path, filename, contentType }) => {
+          const { data, error } = await storageClient.storage
+            .from('email-attachments')
+            .download(path)
+          if (error) throw new Error(`Could not download attachment ${filename}: ${error.message}`)
+          const buffer = Buffer.from(await data.arrayBuffer())
+          return {
+            filename,
+            contentType: contentType || 'application/octet-stream',
+            data:        buffer.toString('base64'),
+          }
+        })
+      )
+      allAttachments = [...allAttachments, ...storageItems]
+    }
+
+    const rawMessage = buildMimeMessage({ to, cc, bcc, subject, body, replyTo, attachments: allAttachments })
     const encoded    = toBase64Url(rawMessage)
 
     let gmailRes = await gmailSend(accessToken, encoded)
@@ -194,6 +216,15 @@ module.exports = async function handler(req, res) {
     }
 
     const gmailData = await gmailRes.json()
+
+    // Remove temp storage files — best-effort, don't fail the response
+    if (storagePaths.length > 0) {
+      getSupabase().storage.from('email-attachments')
+        .remove(storagePaths.map(p => p.path))
+        .then(({ error }) => {
+          if (error) console.error('[gmail-send] Failed to remove temp attachments:', error.message)
+        })
+    }
 
     // Persist audit record
     const supabase = getSupabase()

@@ -20,42 +20,44 @@ function coerceEmailStr(entry) {
 // ─── Resolve a recipients/cc_recipients JSONB array → email strings ────────────
 // titleContact is the collaborator record (or null) fetched from collaborators table
 function resolveRecipients(entries = [], tx, titleContact) {
-  if (!Array.isArray(entries)) return []
+  if (!Array.isArray(entries)) return { emails: [], warnings: [] }
   const resolved = []
   const warnings = []
 
   for (const entry of entries) {
     if (entry.type === 'custom') {
-      resolved.push(entry.value)
+      // Coerce value to string — never push a raw object
+      const val = typeof entry.value === 'string' ? entry.value.trim() : String(entry.value || '').trim()
+      if (val) resolved.push(val)
     } else if (entry.type === 'variable') {
       switch (entry.value) {
         case 'client': {
           const email = tx?.client_email
-          if (email) resolved.push(email)
+          if (email) resolved.push(String(email).trim())
           else warnings.push('Client email not set')
           break
         }
         case 'client2': {
           const email = tx?.client2_email
-          if (email) resolved.push(email)
+          if (email) resolved.push(String(email).trim())
           else warnings.push('Client 2 email not set')
           break
         }
         case 'lender': {
           const email = tx?.lender_email
-          if (email) resolved.push(email)
+          if (email) resolved.push(String(email).trim())
           else warnings.push('Lender email not set')
           break
         }
         case 'title_contact': {
           const email = titleContact?.email
-          if (email) resolved.push(email)
+          if (email) resolved.push(String(email).trim())
           else warnings.push('Title Contact email not set')
           break
         }
         case 'co_op_agent': {
           const email = tx?.co_op_agent_email
-          if (email) resolved.push(email)
+          if (email) resolved.push(String(email).trim())
           else warnings.push('Co-op Agent email not set')
           break
         }
@@ -70,6 +72,7 @@ function resolveRecipients(entries = [], tx, titleContact) {
           warnings.push(`Unknown variable: ${entry.value}`)
       }
     }
+    // else: unknown type — skip, never push raw entry
   }
 
   return { emails: resolved, warnings }
@@ -221,9 +224,9 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
 
   const toEmails = recipientsResult.emails
   const ccEmails = ccResult.emails.length > 0
-    ? ccResult.emails.map(coerceEmailStr)
-    : template?.cc
-      ? resolveVars(template.cc, tx, tcSettings).split(',').map(coerceEmailStr).filter(Boolean)
+    ? ccResult.emails
+    : typeof template?.cc === 'string' && template.cc
+      ? resolveVars(template.cc, tx, tcSettings).split(',').map(s => s.trim()).filter(Boolean)
       : []
 
   const resolvedSubject = resolveVars(template?.subject || '', tx, tcSettings)

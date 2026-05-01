@@ -233,7 +233,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
     if (!seededRef.current && resolvedSubject) {
       const decodedBody = maybeDecodeHtml(resolvedBody)
       setEditableTo(toEmails.join(', '))
-      setEditableCc(ccEmails.join(', '))
+      setEditableCc(ccEmails.map(e => typeof e === 'string' ? e : (e?.email || e?.value || '')).filter(Boolean).join(', '))
       setEditableSubject(resolvedSubject)
       setEditableBody(decodedBody)
       if (bodyRef.current) {
@@ -447,10 +447,10 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
               suppressContentEditableWarning
               onInput={() => setEditableBody(bodyRef.current.innerHTML)}
               style={{
-                background:   'rgba(255,255,255,0.08)',
+                background:   '#ffffff',
                 border:       '1px solid rgba(80,200,220,0.2)',
                 borderRadius: '6px',
-                color:        '#d0d8e0',
+                color:        '#000000',
                 padding:      '12px',
                 fontSize:     '13px',
                 minHeight:    '200px',

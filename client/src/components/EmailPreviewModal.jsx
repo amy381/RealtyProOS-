@@ -233,8 +233,13 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
   useEffect(() => {
     if (!seededRef.current && resolvedSubject) {
       const decodedBody = maybeDecodeHtml(resolvedBody)
-      setEditableTo(toEmails.join(', '))
-      setEditableCc(ccEmails.map(e => typeof e === 'string' ? e : (e?.email || e?.value || '')).filter(Boolean).join(', '))
+      const cleanEntry = entry => {
+        if (typeof entry === 'string') return entry.trim()
+        if (typeof entry === 'object' && entry !== null) return (entry.email || entry.value || '').trim()
+        return ''
+      }
+      setEditableTo(toEmails.map(cleanEntry).filter(Boolean).join(', '))
+      setEditableCc(ccEmails.map(cleanEntry).filter(Boolean).join(', '))
       setEditableSubject(resolvedSubject)
       setEditableBody(decodedBody)
       if (bodyRef.current) {

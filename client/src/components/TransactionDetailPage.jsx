@@ -379,12 +379,18 @@ function FubInlineSearch({ onSelect, onClose, onRelatedParty }) {
       onSelect({ _isRelationship: true, client2: { first_name: person.first_name, last_name: person.last_name, email: person.email, phone: person.phone } })
       return
     }
-    // Save client 1 immediately from search result data
+    // Save immediately from search result data (phone may be empty if FUB omits it in search)
     onSelect({ client1: person, related: [] })
-    // Then async-fetch related parties for client 2 auto-fill (fire and forget)
-    if (person.id && onRelatedParty) {
+    // Always fetch full person record: guarantees phone is captured and supplies related parties
+    if (person.id) {
       fetchFubPerson(person.id).then(full => {
-        if (full?.related?.length > 0) onRelatedParty(full.related)
+        if (full?.client1?.phone) {
+          // Re-select with full record so phone (and any other missing field) is saved
+          onSelect({ client1: { ...person, ...full.client1 } })
+        }
+        if (full?.related?.length > 0 && onRelatedParty) {
+          onRelatedParty(full.related)
+        }
       })
     }
   }

@@ -64,13 +64,11 @@ export function useSyncSupraShowings(transactions) {
         // Strip city/state/zip — DB stores only the street portion
         const streetAddr = address.split(',')[0].trim()
 
-        // Exact ILIKE match against active/pending seller transactions
-        const STATUS_FILTER = ['active-listing', 'pending']
+        // Exact ILIKE match against seller transactions (any status)
         let { data: txMatches } = await supabase
           .from('transactions')
           .select('id')
           .eq('rep_type', 'Seller')
-          .in('status', STATUS_FILTER)
           .ilike('property_address', streetAddr)
 
         // Fallback: match on street number only if exactly one result
@@ -80,7 +78,6 @@ export function useSyncSupraShowings(transactions) {
             .from('transactions')
             .select('id')
             .eq('rep_type', 'Seller')
-            .in('status', STATUS_FILTER)
             .ilike('property_address', `${streetNumber}%`)
           txMatches = fallback?.length === 1 ? fallback : []
         }

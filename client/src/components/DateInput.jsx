@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import './DateInput.css'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -89,12 +90,13 @@ function CalendarPopup({ value, onSelect, pos }) {
   const prev = () => { if (vm === 0)  { setVm(11); setVy(y => y - 1) } else setVm(m => m - 1) }
   const next = () => { if (vm === 11) { setVm(0);  setVy(y => y + 1) } else setVm(m => m + 1) }
 
-  const fixedStyle = pos
-    ? { position: 'fixed', top: pos.top, left: pos.left, zIndex: 99999 }
-    : undefined
-
-  return (
-    <div className="di-popup" style={fixedStyle}>
+  const popup = (
+    <div
+      className="di-popup"
+      style={pos
+        ? { position: 'fixed', top: pos.top, left: pos.left, zIndex: 99999 }
+        : { position: 'fixed', top: 0, left: 0, zIndex: 99999 }}
+    >
       <div className="di-popup-header">
         <button className="di-popup-nav" onMouseDown={e => e.preventDefault()} onClick={prev}>‹</button>
         <span className="di-popup-label">{MONTHS[vm]} {vy}</span>
@@ -119,6 +121,7 @@ function CalendarPopup({ value, onSelect, pos }) {
       </div>
     </div>
   )
+  return createPortal(popup, document.body)
 }
 
 // ─── DateInput ────────────────────────────────────────────────────────────────

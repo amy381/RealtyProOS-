@@ -93,6 +93,7 @@ function CalendarPopup({ value, onSelect, pos }) {
   const popup = (
     <div
       className="di-popup"
+      onMouseDown={e => e.preventDefault()}
       style={pos
         ? { position: 'fixed', top: pos.top, left: pos.left, zIndex: 99999 }
         : { position: 'fixed', top: 0, left: 0, zIndex: 99999 }}

@@ -2067,6 +2067,10 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
                 value={transaction.co_op_agent || ''}
                 category="coop-agents"
                 onSave={save('co_op_agent')}
+                onSelect={c => {
+                  if (c.email) save('co_op_agent_email')(c.email)
+                  if (c.phone) save('co_op_agent_phone')(c.phone)
+                }}
                 placeholder="Search co-op agents…"
                 tabIndex={37}
               />

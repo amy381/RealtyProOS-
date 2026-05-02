@@ -67,7 +67,7 @@ function toDisplay(yyyymmdd) {
 
 // ─── Calendar popup ───────────────────────────────────────────────────────────
 
-function CalendarPopup({ value, onSelect }) {
+function CalendarPopup({ value, onSelect, pos }) {
   const today = new Date()
   const sel = value
     ? (() => { const [y, m, d] = value.split('-').map(Number); return { y, m: m - 1, d } })()
@@ -89,8 +89,12 @@ function CalendarPopup({ value, onSelect }) {
   const prev = () => { if (vm === 0)  { setVm(11); setVy(y => y - 1) } else setVm(m => m - 1) }
   const next = () => { if (vm === 11) { setVm(0);  setVy(y => y + 1) } else setVm(m => m + 1) }
 
+  const fixedStyle = pos
+    ? { position: 'fixed', top: pos.top, left: pos.left, bottom: 'auto', right: 'auto' }
+    : undefined
+
   return (
-    <div className="di-popup">
+    <div className="di-popup" style={fixedStyle}>
       <div className="di-popup-header">
         <button className="di-popup-nav" onMouseDown={e => e.preventDefault()} onClick={prev}>‹</button>
         <span className="di-popup-label">{MONTHS[vm]} {vy}</span>
@@ -129,11 +133,23 @@ export default function DateInput({
   autoFocus,
   style,
 }) {
-  const [text,    setText]    = useState(() => toDisplay(value))
-  const [invalid, setInvalid] = useState(false)
-  const [open,    setOpen]    = useState(false)
+  const [text,     setText]    = useState(() => toDisplay(value))
+  const [invalid,  setInvalid] = useState(false)
+  const [open,     setOpen]    = useState(false)
+  const [popupPos, setPopupPos] = useState(null)
   const wrapRef  = useRef(null)
   const inputRef = useRef(null)
+
+  const computePopupPos = () => {
+    if (!wrapRef.current) return
+    const rect      = wrapRef.current.getBoundingClientRect()
+    const popupH    = 252   // approx height of the calendar grid + header + padding
+    const spaceBelow = window.innerHeight - rect.bottom
+    const top = spaceBelow >= popupH + 8
+      ? rect.bottom + 5
+      : Math.max(4, rect.top - popupH - 5)
+    setPopupPos({ top, left: rect.left })
+  }
 
   useEffect(() => {
     setText(toDisplay(value))
@@ -193,6 +209,7 @@ export default function DateInput({
         tabIndex={tabIndex}
         autoFocus={autoFocus}
         onChange={e => { setText(e.target.value); setInvalid(false) }}
+        onFocus={() => { if (text) { computePopupPos(); setOpen(true) } }}
         onKeyDown={e => {
           if (e.key === 'Enter')  { processCommit(); setOpen(false) }
           if (e.key === 'Escape') { setText(toDisplay(value)); setInvalid(false); setOpen(false) }
@@ -204,7 +221,11 @@ export default function DateInput({
         type="button"
         aria-label="Pick date"
         onMouseDown={e => e.preventDefault()}
-        onClick={() => { setOpen(o => !o); inputRef.current?.focus() }}
+        onClick={() => {
+          if (!open) computePopupPos()
+          setOpen(o => !o)
+          inputRef.current?.focus()
+        }}
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <rect x="1" y="2.5" width="12" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
@@ -212,7 +233,7 @@ export default function DateInput({
           <path d="M4.5 1v3M9.5 1v3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
         </svg>
       </button>
-      {open && <CalendarPopup value={value} onSelect={handleSelect} />}
+      {open && <CalendarPopup value={value} onSelect={handleSelect} pos={popupPos} />}
     </div>
   )
 }

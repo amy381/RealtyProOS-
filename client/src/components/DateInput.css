@@ -39,12 +39,8 @@
   color: #50C8DC;
 }
 
-/* Calendar popup */
+/* Calendar popup — position/top/left/z-index set inline when pos prop is provided */
 .di-popup {
-  position: absolute;
-  top: calc(100% + 5px);
-  left: 0;
-  z-index: 9999;
   background: rgba(2, 5, 18, 0.97);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);

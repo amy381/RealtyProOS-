@@ -90,7 +90,7 @@ function CalendarPopup({ value, onSelect, pos }) {
   const next = () => { if (vm === 11) { setVm(0);  setVy(y => y + 1) } else setVm(m => m + 1) }
 
   const fixedStyle = pos
-    ? { position: 'fixed', top: pos.top, left: pos.left, bottom: 'auto', right: 'auto' }
+    ? { position: 'fixed', top: pos.top, left: pos.left, zIndex: 99999 }
     : undefined
 
   return (
@@ -142,13 +142,20 @@ export default function DateInput({
 
   const computePopupPos = () => {
     if (!wrapRef.current) return
-    const rect      = wrapRef.current.getBoundingClientRect()
-    const popupH    = 252   // approx height of the calendar grid + header + padding
-    const spaceBelow = window.innerHeight - rect.bottom
-    const top = spaceBelow >= popupH + 8
-      ? rect.bottom + 5
-      : Math.max(4, rect.top - popupH - 5)
-    const left = Math.min(rect.left, window.innerWidth - 260)
+    const rect     = wrapRef.current.getBoundingClientRect()
+    const calWidth  = 252
+    const calHeight = 260
+
+    let top  = rect.bottom + 4
+    let left = rect.left
+
+    if (top + calHeight > window.innerHeight) top  = rect.top - calHeight - 4
+    if (left + calWidth > window.innerWidth)  left = rect.right - calWidth
+
+    top  = Math.max(4, top)
+    left = Math.max(4, left)
+
+    console.log('Calendar pos:', { rect: rect.toJSON(), top, left, viewportW: window.innerWidth })
     setPopupPos({ top, left })
   }
 

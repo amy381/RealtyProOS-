@@ -1730,9 +1730,19 @@ function CollaboratorSearch({ label, value, category, onSave, onSelect, placehol
 
   useEffect(() => {
     if (!text.trim()) { setResults([]); return }
-    const t = text.trim()
+    const t     = text.trim()
+    const parts = t.split(/\s+/)
+    // Base: match whole term against each column individually
+    let orFilter = `first_name.ilike.%${t}%,last_name.ilike.%${t}%,company.ilike.%${t}%`
+    // Multi-word: also match first word against first_name AND rest against last_name
+    // so "Karen B" finds first_name=Karen last_name=Barker
+    if (parts.length >= 2) {
+      const first = parts[0]
+      const rest  = parts.slice(1).join(' ')
+      orFilter += `,and(first_name.ilike.%${first}%,last_name.ilike.%${rest}%)`
+    }
     supabase.from('collaborators').select('*').eq('category', category)
-      .or(`first_name.ilike.%${t}%,last_name.ilike.%${t}%,company.ilike.%${t}%`)
+      .or(orFilter)
       .limit(8)
       .then(({ data }) => setResults(data || []))
   }, [text, category])

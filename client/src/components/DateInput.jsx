@@ -148,7 +148,8 @@ export default function DateInput({
     const top = spaceBelow >= popupH + 8
       ? rect.bottom + 5
       : Math.max(4, rect.top - popupH - 5)
-    setPopupPos({ top, left: rect.left })
+    const left = Math.min(rect.left, window.innerWidth - 260)
+    setPopupPos({ top, left })
   }
 
   useEffect(() => {

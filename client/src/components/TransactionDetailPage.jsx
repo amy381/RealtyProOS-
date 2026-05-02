@@ -2252,17 +2252,38 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
           {isPendingOrBeyond && (
             <div className="txp-section txp-pending-dates-section">
               <div className="txp-section-title txp-pending-dates-title">Contract Dates</div>
-              {pendingContractFields.map(({ key, label }, i) => (
-                <TxField
-                  key={key}
-                  label={label}
-                  value={transaction[key] || ''}
-                  displayValue={formatDate(transaction[key])}
-                  type="date"
-                  onSave={save(key)}
-                  tabIndex={50 + i}
-                />
-              ))}
+              {pendingContractFields.map(({ key, label }, i) =>
+                key === 'home_inspection_date' ? (
+                  <div key={key} className="txp-field">
+                    <span className="txp-field-label">{label}</span>
+                    <DateInput
+                      className="txp-input"
+                      value={transaction.home_inspection_date || ''}
+                      onChange={e => {
+                        const v = e.target.value || null
+                        if (String(v ?? '') !== String(transaction.home_inspection_date ?? '')) save('home_inspection_date')(v)
+                      }}
+                      tabIndex={50 + i}
+                    />
+                    <input
+                      type="time"
+                      className="txp-inspection-time"
+                      value={transaction.home_inspection_time || ''}
+                      onChange={e => save('home_inspection_time')(e.target.value || null)}
+                    />
+                  </div>
+                ) : (
+                  <TxField
+                    key={key}
+                    label={label}
+                    value={transaction[key] || ''}
+                    displayValue={formatDate(transaction[key])}
+                    type="date"
+                    onSave={save(key)}
+                    tabIndex={50 + i}
+                  />
+                )
+              )}
               <div className="txp-field">
                 <span className="txp-field-label">Contingency</span>
                 <label className="txp-checkbox-item">

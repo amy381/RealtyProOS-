@@ -956,6 +956,26 @@
 .txp-input:focus { background: rgba(2, 5, 18, 0.7); border-color: rgba(50, 200, 220, 0.6); outline: none; }
 select.txp-input { cursor: pointer; }
 
+/* ── Inspection time input (inline next to Inspection Date) ─────────────────── */
+.txp-inspection-time {
+  width: 100px;
+  flex-shrink: 0;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 500;
+  color: #c8d4e0;
+  background: rgba(2, 5, 18, 0.6);
+  border: 0.5px solid rgba(50, 200, 220, 0.4);
+  border-radius: 4px;
+  padding: 5px 9px;
+  outline: none;
+  color-scheme: dark;
+}
+.txp-inspection-time:focus {
+  background: rgba(2, 5, 18, 0.7);
+  border-color: rgba(50, 200, 220, 0.6);
+}
+
 /* ── Access field: dropdown + text input on same row ────────────────────────── */
 .txp-access-inputs {
   flex: 1;

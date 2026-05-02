@@ -70,7 +70,7 @@ export function resolveVars(text, tx, tcSettings = []) {
     inspection_period_end: fmt(tx.ipe_date),
     close_of_escrow:       fmt(tx.close_of_escrow),
     // Contract details
-    co_agent:              tx.co_op_agent             || '',
+    co_agent:              (tx.co_op_agent || '').split(' ')[0],
     home_inspection_date:  fmt(tx.home_inspection_date),
     home_inspector:        tx.home_inspector          || '',
     // Parties

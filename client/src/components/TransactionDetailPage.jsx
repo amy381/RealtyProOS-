@@ -2062,7 +2062,14 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
 
               <TxField label="Escrow Number" value={transaction.escrow_number || ''} type="text" onSave={save('escrow_number')} placeholder="Escrow #" tabIndex={36} />
 
-              <TxField label="Co-op Agent" value={transaction.co_op_agent || ''} type="text" onSave={save('co_op_agent')} placeholder="Agent name" tabIndex={37} />
+              <CollaboratorSearch
+                label="Co-op Agent"
+                value={transaction.co_op_agent || ''}
+                category="coop-agents"
+                onSave={save('co_op_agent')}
+                placeholder="Search co-op agents…"
+                tabIndex={37}
+              />
 
               <TxField label={isBuyer ? "Seller's Name" : "Buyer's Name"} value={transaction.opposite_party_name || ''} type="text" onSave={save('opposite_party_name')} placeholder={isBuyer ? 'Seller name' : 'Buyer name'} tabIndex={38} />
 

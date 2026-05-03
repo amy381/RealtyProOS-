@@ -178,7 +178,7 @@ export default function MissionControl({ transactions, commissions }) {
   const pipeline = useMemo(() =>
     PIPELINE_STAGES.map(({ id, label }) => {
       const txns = transactions.filter(t => t.status === id)
-      const vol  = txns.reduce((s, t) => s + (Number(t.price) || 0), 0)
+      const vol  = txns.reduce((s, t) => s + (id === 'active-listing' ? Number(t.price) || 0 : Number(t.contract_price || t.price) || 0), 0)
       return { id, label, count: txns.length, volume: vol }
     }),
   [transactions])

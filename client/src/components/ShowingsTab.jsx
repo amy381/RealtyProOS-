@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Plus, Pencil } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { supabase, getUserId } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import { useSyncSupraShowings } from '../hooks/useSyncSupraShowings'
@@ -150,12 +150,14 @@ export default function ShowingsTab({ transactions }) {
     } else {
       // Add mode — INSERT
       if (!addForm.transaction_id) { setAdding(false); return }
+      const uid = await getUserId()
       const { data, error } = await supabase.from('showings').insert({
         transaction_id: addForm.transaction_id,
         agent_name:     addForm.agent_name  || null,
         agent_email:    addForm.agent_email || null,
         showing_date:   addForm.showing_date || null,
         feedback:       addForm.feedback    || '',
+        user_id:        uid,
       }).select().single()
       setAdding(false)
       if (error) { toast.error('Could not save showing.'); return }

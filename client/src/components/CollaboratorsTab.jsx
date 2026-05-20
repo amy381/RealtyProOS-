@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Pencil } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { supabase, getUserId } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
 import { formatPhone } from '../lib/formatters'
 import './CollaboratorsTab.css'
@@ -67,8 +67,9 @@ export default function CollaboratorsTab({ activeCat: activeCatProp, onCatChange
       setRecords(prev => prev.map(r => r.id === editing.id ? data : r))
       toast.success('Saved')
     } else {
+      const uid = await getUserId()
       const { data, error } = await supabase
-        .from('collaborators').insert(payload).select().single()
+        .from('collaborators').insert({ ...payload, user_id: uid }).select().single()
       if (error) {
         console.error('[CollaboratorsTab] insert error:', error.code, error.message, error.hint)
         toast.error(`Failed to add: ${error.message}`)

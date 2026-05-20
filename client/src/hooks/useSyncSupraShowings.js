@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, getUserId } from '../lib/supabase'
 
 const API_BASE       = import.meta.env.DEV ? 'http://localhost:3001' : ''
 const SUPRA_SENDER   = 'suprashowing@suprasystems.com'
@@ -17,6 +17,7 @@ export function useSyncSupraShowings(transactions) {
   const sync = useCallback(async () => {
     setSyncing(true)
     try {
+      const uid = await getUserId()
       // Get access token from server
       const tokenRes = await fetch(`${API_BASE}/api/google/token`)
       if (!tokenRes.ok) throw new Error('Gmail not connected — please re-authorise Google')
@@ -98,6 +99,7 @@ export function useSyncSupraShowings(transactions) {
           showing_time:       time,
           gmail_message_id:   msgId,
           feedback_requested: false,
+          user_id:            uid,
         })
 
         if (!error) {

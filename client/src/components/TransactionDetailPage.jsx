@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Pencil } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { supabase, getUserId } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { formatPhone, formatApn } from '../lib/formatters'
 import { mouseDownIsInside } from '../lib/dragGuard'
@@ -748,15 +748,16 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
     setMention(false)
     inputRef.current?.focus()
 
-    supabase
-      .from('transaction_notes')
-      .insert({ transaction_id: transactionId, note_text: text, created_at: now, author: 'Amy Casanova' })
-      .select('id, note_text, created_at, parent_id, author')
-      .single()
-      .then(({ data: saved, error }) => {
-        if (error) { console.error('[Notes] save error:', error.message); return }
-        if (saved) setNotes(prev => prev.map(n => n.id === tempId ? saved : n))
-      })
+    ;(async () => {
+      const uid = await getUserId()
+      const { data: saved, error } = await supabase
+        .from('transaction_notes')
+        .insert({ transaction_id: transactionId, note_text: text, created_at: now, author: 'Amy Casanova', user_id: uid })
+        .select('id, note_text, created_at, parent_id, author')
+        .single()
+      if (error) { console.error('[Notes] save error:', error.message); return }
+      if (saved) setNotes(prev => prev.map(n => n.id === tempId ? saved : n))
+    })()
 
     onNoteAdded?.(text, mentions)
     if (mentions.length > 0) sendMentionEmails(mentions, text, transactionAddr, tcSettings, transactionId)
@@ -773,15 +774,16 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
     setReplyToId(null)
     setReplyMentOpen(false)
 
-    supabase
-      .from('transaction_notes')
-      .insert({ transaction_id: transactionId, note_text: text, created_at: now, parent_id: parentId, author: 'Amy Casanova' })
-      .select('id, note_text, created_at, parent_id, author')
-      .single()
-      .then(({ data: saved, error }) => {
-        if (error) { console.error('[Notes] reply save error:', error.message); return }
-        if (saved) setNotes(prev => prev.map(n => n.id === tempId ? saved : n))
-      })
+    ;(async () => {
+      const uid = await getUserId()
+      const { data: saved, error } = await supabase
+        .from('transaction_notes')
+        .insert({ transaction_id: transactionId, note_text: text, created_at: now, parent_id: parentId, author: 'Amy Casanova', user_id: uid })
+        .select('id, note_text, created_at, parent_id, author')
+        .single()
+      if (error) { console.error('[Notes] reply save error:', error.message); return }
+      if (saved) setNotes(prev => prev.map(n => n.id === tempId ? saved : n))
+    })()
   }
 
   const handleSaveEdit = (id) => {
@@ -1474,10 +1476,12 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
         return
       }
 
+      const notifyUid = await getUserId()
       await supabase.from('notify_snapshots').insert({
         transaction_id: transaction.id,
         sent_at:        new Date().toISOString(),
         snapshot:       { ...transaction },
+        user_id:        notifyUid,
       })
       toast.success(`Notified ${recipients.map(r => r.name).join(' & ')}`)
       onClose()
@@ -1675,7 +1679,8 @@ function CollaboratorAddModal({ category, initialName = '', onSaved, onClose }) 
   const set = f => e => setForm(p => ({ ...p, [f]: e.target.value }))
 
   const handleSave = async () => {
-    const payload = { ...form, category }
+    const uid = await getUserId()
+    const payload = { ...form, category, user_id: uid }
     console.log('[CollaboratorAdd] inserting:', payload)
     const { data, error } = await supabase
       .from('collaborators').insert(payload).select().single()
@@ -2911,9 +2916,11 @@ function DocsRequiredSection({ transaction, commissions, onTransactionUpdate }) 
     const cur        = docStatuses[docName] || {}
     const newChecked = !cur.checked
     setDocStatuses(prev => ({ ...prev, [docName]: { ...cur, checked: newChecked } }))
+    const uid = await getUserId()
     await supabase.from('document_uploads').upsert(
       { transaction_id: transaction.id, doc_name: docName, checked: newChecked,
-        filename: cur.filename || null, drive_id: cur.drive_id || null, drive_link: cur.drive_link || null },
+        filename: cur.filename || null, drive_id: cur.drive_id || null, drive_link: cur.drive_link || null,
+        user_id: uid },
       { onConflict: 'transaction_id,doc_name' }
     )
   }
@@ -2957,9 +2964,11 @@ function DocsRequiredSection({ transaction, commissions, onTransactionUpdate }) 
       } else {
         toast.success('Saved locally (connect Drive to sync)')
       }
+      const uid = await getUserId()
       const record = {
         transaction_id: transaction.id, doc_name: docName,
         checked: true, filename: file.name, drive_id: driveId, drive_link: driveLink,
+        user_id: uid,
       }
       await supabase.from('document_uploads').upsert(record, { onConflict: 'transaction_id,doc_name' })
       setDocStatuses(prev => ({ ...prev, [docName]: { checked: true, filename: file.name, drive_id: driveId, drive_link: driveLink } }))
@@ -2975,9 +2984,11 @@ function DocsRequiredSection({ transaction, commissions, onTransactionUpdate }) 
     const el   = customInputRefs.current[section]
     const name = el?.value?.trim()
     if (!name) return
+    const uid = await getUserId()
     const record = {
       transaction_id: transaction.id, doc_name: name,
       section, is_custom: true, checked: false,
+      user_id: uid,
     }
     const { error } = await supabase.from('document_uploads')
       .upsert(record, { onConflict: 'transaction_id,doc_name' })
@@ -3268,9 +3279,10 @@ function ShowingsSection({ transaction }) {
         if (error) throw error
         setShowings(prev => prev.map(s => s.id === id ? { ...s, ...payload } : s))
       } else {
+        const uid = await getUserId()
         const { data, error } = await supabase
           .from('showings')
-          .insert({ ...editing, feedback: editing.feedback || '', transaction_id: transaction.id })
+          .insert({ ...editing, feedback: editing.feedback || '', transaction_id: transaction.id, user_id: uid })
           .select().single()
         if (error) throw error
         setShowings(prev => [data, ...prev])
@@ -3589,8 +3601,9 @@ export default function TransactionDetailPage({
     const entry       = { id: `s-${Date.now()}`, description, created_at: new Date().toISOString() }
 
     setSessionHistory(prev => [entry, ...prev])
+    const uid = await getUserId()
     supabase.from('transaction_history')
-      .insert({ transaction_id: transaction.id, description, changed_by: 'Me' })
+      .insert({ transaction_id: transaction.id, description, changed_by: 'Me', user_id: uid })
       .select().single()
       .then(({ data, error }) => {
         if (!error && data) setSessionHistory(prev => prev.map(e => e.id === entry.id ? { ...e, dbId: data.id } : e))
@@ -3605,9 +3618,12 @@ export default function TransactionDetailPage({
       : `📝 Note: "${text}"`
     const entry = { id: `s-${Date.now()}`, description, created_at: now, type }
     setSessionHistory(prev => [entry, ...prev])
-    supabase.from('transaction_history')
-      .insert({ transaction_id: transaction.id, description, changed_by: 'Me' })
-      .then(({ error }) => { if (error) console.warn('[Notes] history save:', error.message) })
+    ;(async () => {
+      const uid = await getUserId()
+      const { error } = await supabase.from('transaction_history')
+        .insert({ transaction_id: transaction.id, description, changed_by: 'Me', user_id: uid })
+      if (error) console.warn('[Notes] history save:', error.message)
+    })()
   }, [transaction.id])
 
   const handleStatusChange = useCallback(async (newStatus) => {
@@ -3617,7 +3633,8 @@ export default function TransactionDetailPage({
     const description = `Stage changed from "${oldLabel}" to "${newLabel}"`
     const entry       = { id: `s-${Date.now()}`, description, created_at: new Date().toISOString() }
     setSessionHistory(prev => [entry, ...prev])
-    supabase.from('transaction_history').insert({ transaction_id: transaction.id, description, changed_by: 'Me' })
+    const uid = await getUserId()
+    supabase.from('transaction_history').insert({ transaction_id: transaction.id, description, changed_by: 'Me', user_id: uid })
       .then(({ error }) => { if (error) console.warn('history save:', error.message) })
   }, [transaction, columns, onStatusChange])
 

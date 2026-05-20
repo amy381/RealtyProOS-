@@ -5,6 +5,10 @@
 
 const { getSupabase } = require('./_lib')
 
+// Single-tenant assumption for Phase A — audit log row has no JWT context.
+// Phase B will derive this from the caller's verified JWT.
+const LEGACY_OS_OWNER_USER_ID = 'a02b464f-dd3e-49de-b893-2825fe8efb3f'
+
 // ── MIME construction ─────────────────────────────────────────────────────────
 
 // RFC 4648 §5 base64url — required by Gmail API for the raw message
@@ -243,6 +247,7 @@ module.exports = async function handler(req, res) {
       sent_by:          'Amy Casanova',
       sent_via:         'gmail',
       gmail_message_id: gmailData.id,
+      user_id:          LEGACY_OS_OWNER_USER_ID,
       ...(transactionId ? { transaction_id: transactionId } : {}),
     })
 

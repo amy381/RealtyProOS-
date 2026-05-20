@@ -4,7 +4,7 @@
 // and lets Amy send directly or add to the Send Queue.
 
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, getUserId } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import './VendorFormPreviewModal.css'
@@ -102,6 +102,7 @@ export default function VendorFormPreviewModal({ taskId, vendorId, tx, onClose }
     if (!pdfData) return
     setQueuing(true)
     const subject = `Inspection Request - ${pdfData.propertyAddress || 'Property'}`
+    const uid = await getUserId()
     const { error: insertErr } = await supabase.from('email_queue').insert({
       transaction_id: tx?.id        || null,
       to_email:       pdfData.vendorEmail,
@@ -112,6 +113,7 @@ export default function VendorFormPreviewModal({ taskId, vendorId, tx, onClose }
       pdf_filename:   pdfData.filename,
       status:         'pending',
       prepared_by:    'Me',
+      user_id:        uid,
     })
     setQueuing(false)
     if (insertErr) { toast.error('Failed to add to queue'); return }

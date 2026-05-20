@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, getUserId } from '../lib/supabase'
 import { uploadToDrive, syncDriveFolder, CONTRACT_DOCS } from '../lib/googleDrive'
 import toast from 'react-hot-toast'
 import DateInput from './DateInput'
@@ -346,6 +346,7 @@ function UploadButton({ tx, uploadCount, onUploadDone }) {
       }
       if (!folderId) { toast.error('✗ No Drive folder connected'); setUploading(false); return }
       const result = await uploadToDrive(file, folderId)
+      const uid = await getUserId()
       await supabase.from('document_uploads').insert({
         transaction_id: tx.id,
         doc_name:       file.name,
@@ -354,6 +355,7 @@ function UploadButton({ tx, uploadCount, onUploadDone }) {
         drive_link:     result.webViewLink,
         is_custom:      true,
         section:        'general',
+        user_id:        uid,
       })
       toast.success('✓ Document uploaded')
       onUploadDone?.(tx.id)
@@ -510,9 +512,10 @@ export default function ListView({ transactions, commissions, columns, onCardCli
     if (!name?.trim()) return
     setSaving(true)
     const toSave = { ...draft, stageChecks: [...draft.stageChecks] }
+    const uid = await getUserId()
     const { data, error } = await supabase
       .from('saved_filters')
-      .insert({ name: name.trim(), filters: toSave })
+      .insert({ name: name.trim(), filters: toSave, user_id: uid })
       .select()
       .single()
     setSaving(false)

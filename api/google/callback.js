@@ -1,5 +1,9 @@
 const { getSupabase } = require('./_lib')
 
+// Single-tenant assumption for Phase A — OAuth callback has no JWT context.
+// Phase B will pass user id via the OAuth `state` param.
+const LEGACY_OS_OWNER_USER_ID = 'a02b464f-dd3e-49de-b893-2825fe8efb3f'
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end()
 
@@ -38,6 +42,7 @@ module.exports = async function handler(req, res) {
       refresh_token: tokens.refresh_token,
       expiry_date:   tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
       scopes:        tokens.scope ?? null,
+      user_id:       LEGACY_OS_OWNER_USER_ID,
     })
     if (dbErr) throw new Error('Failed to save tokens: ' + dbErr.message)
 

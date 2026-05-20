@@ -14,7 +14,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { supabase } from '../lib/supabase'
+import { supabase, getUserId } from '../lib/supabase'
 import { mouseDownIsInside } from '../lib/dragGuard'
 import { TC_ASSIGNEES } from '../lib/taskTemplates'
 import { formatPhone } from '../lib/formatters'
@@ -613,9 +613,10 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   }
 
   const handleCreateVendor = async () => {
+    const uid = await getUserId()
     const { data, error } = await supabase
       .from('vendors')
-      .insert({ name: 'New Vendor', vendor_type: '', contact_method: '', field_mappings: [] })
+      .insert({ name: 'New Vendor', vendor_type: '', contact_method: '', field_mappings: [], user_id: uid })
       .select().single()
     if (error || !data) { alert('Failed to create vendor: ' + error?.message); return }
     setVendors(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
@@ -770,9 +771,10 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     if (!stage?.trim()) return
     const repTypeRaw = window.prompt('Rep type — enter Buyer, Seller, or leave blank for Both:')
     const repType = repTypeRaw?.trim() || null
+    const uid = await getUserId()
     const { data, error } = await supabase
       .from('task_templates')
-      .insert({ name: name.trim(), stage: stage.trim(), rep_type: repType, sort_order: templates.length + 1 })
+      .insert({ name: name.trim(), stage: stage.trim(), rep_type: repType, sort_order: templates.length + 1, user_id: uid })
       .select().single()
     if (error) { alert('Failed to create template: ' + error.message); return }
     await onRefresh()
@@ -833,8 +835,9 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
         const { error } = await supabase.from('template_tasks').update(updates).eq('id', id)
         if (error) throw error
       } else {
+        const uid = await getUserId()
         const { error } = await supabase.from('template_tasks').insert({
-          ...taskToSave, sort_order: taskRows.length,
+          ...taskToSave, sort_order: taskRows.length, user_id: uid,
         })
         if (error) throw error
       }
@@ -905,6 +908,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
         if (error) throw error
         setEmailTemplates(prev => prev.map(e => e.id === id ? { ...e, ...payload } : e))
       } else {
+        const uid = await getUserId()
         const { data, error } = await supabase
           .from('email_templates')
           .insert({
@@ -916,6 +920,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
             cc_recipients: editingEmail.cc_recipients || [],
             trigger:       editingEmail.trigger,
             applies_to:    editingEmail.applies_to,
+            user_id:       uid,
           })
           .select().single()
         if (error) throw error
@@ -940,6 +945,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     if (!editingEmail) return
     setEmailSaving(true)
     try {
+      const uid = await getUserId()
       const { data, error } = await supabase
         .from('email_templates')
         .insert({
@@ -951,6 +957,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
           cc_recipients: editingEmail.cc_recipients || [],
           trigger:       editingEmail.trigger,
           applies_to:    editingEmail.applies_to,
+          user_id:       uid,
         })
         .select().single()
       if (error) throw error

@@ -6,6 +6,11 @@ dotenv.config()
 
 const router = Router()
 
+// Single-tenant assumption for Phase A — this Express route has no JWT context
+// (uses the service-role key). Phase B will verify the caller's JWT and use the
+// derived user id instead of this constant.
+const LEGACY_OS_OWNER_USER_ID = 'a02b464f-dd3e-49de-b893-2825fe8efb3f'
+
 function getSupabase() {
   const url = process.env.SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -41,7 +46,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   const db = requireSupabase(res); if (!db) return
   console.log('[POST /transactions] body:', JSON.stringify(req.body))
-  const { data, error } = await db.from('transactions').insert([req.body]).select().single()
+  const { data, error } = await db.from('transactions').insert([{ ...req.body, user_id: LEGACY_OS_OWNER_USER_ID }]).select().single()
   if (error) {
     console.error('[POST /transactions] Supabase error:', error.message, error.details, error.hint)
     return res.status(500).json({ error: error.message, details: error.details, hint: error.hint })

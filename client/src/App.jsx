@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
-import { supabase } from './lib/supabase'
+import { supabase, getUserId } from './lib/supabase'
 import { syncDriveFolder } from './lib/googleDrive'
 import { buildTemplateTasks, buildTemplateTasksFromDB, getTemplateKey } from './lib/taskTemplates'
 import { sendMentionNotifications, parseMentions } from './lib/emailNotify'
@@ -235,10 +235,11 @@ export default function App() {
       } else {
         const tcs = tcData || []
         if (tcs.length === 0) {
+          const uid = await getUserId()
           const defaults = [
-            { name: 'Amy Casanova', email: '' },
-            { name: 'Justina Morris', email: '' },
-            { name: 'Victoria Lareau', email: '' },
+            { name: 'Amy Casanova',    email: '', user_id: uid },
+            { name: 'Justina Morris',  email: '', user_id: uid },
+            { name: 'Victoria Lareau', email: '', user_id: uid },
           ]
           const { data: seeded } = await supabase.from('tc_settings').insert(defaults).select()
           setTcSettings(seeded || defaults)
@@ -279,15 +280,16 @@ export default function App() {
   // ── New transaction ─────────────────────────────────────────────────────────
   const handleCreateTransaction = async (txData) => {
     try {
+      const uid = await getUserId()
       const { data: newTx, error: txErr } = await supabase
         .from('transactions')
-        .insert(txData)
+        .insert({ ...txData, user_id: uid })
         .select().single()
       if (txErr) throw txErr
 
       const { data: newCm, error: cmErr } = await supabase
         .from('commissions')
-        .insert({ transaction_id: newTx.id, commission_status: 'Pending' })
+        .insert({ transaction_id: newTx.id, commission_status: 'Pending', user_id: uid })
         .select().single()
       if (cmErr) console.warn('[create] commission insert failed:', cmErr.message)
 
@@ -392,7 +394,8 @@ export default function App() {
         const builtTasks  = buildTemplateTasksFromDB(tplTaskRows, transaction)
         if (!builtTasks.length) return
 
-        const toInsert = builtTasks.map(t => ({ ...t, transaction_id: transactionId }))
+        const uid = await getUserId()
+        const toInsert = builtTasks.map(t => ({ ...t, transaction_id: transactionId, user_id: uid }))
         const { data: inserted, error } = await supabase.from('tasks').insert(toInsert).select()
         if (error) {
           console.warn('Could not insert template tasks:', error.message)
@@ -416,7 +419,8 @@ export default function App() {
     const tplTasks = buildTemplateTasks(status, repType, transaction)
     if (!tplTasks.length) return
 
-    const toInsert = tplTasks.map(t => ({ ...t, transaction_id: transactionId }))
+    const uid = await getUserId()
+    const toInsert = tplTasks.map(t => ({ ...t, transaction_id: transactionId, user_id: uid }))
     const { data: inserted, error } = await supabase.from('tasks').insert(toInsert).select()
     if (error) {
       console.warn('Could not insert template tasks (run the tasks SQL in Supabase):', error.message)
@@ -530,9 +534,11 @@ export default function App() {
   // ── Task CRUD ───────────────────────────────────────────────────────────────
   const handleAddTask = useCallback(async (taskData) => {
     try {
+      const uid = await getUserId()
       const { data: newTask, error } = await supabase.from('tasks').insert({
         ...sanitizeForDB(taskData),
         notified_mentions: [],
+        user_id: uid,
       }).select().single()
       if (error) throw error
 
@@ -595,9 +601,10 @@ export default function App() {
   }, [])
 
   const handleAddTaskComment = useCallback(async (taskId, author, body) => {
+    const uid = await getUserId()
     const { data, error } = await supabase
       .from('task_comments')
-      .insert({ task_id: taskId, author, body })
+      .insert({ task_id: taskId, author, body, user_id: uid })
       .select()
       .single()
     if (error) { toast.error('Failed to add comment'); return }
@@ -631,8 +638,9 @@ export default function App() {
     }
 
     // Strip internal mapping fields before inserting into tasks table
+    const uid = await getUserId()
     const toInsert = newTasks.map(({ _template_task_id, resolves_critical_date, ...rest }) => ({
-      ...rest, transaction_id: transactionId, template_key: templateId,
+      ...rest, transaction_id: transactionId, template_key: templateId, user_id: uid,
     }))
     const { data: inserted, error } = await supabase.from('tasks').insert(toInsert).select()
     if (error) { toast.error('Failed to apply template'); return }
@@ -697,6 +705,7 @@ export default function App() {
     saveTimers.current[txId] = setTimeout(async () => {
       const cm = commissionsRef.current[txId] || {}
       const n = v => (v !== '' && v != null ? Number(v) : null)
+      const uid = await getUserId()
       const payload = {
         transaction_id:              txId,
         commission_rate:             cm.commission_rate   ?? null,
@@ -712,6 +721,7 @@ export default function App() {
         tc_fee_commission:           n(cm.tc_fee_commission),
         concessions:                 n(cm.concessions),
         buyer_broker_addendum:       cm.buyer_broker_addendum ?? null,
+        user_id:                     uid,
       }
       console.log('[Commission] saving payload:', payload)
       const { error } = await supabase.from('commissions').upsert(payload, { onConflict: 'transaction_id' })
@@ -732,9 +742,10 @@ export default function App() {
   // ── TC Settings save ────────────────────────────────────────────────────────
   const handleSaveTcSettings = useCallback(async (updated, digestPrefs) => {
     setTcSettings(updated)
+    const uid = await getUserId()
     for (const tc of updated) {
       await supabase.from('tc_settings')
-        .upsert({ name: tc.name, email: tc.email }, { onConflict: 'name' })
+        .upsert({ name: tc.name, email: tc.email, user_id: uid }, { onConflict: 'name' })
     }
 
     // Save digest preferences
@@ -743,7 +754,10 @@ export default function App() {
       for (const pref of digestPrefs) {
         if (!pref.email) continue
         await supabase.from('user_settings')
-          .upsert({ email: pref.email, daily_digest_enabled: pref.daily_digest_enabled }, { onConflict: 'email' })
+          .upsert(
+            { email: pref.email, daily_digest_enabled: pref.daily_digest_enabled, user_id: uid },
+            { onConflict: 'email' },
+          )
         newMap[pref.email] = pref
       }
       setUserSettings(prev => ({ ...prev, ...newMap }))

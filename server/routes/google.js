@@ -3,6 +3,11 @@ import { createClient } from '@supabase/supabase-js'
 
 const router = express.Router()
 
+// Single-tenant assumption for Phase A: the OAuth callback and audit-log writes
+// have no JWT context, so we attribute their rows to LegacyOS's original owner.
+// Phase B will replace this with the JWT-derived user id (state param + verify).
+const LEGACY_OS_OWNER_USER_ID = 'a02b464f-dd3e-49de-b893-2825fe8efb3f'
+
 // ─── Supabase (service role for token storage) ────────────────────────────────
 function getSupabase() {
   const url = process.env.SUPABASE_URL
@@ -197,6 +202,7 @@ router.get('/callback', async (req, res) => {
       refresh_token: tokens.refresh_token,
       expiry_date:   tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
       scopes:        tokens.scope ?? null,
+      user_id:       LEGACY_OS_OWNER_USER_ID,
     })
     if (insertErr) {
       console.error('[Drive] Failed to store tokens in Supabase:', insertErr.message)
@@ -344,6 +350,7 @@ router.post('/gmail-send', async (req, res) => {
       sent_by:          'Me',
       sent_via:         'gmail',
       gmail_message_id: gmailData.id,
+      user_id:          LEGACY_OS_OWNER_USER_ID,
       ...(transactionId ? { transaction_id: transactionId } : {}),
     })
     if (logErr) console.error('[gmail-send] Failed to write sent log:', logErr.message)

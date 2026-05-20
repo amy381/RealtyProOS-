@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, getUserId } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import { mouseDownIsInside } from '../lib/dragGuard'
@@ -264,6 +264,7 @@ function VendorEmailModal({ vendor, tx, onClose }) {
 
   const handleQueue = async () => {
     const now = new Date().toISOString()
+    const uid = await getUserId()
     const { error } = await supabase.from('email_queue').insert({
       transaction_id: tx?.id || null,
       to_email:       vendor.email,
@@ -274,6 +275,7 @@ function VendorEmailModal({ vendor, tx, onClose }) {
       prepared_by:    'Amy Casanova',
       prepared_at:    now,
       created_at:     now,
+      user_id:        uid,
     })
     if (error) { console.error('email_queue insert error:', error); toast.error('Failed to add to queue'); return }
     toast.success('Added to Send Queue')
@@ -361,6 +363,7 @@ function VendorFormModal({ vendor, tx, task, tcSettings, onClose, onTaskUpdate }
   const handleQueue = async () => {
     const subject = `${vendor.name} — ${tx?.property_address || 'Property'}`
     const now = new Date().toISOString()
+    const uid = await getUserId()
     const { error } = await supabase.from('email_queue').insert({
       transaction_id: tx?.id || null,
       to_email:       vendor.email,
@@ -371,6 +374,7 @@ function VendorFormModal({ vendor, tx, task, tcSettings, onClose, onTaskUpdate }
       prepared_by:    'Amy Casanova',
       prepared_at:    now,
       created_at:     now,
+      user_id:        uid,
     })
     if (error) { console.error('email_queue insert error:', error); toast.error('Failed to add to queue'); return }
     toast.success('Added to Send Queue')
@@ -508,6 +512,7 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, onUpdate, onC
     if (!selectedVendor?.email) return
     setQueuing(true)
     const now = new Date().toISOString()
+    const uid = await getUserId()
     const { error } = await supabase.from('email_queue').insert({
       transaction_id: tx?.id || null,
       to_email:       selectedVendor.email,
@@ -518,6 +523,7 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, onUpdate, onC
       prepared_by:    'Amy Casanova',
       prepared_at:    now,
       created_at:     now,
+      user_id:        uid,
     })
     setQueuing(false)
     if (error) { console.error('email_queue insert error:', error); toast.error('Failed to add to queue'); return }
@@ -1369,6 +1375,7 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
       setQueue(prev => prev.map(q => q.id === id ? { ...q, ...updates } : q))
     } else {
       const now = new Date().toISOString()
+      const uid = await getUserId()
       const payload = {
         // UUID fields: empty string → null so Postgres doesn't reject the type
         transaction_id: entry.transaction_id || null,
@@ -1383,6 +1390,7 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
         prepared_by:    'Amy Casanova',
         prepared_at:    now,
         created_at:     now,
+        user_id:        uid,
       }
       console.log('email_queue insert payload:', payload)
       const { data, error } = await supabase

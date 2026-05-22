@@ -3,6 +3,7 @@ import { supabase, getUserId } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import { mouseDownIsInside } from '../lib/dragGuard'
+import { deriveInitials, firstName, resolveMeName, getTcNames, getAssigneeOptions } from '../lib/people'
 import { Mail, FileText, Pencil } from 'lucide-react'
 import VendorFormPreviewModal from './VendorFormPreviewModal'
 import EmailPreviewModal from './EmailPreviewModal'
@@ -49,8 +50,6 @@ const DEFAULT_FILTERS = {
   dueChecks:   DEFAULT_DUE_CHECKS,
 }
 
-const TC_NAMES         = ['Justina Morris', 'Victoria Lareau', 'Amy Casanova']
-const ASSIGNEE_OPTIONS = ['Me', 'Justina Morris', 'Victoria Lareau']
 const STATUS_OPTIONS   = [{ value: 'open', label: 'Open' }, { value: 'complete', label: 'Done' }]
 
 // Category 1: task title substring → { field on transaction, label }
@@ -186,14 +185,15 @@ const VENDOR_FIELD_LABELS = {
   close_of_escrow:    'Close of Escrow Date',
 }
 
-function buildFormFields(vendor, tx, tcSettings) {
-  const me = tcSettings?.find(t => t.name === 'Amy Casanova' || t.name === 'Me')
+function buildFormFields(vendor, tx, tcSettings, agentSettings = null) {
+  const agentName = agentSettings?.realtor_name || ''
+  const me = tcSettings?.find(t => t.name === agentName)
   const clientName = [tx?.client_first_name, tx?.client_last_name].filter(Boolean).join(' ')
   const valueMap = {
-    realtor_name:       'Amy Casanova',
-    company:            'Keller Williams',
-    realtor_phone:      me?.phone || '',
-    realtor_email:      me?.email || '',
+    realtor_name:       agentName,
+    company:            agentSettings?.company || '',
+    realtor_phone:      agentSettings?.realtor_phone || me?.phone || '',
+    realtor_email:      agentSettings?.realtor_email || me?.email || '',
     property_address:   tx?.property_address || '',
     apn:                tx?.apn || '',
     bedrooms:           tx?.bedrooms || '',
@@ -217,7 +217,7 @@ function buildFormFields(vendor, tx, tcSettings) {
 }
 
 // ─── Vendor Email Preview Modal (Email Only vendors) ─────────────────────────
-function VendorEmailModal({ vendor, tx, onClose }) {
+function VendorEmailModal({ vendor, tx, agentName = '', onClose }) {
   const [subject, setSubject] = useState('')
   const [body,    setBody]    = useState('')
   const [loading, setLoading] = useState(!!vendor.email_template_id)
@@ -272,7 +272,7 @@ function VendorEmailModal({ vendor, tx, onClose }) {
       subject,
       body,
       status:         'pending',
-      prepared_by:    'Amy Casanova',
+      prepared_by:    agentName || 'Me',
       prepared_at:    now,
       created_at:     now,
       user_id:        uid,
@@ -318,8 +318,8 @@ function VendorEmailModal({ vendor, tx, onClose }) {
 }
 
 // ─── Vendor Form Preview Modal ────────────────────────────────────────────────
-function VendorFormModal({ vendor, tx, task, tcSettings, onClose, onTaskUpdate }) {
-  const [formFields, setFormFields] = useState(() => buildFormFields(vendor, tx, tcSettings))
+function VendorFormModal({ vendor, tx, task, tcSettings, agentName = '', agentSettings = null, onClose, onTaskUpdate }) {
+  const [formFields, setFormFields] = useState(() => buildFormFields(vendor, tx, tcSettings, agentSettings))
   const [sending,    setSending]    = useState(false)
 
   const setFieldValue = (idx, val) =>
@@ -371,7 +371,7 @@ function VendorFormModal({ vendor, tx, task, tcSettings, onClose, onTaskUpdate }
       subject,
       body:           buildBody(),
       status:         'pending',
-      prepared_by:    'Amy Casanova',
+      prepared_by:    agentName || 'Me',
       prepared_at:    now,
       created_at:     now,
       user_id:        uid,
@@ -440,7 +440,7 @@ function CriticalDateRow({ task, onDelete, flatAddr }) {
 // ─── Vendor Select Modal — vendor dropdown + inline email preview ─────────────
 const API_BASE_TASKS = import.meta.env.DEV ? 'http://localhost:3001' : ''
 
-function VendorSelectModal({ matchedVendors, task, tx, tcSettings, onUpdate, onClose }) {
+function VendorSelectModal({ matchedVendors, task, tx, tcSettings, agentName = '', agentSettings = null, onUpdate, onClose }) {
   const [selectedVendorId, setSelectedVendorId] = useState(task.selected_vendor_id || '')
   const [vendorFormOpen,   setVendorFormOpen]   = useState(false)
   const [vendorPdfOpen,    setVendorPdfOpen]    = useState(false)
@@ -520,7 +520,7 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, onUpdate, onC
       subject:        tplSubject,
       body:           tplBody,
       status:         'pending',
-      prepared_by:    'Amy Casanova',
+      prepared_by:    agentName || 'Me',
       prepared_at:    now,
       created_at:     now,
       user_id:        uid,
@@ -627,6 +627,8 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, onUpdate, onC
             tx={tx}
             task={task}
             tcSettings={tcSettings}
+            agentName={agentName}
+            agentSettings={agentSettings}
             onClose={() => setVendorFormOpen(false)}
             onTaskUpdate={onUpdate}
           />
@@ -644,7 +646,8 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, onUpdate, onC
   )
 }
 
-function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [], emailTemplateMap = {}, isEven = false, txAddress = null }) {
+function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [], agentName = '', agentSettings = null, emailTemplateMap = {}, isEven = false, txAddress = null }) {
+  const assigneeOptions = getAssigneeOptions(tcSettings, agentName)
   const done      = task.status === 'complete'
   const statusKey = task.status || 'open'
 
@@ -702,13 +705,8 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, b
   }
 
   // Resolve "Me" to display name, then derive initials bubble
-  const assigneeDisplay = task.assigned_to === 'Me' ? 'Amy Casanova' : (task.assigned_to || '')
-  const INITIALS_MAP = { 'Amy Casanova': 'AC', 'Justina Morris': 'JM', 'Victoria Lareau': 'VL' }
-  const assigneeInitials = (() => {
-    if (!assigneeDisplay) return null
-    if (INITIALS_MAP[assigneeDisplay]) return INITIALS_MAP[assigneeDisplay]
-    return assigneeDisplay.trim().slice(0, 2).toUpperCase()
-  })()
+  const assigneeDisplay = resolveMeName(task.assigned_to, agentName)
+  const assigneeInitials = assigneeDisplay ? deriveInitials(assigneeDisplay) : null
 
   // Due Status urgency indicator — plain text with colored left-border divider
   const dueStatusInfo = (() => {
@@ -867,7 +865,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, b
           onClick={e => e.stopPropagation()}
         >
           <option value="">— unassigned —</option>
-          {ASSIGNEE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          {assigneeOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
         </select>
       ) : (
         <span
@@ -913,7 +911,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, b
 
 const TASK_TYPE_OPTIONS = ['Task', 'Email', 'Notification', 'Critical Date']
 
-function TaskEditModal({ task, tx, critDateTasks = [], onUpdate, onClose }) {
+function TaskEditModal({ task, tx, critDateTasks = [], assigneeOptions = [], onUpdate, onClose }) {
   const [title,      setTitle]      = useState(task.title || '')
   const [taskType,   setTaskType]   = useState(task.task_type || 'Task')
   const [dueDate,    setDueDate]    = useState(task.due_date || '')
@@ -966,7 +964,7 @@ function TaskEditModal({ task, tx, critDateTasks = [], onUpdate, onClose }) {
             <label className="gtd-edit-field">
               <span className="gtd-edit-label">Assigned To</span>
               <select className="gtd-edit-input" value={assigned} onChange={e => setAssigned(e.target.value)}>
-                {ASSIGNEE_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                {assigneeOptions.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
             </label>
             <label className="gtd-edit-field">
@@ -1002,7 +1000,7 @@ function TaskEditModal({ task, tx, critDateTasks = [], onUpdate, onClose }) {
   )
 }
 
-function AddTaskModal({ tx, critDateTasks = [], onAdd, onClose }) {
+function AddTaskModal({ tx, critDateTasks = [], assigneeOptions = [], onAdd, onClose }) {
   const [title,      setTitle]      = useState('')
   const [taskType,   setTaskType]   = useState('Task')
   const [dueDate,    setDueDate]    = useState('')
@@ -1056,7 +1054,7 @@ function AddTaskModal({ tx, critDateTasks = [], onAdd, onClose }) {
             <label className="gtd-edit-field">
               <span className="gtd-edit-label">Assigned To</span>
               <select className="gtd-edit-input" value={assigned} onChange={e => setAssigned(e.target.value)}>
-                {ASSIGNEE_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                {assigneeOptions.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
             </label>
           </div>
@@ -1093,7 +1091,7 @@ function fmtTs(ts) {
 }
 
 // ─── Compose Modal ────────────────────────────────────────────────────────────
-function ComposeModal({ row, transactions, tcSettings, onSave, onClose }) {
+function ComposeModal({ row, transactions, tcSettings, agentName = '', onSave, onClose }) {
   const [emailTemplates, setEmailTemplates] = useState([])
   const [form, setForm] = useState({
     transaction_id: row?.transaction_id || '',
@@ -1265,7 +1263,7 @@ function ComposeModal({ row, transactions, tcSettings, onSave, onClose }) {
 }
 
 // ─── Send Queue View ──────────────────────────────────────────────────────────
-function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
+function SendQueueView({ transactions, tcSettings, agentName = '', onQueueCountChange }) {
   const [queue,      setQueue]      = useState([])
   const [loading,    setLoading]    = useState(true)
   const [previewing, setPreviewing] = useState(null)
@@ -1387,7 +1385,7 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
         body:           entry.body           || '',
         cc:             entry.cc             || '',
         status:         'pending',
-        prepared_by:    'Amy Casanova',
+        prepared_by:    agentName || 'Me',
         prepared_at:    now,
         created_at:     now,
         user_id:        uid,
@@ -1529,6 +1527,7 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
           row={composing === 'new' ? null : composing}
           transactions={transactions}
           tcSettings={tcSettings}
+          agentName={agentName}
           onSave={handleSaveCompose}
           onClose={() => setComposing(null)}
         />
@@ -1538,7 +1537,7 @@ function SendQueueView({ transactions, tcSettings, onQueueCountChange }) {
 }
 
 // ─── Sent Log View ────────────────────────────────────────────────────────────
-function SentLogView({ transactions }) {
+function SentLogView({ transactions, agentName = '' }) {
   const [log,     setLog]     = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -1589,7 +1588,7 @@ function SentLogView({ transactions }) {
                   <td className="sq-col-tx">{txById[row.transaction_id]?.property_address?.split(',')[0] || '—'}</td>
                   <td className="sq-col-tmpl">{row.template_name || '—'}</td>
                   <td className="sq-col-date">{row.sent_at ? new Date(row.sent_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'}</td>
-                  <td>{row.sent_by === 'Me' ? 'Amy Casanova' : (row.sent_by || '—')}</td>
+                  <td>{resolveMeName(row.sent_by, agentName) || '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -1601,7 +1600,7 @@ function SentLogView({ transactions }) {
 }
 
 // ─── Filters Panel ────────────────────────────────────────────────────────────
-function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, onSaveView, onApplyView, onDeleteView, activeViewId }) {
+function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, onSaveView, onApplyView, onDeleteView, activeViewId, tcNames = [] }) {
   const set = (key, val) => setDraft(d => ({ ...d, [key]: val }))
 
   const toggleStage = (value) => {
@@ -1668,13 +1667,13 @@ function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, 
           <div className="gtd-fp-section">
             <div className="gtd-fp-section-title">TC</div>
             <div className="gtd-fp-toggles">
-              {['All', ...TC_NAMES].map(v => (
+              {['All', ...tcNames].map(v => (
                 <button
                   key={v}
                   className={`gtd-fp-toggle${draft.tcFilter === v ? ' active' : ''}`}
                   onClick={() => set('tcFilter', v)}
                 >
-                  {v === 'Justina Morris' ? 'Justina' : v === 'Victoria Lareau' ? 'Victoria' : v === 'Amy Casanova' ? 'Amy' : v}
+                  {v === 'All' ? v : firstName(v)}
                 </button>
               ))}
             </div>
@@ -1731,9 +1730,11 @@ function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function TasksTab({
   tasks, transactions, onTaskUpdate, onDeleteTask, onAddTask, onUpdateTransaction,
-  tcSettings = [], onCardClick,
+  tcSettings = [], agentName = '', agentSettings = null, onCardClick,
   activeSubTabProp, onSubTabChange,
 }) {
+  const assigneeOptions = useMemo(() => getAssigneeOptions(tcSettings, agentName), [tcSettings, agentName])
+  const tcNames         = useMemo(() => getTcNames(tcSettings), [tcSettings])
   // Sub-tab (controlled externally via activeSubTabProp / onSubTabChange)
   const [activeSubTabLocal, setActiveSubTabLocal] = useState('tasks')
   const activeSubTab = activeSubTabProp ?? activeSubTabLocal
@@ -1840,7 +1841,8 @@ export default function TasksTab({
       if (!filters.stageChecks.has(tx.status)) return false
       if (filters.typeFilter !== 'All' && tx.rep_type !== filters.typeFilter) return false
       if (filters.tcFilter !== 'All') {
-        const match = filters.tcFilter === 'Amy Casanova' ? 'Me' : filters.tcFilter
+        // The agent is stored as the 'Me' sentinel in tx.assigned_tc.
+        const match = filters.tcFilter === agentName ? 'Me' : filters.tcFilter
         if (tx.assigned_tc !== match) return false
       }
       if (filters.search.trim()) {
@@ -1986,7 +1988,7 @@ export default function TasksTab({
     })
 
     if (filters.tcFilter !== 'All') {
-      const short = filters.tcFilter === 'Justina Morris' ? 'Justina' : filters.tcFilter === 'Victoria Lareau' ? 'Victoria' : 'Amy'
+      const short = firstName(filters.tcFilter)
       chips.push({
         key: 'tc',
         label: `TC: ${short}`,
@@ -2129,13 +2131,14 @@ export default function TasksTab({
         <SendQueueView
           transactions={transactions}
           tcSettings={tcSettings}
+          agentName={agentName}
           onQueueCountChange={setQueueCount}
         />
       )}
 
       {/* ── Sent Log view ───────────────────────────────────────────── */}
       {activeSubTab === 'log' && (
-        <SentLogView transactions={transactions} />
+        <SentLogView transactions={transactions} agentName={agentName} />
       )}
 
       {activeSubTab !== 'tasks' && null}
@@ -2205,6 +2208,7 @@ export default function TasksTab({
           onApplyView={applyView}
           onDeleteView={deleteView}
           activeViewId={activeViewId}
+          tcNames={tcNames}
         />
       )}
 
@@ -2226,7 +2230,7 @@ export default function TasksTab({
           <div className="gtd-bulk-actions">
             <select className="gtd-bulk-select" value={bulkAssignTo} onChange={e => setBulkAssignTo(e.target.value)}>
               <option value="">Assigned To…</option>
-              {ASSIGNEE_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+              {assigneeOptions.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
             <select className="gtd-bulk-select" value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}>
               <option value="">Status…</option>
@@ -2368,6 +2372,8 @@ export default function TasksTab({
                       onToggleSelect={() => toggleId(item.id)}
                       vendors={vendors}
                       tcSettings={tcSettings}
+                      agentName={agentName}
+                      agentSettings={agentSettings}
                       emailTemplateMap={emailTemplateMap}
                       isEven={taskRowIdx++ % 2 === 1}
                     />
@@ -2416,6 +2422,8 @@ export default function TasksTab({
                     onToggleSelect={() => toggleId(item.id)}
                     vendors={vendors}
                     tcSettings={tcSettings}
+                    agentName={agentName}
+                    agentSettings={agentSettings}
                     emailTemplateMap={emailTemplateMap}
                     isEven={taskRowIdx++ % 2 === 1}
                     txAddress={addr}
@@ -2432,6 +2440,7 @@ export default function TasksTab({
         <AddTaskModal
           tx={addingForTx}
           critDateTasks={tasks.filter(t => t.transaction_id === addingForTx.id && t.task_type === 'Critical Date')}
+          assigneeOptions={assigneeOptions}
           onAdd={onAddTask}
           onClose={() => setAddingForTx(null)}
         />
@@ -2449,6 +2458,7 @@ export default function TasksTab({
             task={et}
             tx={etx}
             critDateTasks={etCritDateTasks}
+            assigneeOptions={assigneeOptions}
             onUpdate={onTaskUpdate}
             onClose={() => setEditingTaskId(null)}
           />

@@ -28,7 +28,6 @@ const ALLOWED_EMAILS = (import.meta.env.VITE_ALLOWED_EMAILS || '')
 
 const STAGE_ORDER = ['pre-listing', 'buyer-broker', 'active-listing', 'pending', 'closed', 'cancelled-expired']
 const DEFAULT_BOARD_FILTERS = { year: '2026', tcs: [], repType: 'All' }
-const TC_OPTIONS = ['Amy Casanova', 'Justina Morris', 'Victoria Lareau']
 
 function stageName(s) {
   return { 'pre-listing': 'Pre-Listing', 'buyer-broker': 'Buyer-Broker', 'active-listing': 'Active Listing',
@@ -65,6 +64,7 @@ export default function App() {
   const [commissions, setCommissions]           = useState({})
   const [tasks, setTasks]                       = useState([])
   const [tcSettings, setTcSettings]             = useState([])
+  const [agentSettings, setAgentSettings]       = useState(null)
   const [userSettings, setUserSettings]         = useState({}) // keyed by email
   const [dbTemplates,      setDbTemplates]      = useState([])
   const [dbTemplateTasks,  setDbTemplateTasks]  = useState([])
@@ -227,26 +227,19 @@ export default function App() {
 
       if (tcErr) {
         console.warn('tc_settings table not found — run the new SQL in Supabase to enable settings:', tcErr.message)
-        setTcSettings([
-          { name: 'Amy Casanova', email: '' },
-          { name: 'Justina Morris', email: '' },
-          { name: 'Victoria Lareau', email: '' },
-        ])
+        setTcSettings([])
       } else {
-        const tcs = tcData || []
-        if (tcs.length === 0) {
-          const uid = await getUserId()
-          const defaults = [
-            { name: 'Amy Casanova',    email: '', user_id: uid },
-            { name: 'Justina Morris',  email: '', user_id: uid },
-            { name: 'Victoria Lareau', email: '', user_id: uid },
-          ]
-          const { data: seeded } = await supabase.from('tc_settings').insert(defaults).select()
-          setTcSettings(seeded || defaults)
-        } else {
-          setTcSettings(tcs)
-        }
+        setTcSettings(tcData || [])
       }
+
+      // Load the user's agent_settings row — drives the displayed realtor name,
+      // initials, and "Me" → name resolution across the app.
+      const { data: agentData } = await supabase
+        .from('agent_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle()
+      setAgentSettings(agentData || null)
 
       // Load digest preferences (keyed by email)
       const { data: usData } = await supabase
@@ -832,6 +825,9 @@ export default function App() {
     + (boardFilters.tcs.length > 0 ? 1 : 0)
     + (boardFilters.repType !== 'All' ? 1 : 0)
 
+  const agentName  = agentSettings?.realtor_name  || ''
+  const agentEmail = agentSettings?.realtor_email || ''
+
   const toggleBoardTc = (tc) => {
     setBoardFilters(f => ({
       ...f,
@@ -904,12 +900,12 @@ export default function App() {
                     <div className="bfp-row">
                       <span className="bfp-label">TC</span>
                       <div className="bfp-opts">
-                        {TC_OPTIONS.map(tc => (
+                        {tcSettings.map(({ name }) => (
                           <button
-                            key={tc}
-                            className={`bfp-opt${boardFilters.tcs.includes(tc) ? ' active' : ''}`}
-                            onClick={() => toggleBoardTc(tc)}
-                          >{tc.split(' ')[0]}</button>
+                            key={name}
+                            className={`bfp-opt${boardFilters.tcs.includes(name) ? ' active' : ''}`}
+                            onClick={() => toggleBoardTc(name)}
+                          >{name.split(' ')[0]}</button>
                         ))}
                       </div>
                     </div>
@@ -959,6 +955,8 @@ export default function App() {
               columns={COLUMNS}
               onCardClick={(tx) => openTransaction(tx)}
               onOpenSection={(tx, section) => openTransaction(tx, section)}
+              tcSettings={tcSettings}
+              agentName={agentName}
             />
           )}
           {activeTab === 'commissions' && (
@@ -984,6 +982,8 @@ export default function App() {
               onAddTaskComment={handleAddTaskComment}
               onDeleteTaskComment={handleDeleteTaskComment}
               tcSettings={tcSettings}
+              agentName={agentName}
+              agentSettings={agentSettings}
               onCardClick={(tx) => openTransaction(tx, 'details', 'tasks')}
               activeSubTabProp={
                 { 'tasks': 'tasks', 'send-queue': 'queue', 'sent-log': 'log' }[tasksFilter] ?? 'tasks'
@@ -1008,6 +1008,7 @@ export default function App() {
               allTemplateTasks={dbTemplateTasks}
               onRefresh={handleTemplatesRefresh}
               tcSettings={tcSettings}
+              agentName={agentName}
               activeSectionProp={
                 { 'task-templates': 'tasks', 'email-templates': 'email', 'vendor-templates': 'vendors' }[templatesFilter] ?? 'tasks'
               }
@@ -1037,6 +1038,8 @@ export default function App() {
           commissions={commissions}
           tasks={panelTasks}
           tcSettings={tcSettings}
+          agentName={agentName}
+          agentEmail={agentEmail}
           dbTemplates={dbTemplates}
           dbTemplateTasks={dbTemplateTasks}
           onBack={() => {

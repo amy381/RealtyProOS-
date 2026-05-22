@@ -16,7 +16,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { supabase, getUserId } from '../lib/supabase'
 import { mouseDownIsInside } from '../lib/dragGuard'
-import { TC_ASSIGNEES } from '../lib/taskTemplates'
+import { getAssigneeOptions } from '../lib/people'
 import { formatPhone } from '../lib/formatters'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import './TemplatesTab.css'
@@ -523,7 +523,8 @@ function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle, e
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, tcSettings = [], activeSectionProp, onSectionChange }) {
+export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, tcSettings = [], agentName = '', activeSectionProp, onSectionChange }) {
+  const assigneeOptions = getAssigneeOptions(tcSettings, agentName)
   // ── Sidebar section
   const [sideSectionLocal, setSideSectionLocal] = useState('tasks')
   const sideSection    = activeSectionProp ?? sideSectionLocal
@@ -1437,7 +1438,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                   <div className="tt-bulk-fields">
                     <select className="tt-bulk-select" value={bulkAssignTo} onChange={e => setBulkAssignTo(e.target.value)}>
                       <option value="">Auto-Assign To…</option>
-                      {TC_ASSIGNEES.map(a => <option key={a} value={a}>{a}</option>)}
+                      {assigneeOptions.map(a => <option key={a} value={a}>{a}</option>)}
                     </select>
                     <select className="tt-bulk-select" value={bulkTaskType} onChange={e => setBulkTaskType(e.target.value)}>
                       <option value="">Task Type…</option>
@@ -1580,7 +1581,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                   value={editingTask.auto_assign_to}
                   onChange={e => setEditingTask(p => ({ ...p, auto_assign_to: e.target.value }))}
                 >
-                  {TC_ASSIGNEES.map(a => <option key={a} value={a}>{a}</option>)}
+                  {assigneeOptions.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
                 <div className="tt-modal-cd-section">
                   <label className="tt-modal-cd-toggle">

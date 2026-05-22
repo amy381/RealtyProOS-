@@ -7,7 +7,7 @@ import { formatPhone, formatApn } from '../lib/formatters'
 import { mouseDownIsInside } from '../lib/dragGuard'
 import TaskCommentPanel from './TaskCommentPanel'
 import { syncDriveFolder, uploadToDrive, getDriveUrl, CONTRACT_DOCS } from '../lib/googleDrive'
-import { TC_OPTIONS } from '../lib/columnFields'
+import { getTcNames, getAssigneeOptions, resolveMeName, firstName } from '../lib/people'
 import { toast } from 'react-hot-toast'
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts'
 import { useGmailStatus } from '../lib/useGmailStatus'
@@ -174,8 +174,6 @@ const LOCKBOX_OPTIONS = [
   { value: 'None',     label: 'None' },
 ]
 
-const TASK_ASSIGNEES = ['Me', 'Justina Morris', 'Victoria Lareau']
-
 // MENTION_PEOPLE is now built dynamically from tcSettings — see buildMentionPeople()
 
 const STATUS_LABELS = { open: 'To Do', in_progress: 'In Progress', complete: 'Completed' }
@@ -239,11 +237,11 @@ function renderNoteText(text) {
 }
 
 // Build the mention people list dynamically from tcSettings
-function buildMentionPeople(tcSettings = []) {
+function buildMentionPeople(tcSettings = [], agentName = '') {
   return tcSettings.map(tc => {
-    const name = tc.name === 'Me' ? 'Amy Casanova' : tc.name
+    const name = resolveMeName(tc.name, agentName)
     return {
-      handle: '@' + name.split(' ')[0],
+      handle: '@' + (firstName(name) || name),
       email:  tc.email || null,
       name,
     }
@@ -251,7 +249,7 @@ function buildMentionPeople(tcSettings = []) {
 }
 
 // Send EmailJS notification to each mentioned person (uses live tcSettings)
-async function sendMentionEmails(mentions, noteText, transactionAddr, tcSettings = [], transactionId = null) {
+async function sendMentionEmails(mentions, noteText, transactionAddr, tcSettings = [], transactionId = null, agentName = '') {
   const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
   const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
   const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
@@ -260,7 +258,7 @@ async function sendMentionEmails(mentions, noteText, transactionAddr, tcSettings
     console.warn('[Mention] EmailJS env vars missing — SERVICE_ID:', SERVICE_ID, 'TEMPLATE_ID:', TEMPLATE_ID, 'PUBLIC_KEY:', PUBLIC_KEY ? '(set)' : '(missing)')
     return
   }
-  const mentionPeople = buildMentionPeople(tcSettings)
+  const mentionPeople = buildMentionPeople(tcSettings, agentName)
   try {
     const { default: emailjs } = await import('@emailjs/browser')
     for (const handle of mentions) {
@@ -281,7 +279,7 @@ async function sendMentionEmails(mentions, noteText, transactionAddr, tcSettings
           subject:          `You were mentioned in a note — ${transactionAddr || '(No address)'}`,
           transaction_addr: transactionAddr || '(No address)',
           mention_notes:    noteText,
-          mentioner_name:   'Amy Casanova',
+          mentioner_name:   agentName || 'Unknown',
           app_url,
         }, PUBLIC_KEY)
         console.log('[Mention] EmailJS success for', person.email, ':', result)
@@ -634,7 +632,7 @@ function TxField({ label, value, displayValue, type, options, onSave, placeholde
 }
 
 // ─── Notes: single-line compose with @ mentions, threading, fixed-height scroll ─
-function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings }) {
+function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings, agentName = '' }) {
   const [notes, setNotes]                     = useState([])
   const [newText, setNewText]                 = useState('')
   const [editingId, setEditing]               = useState(null)
@@ -727,7 +725,7 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
     })
   }
 
-  const mentionPeople        = buildMentionPeople(tcSettings)
+  const mentionPeople        = buildMentionPeople(tcSettings, agentName)
   const visibleMentions      = mentionPeople.filter(p =>
     p.handle.slice(1).toLowerCase().startsWith(mentionFilter)
   )
@@ -743,7 +741,7 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
     const now    = new Date().toISOString()
     const tempId = `tmp-${Date.now()}`
 
-    setNotes(prev => [{ id: tempId, note_text: text, created_at: now, parent_id: null, author: 'Amy Casanova' }, ...prev])
+    setNotes(prev => [{ id: tempId, note_text: text, created_at: now, parent_id: null, author: agentName || 'Me' }, ...prev])
     setNewText('')
     setMention(false)
     inputRef.current?.focus()
@@ -752,7 +750,7 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
       const uid = await getUserId()
       const { data: saved, error } = await supabase
         .from('transaction_notes')
-        .insert({ transaction_id: transactionId, note_text: text, created_at: now, author: 'Amy Casanova', user_id: uid })
+        .insert({ transaction_id: transactionId, note_text: text, created_at: now, author: agentName || 'Me', user_id: uid })
         .select('id, note_text, created_at, parent_id, author')
         .single()
       if (error) { console.error('[Notes] save error:', error.message); return }
@@ -760,7 +758,7 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
     })()
 
     onNoteAdded?.(text, mentions)
-    if (mentions.length > 0) sendMentionEmails(mentions, text, transactionAddr, tcSettings, transactionId)
+    if (mentions.length > 0) sendMentionEmails(mentions, text, transactionAddr, tcSettings, transactionId, agentName)
   }
 
   const handleAddReply = (parentId) => {
@@ -769,7 +767,7 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
     const now    = new Date().toISOString()
     const tempId = `tmp-reply-${Date.now()}`
 
-    setNotes(prev => [...prev, { id: tempId, note_text: text, created_at: now, parent_id: parentId, author: 'Amy Casanova' }])
+    setNotes(prev => [...prev, { id: tempId, note_text: text, created_at: now, parent_id: parentId, author: agentName || 'Me' }])
     setReplyText('')
     setReplyToId(null)
     setReplyMentOpen(false)
@@ -778,7 +776,7 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings 
       const uid = await getUserId()
       const { data: saved, error } = await supabase
         .from('transaction_notes')
-        .insert({ transaction_id: transactionId, note_text: text, created_at: now, parent_id: parentId, author: 'Amy Casanova', user_id: uid })
+        .insert({ transaction_id: transactionId, note_text: text, created_at: now, parent_id: parentId, author: agentName || 'Me', user_id: uid })
         .select('id, note_text, created_at, parent_id, author')
         .single()
       if (error) { console.error('[Notes] reply save error:', error.message); return }
@@ -1033,7 +1031,7 @@ function fmtTemplateTiming(timingType, timingDays) {
   return `${d} ${opt.label}`
 }
 
-function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, onDelete, dbTemplates, dbTemplateTasks, onApplyTemplate, taskComments = [], onAddTaskComment, onDeleteTaskComment, tcSettings = [], transactionAddr = '' }) {
+function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, onDelete, dbTemplates, dbTemplateTasks, onApplyTemplate, taskComments = [], onAddTaskComment, onDeleteTaskComment, tcSettings = [], agentName = '', transactionAddr = '' }) {
   const [search, setSearch]         = useState('')
   const [filterAssign, setAssign]   = useState('All')
   const [filterStatus, setStatus]   = useState('All')
@@ -1188,6 +1186,7 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
             onDelete={onDeleteTaskComment}
             onClose={() => setCommentTaskId(null)}
             tcSettings={tcSettings}
+            agentName={agentName}
             transactionAddr={transactionAddr}
           />
         )
@@ -1380,13 +1379,20 @@ function buildTransactionSummary(transaction, column, fullAddress) {
 }
 
 // ─── Notify Modal ─────────────────────────────────────────────────────────────
-function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) {
+function NotifyModal({ transaction, tcSettings, column, fullAddress, agentName = '', agentEmail = '', onClose }) {
   const isBuyer  = transaction.rep_type === 'Buyer'
-  const justina  = { ...((tcSettings || []).find(t => t.name === 'Justina Morris') || { email: '' }), name: 'Justina' }
-  const victoria = { ...((tcSettings || []).find(t => t.name === 'Victoria Lareau') || { email: '' }), name: 'Victoria' }
-  const amy      = { name: 'Amy', email: 'amy@desert-legacy.com' }
+  // Build recipient list dynamically: every TC (using their short first name as
+  // a display label) plus the agent themselves. Each row needs name + email.
+  const recipientPeople = (tcSettings || [])
+    .filter(tc => tc && tc.name)
+    .map(tc => ({ key: tc.name, name: firstName(tc.name) || tc.name, email: tc.email || '' }))
+  if (agentName) {
+    recipientPeople.push({ key: '__agent__', name: firstName(agentName) || agentName, email: agentEmail || '' })
+  }
 
-  const [checked,     setChecked]     = useState({ justina: false, victoria: false, amy: false })
+  const [checked, setChecked] = useState(() =>
+    Object.fromEntries(recipientPeople.map(p => [p.key, false]))
+  )
   const [subject,     setSubject]     = useState(`${transaction.property_address || 'Property'} — Update`)
   const [note,        setNote]        = useState('')
   const [changes,     setChanges]     = useState([])
@@ -1427,11 +1433,7 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
     setChanges(prev => prev.map(c => c.key === key ? { ...c, checked: !c.checked } : c))
 
   const handleSend = async () => {
-    const recipients = [
-      checked.justina  && justina,
-      checked.victoria && victoria,
-      checked.amy      && amy,
-    ].filter(r => r && r.email)
+    const recipients = recipientPeople.filter(p => checked[p.key] && p.email)
     if (!recipients.length) { toast.error('No recipients with a configured email'); return }
 
     setSending(true)
@@ -1507,7 +1509,7 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
     // }
   }
 
-  const anyChecked = checked.justina || checked.victoria || checked.amy
+  const anyChecked = Object.values(checked).some(Boolean)
 
   // Live preview — mirrors exactly what handleSend will put in the email
   const checkedChanges = changes.filter(c => c.checked)
@@ -1541,16 +1543,15 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, onClose }) 
           {/* RECIPIENTS */}
           <section className="notify-section">
             <div className="notify-section-label">RECIPIENTS</div>
-            {[
-              { key: 'justina',  person: justina  },
-              { key: 'victoria', person: victoria },
-              { key: 'amy',      person: amy      },
-            ].map(({ key, person }) => (
-              <label key={key} className="notify-recipient">
+            {recipientPeople.length === 0 && (
+              <div className="notify-no-email">No TCs or agent email configured — set them in Settings.</div>
+            )}
+            {recipientPeople.map(person => (
+              <label key={person.key} className="notify-recipient">
                 <input
                   type="checkbox"
-                  checked={checked[key]}
-                  onChange={() => setChecked(p => ({ ...p, [key]: !p[key] }))}
+                  checked={!!checked[person.key]}
+                  onChange={() => setChecked(p => ({ ...p, [person.key]: !p[person.key] }))}
                 />
                 <span className="notify-recipient-name">{person.name}</span>
                 {!person.email && <span className="notify-no-email">(no email configured)</span>}
@@ -1817,7 +1818,7 @@ function CollaboratorSearch({ label, value, category, onSave, onSelect, placehol
 }
 
 // ─── Details Section ───────────────────────────────────────────────────────────
-function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, onStatusChange, onNoteAdded, transactionAddr, tcSettings }) {
+function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, onStatusChange, onNoteAdded, transactionAddr, tcSettings, agentName = '' }) {
   const save   = (field) => (value) => onFieldSave(field, value)
 
   // Saves all 4 property-feature fields in one atomic Supabase update to avoid race conditions.
@@ -1932,7 +1933,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
               label="TC"
               value={transaction.assigned_tc || ''}
               type="select"
-              options={[{ value: '', label: '—' }, ...TC_OPTIONS.map(o => ({ value: o, label: o }))]}
+              options={[{ value: '', label: '—' }, ...getTcNames(tcSettings).map(o => ({ value: o, label: o }))]}
               onSave={save('assigned_tc')}
               tabIndex={13}
             />
@@ -2251,6 +2252,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
             transactionAddr={transactionAddr}
             onNoteAdded={onNoteAdded}
             tcSettings={tcSettings}
+            agentName={agentName}
           />
 
           {/* CONTRACT DATES */}
@@ -2542,9 +2544,8 @@ function CommissionSection({ transaction, commissions, onCommissionChange, onAdd
 }
 
 const TDL_TASK_TYPES  = ['Task', 'Email', 'Notification', 'Critical Date']
-const TDL_ASSIGNEES   = ['Me', 'Justina Morris', 'Victoria Lareau']
 
-function TdlAddTaskModal({ transaction, onAdd, onClose }) {
+function TdlAddTaskModal({ transaction, assigneeOptions = [], onAdd, onClose }) {
   const [title,         setTitle]        = useState('')
   const [taskType,      setTaskType]     = useState('Task')
   const [assigned,      setAssigned]     = useState('Me')
@@ -2602,7 +2603,7 @@ function TdlAddTaskModal({ transaction, onAdd, onClose }) {
           <label className="tdl-modal-field">
             <span className="tdl-modal-label">Assign To</span>
             <select className="tdl-modal-select" value={assigned} onChange={e => setAssigned(e.target.value)}>
-              {TDL_ASSIGNEES.map(a => <option key={a} value={a}>{a}</option>)}
+              {assigneeOptions.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </label>
           <label className="tdl-modal-checkbox">
@@ -2620,7 +2621,7 @@ function TdlAddTaskModal({ transaction, onAdd, onClose }) {
 }
 
 // ─── Tasks & Documents — Left Column ─────────────────────────────────────────
-function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, dbTemplates, dbTemplateTasks, onApplyTemplate, taskComments = [], onAddTaskComment, onDeleteTaskComment, tcSettings = [], transactionAddr = '' }) {
+function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, dbTemplates, dbTemplateTasks, onApplyTemplate, taskComments = [], onAddTaskComment, onDeleteTaskComment, tcSettings = [], agentName = '', transactionAddr = '' }) {
   const [localTasks,   setLocalTasks]  = useState([])
   const [tasksLoaded,  setTasksLoaded] = useState(false)
 
@@ -2688,6 +2689,7 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, 
       onAddTaskComment={onAddTaskComment}
       onDeleteTaskComment={onDeleteTaskComment}
       tcSettings={tcSettings}
+      agentName={agentName}
       transactionAddr={transactionAddr}
     />
   )
@@ -3542,6 +3544,8 @@ export default function TransactionDetailPage({
   commissions,
   tasks,
   tcSettings,
+  agentName = '',
+  agentEmail = '',
   onBack,
   onFieldSave,
   onMultiFieldSave,
@@ -3699,6 +3703,7 @@ export default function TransactionDetailPage({
               onNoteAdded={handleNoteAdded}
               transactionAddr={fullAddress}
               tcSettings={tcSettings}
+              agentName={agentName}
             />
           )}
 
@@ -3718,6 +3723,7 @@ export default function TransactionDetailPage({
                   onAddTaskComment={onAddTaskComment}
                   onDeleteTaskComment={onDeleteTaskComment}
                   tcSettings={tcSettings}
+                  agentName={agentName}
                   transactionAddr={fullAddress}
                 />
               </div>
@@ -3758,6 +3764,8 @@ export default function TransactionDetailPage({
           tcSettings={tcSettings}
           column={column}
           fullAddress={fullAddress}
+          agentName={agentName}
+          agentEmail={agentEmail}
           onClose={() => setNotifyOpen(false)}
         />
       )}

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { supabase, getUserId } from '../lib/supabase'
 import { uploadToDrive, syncDriveFolder, CONTRACT_DOCS } from '../lib/googleDrive'
+import { getTcNames, firstName, resolveMeName } from '../lib/people'
 import toast from 'react-hot-toast'
 import DateInput from './DateInput'
 import './ListView.css'
@@ -32,8 +33,6 @@ const SECTIONS = [
   { id: 'google-drive', label: 'Google Drive'        },
 ]
 
-
-const TC_NAMES = ['Justina Morris', 'Victoria Lareau']
 
 const DEFAULT_FILTERS = {
   search:         '',
@@ -109,7 +108,7 @@ function countActiveFilters(f) {
 }
 
 // ─── Filters Panel ────────────────────────────────────────────────────────────
-function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, onSaveView, onApplyView, onDeleteView, activeViewId, saving }) {
+function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, onSaveView, onApplyView, onDeleteView, activeViewId, saving, tcNames = [] }) {
   const set = (key, val) => setDraft(d => ({ ...d, [key]: val }))
 
   const toggleStage = (value) => {
@@ -168,12 +167,12 @@ function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, 
           <div className="lv-fpanel-section">
             <div className="lv-fpanel-section-title">TC</div>
             <div className="lv-fpanel-toggles">
-              {['All', ...TC_NAMES].map(v => (
+              {['All', ...tcNames].map(v => (
                 <button
                   key={v}
                   className={`lv-fpanel-toggle${draft.tcFilter === v ? ' active' : ''}`}
                   onClick={() => set('tcFilter', v)}
-                >{v === 'Justina Morris' ? 'Justina' : v === 'Victoria Lareau' ? 'Victoria' : v}</button>
+                >{v === 'All' ? v : firstName(v)}</button>
               ))}
             </div>
           </div>
@@ -381,7 +380,7 @@ function UploadButton({ tx, uploadCount, onUploadDone }) {
 }
 
 // ─── List Row ─────────────────────────────────────────────────────────────────
-function ListRow({ tx, stageLabel, onCardClick, onOpenSection, uploadCount, onUploadDone }) {
+function ListRow({ tx, stageLabel, onCardClick, onOpenSection, uploadCount, onUploadDone, agentName = '' }) {
   const c1 = [tx.client_first_name, tx.client_last_name].filter(Boolean).join(' ') || tx.client_name || '—'
   const c2 = [tx.client2_first_name, tx.client2_last_name].filter(Boolean).join(' ')
   const price        = getPrice(tx)
@@ -403,7 +402,7 @@ function ListRow({ tx, stageLabel, onCardClick, onOpenSection, uploadCount, onUp
       <td className="lv-td">
         <span className={`lv-stage lv-stage--${tx.status}`}>{stageLabel(tx.status)}</span>
       </td>
-      <td className="lv-td lv-td-tc">{tx.assigned_tc || '—'}</td>
+      <td className="lv-td lv-td-tc">{resolveMeName(tx.assigned_tc, agentName) || '—'}</td>
       <td className="lv-td lv-td-date">{fmtDate(contractDate)}</td>
       <td className="lv-td lv-td-date">{fmtDate(tx.close_of_escrow)}</td>
       <td className="lv-td lv-td-price">{price ? fmtMoney(price) : '—'}</td>
@@ -412,7 +411,8 @@ function ListRow({ tx, stageLabel, onCardClick, onOpenSection, uploadCount, onUp
 }
 
 // ─── Main ListView ────────────────────────────────────────────────────────────
-export default function ListView({ transactions, commissions, columns, onCardClick, onOpenSection }) {
+export default function ListView({ transactions, commissions, columns, onCardClick, onOpenSection, tcSettings = [], agentName = '' }) {
+  const tcNames = getTcNames(tcSettings)
   const [filters,      setFilters]      = useState(() => {
     try {
       const raw = JSON.parse(localStorage.getItem('listViewFilters') || 'null')
@@ -557,7 +557,10 @@ export default function ListView({ transactions, commissions, columns, onCardCli
     )
   }
   if (filters.typeFilter     !== 'All') filtered = filtered.filter(t => t.rep_type      === filters.typeFilter)
-  if (filters.tcFilter       !== 'All') filtered = filtered.filter(t => t.assigned_tc   === filters.tcFilter)
+  if (filters.tcFilter       !== 'All') {
+    const match = filters.tcFilter === agentName ? 'Me' : filters.tcFilter
+    filtered = filtered.filter(t => t.assigned_tc === match)
+  }
   if (filters.propTypeFilter !== 'All') filtered = filtered.filter(t => t.property_type === filters.propTypeFilter)
   if (filters.coeFrom) filtered = filtered.filter(t => t.close_of_escrow && t.close_of_escrow >= filters.coeFrom)
   if (filters.coeTo)   filtered = filtered.filter(t => t.close_of_escrow && t.close_of_escrow <= filters.coeTo)
@@ -632,7 +635,7 @@ export default function ListView({ transactions, commissions, columns, onCardCli
     })
 
     if (filters.tcFilter !== 'All') {
-      const short = filters.tcFilter === 'Justina Morris' ? 'Justina' : 'Victoria'
+      const short = firstName(filters.tcFilter)
       chips.push({
         key: 'tc',
         label: `TC: ${short}`,
@@ -727,6 +730,7 @@ export default function ListView({ transactions, commissions, columns, onCardCli
           onDeleteView={deleteView}
           activeViewId={activeViewId}
           saving={saving}
+          tcNames={tcNames}
         />
       )}
 
@@ -762,6 +766,7 @@ export default function ListView({ transactions, commissions, columns, onCardCli
                   onOpenSection={onOpenSection}
                   uploadCount={uploadCounts[tx.id] || 0}
                   onUploadDone={refreshUploadCount}
+                  agentName={agentName}
                 />
               ))
             )}

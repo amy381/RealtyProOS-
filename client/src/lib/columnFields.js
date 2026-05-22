@@ -1,4 +1,6 @@
-export const TC_OPTIONS = ['Justina Morris', 'Victoria Lareau']
+// TC_OPTIONS removed — TC names now come from tc_settings rows via the
+// lib/people helpers (orphan modals IntakeModal/TransactionModal still
+// reference it; revive them with prop-driven options before re-enabling).
 
 // Used in TransactionModal for column-specific edit fields
 export const COLUMN_FIELDS = {

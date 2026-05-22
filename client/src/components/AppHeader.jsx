@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Bell, CheckSquare, Search } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { deriveInitials } from '../lib/people'
 import './AppHeader.css'
 
 function useDebounce(value, delay) {
@@ -10,23 +11,6 @@ function useDebounce(value, delay) {
     return () => clearTimeout(t)
   }, [value, delay])
   return debounced
-}
-
-function deriveInitials(name, email) {
-  const source = (name || '').trim()
-  if (source) {
-    const parts = source.split(/\s+/).filter(Boolean)
-    const letters = parts.slice(0, 2).map(p => p[0]).join('')
-    if (letters) return letters.toUpperCase()
-  }
-  const local = (email || '').split('@')[0]
-  if (local) {
-    const parts = local.split(/[._-]+/).filter(Boolean)
-    const letters = parts.slice(0, 2).map(p => p[0]).join('')
-    if (letters) return letters.toUpperCase()
-    return local[0].toUpperCase()
-  }
-  return '?'
 }
 
 export default function AppHeader({ transactions = [], onNavigateTransaction, onNavigateTab }) {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
+import { deriveInitials } from '../lib/people'
 import './MissionControl.css'
 
 // ─── Commission calculation (mirrors CommissionsTab / GoalsDashboard) ─────────
@@ -53,10 +54,8 @@ function getQuarter(tx) {
   return Math.floor(new Date(d + 'T00:00:00').getMonth() / 3) + 1
 }
 
-const INITIALS_MAP = { 'Amy Casanova': 'AC', 'Justina Morris': 'JM', 'Victoria Lareau': 'VL' }
 function initials(name) {
-  if (!name) return '?'
-  return INITIALS_MAP[name] || name.trim().slice(0, 2).toUpperCase()
+  return deriveInitials(name)
 }
 
 const PIPELINE_STAGES = [

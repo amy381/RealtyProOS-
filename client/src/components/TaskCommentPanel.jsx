@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { getAssigneeOptions, firstName } from '../lib/people'
 import './TaskCommentPanel.css'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -18,9 +19,9 @@ function renderCommentText(text) {
 
 function buildMentionPeople(tcSettings = []) {
   return tcSettings
-    .filter(tc => tc.name !== 'Me')
+    .filter(tc => tc.name && tc.name !== 'Me')
     .map(tc => ({
-      handle: '@' + tc.name.split(' ')[0],
+      handle: '@' + (firstName(tc.name) || tc.name),
       email:  tc.email || null,
       name:   tc.name,
     }))
@@ -51,8 +52,6 @@ async function sendMentionEmails(mentions, body, transactionAddr, tcSettings = [
   }
 }
 
-const COMMENT_AUTHORS = ['Me', 'Justina Morris', 'Victoria Lareau']
-
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function TaskCommentPanel({
   taskTitle,
@@ -61,8 +60,10 @@ export default function TaskCommentPanel({
   onDelete,
   onClose,
   tcSettings = [],
+  agentName = '',
   transactionAddr = '',
 }) {
+  const authorOptions = getAssigneeOptions(tcSettings, agentName)
   const [text,          setText]          = useState('')
   const [author,        setAuthor]        = useState('Me')
   const [mentionOpen,   setMentionOpen]   = useState(false)
@@ -140,7 +141,7 @@ export default function TaskCommentPanel({
 
         <div className="tc-compose">
           <select className="tc-author-sel" value={author} onChange={e => setAuthor(e.target.value)}>
-            {COMMENT_AUTHORS.map(a => <option key={a}>{a}</option>)}
+            {authorOptions.map(a => <option key={a}>{a}</option>)}
           </select>
           <div className="tc-input-wrap">
             <input

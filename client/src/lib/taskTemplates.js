@@ -8,7 +8,8 @@ function addDays(dateStr, days) {
   return `${y}-${m}-${day}`
 }
 
-export const TC_ASSIGNEES = ['Me', 'Justina Morris', 'Victoria Lareau']
+// TC_ASSIGNEES removed — assignee dropdowns now derive from agent_settings +
+// tc_settings via getAssigneeOptions() in lib/people.
 
 // Calculate due date from a timing_type + timing_days + transaction fields.
 // Day counting rules: day of trigger does NOT count as day 1; counting starts the next day.

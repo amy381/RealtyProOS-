@@ -1095,6 +1095,7 @@ export default function App() {
           onCreate={handleCreateTransaction}
           onClose={() => { setNewTxOpen(false); setNewTxPrefill(null) }}
           prefill={newTxPrefill}
+          tcSettings={tcSettings}
         />
       )}
 

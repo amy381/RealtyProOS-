@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react'
-import { TC_OPTIONS } from '../lib/columnFields'
 import DateInput from './DateInput'
 import './NewTransactionPopup.css'
 
@@ -120,11 +119,12 @@ function FubSearch({ onSelect }) {
 }
 
 // ─── Main popup ───────────────────────────────────────────────────────────────
-export default function NewTransactionPopup({ onCreate, onClose, prefill = null }) {
+export default function NewTransactionPopup({ onCreate, onClose, prefill = null, tcSettings = [] }) {
+  const tcOptions = (tcSettings || []).map(s => s.name).filter(Boolean)
   const [repType,  setRepType]  = useState('Seller')
   const [status,   setStatus]   = useState('pre-listing')
   const [propType, setPropType] = useState('')
-  const [tc,       setTc]       = useState(TC_OPTIONS[0] || '')
+  const [tc,       setTc]       = useState(tcOptions[0] || '')
   const [client1,  setClient1]  = useState(null)
   const [client2,  setClient2]  = useState(null)
   const [creating, setCreating] = useState(false)
@@ -283,7 +283,8 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null 
             <div className="ntp-field">
               <label>TC</label>
               <select value={tc} onChange={e => setTc(e.target.value)}>
-                {TC_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                {tcOptions.length === 0 && <option value="">— No TCs configured —</option>}
+                {tcOptions.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
           </div>

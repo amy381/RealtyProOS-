@@ -12,12 +12,48 @@ function useDebounce(value, delay) {
   return debounced
 }
 
+function deriveInitials(name, email) {
+  const source = (name || '').trim()
+  if (source) {
+    const parts = source.split(/\s+/).filter(Boolean)
+    const letters = parts.slice(0, 2).map(p => p[0]).join('')
+    if (letters) return letters.toUpperCase()
+  }
+  const local = (email || '').split('@')[0]
+  if (local) {
+    const parts = local.split(/[._-]+/).filter(Boolean)
+    const letters = parts.slice(0, 2).map(p => p[0]).join('')
+    if (letters) return letters.toUpperCase()
+    return local[0].toUpperCase()
+  }
+  return '?'
+}
+
 export default function AppHeader({ transactions = [], onNavigateTransaction, onNavigateTab }) {
   const [query,   setQuery]   = useState('')
   const [results, setResults] = useState(null) // null = closed
   const [focused, setFocused] = useState(false)
+  const [agent,   setAgent]   = useState({ name: '', email: '' })
   const inputRef    = useRef(null)
   const containerRef = useRef(null)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      const email = user?.email || ''
+      const { data } = await supabase
+        .from('agent_settings')
+        .select('realtor_name')
+        .limit(1)
+        .maybeSingle()
+      if (!cancelled) setAgent({ name: data?.realtor_name || '', email })
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  const displayName = agent.name || agent.email || ''
+  const initials    = deriveInitials(agent.name, agent.email)
 
   const debouncedQuery = useDebounce(query, 280)
 
@@ -187,7 +223,7 @@ export default function AppHeader({ transactions = [], onNavigateTransaction, on
         <button className="app-header-icon-btn" title="Quick tasks">
           <CheckSquare size={18} />
         </button>
-        <div className="app-header-avatar" title="Amy Casanova">AC</div>
+        <div className="app-header-avatar" title={displayName}>{initials}</div>
       </div>
 
     </header>

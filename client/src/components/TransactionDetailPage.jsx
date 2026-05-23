@@ -1675,7 +1675,7 @@ function CollaboratorAddModal({ category, initialName = '', onSaved, onClose }) 
   const [form, setForm] = useState({
     first_name: nameParts[0] || '',
     last_name:  nameParts.slice(1).join(' ') || '',
-    company: '', phone: '', email: '', type: '',
+    company: '', phone: '', email: '', type: '', address: '',
   })
   const set = f => e => setForm(p => ({ ...p, [f]: e.target.value }))
 
@@ -1709,6 +1709,9 @@ function CollaboratorAddModal({ category, initialName = '', onSaved, onClose }) 
           </div>
           <label>{meta.companyLabel}<input value={form.company} onChange={set('company')} placeholder={meta.companyLabel} /></label>
           {meta.hasType && <label>Type<input value={form.type} onChange={set('type')} placeholder="e.g. Photographer" /></label>}
+          {category === 'title-escrow' && (
+            <label>Address<input value={form.address} onChange={set('address')} placeholder="Street address" /></label>
+          )}
           <div className="collab-add-row">
             <label>Phone<input value={form.phone} onChange={set('phone')} onBlur={() => setForm(p => ({ ...p, phone: formatPhone(p.phone) }))} type="tel" placeholder="(555) 000-0000" /></label>
             <label>Email<input value={form.email} onChange={set('email')} type="email" placeholder="email@example.com" /></label>

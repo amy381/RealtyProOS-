@@ -174,13 +174,17 @@ export default function MissionControl({ transactions, commissions }) {
   }, [transactions, commissions, currentYear])
 
   // ── Pipeline snapshot ────────────────────────────────────────────────────────
+  // Closed is filtered to the current year so the snapshot matches Annual Goals;
+  // other stages reflect the current pipeline state regardless of year.
   const pipeline = useMemo(() =>
     PIPELINE_STAGES.map(({ id, label }) => {
-      const txns = transactions.filter(t => t.status === id)
+      const txns = transactions.filter(t =>
+        t.status === id && (id !== 'closed' || getYear(t) === currentYear)
+      )
       const vol  = txns.reduce((s, t) => s + (id === 'active-listing' ? Number(t.price) || 0 : Number(t.contract_price || t.price) || 0), 0)
       return { id, label, count: txns.length, volume: vol }
     }),
-  [transactions])
+  [transactions, currentYear])
 
   // ── Goals (with fallback to GoalsDashboard hardcoded values) ─────────────────
   const G = goals

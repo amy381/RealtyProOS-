@@ -958,7 +958,7 @@ select.txp-input { cursor: pointer; }
 
 /* ── Inspection time input (inline next to Inspection Date) ─────────────────── */
 .txp-inspection-time {
-  width: 100px;
+  width: 140px;
   flex-shrink: 0;
   font-size: 14px;
   font-family: inherit;

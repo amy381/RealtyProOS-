@@ -150,7 +150,7 @@ export default function TransactionCard({ transaction, onDelete, isDragging, pri
               ? transaction.contract_price
               : transaction.rep_type === 'Seller' && transaction.contract_price
                 ? transaction.contract_price
-                : transaction.price
+                : (transaction.contract_price ?? transaction.price)
           ).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
         </div>
       )}

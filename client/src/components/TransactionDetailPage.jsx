@@ -2370,8 +2370,8 @@ function CommissionSection({ transaction, commissions, onCommissionChange, onAdd
   console.log('[Commission] scPct draft:', scPctDraft, '→ sellerGCI:', sellerGCI, '| price:', price, '| GCI:', gci)
 
   const referralAmt    = referralPct > 0 ? gci * referralPct / 100 : 0
-  const capAmt         = commission.cap_deduction     ? gci * 0.30 : 0
-  const royaltyAmt     = commission.royalty_deduction ? gci * 0.06 : 0
+  const capAmt         = commission.cap_deduction     ? (gci - referralAmt) * 0.30 : 0
+  const royaltyAmt     = commission.royalty_deduction ? (gci - referralAmt) * 0.06 : 0
   const eoAmt          = 35
   const tcFeeAmt       = Number(commission.tc_fee_commission) || 0
   const concessionsAmt = Number(commission.concessions) || 0

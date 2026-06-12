@@ -49,8 +49,8 @@ function calcRow(t, c) {
   const gci         = calcGCI(t, c)
 
   const referralAmt    = referralPct > 0 ? gci * referralPct / 100 : 0
-  const capAmt         = c.cap_deduction     ? gci * CAP_RATE    : 0
-  const royaltyAmt     = c.royalty_deduction ? gci * ROYALTY_RATE : 0
+  const capAmt         = c.cap_deduction     ? (gci - referralAmt) * CAP_RATE    : 0
+  const royaltyAmt     = c.royalty_deduction ? (gci - referralAmt) * ROYALTY_RATE : 0
   const eoAmt          = gci > 0 ? EO_FLAT : 0
   const tcFeeAmt       = Number(c.tc_fee_commission) || 0
   const concessionsAmt = Number(c.concessions) || 0

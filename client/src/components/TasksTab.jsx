@@ -1802,6 +1802,7 @@ export default function TasksTab({
 
   // View mode: grouped accordion or flat list
   const [viewMode, setViewMode] = useState('grouped')
+  const [showCompletedFlat, setShowCompletedFlat] = useState(false)
 
   // Vendors
   const [vendors, setVendors] = useState([])
@@ -1933,7 +1934,9 @@ export default function TasksTab({
   const flatListData = useMemo(() => {
     if (viewMode !== 'flat') return []
     const all = groupedData.flatMap(({ tx, items }) =>
-      items.map(item => ({ ...item, _tx: tx }))
+      items
+        .filter(item => item.task_type === 'Critical Date' || item.status !== 'complete' || showCompletedFlat)
+        .map(item => ({ ...item, _tx: tx }))
     )
     return all.slice().sort((a, b) => {
       let cmp = 0
@@ -1946,7 +1949,7 @@ export default function TasksTab({
       }
       return sortDir === 'asc' ? cmp : -cmp
     })
-  }, [viewMode, groupedData, sortField, sortDir])
+  }, [viewMode, groupedData, sortField, sortDir, showCompletedFlat])
 
   // ── Active filter chips ────────────────────────────────────────────────────
   const activeChips = useMemo(() => {
@@ -2393,6 +2396,15 @@ export default function TasksTab({
 
         {/* ── Flat list view ────────────────────────────────────────── */}
         {viewMode === 'flat' && (
+          <>
+          {doneCount > 0 && (
+            <button
+              className="gtd-show-completed-btn"
+              onClick={() => setShowCompletedFlat(v => !v)}
+            >
+              {showCompletedFlat ? 'Hide' : 'Show'} {doneCount} completed
+            </button>
+          )}
           <div className="gtd-flat-list">
             {flatListData.length === 0 && (
               <div className="gtd-empty">No tasks match these filters</div>
@@ -2432,6 +2444,7 @@ export default function TasksTab({
               })
             })()}
           </div>
+          </>
         )}
       </div>
 

@@ -9,6 +9,21 @@ const EO_FLAT       = 35
 
 const COMMISSION_STATUSES = new Set(['pending', 'closed'])
 const FILTERS = ['All', 'Pending', 'Closed', 'Buyer', 'Seller']
+const MONTHS = [
+  { value: 'All', label: 'All Months' },
+  { value: '01',  label: 'January'   },
+  { value: '02',  label: 'February'  },
+  { value: '03',  label: 'March'     },
+  { value: '04',  label: 'April'     },
+  { value: '05',  label: 'May'       },
+  { value: '06',  label: 'June'      },
+  { value: '07',  label: 'July'      },
+  { value: '08',  label: 'August'    },
+  { value: '09',  label: 'September' },
+  { value: '10',  label: 'October'   },
+  { value: '11',  label: 'November'  },
+  { value: '12',  label: 'December'  },
+]
 
 function getCapYearStart() {
   const today = new Date()
@@ -181,6 +196,8 @@ function computeAllRows(transactions, commissions) {
       ref_dollar:  hasCm ? referralAmt  : null,
       cap:         hasCm ? (capByTx[t.id]     ?? 0) : null,
       royalty:     hasCm ? (royaltyByTx[t.id] ?? 0) : null,
+      cap_paid:     hasCm && !!c.cap_deduction,
+      royalty_paid: hasCm && !!c.royalty_deduction,
       tc_fee:      hasCm ? tcFeeAmt     : null,
       status:      statusFromStage(t.status),
     }
@@ -194,6 +211,8 @@ export default function CommissionsTab({ transactions, commissions, onDeleteComm
   const [sortDir,      setSortDir]      = useState('asc')
   const [activeFilter, setActiveFilter] = useState('All')
   const [yearFilter,   setYearFilter]   = useState('2026')
+  const [monthFilter,  setMonthFilter]  = useState('All')
+  const [paidCapRoyaltyOnly, setPaidCapRoyaltyOnly] = useState(false)
 
   const handleSort = key => {
     if (key === '_delete') return
@@ -220,6 +239,8 @@ export default function CommissionsTab({ transactions, commissions, onDeleteComm
   const visibleRows = useMemo(() => {
     let result = rows
     if (yearFilter !== 'All') result = result.filter(r => r.coe && r.coe.startsWith(yearFilter))
+    if (monthFilter !== 'All') result = result.filter(r => r.coe && r.coe.slice(5, 7) === monthFilter)
+    if (paidCapRoyaltyOnly) result = result.filter(r => r.cap_paid && r.royalty_paid)
     switch (activeFilter) {
       case 'Pending': return result.filter(r => r.status === 'Pending')
       case 'Closed':  return result.filter(r => r.status === 'Closed')
@@ -227,7 +248,7 @@ export default function CommissionsTab({ transactions, commissions, onDeleteComm
       case 'Seller':  return result.filter(r => r.rep    === 'Seller')
       default:        return result
     }
-  }, [rows, activeFilter, yearFilter])
+  }, [rows, activeFilter, yearFilter, monthFilter, paidCapRoyaltyOnly])
 
   const sorted = useMemo(() => [...visibleRows].sort((a, b) => {
     const av = a[sortKey] ?? ''; const bv = b[sortKey] ?? ''
@@ -296,6 +317,21 @@ export default function CommissionsTab({ transactions, commissions, onDeleteComm
         >
           {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
+        <select
+          className="commissions-year-select"
+          value={monthFilter}
+          onChange={e => setMonthFilter(e.target.value)}
+        >
+          {MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+        </select>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={paidCapRoyaltyOnly}
+            onChange={e => setPaidCapRoyaltyOnly(e.target.checked)}
+          />
+          Paid Cap &amp; Royalty
+        </label>
       </div>
 
       <div className="commissions-scroll">

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   Rocket, LayoutDashboard, ListChecks, CircleDollarSign,
   Users, FileText, LockKeyhole, SquareLibrary, Settings,
-  ChevronRight, ChevronLeft,
+  FileStack, ChevronRight, ChevronLeft,
 } from 'lucide-react'
 import './Sidebar.css'
 
@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { key: 'templates',     label: 'Templates',       Icon: FileText         },
   { key: 'showings',      label: 'Showings',        Icon: LockKeyhole      },
   { key: 'reporting',     label: 'Reporting',       Icon: SquareLibrary    },
+  { key: 'legacy-pdf',    label: 'Legacy PDF',      Icon: FileStack        },
 ]
 
 const COLLAB_SUB = [

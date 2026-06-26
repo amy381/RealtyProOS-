@@ -20,6 +20,7 @@ import MeshBackground from './components/MeshBackground'
 import Sidebar from './components/Sidebar'
 import MissionControl from './components/MissionControl'
 import AppHeader from './components/AppHeader'
+import LegacyPDF from './components/LegacyPDF'
 import './App.css'
 import './styles/darkTheme.css'
 
@@ -80,7 +81,7 @@ export default function App() {
   const [txFrom,              setTxFrom]              = useState('board')
   const [activeTab,  setActiveTab]  = useState(() => {
     const p = new URLSearchParams(window.location.search)
-    const VALID_TABS = ['dashboard','board','tasks','commissions','collaborators','templates','showings','reporting']
+    const VALID_TABS = ['dashboard','board','tasks','commissions','collaborators','templates','showings','reporting','legacy-pdf']
     const t = p.get('tab')
     return VALID_TABS.includes(t) ? t : 'board'
   })
@@ -1022,6 +1023,9 @@ export default function App() {
               <div className="placeholder-title">Reporting</div>
               <div className="placeholder-sub">Coming Soon</div>
             </div>
+          )}
+          {activeTab === 'legacy-pdf' && (
+            <LegacyPDF />
           )}
         </main>
       </div>

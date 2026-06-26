@@ -7,3 +7,6 @@ server/.env
 dist/
 client/dist/
 .vercel
+
+# macOS
+.DS_Store

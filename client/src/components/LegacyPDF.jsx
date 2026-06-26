@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast'
 import {
   Upload, Download, RotateCw, RotateCcw, Trash2, Scissors,
   Crop, FilePlus2, Copy, Minimize2, FileStack, X,
-  ZoomIn, ZoomOut, Maximize, Columns,
+  ArrowUp, ArrowDown,
 } from 'lucide-react'
 // @cantoo/pdf-lib is a drop-in, same-API fork of pdf-lib that can decrypt
 // permission-locked PDFs (owner-password only, empty user password) — common
@@ -21,6 +21,9 @@ let _srcSeq = 0
 let _pageSeq = 0
 const nextSrcId = () => `src_${++_srcSeq}`
 const nextPageId = () => `pg_${++_pageSeq}`
+
+const ZOOM_MIN = 25   // %
+const ZOOM_MAX = 400  // %
 
 // Build a single working PDF (Uint8Array) from the source files + ordered page list.
 // This is the single derived artifact used for both rendering (pdf.js) and download.
@@ -56,16 +59,17 @@ export default function LegacyPDF() {
   const [sources, setSources] = useState({})        // srcId -> { name, bytes }
   const [pages, setPages]     = useState([])         // ordered [{ id, srcId, srcIndex, rotation, crop }]
   const [selected, setSelected] = useState([])       // selected page ids
-  const [currentId, setCurrentId] = useState(null)   // page id highlighted / scrolled into view
+  const [currentId, setCurrentId] = useState(null)   // page id currently scrolled into view
 
   // Derived render state
   const [pdfDoc, setPdfDoc]   = useState(null)
   const workingBytesRef = useRef(null)               // Uint8Array of current working doc (for download)
   const [building, setBuilding] = useState(false)
 
-  // View controls
-  const [zoomMode, setZoomMode] = useState('fit-width') // 'custom' | 'fit-width' | 'fit-page'
-  const [scale, setScale]       = useState(1)
+  // Zoom — a single continuous scale factor (1 = 100%) driven by the top-bar slider.
+  // On first load we auto-fit the whole page; after that the slider controls it.
+  const [scale, setScale] = useState(1)
+  const fittedRef = useRef(false)                    // have we auto-fit the current document yet?
 
   // Crop panel
   const [cropOpen, setCropOpen] = useState(false)
@@ -77,9 +81,7 @@ export default function LegacyPDF() {
   const fileInputRef = useRef(null)
   const pageRefs = useRef({})        // pageId -> wrapper element (main canvas)
   const canvasRefs = useRef({})      // pageId -> main canvas element
-  const thumbCanvasRefs = useRef({}) // pageId -> thumbnail canvas element
   const renderTokenRef = useRef(0)
-  const dragIndexRef = useRef(null)
 
   const hasDoc = pages.length > 0
 
@@ -137,6 +139,7 @@ export default function LegacyPDF() {
     if (!pages.length) {
       workingBytesRef.current = null
       setPdfDoc(null)
+      fittedRef.current = false   // next loaded doc should auto-fit again
       return
     }
     setBuilding(true)
@@ -159,40 +162,33 @@ export default function LegacyPDF() {
     return () => { cancelled = true }
   }, [sources, pages])
 
-  // ── Render thumbnails (independent of zoom) ──────────────────────────────────
+  // ── Auto-fit the whole page on first load (viewport-computed, runs once) ──────
   useEffect(() => {
-    if (!pdfDoc) return
+    if (!pdfDoc || fittedRef.current) return
     let cancelled = false
     ;(async () => {
-      for (let i = 0; i < pages.length; i++) {
+      try {
+        const page = await pdfDoc.getPage(1)
+        const base = page.getViewport({ scale: 1 })
+        const el = scrollRef.current
+        const cw = (el?.clientWidth || 800) - 48   // minus canvas-area padding
+        const ch = (el?.clientHeight || 800) - 48
+        const fit = Math.min(cw / base.width, ch / base.height)
         if (cancelled) return
-        const pageId = pages[i].id
-        const canvas = thumbCanvasRefs.current[pageId]
-        if (!canvas) continue
-        try {
-          const page = await pdfDoc.getPage(i + 1)
-          const base = page.getViewport({ scale: 1 })
-          const thumbScale = 140 / base.width
-          const viewport = page.getViewport({ scale: thumbScale })
-          const ctx = canvas.getContext('2d')
-          canvas.width = viewport.width
-          canvas.height = viewport.height
-          await page.render({ canvasContext: ctx, viewport }).promise
-        } catch (err) {
-          if (err?.name !== 'RenderingCancelledException') console.error(err)
-        }
+        setScale(Math.max(0.1, fit))
+        fittedRef.current = true
+      } catch (err) {
+        console.error('[LegacyPDF] auto-fit failed', err)
       }
     })()
     return () => { cancelled = true }
-  }, [pdfDoc, pages])
+  }, [pdfDoc])
 
   // ── Render main pages (depends on zoom) ──────────────────────────────────────
   useEffect(() => {
     if (!pdfDoc) return
     const token = ++renderTokenRef.current
     ;(async () => {
-      const containerW = (scrollRef.current?.clientWidth || 800) - 48
-      const containerH = (scrollRef.current?.clientHeight || 800) - 48
       for (let i = 0; i < pages.length; i++) {
         if (token !== renderTokenRef.current) return
         const pageId = pages[i].id
@@ -200,12 +196,8 @@ export default function LegacyPDF() {
         if (!canvas) continue
         try {
           const page = await pdfDoc.getPage(i + 1)
-          const base = page.getViewport({ scale: 1 })
-          let eff = scale
-          if (zoomMode === 'fit-width') eff = containerW / base.width
-          else if (zoomMode === 'fit-page') eff = Math.min(containerW / base.width, containerH / base.height)
           const dpr = window.devicePixelRatio || 1
-          const viewport = page.getViewport({ scale: eff })
+          const viewport = page.getViewport({ scale })
           const ctx = canvas.getContext('2d')
           canvas.width = Math.floor(viewport.width * dpr)
           canvas.height = Math.floor(viewport.height * dpr)
@@ -218,9 +210,9 @@ export default function LegacyPDF() {
         }
       }
     })()
-  }, [pdfDoc, pages, scale, zoomMode])
+  }, [pdfDoc, pages, scale])
 
-  // ── Track current page on scroll ─────────────────────────────────────────────
+  // ── Track current page on scroll (for the "Page X / N" indicator) ────────────
   useEffect(() => {
     const root = scrollRef.current
     if (!root || !pages.length) return
@@ -234,18 +226,17 @@ export default function LegacyPDF() {
     return () => observer.disconnect()
   }, [pages])
 
-  // ── Navigation / selection ───────────────────────────────────────────────────
-  const jumpTo = (pageId, e) => {
+  // ── Selection (click a page in the canvas; ⌘/Ctrl-click to multi-select) ─────
+  const selectPage = (id, e) => {
     if (e && (e.metaKey || e.ctrlKey)) {
-      setSelected(s => s.includes(pageId) ? s.filter(x => x !== pageId) : [...s, pageId])
-      return
+      setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])
+    } else {
+      setSelected([id])
     }
-    setSelected([pageId])
-    setCurrentId(pageId)
-    pageRefs.current[pageId]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setCurrentId(id)
   }
 
-  // Pages an op should target: selection if any, else the current page.
+  // Pages an op should target: selection if any, else the current (in-view) page.
   const targetIds = () => (selected.length ? selected : (currentId ? [currentId] : []))
 
   // ── Organize operations ───────────────────────────────────────────────────────
@@ -257,6 +248,17 @@ export default function LegacyPDF() {
       next.splice(to, 0, moved)
       return next
     })
+  }
+
+  // Move the selected page earlier/later in document order (replaces drag-in-rail).
+  const moveSelected = (dir) => {
+    const id = selected[0] ?? currentId
+    if (!id) { toast.error('Select a page first'); return }
+    const idx = pages.findIndex(p => p.id === id)
+    const to = idx + dir
+    if (idx < 0 || to < 0 || to >= pages.length) return
+    reorder(idx, to)
+    setSelected([id])  // keep the moved page selected
   }
 
   const rotateSelected = (dir) => {
@@ -376,16 +378,13 @@ export default function LegacyPDF() {
     setPages([])
     setSelected([])
     setCurrentId(null)
+    fittedRef.current = false
     canvasRefs.current = {}
-    thumbCanvasRefs.current = {}
     pageRefs.current = {}
   }
 
-  // Zoom controls
-  const zoomIn  = () => { setZoomMode('custom'); setScale(s => Math.min(4, +(s + 0.2).toFixed(2))) }
-  const zoomOut = () => { setZoomMode('custom'); setScale(s => Math.max(0.2, +(s - 0.2).toFixed(2))) }
-
   const currentIndex = pages.findIndex(p => p.id === currentId)
+  const zoomPct = Math.round(scale * 100)
 
   return (
     <div className="lpdf">
@@ -396,12 +395,24 @@ export default function LegacyPDF() {
           <span className="lpdf-title">Legacy PDF</span>
           {hasDoc && (
             <span className="lpdf-meta">
-              {pages.length} page{pages.length > 1 ? 's' : ''}
+              Page {currentIndex >= 0 ? currentIndex + 1 : 1} / {pages.length}
               {building && <span className="lpdf-building"> · rendering…</span>}
             </span>
           )}
         </div>
         <div className="lpdf-topbar-right">
+          {hasDoc && (
+            <div className="lpdf-zoom" title="Zoom">
+              <input
+                type="range"
+                min={ZOOM_MIN}
+                max={ZOOM_MAX}
+                value={Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoomPct))}
+                onChange={(e) => { fittedRef.current = true; setScale(Number(e.target.value) / 100) }}
+              />
+              <span className="lpdf-zoom-val">{zoomPct}%</span>
+            </div>
+          )}
           <button className="lpdf-btn" onClick={() => fileInputRef.current?.click()}>
             <Upload size={15} /> {hasDoc ? 'Add PDF' : 'Upload PDF'}
           </button>
@@ -439,27 +450,7 @@ export default function LegacyPDF() {
         </div>
       ) : (
         <div className="lpdf-workspace">
-          {/* Left: thumbnails */}
-          <div className="lpdf-thumbs">
-            {pages.map((p, i) => (
-              <div
-                key={p.id}
-                className={`lpdf-thumb${currentId === p.id ? ' lpdf-thumb--current' : ''}${selected.includes(p.id) ? ' lpdf-thumb--selected' : ''}`}
-                draggable
-                onDragStart={() => { dragIndexRef.current = i }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => { reorder(dragIndexRef.current, i); dragIndexRef.current = null }}
-                onClick={(e) => jumpTo(p.id, e)}
-              >
-                <div className="lpdf-thumb-canvas-wrap">
-                  <canvas ref={el => { if (el) thumbCanvasRefs.current[p.id] = el }} />
-                </div>
-                <div className="lpdf-thumb-num">{i + 1}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Center: canvas */}
+          {/* Center: canvas (the only scrolling region) */}
           <div
             className="lpdf-canvas-area"
             ref={scrollRef}
@@ -471,10 +462,10 @@ export default function LegacyPDF() {
             {pages.map((p, i) => (
               <div
                 key={p.id}
-                className={`lpdf-page${currentId === p.id ? ' lpdf-page--current' : ''}`}
+                className={`lpdf-page${selected.includes(p.id) ? ' lpdf-page--selected' : ''}`}
                 data-page-id={p.id}
                 ref={el => { if (el) pageRefs.current[p.id] = el }}
-                onClick={() => { setSelected([p.id]); setCurrentId(p.id) }}
+                onClick={(e) => selectPage(p.id, e)}
               >
                 <canvas ref={el => { if (el) canvasRefs.current[p.id] = el }} />
                 <div className="lpdf-page-badge">{i + 1}</div>
@@ -482,40 +473,18 @@ export default function LegacyPDF() {
             ))}
           </div>
 
-          {/* Right: tools */}
+          {/* Right: tools (sticky — stays pinned while the canvas scrolls) */}
           <div className="lpdf-tools">
-            {/* View */}
-            <div className="lpdf-tool-group">
-              <div className="lpdf-tool-label">View</div>
-              <div className="lpdf-tool-row">
-                <button className="lpdf-tool-btn" onClick={zoomOut} title="Zoom out"><ZoomOut size={16} /></button>
-                <button className="lpdf-tool-btn" onClick={zoomIn} title="Zoom in"><ZoomIn size={16} /></button>
-                <button className={`lpdf-tool-btn${zoomMode === 'fit-width' ? ' active' : ''}`} onClick={() => setZoomMode('fit-width')} title="Fit width"><Columns size={16} /></button>
-                <button className={`lpdf-tool-btn${zoomMode === 'fit-page' ? ' active' : ''}`} onClick={() => setZoomMode('fit-page')} title="Fit page"><Maximize size={16} /></button>
-              </div>
-              <div className="lpdf-jump">
-                <span>Page</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={pages.length}
-                  value={currentIndex >= 0 ? currentIndex + 1 : 1}
-                  onChange={(e) => {
-                    const n = parseInt(e.target.value, 10)
-                    if (n >= 1 && n <= pages.length) jumpTo(pages[n - 1].id)
-                  }}
-                />
-                <span>/ {pages.length}</span>
-              </div>
-            </div>
-
-            {/* Selection hint */}
             <div className="lpdf-tool-group">
               <div className="lpdf-tool-label">Organize</div>
               <div className="lpdf-tool-hint">
                 {selected.length
                   ? `${selected.length} page${selected.length > 1 ? 's' : ''} selected`
-                  : 'Acts on current page · ⌘-click thumbnails to multi-select'}
+                  : 'Click a page to select · ⌘-click to add more'}
+              </div>
+              <div className="lpdf-tool-row">
+                <button className="lpdf-tool-btn wide" onClick={() => moveSelected(-1)}><ArrowUp size={16} /> Move Up</button>
+                <button className="lpdf-tool-btn wide" onClick={() => moveSelected(1)}><ArrowDown size={16} /> Move Down</button>
               </div>
               <div className="lpdf-tool-row">
                 <button className="lpdf-tool-btn wide" onClick={() => rotateSelected(-1)}><RotateCcw size={16} /> Left</button>
@@ -543,7 +512,6 @@ export default function LegacyPDF() {
               )}
             </div>
 
-            {/* Export-ish ops */}
             <div className="lpdf-tool-group">
               <div className="lpdf-tool-label">Split & Output</div>
               <button className="lpdf-tool-btn full" onClick={extractSelected}><Scissors size={16} /> Extract selected →</button>

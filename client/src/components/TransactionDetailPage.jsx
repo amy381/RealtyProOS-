@@ -271,8 +271,8 @@ async function sendMentionEmails(mentions, noteText, transactionAddr, tcSettings
       console.log('[Mention] Sending to:', person.email, '(', person.name, ')')
       try {
         const app_url = transactionId
-          ? `https://realty-pro-os.vercel.app/?tab=board&tx=${transactionId}`
-          : 'https://realty-pro-os.vercel.app/?tab=board'
+          ? `https://app.desert-legacy.com/?tab=board&tx=${transactionId}`
+          : 'https://app.desert-legacy.com/?tab=board'
         const result = await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
           to_email:         person.email,
           to_name:          person.name,

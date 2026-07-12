@@ -40,7 +40,7 @@ export async function sendMentionNotifications({
 
     try {
       const { default: emailjs } = await import('@emailjs/browser')
-      const app_url = `https://realty-pro-os.vercel.app/transaction/${transaction.id}`
+      const app_url = `https://app.desert-legacy.com/?tab=board&tx=${transaction.id}`
       await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
         to_email:         tc.email,
         to_name:          tc.name,

@@ -1386,12 +1386,24 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, agentName =
   const isBuyer  = transaction.rep_type === 'Buyer'
   // Build recipient list dynamically: every TC (using their short first name as
   // a display label) plus the agent themselves. Each row needs name + email.
-  const recipientPeople = (tcSettings || [])
+  const mergedRecipients = (tcSettings || [])
     .filter(tc => tc && tc.name)
     .map(tc => ({ key: tc.name, name: firstName(tc.name) || tc.name, email: tc.email || '' }))
   if (agentName) {
-    recipientPeople.push({ key: '__agent__', name: firstName(agentName) || agentName, email: agentEmail || '' })
+    mergedRecipients.push({ key: '__agent__', name: firstName(agentName) || agentName, email: agentEmail || '' })
   }
+  // Dedupe by email (lowercased + trimmed) — the agent can also be a TC (e.g. in
+  // agent_settings AND tc_settings), which would otherwise render them twice.
+  // Keep the first occurrence to preserve order and the displayed label; rows
+  // with no email are left as-is since email is the only stable identity.
+  const seenEmails = new Set()
+  const recipientPeople = mergedRecipients.filter(p => {
+    const email = (p.email || '').trim().toLowerCase()
+    if (!email) return true
+    if (seenEmails.has(email)) return false
+    seenEmails.add(email)
+    return true
+  })
 
   const [checked, setChecked] = useState(() =>
     Object.fromEntries(recipientPeople.map(p => [p.key, false]))

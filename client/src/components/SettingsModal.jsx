@@ -187,18 +187,6 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
               </>
             )}
           </div>
-
-          <div className="settings-email-note">
-            <strong>To enable email notifications:</strong> Sign up at{' '}
-            <a href="https://www.emailjs.com" target="_blank" rel="noreferrer">emailjs.com</a>{' '}
-            (free), create a service + template, then add these to your Vercel environment variables:
-            <code className="settings-env-block">
-              VITE_EMAILJS_SERVICE_ID<br />
-              VITE_EMAILJS_TEMPLATE_ID<br />
-              VITE_EMAILJS_PUBLIC_KEY
-            </code>
-            Email template variables: <code>to_email</code>, <code>to_name</code>, <code>transaction_addr</code>, <code>task_title</code>, <code>mention_notes</code>
-          </div>
         </div>
 
         <div className="settings-actions">

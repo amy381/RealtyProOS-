@@ -257,9 +257,6 @@ function VendorEmailModal({ vendor, tx, agentName = '', onClose }) {
     } catch (err) {
       toast.error('Send failed: ' + err.message)
     } finally { setSending(false) }
-
-    // ── EMAILJS LEGACY — unreachable, kept for reference until migration is verified ──
-    // await emailjs.send(SERVICE_ID, TEMPLATE_ID, { to_email: vendor.email, ... }, PUBLIC_KEY)
   }
 
   const handleQueue = async () => {
@@ -355,9 +352,6 @@ function VendorFormModal({ vendor, tx, task, tcSettings, agentName = '', agentSe
     } catch (err) {
       toast.error('Send failed: ' + err.message)
     } finally { setSending(false) }
-
-    // ── EMAILJS LEGACY — unreachable, kept for reference until migration is verified ──
-    // await emailjs.send(SERVICE_ID, TEMPLATE_ID, { to_email: vendor.email, ... }, PUBLIC_KEY)
   }
 
   const handleQueue = async () => {
@@ -1346,10 +1340,6 @@ function SendQueueView({ transactions, tcSettings, agentName = '', onQueueCountC
     } finally {
       setSending(null)
     }
-
-    // ── EMAILJS LEGACY — unreachable, kept for reference until migration is verified ──
-    // const { default: emailjs } = await import('@emailjs/browser')
-    // await emailjs.send(SERVICE_ID, TEMPLATE_ID, { to_email, to_name, subject, ... }, PUBLIC_KEY)
   }
 
   const handleDiscard = async (id) => {

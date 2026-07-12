@@ -1,10 +1,12 @@
-// Sends @mention email notifications via EmailJS.
-// Requires these Vercel / .env vars:
-//   VITE_EMAILJS_SERVICE_ID
-//   VITE_EMAILJS_TEMPLATE_ID   (template vars: to_email, to_name, transaction_addr, client_name, task_title, mention_notes, app_url)
-//   VITE_EMAILJS_PUBLIC_KEY
-//
-// If not configured, notifications are silently skipped.
+// Sends @mention email notifications via the Gmail API (/api/google/gmail-send).
+// Recipients are TCs matched from tc_settings by @handle — internal only.
+// Failures are logged and swallowed so a bad notification never breaks the
+// task create/update that triggered it.
+
+import { wrapEmailBody } from './emailWrapper'
+
+const esc = (s) =>
+  String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 export function parseMentions(notes) {
   if (!notes) return []
@@ -18,14 +20,12 @@ export async function sendMentionNotifications({
   transaction,
   taskTitle,
 }) {
-  const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
-  const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-  const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-  if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) return []
-
   const rawMentions = parseMentions(notes)
   if (!rawMentions.length) return []
 
+  const API_BASE  = import.meta.env.DEV ? 'http://localhost:3001' : ''
+  const address   = transaction.property_address || '(no address)'
+  const app_url   = `https://app.desert-legacy.com/?tab=board&tx=${transaction.id}`
   const newlyNotified = []
 
   for (const raw of rawMentions) {
@@ -38,21 +38,30 @@ export async function sendMentionNotifications({
     })
     if (!tc?.email) continue
 
+    const subject  = `You were mentioned in a task — ${address}`
+    const htmlBody = wrapEmailBody(
+      `<p style="font-size:13px;">You were mentioned in a note on <strong>${esc(address)}</strong>.</p>` +
+      (taskTitle ? `<p style="font-size:13px;">Task: <strong>${esc(taskTitle)}</strong></p>` : '') +
+      `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${esc(notes)}</pre>` +
+      `<p style="font-size:13px;"><a href="${app_url}">Open in LegacyOS</a></p>`
+    )
+
     try {
-      const { default: emailjs } = await import('@emailjs/browser')
-      const app_url = `https://app.desert-legacy.com/?tab=board&tx=${transaction.id}`
-      await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-        to_email:         tc.email,
-        to_name:          tc.name,
-        transaction_addr: transaction.property_address || '(no address)',
-        client_name:      transaction.client_name || '',
-        task_title:       taskTitle,
-        mention_notes:    notes,
-        app_url,
-      }, PUBLIC_KEY)
+      const res = await fetch(`${API_BASE}/api/google/gmail-send`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to:            tc.email,
+          subject,
+          body:          htmlBody,
+          transactionId: transaction.id,
+        }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(result.error || `Gmail send failed (${res.status})`)
       newlyNotified.push(raw)
     } catch (err) {
-      console.error('EmailJS send error:', err)
+      console.error('[Mention] Gmail send error:', err)
     }
   }
 

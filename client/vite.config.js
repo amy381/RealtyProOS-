@@ -18,7 +18,6 @@ export default defineConfig({
         manualChunks: {
           'react-vendor':   ['react', 'react-dom', 'react-hot-toast'],
           'supabase':       ['@supabase/supabase-js'],
-          'emailjs':        ['@emailjs/browser'],
         },
       },
     },

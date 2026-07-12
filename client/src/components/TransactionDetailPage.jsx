@@ -248,47 +248,49 @@ function buildMentionPeople(tcSettings = [], agentName = '') {
   })
 }
 
-// Send EmailJS notification to each mentioned person (uses live tcSettings)
+// Send an @mention notification to each mentioned TC via the Gmail API.
+// Recipients come from live tcSettings only; failures are logged, never thrown,
+// so note creation is never blocked by a bad send.
 async function sendMentionEmails(mentions, noteText, transactionAddr, tcSettings = [], transactionId = null, agentName = '') {
-  const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
-  const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-  const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
   console.log('[Mention] sendMentionEmails called — mentions:', mentions, '| tcSettings:', tcSettings)
-  if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
-    console.warn('[Mention] EmailJS env vars missing — SERVICE_ID:', SERVICE_ID, 'TEMPLATE_ID:', TEMPLATE_ID, 'PUBLIC_KEY:', PUBLIC_KEY ? '(set)' : '(missing)')
-    return
-  }
   const mentionPeople = buildMentionPeople(tcSettings, agentName)
-  try {
-    const { default: emailjs } = await import('@emailjs/browser')
-    for (const handle of mentions) {
-      const person = mentionPeople.find(p => p.handle.toLowerCase() === handle.toLowerCase())
-      console.log('[Mention] Looking up handle:', handle, '→ found:', person)
-      if (!person?.email) {
-        console.warn('[Mention] No email for handle:', handle, '— skipping')
-        continue
-      }
-      console.log('[Mention] Sending to:', person.email, '(', person.name, ')')
-      try {
-        const app_url = transactionId
-          ? `https://app.desert-legacy.com/?tab=board&tx=${transactionId}`
-          : 'https://app.desert-legacy.com/?tab=board'
-        const result = await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-          to_email:         person.email,
-          to_name:          person.name,
-          subject:          `You were mentioned in a note — ${transactionAddr || '(No address)'}`,
-          transaction_addr: transactionAddr || '(No address)',
-          mention_notes:    noteText,
-          mentioner_name:   agentName || 'Unknown',
-          app_url,
-        }, PUBLIC_KEY)
-        console.log('[Mention] EmailJS success for', person.email, ':', result)
-      } catch (sendErr) {
-        console.error('[Mention] EmailJS send failed for', person.email, ':', sendErr)
-      }
+  const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
+  const escHtml  = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const addr     = transactionAddr || '(No address)'
+
+  for (const handle of mentions) {
+    const person = mentionPeople.find(p => p.handle.toLowerCase() === handle.toLowerCase())
+    console.log('[Mention] Looking up handle:', handle, '→ found:', person)
+    if (!person?.email) {
+      console.warn('[Mention] No email for handle:', handle, '— skipping')
+      continue
     }
-  } catch (err) {
-    console.warn('[Mention] mention email setup failed:', err.message)
+    console.log('[Mention] Sending to:', person.email, '(', person.name, ')')
+    const app_url = transactionId
+      ? `https://app.desert-legacy.com/?tab=board&tx=${transactionId}`
+      : 'https://app.desert-legacy.com/?tab=board'
+    const htmlBody = wrapEmailBody(
+      `<p style="font-size:13px;">You were mentioned in a note on <strong>${escHtml(addr)}</strong> by ${escHtml(agentName || 'Unknown')}.</p>` +
+      `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${escHtml(noteText)}</pre>` +
+      `<p style="font-size:13px;"><a href="${app_url}">Open in LegacyOS</a></p>`
+    )
+    try {
+      const res = await fetch(`${API_BASE}/api/google/gmail-send`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to:            person.email,
+          subject:       `You were mentioned in a note — ${addr}`,
+          body:          htmlBody,
+          transactionId: transactionId || undefined,
+        }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(result.error || `Gmail send failed (${res.status})`)
+      console.log('[Mention] Gmail send success for', person.email, ':', result)
+    } catch (sendErr) {
+      console.error('[Mention] Gmail send failed for', person.email, ':', sendErr)
+    }
   }
 }
 
@@ -1188,6 +1190,7 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
             tcSettings={tcSettings}
             agentName={agentName}
             transactionAddr={transactionAddr}
+            transactionId={transactionId}
           />
         )
       })()}
@@ -1492,21 +1495,6 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, agentName =
       setSendError(err.message || 'Failed to send email')
       setSending(false)
     }
-
-    // ── EMAILJS LEGACY — unreachable, kept for reference until migration is verified ──
-    // const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
-    // const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-    // const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-    // const { default: emailjs } = await import('@emailjs/browser')
-    // for (const r of recipients) {
-    //   await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-    //     to_email:         r.email,
-    //     to_name:          r.name,
-    //     subject,
-    //     mention_notes:    plainBody,
-    //     transaction_addr: fullAddress || '',
-    //   }, PUBLIC_KEY)
-    // }
   }
 
   const anyChecked = Object.values(checked).some(Boolean)

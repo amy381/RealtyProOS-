@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { getAssigneeOptions, firstName } from '../lib/people'
+import { wrapEmailBody } from '../lib/emailWrapper'
 import './TaskCommentPanel.css'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -27,28 +28,42 @@ function buildMentionPeople(tcSettings = []) {
     }))
 }
 
-async function sendMentionEmails(mentions, body, transactionAddr, tcSettings = []) {
-  const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID
-  const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-  const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-  if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) return
-  const people = buildMentionPeople(tcSettings)
-  try {
-    const { default: emailjs } = await import('@emailjs/browser')
-    for (const handle of mentions) {
-      const person = people.find(p => p.handle.toLowerCase() === handle.toLowerCase())
-      if (!person?.email) continue
-      await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-        to_email:         person.email,
-        to_name:          person.name,
-        transaction_addr: transactionAddr || '(No address)',
-        mention_notes:    body,
-        task_title:       'You were mentioned in a task comment',
-        app_url:          window.location.origin,
-      }, PUBLIC_KEY)
+// Send a task-comment @mention notification to each mentioned TC via the Gmail
+// API. Recipients come from live tcSettings only; failures are logged, never
+// thrown, so comment creation is never blocked by a bad send.
+async function sendMentionEmails(mentions, body, transactionAddr, tcSettings = [], transactionId = null) {
+  const people   = buildMentionPeople(tcSettings)
+  const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
+  const escHtml  = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const addr     = transactionAddr || '(No address)'
+  const app_url  = transactionId
+    ? `https://app.desert-legacy.com/?tab=board&tx=${transactionId}`
+    : 'https://app.desert-legacy.com/?tab=board'
+
+  for (const handle of mentions) {
+    const person = people.find(p => p.handle.toLowerCase() === handle.toLowerCase())
+    if (!person?.email) continue
+    const htmlBody = wrapEmailBody(
+      `<p style="font-size:13px;">You were mentioned in a task comment on <strong>${escHtml(addr)}</strong>.</p>` +
+      `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${escHtml(body)}</pre>` +
+      `<p style="font-size:13px;"><a href="${app_url}">Open in LegacyOS</a></p>`
+    )
+    try {
+      const res = await fetch(`${API_BASE}/api/google/gmail-send`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to:            person.email,
+          subject:       `You were mentioned in a task comment — ${addr}`,
+          body:          htmlBody,
+          transactionId: transactionId || undefined,
+        }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(result.error || `Gmail send failed (${res.status})`)
+    } catch (err) {
+      console.warn('[TaskComment] mention email failed:', err.message)
     }
-  } catch (err) {
-    console.warn('[TaskComment] mention email failed:', err.message)
   }
 }
 
@@ -62,6 +77,7 @@ export default function TaskCommentPanel({
   tcSettings = [],
   agentName = '',
   transactionAddr = '',
+  transactionId = null,
 }) {
   const authorOptions = getAssigneeOptions(tcSettings, agentName)
   const [text,          setText]          = useState('')
@@ -109,7 +125,7 @@ export default function TaskCommentPanel({
     setText('')
     setMentionOpen(false)
     inputRef.current?.focus()
-    if (mentions.length > 0) sendMentionEmails(mentions, body, transactionAddr, tcSettings)
+    if (mentions.length > 0) sendMentionEmails(mentions, body, transactionAddr, tcSettings, transactionId)
   }
 
   return (

@@ -40,10 +40,10 @@ function row(label, value) {
 function buildCard(tx) {
   const { status, property_address, id } = tx
   const label  = STAGE_LABELS[status] || status
-  const appUrl = `https://realty-pro-os.vercel.app/?tx=${id}`
+  const appUrl = `https://app.desert-legacy.com/?tx=${id}`
 
   const addrHtml = property_address
-    ? `<a class="addr" href="${appUrl}" target="_blank" rel="noopener noreferrer">${property_address}</a>`
+    ? `<a class="addr" href="${appUrl}" target="legacyos" rel="noopener noreferrer">${property_address}</a>`
     : ''
 
   let rows = ''
@@ -172,7 +172,7 @@ const HTML_SHELL_CLOSE = `</body>
 </html>`
 
 function buildPage(transactions, person) {
-  const newTxUrl = `https://realty-pro-os.vercel.app/?newTransaction=true` +
+  const newTxUrl = `https://app.desert-legacy.com/?newTransaction=true` +
     `&fubContactId=${encodeURIComponent(person.id)}` +
     `&name=${encodeURIComponent(person.name || '')}` +
     `&email=${encodeURIComponent(person.email || '')}`
@@ -182,7 +182,7 @@ function buildPage(transactions, person) {
     : `<p class="empty">No active transaction found.</p>`
 
   return HTML_SHELL_OPEN +
-    `\n  ${bodyHtml}\n  <a class="btn-new" href="${newTxUrl}" target="_blank" rel="noopener noreferrer">+ New Transaction</a>\n` +
+    `\n  ${bodyHtml}\n  <a class="btn-new" href="${newTxUrl}" target="legacyos" rel="noopener noreferrer">+ New Transaction</a>\n` +
     HTML_SHELL_CLOSE
 }
 

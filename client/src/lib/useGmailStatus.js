@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-
-const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
+import { apiFetch } from './apiClient'
 
 /**
  * useGmailStatus
@@ -16,7 +15,7 @@ export function useGmailStatus() {
   useEffect(() => {
     let cancelled = false
 
-    fetch(`${API_BASE}/api/google/gmail-status`)
+    apiFetch('/api/google/gmail-status')
       .then(res => res.json())
       .then(({ connected = false, hasGmailScope = false }) => {
         if (!cancelled) setState({ connected, hasGmailScope, loading: false })

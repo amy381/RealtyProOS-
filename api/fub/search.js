@@ -1,3 +1,5 @@
+const { requireAuth } = require('../_lib/requireAuth')
+
 const FUB_BASE = 'https://api.followupboss.com/v1'
 
 function authHeaders() {
@@ -42,6 +44,9 @@ function normalizeRelationship(r, primaryPerson) {
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+
+  const user = await requireAuth(req, res)
+  if (!user) return
 
   const q = (req.query.q || '').trim()
   if (q.length < 2) return res.json({ people: [] })

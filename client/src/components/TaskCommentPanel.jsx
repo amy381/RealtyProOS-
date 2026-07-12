@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { getAssigneeOptions, firstName } from '../lib/people'
 import { wrapEmailBody } from '../lib/emailWrapper'
+import { apiFetch } from '../lib/apiClient'
 import './TaskCommentPanel.css'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -33,7 +34,6 @@ function buildMentionPeople(tcSettings = []) {
 // thrown, so comment creation is never blocked by a bad send.
 async function sendMentionEmails(mentions, body, transactionAddr, tcSettings = [], transactionId = null) {
   const people   = buildMentionPeople(tcSettings)
-  const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
   const escHtml  = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const addr     = transactionAddr || '(No address)'
   const app_url  = transactionId
@@ -49,7 +49,7 @@ async function sendMentionEmails(mentions, body, transactionAddr, tcSettings = [
       `<p style="font-size:13px;"><a href="${app_url}">Open in LegacyOS</a></p>`
     )
     try {
-      const res = await fetch(`${API_BASE}/api/google/gmail-send`, {
+      const res = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { supabase, getUserId } from '../lib/supabase'
+import { apiFetch } from '../lib/apiClient'
 
-const API_BASE       = import.meta.env.DEV ? 'http://localhost:3001' : ''
 const SUPRA_SENDER   = 'suprashowing@suprasystems.com'
 const SUPRA_LABEL_ID = 'processed-supra'
 const SHOWING_REGEX  = /The showing by (.+?) \(([^)]+)\) \( ?([^)]+)\) at (.+?) \(KeyBox#[^)]+\) began (\d{2}\/\d{2}\/\d{4}) (\d+:\d+[AP]M)/
@@ -19,7 +19,7 @@ export function useSyncSupraShowings(transactions) {
     try {
       const uid = await getUserId()
       // Get access token from server
-      const tokenRes = await fetch(`${API_BASE}/api/google/token`)
+      const tokenRes = await apiFetch('/api/google/token')
       if (!tokenRes.ok) throw new Error('Gmail not connected — please re-authorise Google')
       const { access_token } = await tokenRes.json()
 

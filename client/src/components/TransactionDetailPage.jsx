@@ -8,6 +8,7 @@ import { mouseDownIsInside } from '../lib/dragGuard'
 import TaskCommentPanel from './TaskCommentPanel'
 import { syncDriveFolder, uploadToDrive, getDriveUrl, CONTRACT_DOCS } from '../lib/googleDrive'
 import { getTcNames, getAssigneeOptions, resolveMeName, firstName } from '../lib/people'
+import { apiFetch } from '../lib/apiClient'
 import { toast } from 'react-hot-toast'
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts'
 import { useGmailStatus } from '../lib/useGmailStatus'
@@ -254,7 +255,6 @@ function buildMentionPeople(tcSettings = [], agentName = '') {
 async function sendMentionEmails(mentions, noteText, transactionAddr, tcSettings = [], transactionId = null, agentName = '') {
   console.log('[Mention] sendMentionEmails called — mentions:', mentions, '| tcSettings:', tcSettings)
   const mentionPeople = buildMentionPeople(tcSettings, agentName)
-  const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
   const escHtml  = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const addr     = transactionAddr || '(No address)'
 
@@ -275,7 +275,7 @@ async function sendMentionEmails(mentions, noteText, transactionAddr, tcSettings
       `<p style="font-size:13px;"><a href="${app_url}">Open in LegacyOS</a></p>`
     )
     try {
-      const res = await fetch(`${API_BASE}/api/google/gmail-send`, {
+      const res = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -329,7 +329,7 @@ function dueDateLabel(dateStr, isDone, completedAt) {
 // ─── FUB API ──────────────────────────────────────────────────────────────────
 async function fetchFubContacts(query) {
   try {
-    const resp = await fetch(`/api/fub/search?q=${encodeURIComponent(query)}`)
+    const resp = await apiFetch(`/api/fub/search?q=${encodeURIComponent(query)}`)
     if (!resp.ok) return []
     const data = await resp.json()
     return data.people || []
@@ -338,7 +338,7 @@ async function fetchFubContacts(query) {
 
 async function fetchFubPerson(personId) {
   try {
-    const resp = await fetch(`/api/fub/person/${personId}`)
+    const resp = await apiFetch(`/api/fub/person/${personId}`)
     if (!resp.ok) return null
     return resp.json()
   } catch { return null }
@@ -1473,9 +1473,8 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, agentName =
     const plainBody = `${changeBlock}${noteBlock}`.trimEnd()
     const htmlBody  = `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${plainBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
 
-    const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
     try {
-      const gmailRes = await fetch(`${API_BASE}/api/google/gmail-send`, {
+      const gmailRes = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -3317,8 +3316,7 @@ function ShowingsSection({ transaction }) {
     const htmlBody = plainBody.replace(/\n/g, '<br>')
     setEmailingId(`${s.id}_seller`)
     try {
-      const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
-      const gmailRes = await fetch(`${API_BASE}/api/google/gmail-send`, {
+      const gmailRes = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: toEmail, subject, body: wrapEmailBody(htmlBody), transactionId: transaction.id }),
@@ -3385,8 +3383,7 @@ function ShowingsSection({ transaction }) {
     setEmailingId(`${s.id}_agent`)
     let sent = false
     try {
-      const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
-      const gmailRes = await fetch(`${API_BASE}/api/google/gmail-send`, {
+      const gmailRes = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: toEmail, subject, body: wrapEmailBody(htmlBody), transactionId: transaction.id }),

@@ -3,6 +3,7 @@
 // FUB passes a base64-encoded JSON `context` query parameter containing the contact's info.
 
 const { createClient } = require('@supabase/supabase-js')
+const { verifyFubSignature } = require('../_lib/verifyFubSignature')
 
 function getSupabase() {
   return createClient(
@@ -193,6 +194,17 @@ module.exports = async function handler(req, res) {
   res.removeHeader('X-Frame-Options')
   res.setHeader('Content-Security-Policy', 'frame-ancestors *')
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
+
+  // Verify FUB's HMAC-SHA256 signature over the raw context param. Reject
+  // unsigned/invalid requests so this endpoint can't be used to enumerate
+  // transaction data by guessing fub_contact_id values.
+  if (!verifyFubSignature(req.query.context, req.query.signature)) {
+    return res.status(401).end(
+      HTML_SHELL_OPEN +
+      `\n  <p class="err">Invalid or missing request signature.</p>\n` +
+      HTML_SHELL_CLOSE
+    )
+  }
 
   // Decode FUB context
   let person = null

@@ -5,12 +5,16 @@ const {
   getParentFolderIdForStatus,
   createDriveFolder,
 } = require('./_lib')
+const { requireAuth } = require('../_lib/requireAuth')
 
 // POST /api/google/create-folder
 // Creates a new Drive folder for a transaction that doesn't have one yet.
 // Does NOT move existing folders — use /api/google/move-folder for that.
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
+
+  const user = await requireAuth(req, res)
+  if (!user) return
 
   const {
     transactionId,

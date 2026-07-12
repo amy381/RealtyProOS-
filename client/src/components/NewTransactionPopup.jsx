@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import DateInput from './DateInput'
+import { apiFetch } from '../lib/apiClient'
 import './NewTransactionPopup.css'
 
 const SELLER_STAGES = [
@@ -20,7 +21,7 @@ const BUYER_STAGES = [
 // ─── FUB helpers ──────────────────────────────────────────────────────────────
 async function fetchFubContacts(query) {
   try {
-    const resp = await fetch(`/api/fub/search?q=${encodeURIComponent(query)}`)
+    const resp = await apiFetch(`/api/fub/search?q=${encodeURIComponent(query)}`)
     if (!resp.ok) return []
     const data = await resp.json()
     return data.people || []
@@ -29,7 +30,7 @@ async function fetchFubContacts(query) {
 
 async function fetchFubPerson(personId) {
   try {
-    const resp = await fetch(`/api/fub/person/${personId}`)
+    const resp = await apiFetch(`/api/fub/person/${personId}`)
     if (!resp.ok) return null
     return resp.json()
   } catch { return null }

@@ -4,6 +4,7 @@
 // No external MIME or Gmail libraries — native fetch + string construction only.
 
 const { getSupabase } = require('./_lib')
+const { requireAuth } = require('../_lib/requireAuth')
 
 // Single-tenant assumption for Phase A — audit log row has no JWT context.
 // Phase B will derive this from the caller's verified JWT.
@@ -155,6 +156,9 @@ function gmailSend(accessToken, encodedMessage) {
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
+
+  const user = await requireAuth(req, res)
+  if (!user) return
 
   const {
     to,

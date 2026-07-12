@@ -4,6 +4,7 @@ import { supabase, getUserId } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import { useSyncSupraShowings } from '../hooks/useSyncSupraShowings'
+import { apiFetch } from '../lib/apiClient'
 import DateInput from './DateInput'
 import './ShowingsTab.css'
 
@@ -211,8 +212,7 @@ export default function ShowingsTab({ transactions }) {
     setEmailingId(`${s.id}_agent`)
     let sent = false
     try {
-      const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
-      const gmailRes = await fetch(`${API_BASE}/api/google/gmail-send`, {
+      const gmailRes = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: toEmail, subject, body: wrapEmailBody(htmlBody), transactionId: s.transaction_id }),

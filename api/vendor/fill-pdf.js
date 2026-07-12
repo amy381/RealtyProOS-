@@ -7,6 +7,7 @@
 
 const { PDFDocument } = require('pdf-lib')
 const { getSupabase }  = require('../google/_lib')
+const { requireAuth }  = require('../_lib/requireAuth')
 
 // Format a date string (YYYY-MM-DD) as MM/DD/YYYY. Returns '' for falsy input.
 function fmtDate(val) {
@@ -54,6 +55,9 @@ function buildValueMap(tx, agent) {
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
+
+  const user = await requireAuth(req, res)
+  if (!user) return
 
   const { taskId, vendorId } = req.body || {}
   if (!taskId || !vendorId) {

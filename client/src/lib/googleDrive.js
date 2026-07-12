@@ -1,7 +1,7 @@
 // Client-side helpers for Google Drive integration.
 // All server calls go through our own API (secrets never touch the browser).
 
-const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
+import { apiFetch } from './apiClient'
 
 // Documents that route to the "Under Contract" subfolder when it exists.
 // All others go to the main transaction folder.
@@ -22,7 +22,7 @@ export function getDriveUrl(folderId) {
 // Check whether the server has a valid Google refresh token stored.
 export async function checkDriveConnected() {
   try {
-    const res  = await fetch(`${API_BASE}/api/google/status`)
+    const res  = await apiFetch('/api/google/status')
     const data = await res.json()
     return data.connected === true
   } catch {
@@ -41,7 +41,7 @@ export async function syncDriveFolder({
   propertyAddress,
   clientLastName,
 }) {
-  const res = await fetch(`${API_BASE}/api/google/move-folder`, {
+  const res = await apiFetch('/api/google/move-folder', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -64,7 +64,7 @@ export async function syncDriveFolder({
 // Upload a file directly to Google Drive using a short-lived token from our server.
 // folderId is either drive_folder_id or drive_under_contract_id depending on doc type.
 export async function uploadToDrive(file, folderId) {
-  const tokenRes = await fetch(`${API_BASE}/api/google/token`)
+  const tokenRes = await apiFetch('/api/google/token')
   if (!tokenRes.ok) throw new Error('Could not get Drive access token — is Google Drive connected?')
   const { access_token } = await tokenRes.json()
 

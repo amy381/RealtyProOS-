@@ -4,9 +4,8 @@ import { wrapEmailBody } from '../lib/emailWrapper'
 import { resolveVars } from '../lib/resolveVars'
 import { toast } from 'react-hot-toast'
 import { useGmailStatus } from '../lib/useGmailStatus'
+import { apiFetch } from '../lib/apiClient'
 import './EmailPreviewModal.css'
-
-const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
 
 // Coerce a CC/To entry that may be a string or unexpected object → clean email string
 function coerceEmailStr(entry) {
@@ -89,7 +88,7 @@ function DriveFilePicker({ folderId, selectedFiles, onToggleFile, onClose }) {
 
     async function fetchFiles() {
       try {
-        const tokenRes = await fetch(`${API_BASE}/api/google/token`)
+        const tokenRes = await apiFetch('/api/google/token')
         if (!tokenRes.ok) throw new Error('Could not get Drive access token')
         const { access_token } = await tokenRes.json()
 
@@ -348,7 +347,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
       setSendPhase('sending')
       const driveAttachments = await Promise.all(
         driveFiles.map(async (file) => {
-          const tokenRes = await fetch(`${API_BASE}/api/google/token`)
+          const tokenRes = await apiFetch('/api/google/token')
           const { access_token } = await tokenRes.json()
           const contentRes = await fetch(
             `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&supportsAllDrives=true`,
@@ -366,7 +365,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
         })
       )
 
-      const res = await fetch(`${API_BASE}/api/google/gmail-send`, {
+      const res = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

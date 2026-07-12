@@ -6,9 +6,13 @@ const {
   createDriveFolder,
   moveDriveFolder,
 } = require('./_lib')
+const { requireAuth } = require('../_lib/requireAuth')
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
+
+  const user = await requireAuth(req, res)
+  if (!user) return
 
   const {
     transactionId,

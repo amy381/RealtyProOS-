@@ -19,9 +19,8 @@ import { mouseDownIsInside } from '../lib/dragGuard'
 import { getAssigneeOptions } from '../lib/people'
 import { formatPhone } from '../lib/formatters'
 import { wrapEmailBody } from '../lib/emailWrapper'
+import { apiFetch } from '../lib/apiClient'
 import './TemplatesTab.css'
-
-const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
 
 const TEST_VARS = {
   client_first_name:  'Jodi',
@@ -875,7 +874,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     setTestSending(true)
     setTestToast(null)
     try {
-      const res = await fetch(`${API_BASE}/api/google/gmail-send`, {
+      const res = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

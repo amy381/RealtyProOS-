@@ -4,6 +4,7 @@
 // task create/update that triggered it.
 
 import { wrapEmailBody } from './emailWrapper'
+import { apiFetch } from './apiClient'
 
 const esc = (s) =>
   String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -23,7 +24,6 @@ export async function sendMentionNotifications({
   const rawMentions = parseMentions(notes)
   if (!rawMentions.length) return []
 
-  const API_BASE  = import.meta.env.DEV ? 'http://localhost:3001' : ''
   const address   = transaction.property_address || '(no address)'
   const app_url   = `https://app.desert-legacy.com/?tab=board&tx=${transaction.id}`
   const newlyNotified = []
@@ -47,7 +47,7 @@ export async function sendMentionNotifications({
     )
 
     try {
-      const res = await fetch(`${API_BASE}/api/google/gmail-send`, {
+      const res = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

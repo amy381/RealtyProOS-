@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { TC_OPTIONS } from '../lib/columnFields'
+import { apiFetch } from '../lib/apiClient'
 import DateInput from './DateInput'
 import './IntakeModal.css'
 
@@ -17,7 +18,7 @@ const EMPTY_CLIENT = { first_name: '', last_name: '', phone: '', email: '', fub_
 // ── FUB search ─────────────────────────────────────────────
 async function fetchFubContacts(query) {
   try {
-    const resp = await fetch(`/api/fub/search?q=${encodeURIComponent(query)}`)
+    const resp = await apiFetch(`/api/fub/search?q=${encodeURIComponent(query)}`)
     const text = await resp.text()
     console.log('[FUB search] status:', resp.status, 'body:', text)
     if (!resp.ok) return []
@@ -32,7 +33,7 @@ async function fetchFubContacts(query) {
 // Returns { client1, related } or null
 async function fetchFubPerson(personId) {
   try {
-    const resp = await fetch(`/api/fub/person/${personId}`)
+    const resp = await apiFetch(`/api/fub/person/${personId}`)
     const text = await resp.text()
     console.log('[FUB person] status:', resp.status, 'body:', text)
     if (!resp.ok) return null

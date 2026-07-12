@@ -4,6 +4,7 @@ import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import { mouseDownIsInside } from '../lib/dragGuard'
 import { deriveInitials, firstName, resolveMeName, getTcNames, getAssigneeOptions } from '../lib/people'
+import { apiFetch } from '../lib/apiClient'
 import { Mail, FileText, Pencil } from 'lucide-react'
 import VendorFormPreviewModal from './VendorFormPreviewModal'
 import EmailPreviewModal from './EmailPreviewModal'
@@ -235,12 +236,11 @@ function VendorEmailModal({ vendor, tx, agentName = '', onClose }) {
   const handleSend = async () => {
     if (!vendor.email) { toast.error('No email address for this vendor'); return }
     setSending(true)
-    const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
     const htmlBody = body.trimStart().startsWith('<')
       ? body
       : `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${body.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
     try {
-      const res    = await fetch(`${API_BASE}/api/google/gmail-send`, {
+      const res    = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -328,12 +328,11 @@ function VendorFormModal({ vendor, tx, task, tcSettings, agentName = '', agentSe
   const handleSend = async () => {
     if (!vendor.email) { toast.error('No email address on file for this vendor'); return }
     setSending(true)
-    const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
     const subject  = `${vendor.name} — ${tx?.property_address || 'Property'}`
     const plain    = buildBody()
     const htmlBody = `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${plain.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
     try {
-      const res    = await fetch(`${API_BASE}/api/google/gmail-send`, {
+      const res    = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -432,7 +431,6 @@ function CriticalDateRow({ task, onDelete, flatAddr }) {
 }
 
 // ─── Vendor Select Modal — vendor dropdown + inline email preview ─────────────
-const API_BASE_TASKS = import.meta.env.DEV ? 'http://localhost:3001' : ''
 
 function VendorSelectModal({ matchedVendors, task, tx, tcSettings, agentName = '', agentSettings = null, onUpdate, onClose }) {
   const [selectedVendorId, setSelectedVendorId] = useState(task.selected_vendor_id || '')
@@ -483,7 +481,7 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, agentName = '
       ? tplBody
       : `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${tplBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
     try {
-      const res = await fetch(`${API_BASE_TASKS}/api/google/gmail-send`, {
+      const res = await apiFetch('/api/google/gmail-send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1285,8 +1283,6 @@ function SendQueueView({ transactions, tcSettings, agentName = '', onQueueCountC
     setLoading(false)
   }
 
-  const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
-
   const handleSend = async (row) => {
     setSending(row.id)
     setRowErrors(prev => { const n = { ...prev }; delete n[row.id]; return n })
@@ -1297,7 +1293,7 @@ function SendQueueView({ transactions, tcSettings, agentName = '', onQueueCountC
       : `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
 
     try {
-      const gmailRes = await fetch(`${API_BASE}/api/google/gmail-send`, {
+      const gmailRes = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

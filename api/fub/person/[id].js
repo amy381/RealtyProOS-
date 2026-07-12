@@ -1,3 +1,5 @@
+const { requireAuth } = require('../../_lib/requireAuth')
+
 const FUB_BASE = 'https://api.followupboss.com/v1'
 
 function authHeaders() {
@@ -41,6 +43,9 @@ function normalizeRelationship(r) {
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+
+  const user = await requireAuth(req, res)
+  if (!user) return
 
   const { id } = req.query
   const apiKey = process.env.FUB_API_KEY

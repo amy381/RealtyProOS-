@@ -7,9 +7,8 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase, getUserId } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
+import { apiFetch } from '../lib/apiClient'
 import './VendorFormPreviewModal.css'
-
-const API_BASE = import.meta.env.DEV ? 'http://localhost:3001' : ''
 
 export default function VendorFormPreviewModal({ taskId, vendorId, tx, onClose }) {
   const [loading,   setLoading]   = useState(true)
@@ -27,7 +26,7 @@ export default function VendorFormPreviewModal({ taskId, vendorId, tx, onClose }
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch(`${API_BASE}/api/vendor/fill-pdf`, {
+        const res = await apiFetch('/api/vendor/fill-pdf', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({ taskId, vendorId }),
@@ -72,7 +71,7 @@ export default function VendorFormPreviewModal({ taskId, vendorId, tx, onClose }
     setSending(true)
     try {
       const subject = `Inspection Request - ${pdfData.propertyAddress || 'Property'}`
-      const res = await fetch(`${API_BASE}/api/google/gmail-send`, {
+      const res = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

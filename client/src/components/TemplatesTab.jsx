@@ -16,7 +16,6 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { supabase, getUserId } from '../lib/supabase'
 import { mouseDownIsInside } from '../lib/dragGuard'
-import { getAssigneeOptions } from '../lib/people'
 import { formatPhone } from '../lib/formatters'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { apiFetch } from '../lib/apiClient'
@@ -82,7 +81,7 @@ const EMPTY_TASK = {
   timing_type:            'stage_pending',
   timing_days:            0,
   applies_to:             'Both',
-  auto_assign_to:         'Me',
+  auto_assign_to:         'TC',
   email_template_id:      null,
   resolves_critical_date: null,
   has_progress_tracking:  false,
@@ -523,7 +522,6 @@ function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle, e
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, tcSettings = [], agentName = '', activeSectionProp, onSectionChange }) {
-  const assigneeOptions = getAssigneeOptions(tcSettings, agentName)
   // ── Sidebar section
   const [sideSectionLocal, setSideSectionLocal] = useState('tasks')
   const sideSection    = activeSectionProp ?? sideSectionLocal
@@ -1437,7 +1435,8 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                   <div className="tt-bulk-fields">
                     <select className="tt-bulk-select" value={bulkAssignTo} onChange={e => setBulkAssignTo(e.target.value)}>
                       <option value="">Auto-Assign To…</option>
-                      {assigneeOptions.map(a => <option key={a} value={a}>{a}</option>)}
+                      <option value="Agent">Agent</option>
+                      <option value="TC">TC</option>
                     </select>
                     <select className="tt-bulk-select" value={bulkTaskType} onChange={e => setBulkTaskType(e.target.value)}>
                       <option value="">Task Type…</option>
@@ -1580,7 +1579,16 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                   value={editingTask.auto_assign_to}
                   onChange={e => setEditingTask(p => ({ ...p, auto_assign_to: e.target.value }))}
                 >
-                  {assigneeOptions.map(a => <option key={a} value={a}>{a}</option>)}
+                  <option value="Agent">Agent</option>
+                  <option value="TC">TC</option>
+                  {/* Legacy person-name value: show it (disabled) so the row isn't
+                      silently rewritten, but it can't be re-selected — only Agent/TC. */}
+                  {editingTask.auto_assign_to &&
+                    !['Agent', 'TC'].includes(editingTask.auto_assign_to) && (
+                      <option value={editingTask.auto_assign_to} disabled>
+                        {editingTask.auto_assign_to} (legacy)
+                      </option>
+                    )}
                 </select>
                 <div className="tt-modal-cd-section">
                   <label className="tt-modal-cd-toggle">

@@ -39,15 +39,38 @@ export function calcDueDate(timingType, timingDays, tx) {
   }
 }
 
+// Resolve a template's role-based auto_assign_to into a real person name.
+//   'Agent' → the agent's realtor_name (agentName)
+//   'TC'    → this transaction's assigned_tc
+//   anything else (a literal person name, incl. legacy 'Me') → passed through
+// A role that resolves to nothing yields '' (never the literal 'Agent'/'TC'),
+// and is logged so unassigned template tasks are visible.
+export function resolveAutoAssign(autoAssignTo, transaction, agentName) {
+  if (autoAssignTo === 'Agent') {
+    const name = (agentName || '').trim()
+    if (!name) console.warn('[template] auto_assign_to "Agent" resolved to nothing — no agent realtor_name; leaving task unassigned')
+    return name
+  }
+  if (autoAssignTo === 'TC') {
+    const name = (transaction?.assigned_tc || '').trim()
+    if (!name) console.warn('[template] auto_assign_to "TC" resolved to nothing — transaction has no assigned_tc; leaving task unassigned')
+    return name
+  }
+  // Legacy literal person name (incl. 'Me') — pass through unchanged so nothing
+  // breaks before Amy runs the data migration.
+  return autoAssignTo || ''
+}
+
 // Build task records from DB template_task rows for a given transaction.
-export function buildTemplateTasksFromDB(templateTaskRows, transaction) {
+// agentName resolves the 'Agent' role; the transaction resolves the 'TC' role.
+export function buildTemplateTasksFromDB(templateTaskRows, transaction, agentName = '') {
   return [...templateTaskRows]
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((t, i) => ({
       title:                  t.title,
       task_type:              t.task_type || 'Task',
       due_date:               calcDueDate(t.timing_type, t.timing_days, transaction),
-      assigned_to:            (t.task_type === 'Critical Date') ? null : (t.auto_assign_to || 'Me'),
+      assigned_to:            (t.task_type === 'Critical Date') ? null : resolveAutoAssign(t.auto_assign_to, transaction, agentName),
       status:                 'open',
       notes:                  '',
       sort_order:             i,

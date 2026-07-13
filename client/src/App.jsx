@@ -385,7 +385,7 @@ export default function App() {
         if (alreadyHas) return
 
         const tplTaskRows = dbTemplateTasks.filter(t => t.template_id === tpl.id)
-        const builtTasks  = buildTemplateTasksFromDB(tplTaskRows, transaction)
+        const builtTasks  = buildTemplateTasksFromDB(tplTaskRows, transaction, agentSettings?.realtor_name || '')
         if (!builtTasks.length) return
 
         const uid = await getUserId()
@@ -614,7 +614,8 @@ export default function App() {
   // ── Apply template manually ─────────────────────────────────────────────────
   const handleApplyTemplate = useCallback(async (transactionId, templateId, transaction, excludedTplIds = new Set()) => {
     const tplTaskRows = dbTemplateTasks.filter(t => t.template_id === templateId && !excludedTplIds.has(t.id))
-    const builtTasks  = buildTemplateTasksFromDB(tplTaskRows, transaction)
+    const agentName   = agentSettings?.realtor_name || ''
+    const builtTasks  = buildTemplateTasksFromDB(tplTaskRows, transaction, agentName)
     if (!builtTasks.length) return
 
     // Fetch existing task titles for this transaction so we never duplicate or overwrite
@@ -665,7 +666,7 @@ export default function App() {
       }
       toast.success(`${inserted.length} task${inserted.length !== 1 ? 's' : ''} added`, { duration: 2000 })
     }
-  }, [dbTemplateTasks])
+  }, [dbTemplateTasks, agentSettings])
 
   // ── Backward move — remove incomplete tasks ──────────────────────────────────
   const handleBackMoveYes = useCallback(async () => {

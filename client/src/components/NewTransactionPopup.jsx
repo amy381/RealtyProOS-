@@ -129,6 +129,7 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null,
   const [client1,  setClient1]  = useState(null)
   const [client2,  setClient2]  = useState(null)
   const [creating, setCreating] = useState(false)
+  const [hydrating, setHydrating] = useState(false)
 
   // Seller fields
   const [address,         setAddress]         = useState('')
@@ -161,6 +162,11 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null,
 
   useEffect(() => {
     if (!prefill) return
+    // Seed from the URL params first so the form is never blank. The widget only
+    // passes name + email (no phone), so hydrate the full contact — including the
+    // phone — from the authoritative FUB REST record, the same source the "Change /
+    // Search FUB" flow uses. fetchFubPerson goes through apiFetch, so the Supabase
+    // JWT attaches (the endpoint is JWT-protected since Phase B).
     setClient1({
       first_name: prefill.first_name || '',
       last_name:  prefill.last_name  || '',
@@ -168,6 +174,34 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null,
       phone:      '',
       id:         prefill.fubContactId ?? null,
     })
+
+    if (!prefill.fubContactId) return
+
+    let cancelled = false
+    setHydrating(true)
+    ;(async () => {
+      try {
+        const full = await fetchFubPerson(prefill.fubContactId)
+        if (cancelled) return
+        const p = full?.client1
+        if (p) {
+          // Merge over the seeded values; if any field comes back empty, keep the
+          // URL fallback so we degrade to today's behavior, never to a blank client.
+          setClient1(prev => ({
+            first_name: p.first_name || prev?.first_name || '',
+            last_name:  p.last_name  || prev?.last_name  || '',
+            email:      p.email      || prev?.email      || '',
+            phone:      p.phone      || prev?.phone      || '',
+            id:         p.id ?? prev?.id ?? null,
+          }))
+        }
+        // On null (401/error/not found) the seeded name+email fallback stays as-is.
+      } finally {
+        if (!cancelled) setHydrating(false)
+      }
+    })()
+
+    return () => { cancelled = true }
   }, [prefill])
 
   const handleTypeChange = (t) => {
@@ -440,8 +474,8 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null,
         {/* Footer */}
         <div className="ntp-footer">
           <button className="ntp-cancel-btn" onClick={onClose}>Cancel</button>
-          <button className="ntp-create-btn" disabled={creating} onClick={handleCreate}>
-            {creating ? 'Creating…' : `Create ${repType} Transaction`}
+          <button className="ntp-create-btn" disabled={creating || hydrating} onClick={handleCreate}>
+            {creating ? 'Creating…' : hydrating ? 'Loading contact…' : `Create ${repType} Transaction`}
           </button>
         </div>
 

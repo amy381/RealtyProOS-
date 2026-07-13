@@ -44,7 +44,7 @@ function buildCard(tx) {
   const appUrl = `https://app.desert-legacy.com/?tx=${id}`
 
   const addrHtml = property_address
-    ? `<a class="addr" href="${appUrl}" target="legacyos" rel="noopener noreferrer">${property_address}</a>`
+    ? `<a class="addr" href="${appUrl}" target="legacyos">${property_address}</a>`
     : ''
 
   let rows = ''
@@ -183,7 +183,7 @@ function buildPage(transactions, person) {
     : `<p class="empty">No active transaction found.</p>`
 
   return HTML_SHELL_OPEN +
-    `\n  ${bodyHtml}\n  <a class="btn-new" href="${newTxUrl}" target="legacyos" rel="noopener noreferrer">+ New Transaction</a>\n` +
+    `\n  ${bodyHtml}\n  <a class="btn-new" href="${newTxUrl}" target="legacyos">+ New Transaction</a>\n` +
     HTML_SHELL_CLOSE
 }
 

@@ -61,13 +61,13 @@ function buildCard(tx) {
     ].join('')
   } else if (status === 'pending') {
     rows = [
-      row('Purchase Price', fmtPrice(tx.price)),
+      row('Purchase Price', fmtPrice(tx.contract_price ?? tx.price)),
       row('Accepted',       fmtDate(tx.contract_acceptance_date)),
       row('COE',            fmtDate(tx.close_of_escrow)),
     ].join('')
   } else if (status === 'closed') {
     rows = [
-      row('Purchase Price', fmtPrice(tx.price)),
+      row('Purchase Price', fmtPrice(tx.contract_price ?? tx.price)),
       row('COE',            fmtDate(tx.close_of_escrow)),
     ].join('')
   }
@@ -237,7 +237,7 @@ module.exports = async function handler(req, res) {
     const supabase = getSupabase()
     const { data, error } = await supabase
       .from('transactions')
-      .select('id, status, property_address, price, listing_contract, listing_expiration_date, bba_contract, bba_expiration, contract_acceptance_date, close_of_escrow')
+      .select('id, status, property_address, price, contract_price, listing_contract, listing_expiration_date, bba_contract, bba_expiration, contract_acceptance_date, close_of_escrow')
       .eq('fub_contact_id', person.id)
       .order('created_at', { ascending: false })
     if (error) throw error

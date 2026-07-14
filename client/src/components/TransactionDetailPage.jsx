@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Pencil } from 'lucide-react'
 import { supabase, getUserId } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
+import { renderBrandedEmail, quoteBlock, changesTable, cityStateZip, renderNoteHtml } from '../lib/emailTemplate'
 import { formatPhone, formatApn } from '../lib/formatters'
 import { mouseDownIsInside } from '../lib/dragGuard'
 import TaskCommentPanel from './TaskCommentPanel'
@@ -252,11 +253,10 @@ function buildMentionPeople(tcSettings = [], agentName = '') {
 // Send an @mention notification to each mentioned TC via the Gmail API.
 // Recipients come from live tcSettings only; failures are logged, never thrown,
 // so note creation is never blocked by a bad send.
-async function sendMentionEmails(mentions, noteText, transactionAddr, tcSettings = [], transactionId = null, agentName = '') {
+async function sendMentionEmails(mentions, noteText, transactionAddr, tcSettings = [], transactionId = null, agentName = '', transaction = null) {
   console.log('[Mention] sendMentionEmails called — mentions:', mentions, '| tcSettings:', tcSettings)
   const mentionPeople = buildMentionPeople(tcSettings, agentName)
-  const escHtml  = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  const addr     = transactionAddr || '(No address)'
+  const addr     = transaction?.property_address || transactionAddr || '(No address)'
 
   for (const handle of mentions) {
     const person = mentionPeople.find(p => p.handle.toLowerCase() === handle.toLowerCase())
@@ -269,11 +269,13 @@ async function sendMentionEmails(mentions, noteText, transactionAddr, tcSettings
     const app_url = transactionId
       ? `https://app.desert-legacy.com/?tab=board&tx=${transactionId}`
       : 'https://app.desert-legacy.com/?tab=board'
-    const htmlBody = wrapEmailBody(
-      `<p style="font-size:13px;">You were mentioned in a note on <strong>${escHtml(addr)}</strong> by ${escHtml(agentName || 'Unknown')}.</p>` +
-      `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${escHtml(noteText)}</pre>` +
-      `<p style="font-size:13px;"><a href="${app_url}">Open in LegacyOS</a></p>`
-    )
+    const htmlBody = renderBrandedEmail({
+      eyebrow:     'You were mentioned',
+      address:     addr,
+      subline:     transaction ? cityStateZip(transaction) : '',
+      contentRows: quoteBlock({ author: agentName, bodyHtml: renderNoteHtml(noteText) }),
+      ctaUrl:      app_url,
+    })
     try {
       const res = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
@@ -634,7 +636,7 @@ function TxField({ label, value, displayValue, type, options, onSave, placeholde
 }
 
 // ─── Notes: single-line compose with @ mentions, threading, fixed-height scroll ─
-function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings, agentName = '' }) {
+function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings, agentName = '', transaction = null }) {
   const [notes, setNotes]                     = useState([])
   const [newText, setNewText]                 = useState('')
   const [editingId, setEditing]               = useState(null)
@@ -760,7 +762,7 @@ function NotesSection({ transactionId, transactionAddr, onNoteAdded, tcSettings,
     })()
 
     onNoteAdded?.(text, mentions)
-    if (mentions.length > 0) sendMentionEmails(mentions, text, transactionAddr, tcSettings, transactionId, agentName)
+    if (mentions.length > 0) sendMentionEmails(mentions, text, transactionAddr, tcSettings, transactionId, agentName, transaction)
   }
 
   const handleAddReply = (parentId) => {
@@ -1191,6 +1193,7 @@ function TasksSpreadsheet({ tasks, transactionId, transaction, onAdd, onUpdate, 
             agentName={agentName}
             transactionAddr={transactionAddr}
             transactionId={transactionId}
+            transaction={transaction}
           />
         )
       })()}
@@ -1456,22 +1459,24 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, agentName =
 
     const checkedChanges = changes.filter(c => c.checked)
 
-    let changeBlock = ''
-    if (checkedChanges.length) {
-      changeBlock = 'CHANGES\n' + '─'.repeat(44) + '\n'
-        + checkedChanges.map(c =>
-            c.isBoolean
-              ? c.label
-              : c.oldVal ? `${c.label}: "${c.oldVal}" → "${c.newVal}"` : `${c.label}: "${c.newVal}"`
-          ).join('\n')
-        + '\n\n'
-    }
-
-    let noteBlock = ''
-    if (note.trim()) noteBlock = 'NOTE\n' + '─'.repeat(44) + '\n' + note.trim() + '\n\n'
-
-    const plainBody = `${changeBlock}${noteBlock}`.trimEnd()
-    const htmlBody  = `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${plainBody.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
+    // Subline: "City, ST ZIP · Buyer · Pending" — each part omitted if empty.
+    const subline = [cityStateZip(transaction), transaction.rep_type, column?.label]
+      .filter(Boolean).join('  ·  ')
+    // Optional personal note (no author line) above the "What changed" table.
+    const noteRows = note.trim() ? quoteBlock({ bodyHtml: renderNoteHtml(note.trim()) }) : ''
+    const changeRows = changesTable(
+      checkedChanges.map(c => ({
+        label: c.label,
+        value: c.isBoolean ? (c.newVal === 'true' ? 'Yes' : 'No') : c.newVal,
+      }))
+    )
+    const htmlBody = renderBrandedEmail({
+      eyebrow:     'Transaction updated',
+      address:     transaction.property_address || '(No address)',
+      subline,
+      contentRows: noteRows + changeRows,
+      ctaUrl:      `https://app.desert-legacy.com/?tab=board&tx=${transaction.id}`,
+    })
 
     try {
       const gmailRes = await apiFetch('/api/google/gmail-send', {
@@ -1480,7 +1485,7 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, agentName =
         body: JSON.stringify({
           to:            recipients.map(r => r.email),
           subject,
-          body:          wrapEmailBody(htmlBody),
+          body:          htmlBody,
           transactionId: transaction.id,
         }),
       })
@@ -2259,6 +2264,7 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
             onNoteAdded={onNoteAdded}
             tcSettings={tcSettings}
             agentName={agentName}
+            transaction={transaction}
           />
 
           {/* CONTRACT DATES */}

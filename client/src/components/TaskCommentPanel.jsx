@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
-import { getAssigneeOptions, firstName } from '../lib/people'
-import { wrapEmailBody } from '../lib/emailWrapper'
+import { getAssigneeOptions, firstName, resolveMeName } from '../lib/people'
+import { renderBrandedEmail, quoteBlock, cityStateZip, renderNoteHtml } from '../lib/emailTemplate'
 import { apiFetch } from '../lib/apiClient'
 import './TaskCommentPanel.css'
 
@@ -32,10 +32,9 @@ function buildMentionPeople(tcSettings = []) {
 // Send a task-comment @mention notification to each mentioned TC via the Gmail
 // API. Recipients come from live tcSettings only; failures are logged, never
 // thrown, so comment creation is never blocked by a bad send.
-async function sendMentionEmails(mentions, body, transactionAddr, tcSettings = [], transactionId = null) {
+async function sendMentionEmails(mentions, body, transactionAddr, tcSettings = [], transactionId = null, author = '', transaction = null) {
   const people   = buildMentionPeople(tcSettings)
-  const escHtml  = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  const addr     = transactionAddr || '(No address)'
+  const addr     = transaction?.property_address || transactionAddr || '(No address)'
   const app_url  = transactionId
     ? `https://app.desert-legacy.com/?tab=board&tx=${transactionId}`
     : 'https://app.desert-legacy.com/?tab=board'
@@ -43,11 +42,13 @@ async function sendMentionEmails(mentions, body, transactionAddr, tcSettings = [
   for (const handle of mentions) {
     const person = people.find(p => p.handle.toLowerCase() === handle.toLowerCase())
     if (!person?.email) continue
-    const htmlBody = wrapEmailBody(
-      `<p style="font-size:13px;">You were mentioned in a task comment on <strong>${escHtml(addr)}</strong>.</p>` +
-      `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${escHtml(body)}</pre>` +
-      `<p style="font-size:13px;"><a href="${app_url}">Open in LegacyOS</a></p>`
-    )
+    const htmlBody = renderBrandedEmail({
+      eyebrow:     'You were mentioned',
+      address:     addr,
+      subline:     transaction ? cityStateZip(transaction) : '',
+      contentRows: quoteBlock({ author, bodyHtml: renderNoteHtml(body) }),
+      ctaUrl:      app_url,
+    })
     try {
       const res = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
@@ -78,6 +79,7 @@ export default function TaskCommentPanel({
   agentName = '',
   transactionAddr = '',
   transactionId = null,
+  transaction = null,
 }) {
   const authorOptions = getAssigneeOptions(tcSettings, agentName)
   const [text,          setText]          = useState('')
@@ -125,7 +127,7 @@ export default function TaskCommentPanel({
     setText('')
     setMentionOpen(false)
     inputRef.current?.focus()
-    if (mentions.length > 0) sendMentionEmails(mentions, body, transactionAddr, tcSettings, transactionId)
+    if (mentions.length > 0) sendMentionEmails(mentions, body, transactionAddr, tcSettings, transactionId, resolveMeName(author, agentName), transaction)
   }
 
   return (

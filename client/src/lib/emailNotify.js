@@ -3,11 +3,8 @@
 // Failures are logged and swallowed so a bad notification never breaks the
 // task create/update that triggered it.
 
-import { wrapEmailBody } from './emailWrapper'
 import { apiFetch } from './apiClient'
-
-const esc = (s) =>
-  String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+import { renderBrandedEmail, quoteBlock, cityStateZip, renderNoteHtml } from './emailTemplate'
 
 export function parseMentions(notes) {
   if (!notes) return []
@@ -20,6 +17,7 @@ export async function sendMentionNotifications({
   tcSettings = [],
   transaction,
   taskTitle,
+  agentName = '',
 }) {
   const rawMentions = parseMentions(notes)
   if (!rawMentions.length) return []
@@ -39,12 +37,13 @@ export async function sendMentionNotifications({
     if (!tc?.email) continue
 
     const subject  = `You were mentioned in a task — ${address}`
-    const htmlBody = wrapEmailBody(
-      `<p style="font-size:13px;">You were mentioned in a note on <strong>${esc(address)}</strong>.</p>` +
-      (taskTitle ? `<p style="font-size:13px;">Task: <strong>${esc(taskTitle)}</strong></p>` : '') +
-      `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${esc(notes)}</pre>` +
-      `<p style="font-size:13px;"><a href="${app_url}">Open in LegacyOS</a></p>`
-    )
+    const htmlBody = renderBrandedEmail({
+      eyebrow:     'You were mentioned',
+      address,
+      subline:     cityStateZip(transaction),
+      contentRows: quoteBlock({ author: agentName, bodyHtml: renderNoteHtml(notes) }),
+      ctaUrl:      app_url,
+    })
 
     try {
       const res = await apiFetch('/api/google/gmail-send', {

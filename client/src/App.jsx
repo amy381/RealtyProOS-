@@ -543,6 +543,7 @@ export default function App() {
         tcSettings,
         transaction:          transactions.find(t => t.id === taskData.transaction_id) || {},
         taskTitle:            newTask.title,
+        agentName:            agentSettings?.realtor_name || '',
       })
       if (notified.length) {
         await supabase.from('tasks').update({ notified_mentions: notified }).eq('id', newTask.id)
@@ -577,6 +578,7 @@ export default function App() {
         const notified  = await sendMentionNotifications({
           notes: updates.notes, prevNotifiedMentions: prev,
           tcSettings, transaction, taskTitle: task.title,
+          agentName: agentSettings?.realtor_name || '',
         })
         if (notified.length) {
           const merged = [...new Set([...prev, ...notified])]

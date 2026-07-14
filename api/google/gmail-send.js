@@ -117,14 +117,23 @@ async function refreshAccessToken(tokenRow) {
   })
 
   const tokens = await res.json()
-  if (!res.ok) throw new Error(tokens.error_description || 'Token refresh failed')
+  if (!res.ok) {
+    // Surface the actual Google error instead of failing silently. No token values.
+    const code = tokens.error || 'unknown_error'
+    const desc = tokens.error_description || 'Token refresh failed'
+    console.error(`[google_auth] token refresh failed: ${res.status} ${code} — ${desc}`)
+    const err = new Error(`${code}: ${desc}`)
+    err.googleError = code
+    throw err
+  }
 
   const supabase = getSupabase()
-  await supabase.from('google_auth').update({
+  const { error: updErr } = await supabase.from('google_auth').update({
     access_token: tokens.access_token,
     expiry_date:  Date.now() + tokens.expires_in * 1000,
     updated_at:   new Date().toISOString(),
   }).eq('id', tokenRow.id)
+  if (updErr) console.error(`[google_auth] persist failed after refresh: ${updErr.message}`)
 
   return tokens.access_token
 }

@@ -41,15 +41,37 @@ async function getValidAccessToken() {
   })
 
   const tokens = await tokenRes.json()
-  if (!tokenRes.ok) throw new Error(tokens.error_description || 'Token refresh failed')
+  if (!tokenRes.ok) {
+    // Surface the actual Google error (e.g. invalid_grant / "Token has been
+    // expired or revoked") instead of failing silently. Never log token values.
+    const code = tokens.error || 'unknown_error'
+    const desc = tokens.error_description || 'Token refresh failed'
+    console.error(`[google_auth] token refresh failed: ${tokenRes.status} ${code} — ${desc}`)
+    const err = new Error(`${code}: ${desc}`)
+    err.googleError = code
+    throw err
+  }
 
-  await supabase.from('google_auth').update({
+  const { error: updErr } = await supabase.from('google_auth').update({
     access_token: tokens.access_token,
     expiry_date:  Date.now() + tokens.expires_in * 1000,
     updated_at:   new Date().toISOString(),
   }).eq('id', data.id)
+  if (updErr) console.error(`[google_auth] persist failed after refresh: ${updErr.message}`)
 
   return tokens.access_token
+}
+
+// Classify a getValidAccessToken() failure into a reason the UI can act on:
+//   'not_connected' — no token row / never connected
+//   'revoked'       — refresh token rejected by Google (reconnect required)
+//   'error'         — anything else (network, config, etc.)
+function classifyAuthError(err) {
+  const code = err && err.googleError
+  const msg  = ((err && err.message) || '').toLowerCase()
+  if (code === 'invalid_grant' || /invalid_grant|revoked|expired/.test(msg)) return 'revoked'
+  if (/not connected/.test(msg)) return 'not_connected'
+  return 'error'
 }
 
 // "6490 W Hermit Dr" → "Hermit Dr, 6490 W"
@@ -141,6 +163,7 @@ async function moveDriveFolder(accessToken, fileId, newParentId, newName) {
 module.exports = {
   getSupabase,
   getValidAccessToken,
+  classifyAuthError,
   getFolderName,
   getParentFolderIdForStatus,
   createDriveFolder,

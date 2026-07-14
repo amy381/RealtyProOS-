@@ -1,4 +1,4 @@
-const { getSupabase } = require('./_lib')
+const { getValidAccessToken, classifyAuthError } = require('./_lib')
 const { requireAuth } = require('../_lib/requireAuth')
 
 module.exports = async function handler(req, res) {
@@ -7,14 +7,14 @@ module.exports = async function handler(req, res) {
   const user = await requireAuth(req, res)
   if (!user) return
 
+  // Report whether Google will actually accept the token, not just that a row
+  // exists. getValidAccessToken() refreshes only when the token is expired and
+  // self-heals on success; a revoked refresh token throws and we report why.
+  // Never let this throw a 500 — always return a JSON status.
   try {
-    const { data } = await getSupabase()
-      .from('google_auth')
-      .select('refresh_token')
-      .limit(1)
-      .single()
-    res.json({ connected: !!data?.refresh_token })
-  } catch {
-    res.json({ connected: false })
+    await getValidAccessToken()
+    res.json({ connected: true })
+  } catch (err) {
+    res.json({ connected: false, reason: classifyAuthError(err) })
   }
 }

@@ -11,7 +11,7 @@ import { getTcNames, getAssigneeOptions, resolveMeName, firstName } from '../lib
 import { apiFetch } from '../lib/apiClient'
 import { toast } from 'react-hot-toast'
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts'
-import { useGmailStatus } from '../lib/useGmailStatus'
+import { useGmailStatus, isGmailBroken } from '../lib/useGmailStatus'
 import DateInput from './DateInput'
 import './TransactionDetailPage.css'
 
@@ -1640,7 +1640,11 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, agentName =
           )}
           {!gmailStatus.loading && (!gmailStatus.connected || !gmailStatus.hasGmailScope) ? (
             <div className="notify-reconnect">
-              <span className="notify-reconnect-text">Gmail not connected —</span>
+              <span className="notify-reconnect-text">
+                {isGmailBroken(gmailStatus)
+                  ? 'Google connection expired — reconnect to send email.'
+                  : 'Gmail not connected —'}
+              </span>
               <a href="/api/google/auth" className="notify-reconnect-link">Reconnect Google</a>
             </div>
           ) : (

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { apiFetch } from '../lib/apiClient'
 import './SettingsModal.css'
 
 export default function SettingsModal({ tcSettings, userSettings, onSave, onClose }) {
@@ -17,6 +18,7 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
   const [agentId, setAgentId] = useState(null)
 
   const [googleConnected, setGoogleConnected] = useState(false)
+  const [googleReason,    setGoogleReason]    = useState(null)
   const [googleLoading,   setGoogleLoading]   = useState(true)
 
   useEffect(() => {
@@ -39,20 +41,29 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
   }, [])
 
   useEffect(() => {
-    supabase
-      .from('google_auth')
-      .select('access_token')
-      .limit(1)
-      .single()
-      .then(({ data }) => {
-        setGoogleConnected(!!(data?.access_token))
+    // Ask the status endpoint whether Google will actually accept the token,
+    // not just whether a row exists — otherwise a revoked token still shows
+    // "Connected". reason distinguishes "never connected" from "broken".
+    apiFetch('/api/google/gmail-status')
+      .then(res => res.json())
+      .then(({ connected = false, reason = null }) => {
+        setGoogleConnected(connected)
+        setGoogleReason(connected ? null : reason)
+        setGoogleLoading(false)
+      })
+      .catch(() => {
+        setGoogleConnected(false)
+        setGoogleReason('error')
         setGoogleLoading(false)
       })
   }, [])
 
+  const googleBroken = !googleConnected && (googleReason === 'revoked' || googleReason === 'error')
+
   const handleGoogleDisconnect = async () => {
     await supabase.from('google_auth').delete().neq('id', '00000000-0000-0000-0000-000000000000')
     setGoogleConnected(false)
+    setGoogleReason('not_connected')
   }
 
   const setEmail = (idx, email) => {
@@ -157,6 +168,14 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
 
           <div className="settings-section-label" style={{ marginTop: 6 }}>Google Account</div>
 
+          {googleBroken && (
+            <div className="sq-reconnect-banner">
+              Google connection expired —{' '}
+              <a href="/api/google/auth" className="sq-reconnect-link">Reconnect Google</a>
+              {' '}to send email.
+            </div>
+          )}
+
           <div className="settings-google-row">
             {googleLoading ? (
               <span className="settings-google-status">Checking…</span>
@@ -165,6 +184,21 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
                 <span className="settings-google-status">
                   <span className="settings-google-dot settings-google-dot--connected" />
                   Connected as amy@desert-legacy.com
+                </span>
+                <div className="settings-google-actions">
+                  <button className="settings-google-btn settings-google-btn--disconnect" onClick={handleGoogleDisconnect}>
+                    Disconnect
+                  </button>
+                  <a className="settings-google-btn settings-google-btn--reconnect" href="/api/google/auth">
+                    Reconnect
+                  </a>
+                </div>
+              </>
+            ) : googleBroken ? (
+              <>
+                <span className="settings-google-status">
+                  <span className="settings-google-dot settings-google-dot--disconnected" />
+                  Connection expired — reconnect required
                 </span>
                 <div className="settings-google-actions">
                   <button className="settings-google-btn settings-google-btn--disconnect" onClick={handleGoogleDisconnect}>

@@ -8,7 +8,7 @@ import { apiFetch } from '../lib/apiClient'
 import { Mail, FileText, Pencil } from 'lucide-react'
 import VendorFormPreviewModal from './VendorFormPreviewModal'
 import EmailPreviewModal from './EmailPreviewModal'
-import { useGmailStatus } from '../lib/useGmailStatus'
+import { useGmailStatus, isGmailBroken } from '../lib/useGmailStatus'
 import { resolveVars } from '../lib/resolveVars'
 import DateInput from './DateInput'
 import './TasksTab.css'
@@ -1414,9 +1414,19 @@ function SendQueueView({ transactions, tcSettings, agentName = '', onQueueCountC
 
       {!gmailStatus.loading && (!gmailStatus.connected || !gmailStatus.hasGmailScope) && (
         <div className="sq-reconnect-banner">
-          Gmail not connected —{' '}
-          <a href="/api/google/auth" className="sq-reconnect-link">Reconnect Google</a>
-          {' '}to send emails from the queue.
+          {isGmailBroken(gmailStatus) ? (
+            <>
+              Google connection expired —{' '}
+              <a href="/api/google/auth" className="sq-reconnect-link">Reconnect Google</a>
+              {' '}to send email.
+            </>
+          ) : (
+            <>
+              Gmail not connected —{' '}
+              <a href="/api/google/auth" className="sq-reconnect-link">Reconnect Google</a>
+              {' '}to send emails from the queue.
+            </>
+          )}
         </div>
       )}
 

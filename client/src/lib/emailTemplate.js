@@ -10,8 +10,7 @@
 // teal rule/accent #50C8DC, amber eyebrow/CTA #D4781E, body #0f1c24, muted
 // #6a7c88, quote bg #f4f8fa.
 
-const LOGO_URL   = 'https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo-nav-v3.png'
-const FOOTER_URL = 'https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/email-footer-white2.png'
+const LOGO_URL = 'https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo-nav-v3.png'
 const FONT = "-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
 
 // "Bullhead City, AZ 86442" from a transaction, omitting empty parts (no
@@ -132,13 +131,10 @@ export function renderBrandedEmail({
           `</td></tr>` +
           // Optional content (quote block, changes table)
           contentRows +
-          // CTA
+          // CTA — its 30px bottom padding closes the card; no footer row. The
+          // card table's border-radius:10px + overflow:hidden keeps the bottom
+          // corners rounded now that the (flush) footer image is gone.
           ctaRow +
-          // Footer banner (decorative — empty alt, layout does not depend on it).
-          // Asset is intrinsically 600x100. Explicit width/height attributes pin
-          // the 6:1 ratio for clients that strip CSS and keep the images-disabled
-          // placeholder a thin strip; height:auto lets it scale on narrow widths.
-          `<tr><td style="padding:0;"><img src="${FOOTER_URL}" alt="" width="600" height="100" style="width:600px;height:auto;max-width:100%;display:block;border:0;"></td></tr>` +
         `</table>` +
       `</td></tr>` +
     `</table>`

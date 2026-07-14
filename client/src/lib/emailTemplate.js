@@ -38,18 +38,24 @@ export function renderNoteHtml(text) {
     .replace(/\n/g, '<br>')
 }
 
-// Teal-accented quote block. The "Note added by …" line is omitted entirely
-// when author is absent — no dangling label. bodyHtml is pre-rendered
+// Teal-accented quote block. The optional "Task: …" and "Note added by …"
+// header lines are each omitted entirely when absent — no dangling label. The
+// last present header line carries the 8px gap before the note; task title (for
+// task-note/comment mentions) sits above the author. bodyHtml is pre-rendered
 // (escaped + optionally mention-highlighted).
-export function quoteBlock({ author = '', bodyHtml = '' }) {
-  const byline = author
+export function quoteBlock({ author = '', taskTitle = '', bodyHtml = '' }) {
+  const authorLine = author
     ? `<p style="margin:0 0 8px;font-size:12px;color:#7a8b96;font-family:${FONT};">Note added by <strong style="color:#0f1c24;">${escapeHtml(author)}</strong></p>`
+    : ''
+  const taskLine = taskTitle
+    ? `<p style="margin:0 0 ${author ? '4' : '8'}px;font-size:12px;color:#7a8b96;font-family:${FONT};">Task: <strong style="color:#0f1c24;">${escapeHtml(taskTitle)}</strong></p>`
     : ''
   return (
     `<tr><td style="padding:22px 28px 0;">` +
       `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f8fa;border-left:3px solid #50C8DC;border-radius:0 6px 6px 0;">` +
         `<tr><td style="padding:16px 18px;">` +
-          byline +
+          taskLine +
+          authorLine +
           `<p style="margin:0;font-size:15px;line-height:1.55;color:#1d2b35;font-family:${FONT};">${bodyHtml}</p>` +
         `</td></tr>` +
       `</table>` +

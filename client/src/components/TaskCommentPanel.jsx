@@ -32,7 +32,7 @@ function buildMentionPeople(tcSettings = []) {
 // Send a task-comment @mention notification to each mentioned TC via the Gmail
 // API. Recipients come from live tcSettings only; failures are logged, never
 // thrown, so comment creation is never blocked by a bad send.
-async function sendMentionEmails(mentions, body, transactionAddr, tcSettings = [], transactionId = null, author = '', transaction = null) {
+async function sendMentionEmails(mentions, body, transactionAddr, tcSettings = [], transactionId = null, author = '', transaction = null, taskTitle = '') {
   const people   = buildMentionPeople(tcSettings)
   const addr     = transaction?.property_address || transactionAddr || '(No address)'
   const app_url  = transactionId
@@ -46,7 +46,7 @@ async function sendMentionEmails(mentions, body, transactionAddr, tcSettings = [
       eyebrow:     'You were mentioned',
       address:     addr,
       subline:     transaction ? cityStateZip(transaction) : '',
-      contentRows: quoteBlock({ author, bodyHtml: renderNoteHtml(body) }),
+      contentRows: quoteBlock({ author, taskTitle, bodyHtml: renderNoteHtml(body) }),
       ctaUrl:      app_url,
     })
     try {
@@ -127,7 +127,7 @@ export default function TaskCommentPanel({
     setText('')
     setMentionOpen(false)
     inputRef.current?.focus()
-    if (mentions.length > 0) sendMentionEmails(mentions, body, transactionAddr, tcSettings, transactionId, resolveMeName(author, agentName), transaction)
+    if (mentions.length > 0) sendMentionEmails(mentions, body, transactionAddr, tcSettings, transactionId, resolveMeName(author, agentName), transaction, taskTitle)
   }
 
   return (

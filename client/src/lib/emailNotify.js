@@ -41,7 +41,7 @@ export async function sendMentionNotifications({
       eyebrow:     'You were mentioned',
       address,
       subline:     cityStateZip(transaction),
-      contentRows: quoteBlock({ author: agentName, bodyHtml: renderNoteHtml(notes) }),
+      contentRows: quoteBlock({ author: agentName, taskTitle, bodyHtml: renderNoteHtml(notes) }),
       ctaUrl:      app_url,
     })
 

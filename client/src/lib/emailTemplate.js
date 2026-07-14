@@ -134,8 +134,11 @@ export function renderBrandedEmail({
           contentRows +
           // CTA
           ctaRow +
-          // Footer banner (decorative — empty alt, layout does not depend on it)
-          `<tr><td style="padding:0;"><img src="${FOOTER_URL}" alt="" width="600" style="width:600px;max-width:100%;display:block;border:0;"></td></tr>` +
+          // Footer banner (decorative — empty alt, layout does not depend on it).
+          // Asset is intrinsically 600x100. Explicit width/height attributes pin
+          // the 6:1 ratio for clients that strip CSS and keep the images-disabled
+          // placeholder a thin strip; height:auto lets it scale on narrow widths.
+          `<tr><td style="padding:0;"><img src="${FOOTER_URL}" alt="" width="600" height="100" style="width:600px;height:auto;max-width:100%;display:block;border:0;"></td></tr>` +
         `</table>` +
       `</td></tr>` +
     `</table>`

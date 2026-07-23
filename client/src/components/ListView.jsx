@@ -28,7 +28,7 @@ const STAGE_ORDER = {
 const SECTIONS = [
   { id: 'details',      label: 'Transaction Details' },
   { id: 'tasks',        label: 'Tasks'               },
-  { id: 'docs-req',     label: 'Documents Required'  },
+  { id: 'documents',    label: 'Documents'           },
   { id: 'commission',   label: 'Commission'          },
   { id: 'google-drive', label: 'Google Drive'        },
 ]

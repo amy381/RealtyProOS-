@@ -520,6 +520,24 @@ function SortableRow({ task, onEdit, onDelete, bulkMode, isSelected, onToggle, e
   )
 }
 
+// ─── Sortable template list item ──────────────────────────────────────────────
+function SortableTemplateItem({ tpl, isActive, onSelect }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: tpl.id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  }
+  return (
+    <div ref={setNodeRef} style={style}
+      className={`templates-list-item${isActive ? ' active' : ''}`}>
+      <span className="tt-tpl-drag" {...attributes} {...listeners}>⠿</span>
+      <span className="templates-list-name" onClick={() => onSelect(tpl.id)}>{tpl.name}</span>
+    </div>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, tcSettings = [], agentName = '', activeSectionProp, onSectionChange }) {
   // ── Sidebar section
@@ -813,6 +831,21 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     await onRefresh()
   }
 
+  // Reorder the task-template list itself. Mirrors handleDragEnd above, but
+  // writes task_templates.sort_order. `templates` is a prop ordered by
+  // sort_order in App.jsx, so the parent reload reflects the new order.
+  const handleTemplateDragEnd = async ({ active, over }) => {
+    if (!over || active.id === over.id) return
+    const oldIdx = templates.findIndex(t => t.id === active.id)
+    const newIdx = templates.findIndex(t => t.id === over.id)
+    if (oldIdx === -1 || newIdx === -1) return
+    const reordered = arrayMove(templates, oldIdx, newIdx)
+    await Promise.all(reordered.map((t, i) =>
+      supabase.from('task_templates').update({ sort_order: i }).eq('id', t.id)
+    ))
+    await onRefresh()
+  }
+
   const handleDeleteTask = async (taskId) => {
     if (!window.confirm('Delete this task from the template?')) return
     await supabase.from('template_tasks').delete().eq('id', taskId)
@@ -1040,20 +1073,19 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
           <div className="tt-list-pane">
 
             {sideSection === 'tasks' && <>
-              <div className="templates-list">
-                {templates.map(t => (
-                  <div
-                    key={t.id}
-                    className={`templates-list-item${selectedTemplateId === t.id ? ' active' : ''}`}
-                    onClick={() => selectTemplate(t.id)}
-                  >
-                    <span className="templates-list-name">{t.name}</span>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleTemplateDragEnd}>
+                <SortableContext items={templates.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                  <div className="templates-list">
+                    {templates.map(t => (
+                      <SortableTemplateItem key={t.id} tpl={t}
+                        isActive={selectedTemplateId === t.id} onSelect={selectTemplate} />
+                    ))}
+                    {templates.length === 0 && (
+                      <div className="templates-coming-soon">No templates yet</div>
+                    )}
                   </div>
-                ))}
-                {templates.length === 0 && (
-                  <div className="templates-coming-soon">No templates yet</div>
-                )}
-              </div>
+                </SortableContext>
+              </DndContext>
               <button className="templates-create-btn" onClick={handleCreateTemplate}>
                 + Create New Template
               </button>

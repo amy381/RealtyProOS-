@@ -67,6 +67,18 @@
   border-left-color: rgba(50, 200, 220, 0.5);
 }
 
+/* Drag handle for reordering task templates — matches the .tt-drag-cell feel. */
+.tt-tpl-drag {
+  cursor: grab;
+  padding-right: 8px;
+  opacity: 0.5;
+  user-select: none;
+}
+
+.tt-tpl-drag:active {
+  cursor: grabbing;
+}
+
 .templates-list-name {
   flex: 1;
   min-width: 0;

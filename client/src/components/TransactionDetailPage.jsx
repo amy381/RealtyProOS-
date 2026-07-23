@@ -18,7 +18,8 @@ import './TransactionDetailPage.css'
 
 const SECTIONS = [
   { id: 'details',      label: 'Transaction Details' },
-  { id: 'docs-req',     label: 'Tasks & Documents'   },
+  { id: 'tasks',        label: 'Tasks'               },
+  { id: 'documents',    label: 'Documents'           },
   { id: 'commission',   label: 'Commission'           },
   { id: 'showings',     label: 'Showings',  sellerOnly: true },
   { id: 'history',      label: 'History'              },
@@ -3576,7 +3577,12 @@ export default function TransactionDetailPage({
   onGoToTasks,
   onGoToBoard,
 }) {
-  const [activeSection, setActiveSection]   = useState(initialSection)
+  // 'docs-req' was the old combined Tasks & Documents tab, now split into
+  // 'tasks' + 'documents'. ListView's "Go To" menu can still hand us the legacy
+  // id, so normalize it rather than render an empty content area.
+  const [activeSection, setActiveSection]   = useState(
+    initialSection === 'docs-req' ? 'tasks' : initialSection
+  )
   const [sessionHistory, setSessionHistory] = useState([])
   const [notifyOpen, setNotifyOpen]         = useState(false)
 
@@ -3717,26 +3723,29 @@ export default function TransactionDetailPage({
             />
           )}
 
-          {activeSection === 'docs-req' && (
-            <div className="txp-td-wrap">
-              <div className="txp-td-col txp-td-col--tasks">
-                <TasksDocsLeft
-                  transactionId={transaction.id}
-                  transaction={transaction}
-                  onAdd={onAddTask}
-                  onUpdate={onUpdateTask}
-                  onDelete={onDeleteTask}
-                  dbTemplates={dbTemplates}
-                  dbTemplateTasks={dbTemplateTasks}
-                  onApplyTemplate={onApplyTemplate}
-                  taskComments={taskComments}
-                  onAddTaskComment={onAddTaskComment}
-                  onDeleteTaskComment={onDeleteTaskComment}
-                  tcSettings={tcSettings}
-                  agentName={agentName}
-                  transactionAddr={fullAddress}
-                />
-              </div>
+          {activeSection === 'tasks' && (
+            <div className="txp-tasks-full">
+              <TasksDocsLeft
+                transactionId={transaction.id}
+                transaction={transaction}
+                onAdd={onAddTask}
+                onUpdate={onUpdateTask}
+                onDelete={onDeleteTask}
+                dbTemplates={dbTemplates}
+                dbTemplateTasks={dbTemplateTasks}
+                onApplyTemplate={onApplyTemplate}
+                taskComments={taskComments}
+                onAddTaskComment={onAddTaskComment}
+                onDeleteTaskComment={onDeleteTaskComment}
+                tcSettings={tcSettings}
+                agentName={agentName}
+                transactionAddr={fullAddress}
+              />
+            </div>
+          )}
+
+          {activeSection === 'documents' && (
+            <div className="txp-documents-full">
               <DocsRequiredSection
                 transaction={transaction}
                 commissions={commissions}

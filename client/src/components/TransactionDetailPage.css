@@ -468,6 +468,12 @@
 /* ─── Two-column layout ─────────────────────────────────────────────────────────── */
 .txp-details-view { display: flex; flex-direction: column; gap: 0; }
 
+/* ─── Split Tasks / Documents tabs — each fills the content area ──────────────── */
+.txp-tasks-full,
+.txp-documents-full {
+  width: 100%;
+}
+
 /* ─── Tasks & Documents two-column layout ───────────────────────────────────────── */
 .txp-td-wrap {
   display: flex;

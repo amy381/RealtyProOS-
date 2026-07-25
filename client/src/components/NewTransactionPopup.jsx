@@ -119,6 +119,25 @@ function FubSearch({ onSelect }) {
   )
 }
 
+// Property-feature checkboxes. Keys are the exact transactions column names, so
+// the state object spreads straight into the tx row. Order = display order.
+// These drive template auto-apply + conditional task generation at intake.
+const FEATURE_FIELDS = [
+  { key: 'has_septic',       label: 'Septic' },
+  { key: 'has_well',         label: 'Well' },
+  { key: 'has_solar',        label: 'Solar' },
+  { key: 'has_hoa',          label: 'HOA' },
+  { key: 'has_lbp',          label: 'Lead-Based Paint' },
+  { key: 'new_construction', label: 'New Construction' },
+  { key: 'has_sign',         label: 'Sign' },
+  { key: 'has_contingency',  label: 'Contingency' },
+  { key: 'has_bba',          label: 'BBA' },
+  { key: 'has_referral',     label: 'Referral' },
+  { key: 'has_financing',    label: 'Financing' },
+  { key: 'has_lockbox',      label: 'Lockbox' },
+]
+const EMPTY_FEATURES = Object.fromEntries(FEATURE_FIELDS.map(f => [f.key, false]))
+
 // ─── Main popup ───────────────────────────────────────────────────────────────
 export default function NewTransactionPopup({ onCreate, onClose, prefill = null, tcSettings = [] }) {
   const tcOptions = (tcSettings || []).map(s => s.name).filter(Boolean)
@@ -130,6 +149,10 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null,
   const [client2,  setClient2]  = useState(null)
   const [creating, setCreating] = useState(false)
   const [hydrating, setHydrating] = useState(false)
+
+  // Property-feature checkboxes (all default false). Keys match tx columns.
+  const [features, setFeatures] = useState(EMPTY_FEATURES)
+  const toggleFeature = key => setFeatures(f => ({ ...f, [key]: !f[key] }))
 
   // Seller fields
   const [address,         setAddress]         = useState('')
@@ -234,6 +257,7 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null,
       status,
       property_type: propType || null,
       assigned_tc:   tc,
+      ...features,
     }
 
     if (client1) {
@@ -468,6 +492,21 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null,
               </div>
             )}
           </>)}
+
+          {/* ── Property Features ── */}
+          <div className="ntp-section-divider">Property Features</div>
+          <div className="ntp-features-grid">
+            {FEATURE_FIELDS.map(f => (
+              <label key={f.key} className="ntp-feature-check">
+                <input
+                  type="checkbox"
+                  checked={features[f.key]}
+                  onChange={() => toggleFeature(f.key)}
+                />
+                <span>{f.label}</span>
+              </label>
+            ))}
+          </div>
 
         </div>{/* end ntp-body */}
 

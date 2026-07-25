@@ -296,6 +296,11 @@ export default function App() {
         })
       }
 
+      // Auto-apply the matching task template at intake. newTx is the freshly
+      // inserted row, so it carries property_type + all has_* feature flags —
+      // required for template matching and conditional-task filtering.
+      await insertTemplateTasks(newTx.id, newTx.status, newTx.rep_type, newTx)
+
       setNewTxOpen(false)
       setSelectedTransaction(newTx)
     } catch (err) {
@@ -370,13 +375,31 @@ export default function App() {
     }
   }
 
+  // Maps a template_task.condition value → the transactions boolean column that
+  // gates it. A condition not in this map is treated as unmet (task skipped).
+  const CONDITION_FIELD_MAP = {
+    septic:           'has_septic',
+    well:             'has_well',
+    solar:            'has_solar',
+    hoa:              'has_hoa',
+    lbp:              'has_lbp',
+    new_construction: 'new_construction',
+    sign:             'has_sign',
+    contingency:      'has_contingency',
+    bba:              'has_bba',
+    referral:         'has_referral',
+    financing:        'has_financing',
+    lockbox:          'has_lockbox',
+  }
+
   // ── Template task insertion helper ──────────────────────────────────────────
   const insertTemplateTasks = async (transactionId, status, repType, transaction) => {
     // Prefer DB templates when available
     if (dbTemplates.length > 0) {
       const tpl = dbTemplates.find(t =>
         t.stage === status &&
-        (t.rep_type === repType || t.rep_type === null || t.rep_type === 'Both')
+        (t.rep_type === repType || t.rep_type === null || t.rep_type === 'Both') &&
+        (t.property_type === transaction.property_type || t.property_type === null)
       )
       if (tpl) {
         const alreadyHas = tasks.some(
@@ -384,7 +407,17 @@ export default function App() {
         )
         if (alreadyHas) return
 
-        const tplTaskRows = dbTemplateTasks.filter(t => t.template_id === tpl.id)
+        // Conditional tasks carry a `condition` (e.g. 'septic'); include one only
+        // when its mapped transaction feature flag is checked. Unconditional
+        // tasks (null/empty condition) always apply.
+        const tplTaskRows = dbTemplateTasks
+          .filter(t => t.template_id === tpl.id)
+          .filter(t => {
+            const cond = (t.condition || '').trim()
+            if (!cond) return true
+            const field = CONDITION_FIELD_MAP[cond]
+            return field ? transaction[field] === true : false
+          })
         const builtTasks  = buildTemplateTasksFromDB(tplTaskRows, transaction, agentSettings?.realtor_name || '')
         if (!builtTasks.length) return
 

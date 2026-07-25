@@ -175,6 +175,28 @@
   margin-top: 2px;
 }
 
+/* ─── Property Features checkbox grid ─────────────────────────────────────── */
+.ntp-features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 12px;
+}
+
+.ntp-feature-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #a8bfcc;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ntp-feature-check input {
+  cursor: pointer;
+  margin: 0;
+}
+
 /* ─── FUB search ──────────────────────────────────────────────────────────── */
 .ntp-fub-wrap { position: relative; }
 

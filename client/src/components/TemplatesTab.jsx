@@ -560,11 +560,10 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   const [selectedTemplateId, setSelectedTemplateId] = useState(null)
   const [editingTask,        setEditingTask]        = useState(null)
   const [saving,             setSaving]             = useState(false)
-  const [renamingId,         setRenamingId]         = useState(null)
-  const [renameValue,        setRenameValue]        = useState('')
-
-  // Create-template modal (replaces the old window.prompt flow)
+  // Create/Edit-template modal (replaces the old window.prompt + inline rename).
+  // editTemplateId null → create mode (insert); set → edit mode (update that id).
   const [createOpen, setCreateOpen] = useState(false)
+  const [editTemplateId, setEditTemplateId] = useState(null)
   const [createForm, setCreateForm] = useState({
     name: '', stage: 'pre-listing', rep_type: 'Seller', property_type: 'Residential',
   })
@@ -799,13 +798,45 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
 
   // Open the create-template modal with a fresh (constraint-valid) form.
   const handleCreateTemplate = () => {
+    setEditTemplateId(null)
     setCreateForm({ name: '', stage: 'pre-listing', rep_type: 'Seller', property_type: 'Residential' })
     setCreateOpen(true)
   }
 
-  const submitCreateTemplate = async () => {
+  // Map a Supabase error to a user-facing message. The unique index
+  // task_templates_match_unique enforces one template per (rep_type, stage,
+  // property_type); surface that as a clear message instead of raw SQL.
+  const templateErrorMessage = (error, action) => {
+    if (error.code === '23505' || (error.message || '').includes('task_templates_match_unique')) {
+      return 'A template already exists for this Rep Type / Stage / Property Type combination. Each combination can only have one template.'
+    }
+    return `Failed to ${action} template: ${error.message}`
+  }
+
+  // Modal submit — branches on mode: edit updates the existing row, create inserts.
+  const submitTemplateModal = async () => {
     const name = createForm.name.trim()
     if (!name) return
+
+    // EDIT mode: update the existing template in place (no new row).
+    if (editTemplateId) {
+      const { error } = await supabase
+        .from('task_templates')
+        .update({
+          name,
+          stage:         createForm.stage,
+          rep_type:      createForm.rep_type,
+          property_type: createForm.property_type,
+        })
+        .eq('id', editTemplateId)
+      if (error) { alert(templateErrorMessage(error, 'update')); return }
+      closeTemplateModal()
+      await onRefresh()
+      setSelectedTemplateId(editTemplateId)
+      return
+    }
+
+    // CREATE mode: insert a new template.
     const uid = await getUserId()
     const { data, error } = await supabase
       .from('task_templates')
@@ -818,8 +849,8 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
         user_id:       uid,
       })
       .select().single()
-    if (error) { alert('Failed to create template: ' + error.message); return }
-    setCreateOpen(false)
+    if (error) { alert(templateErrorMessage(error, 'create')); return }
+    closeTemplateModal()
     await onRefresh()
     setSelectedTemplateId(data.id)
   }
@@ -904,20 +935,24 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     if (selectedTemplateId === id) setSelectedTemplateId(null)
   }
 
-  const startRename = (tpl) => {
-    setRenamingId(tpl.id)
-    setRenameValue(tpl.name)
+  // Open the modal in EDIT mode, pre-filled with the template's current values.
+  // rep_type/property_type fall back to a valid dropdown option when the stored
+  // value is blank/null (legacy "Both" or not-yet-typed templates) so the select
+  // always shows what will be saved.
+  const handleEditTemplate = (tpl) => {
+    setEditTemplateId(tpl.id)
+    setCreateForm({
+      name:          tpl.name || '',
+      stage:         tpl.stage || 'pre-listing',
+      rep_type:      tpl.rep_type || 'Seller',
+      property_type: tpl.property_type || 'Residential',
+    })
+    setCreateOpen(true)
   }
 
-  const commitRename = async () => {
-    if (!renamingId) return
-    const trimmed = renameValue.trim()
-    if (trimmed) {
-      await supabase.from('task_templates').update({ name: trimmed }).eq('id', renamingId)
-      await onRefresh()
-    }
-    setRenamingId(null)
-    setRenameValue('')
+  const closeTemplateModal = () => {
+    setCreateOpen(false)
+    setEditTemplateId(null)
   }
 
   const handleDragEnd = async ({ active, over }) => {
@@ -1495,24 +1530,13 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
               {/* Header */}
               <div className="templates-main-header">
                 <div className="templates-main-title-row">
-                  {renamingId === selectedTemplate.id ? (
-                    <input
-                      className="tt-rename-input"
-                      value={renameValue}
-                      autoFocus
-                      onChange={e => setRenameValue(e.target.value)}
-                      onBlur={e => { if (!mouseDownIsInside(e.currentTarget)) commitRename() }}
-                      onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') { setRenamingId(null); setRenameValue('') } }}
-                    />
-                  ) : (
-                    <h2 className="templates-main-title">{selectedTemplate.name}</h2>
-                  )}
+                  <h2 className="templates-main-title">{selectedTemplate.name}</h2>
                   <div className="tt-template-meta-actions">
                     <div className="templates-main-meta">
-                      {selectedTemplate.stage} · {selectedTemplate.rep_type || 'Both'}
+                      {selectedTemplate.stage} · {selectedTemplate.rep_type || 'Both'} · {selectedTemplate.property_type || '—'}
                       {' · '}{taskRows.length} task{taskRows.length !== 1 ? 's' : ''}
                     </div>
-                    <button className="tt-tpl-edit-btn" onClick={() => startRename(selectedTemplate)} title="Rename template"><Pencil size={16} /></button>
+                    <button className="tt-tpl-edit-btn" onClick={() => handleEditTemplate(selectedTemplate)} title="Edit template"><Pencil size={16} /></button>
                     <button className="tt-tpl-edit-btn" onClick={() => handleDuplicateTemplate(selectedTemplate)} title="Duplicate template"><Copy size={16} /></button>
                     <button className="tt-tpl-delete-btn" onClick={() => handleDeleteTemplate(selectedTemplate.id)} title="Delete template">✕ Delete</button>
                   </div>
@@ -1772,16 +1796,16 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
         </div>
       )}
 
-      {/* ── Create Template modal (replaces window.prompt) ─────────────── */}
+      {/* ── Create / Edit Template modal (replaces window.prompt + rename) ─ */}
       {createOpen && (
         <div
           className="tt-modal-overlay"
-          onMouseDown={e => { if (e.target === e.currentTarget) setCreateOpen(false) }}
+          onMouseDown={e => { if (e.target === e.currentTarget) closeTemplateModal() }}
         >
           <div className="tt-modal">
             <div className="tt-modal-header">
-              <h3>New Template</h3>
-              <button className="tt-modal-close" onClick={() => setCreateOpen(false)}>✕</button>
+              <h3>{editTemplateId ? 'Edit Template' : 'New Template'}</h3>
+              <button className="tt-modal-close" onClick={closeTemplateModal}>✕</button>
             </div>
             <div className="tt-modal-body">
               <label className="tt-modal-label">Name</label>
@@ -1820,13 +1844,13 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
               </select>
             </div>
             <div className="tt-modal-actions">
-              <button className="tt-modal-cancel" onClick={() => setCreateOpen(false)}>Cancel</button>
+              <button className="tt-modal-cancel" onClick={closeTemplateModal}>Cancel</button>
               <button
                 className="tt-modal-save"
-                onClick={submitCreateTemplate}
+                onClick={submitTemplateModal}
                 disabled={!createForm.name.trim()}
               >
-                Create
+                {editTemplateId ? 'Save' : 'Create'}
               </button>
             </div>
           </div>

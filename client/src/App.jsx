@@ -375,110 +375,64 @@ export default function App() {
     }
   }
 
-  // Maps a template_task.condition value → the transactions boolean column that
-  // gates it. A condition not in this map is treated as unmet (task skipped).
+  // Condition value → transaction boolean field
   const CONDITION_FIELD_MAP = {
-    septic:           'has_septic',
-    well:             'has_well',
-    solar:            'has_solar',
-    hoa:              'has_hoa',
-    lbp:              'has_lbp',
-    new_construction: 'new_construction',
-    sign:             'has_sign',
-    contingency:      'has_contingency',
-    bba:              'has_bba',
-    referral:         'has_referral',
-    financing:        'has_financing',
-    lockbox:          'has_lockbox',
+    septic: 'has_septic', well: 'has_well', solar: 'has_solar', hoa: 'has_hoa',
+    lbp: 'has_lbp', new_construction: 'new_construction', sign: 'has_sign',
+    contingency: 'has_contingency', bba: 'has_bba', referral: 'has_referral',
+    financing: 'has_financing', lockbox: 'has_lockbox',
   }
 
-  // ── Template task insertion helper ──────────────────────────────────────────
+  // ── Auto-apply matching template at intake ──────────────────────────────────────────
   const insertTemplateTasks = async (transactionId, status, repType, transaction) => {
-    // TEMP DEBUG: trace every exit path to diagnose intake auto-apply. Remove
-    // once the early-return cause is found.
-    console.debug('[apply] start', {
-      transactionId, status, repType,
-      property_type: transaction?.property_type,
-      dbTemplatesLen: dbTemplates.length,
-    })
-    // Prefer DB templates when available
-    if (dbTemplates.length > 0) {
-      const tpl = dbTemplates.find(t =>
-        t.stage === status &&
-        (t.rep_type === repType || t.rep_type === null || t.rep_type === 'Both') &&
-        (t.property_type === transaction.property_type || t.property_type === null)
-      )
-      if (tpl) {
-        console.debug('[apply] matched template', tpl?.id, tpl?.name)
-        const alreadyHas = tasks.some(
-          t => t.transaction_id === transactionId && t.template_key === tpl.id
-        )
-        if (alreadyHas) { console.debug('[apply] already has tasks, skipping'); return }
+    if (!dbTemplates.length) { console.debug('[apply] no dbTemplates loaded'); return }
 
-        // Conditional tasks carry a `condition` (e.g. 'septic'); include one only
-        // when its mapped transaction feature flag is checked. Unconditional
-        // tasks (null/empty condition) always apply.
-        const tplTaskRows = dbTemplateTasks
-          .filter(t => t.template_id === tpl.id)
-          .filter(t => {
-            const cond = (t.condition || '').trim()
-            if (!cond) return true
-            const field = CONDITION_FIELD_MAP[cond]
-            return field ? transaction[field] === true : false
-          })
-        const builtTasks  = buildTemplateTasksFromDB(tplTaskRows, transaction, agentSettings?.realtor_name || '')
-        console.debug('[apply] built tasks count', builtTasks.length)
-        if (!builtTasks.length) return
-
-        const uid = await getUserId()
-        // Strip the internal _template_task_id mapping field — it's not a real
-        // tasks column and the insert rejects it. resolves_critical_date holds a
-        // template_task id at build time; null it for now since post-insert
-        // resolution (template_task id → real task id) isn't wired on this intake
-        // path yet — see the manual apply-template path (~L686) for the pattern.
-        const toInsert = builtTasks.map(({ _template_task_id, ...t }) => ({
-          ...t,
-          resolves_critical_date: null,
-          transaction_id: transactionId,
-          user_id: uid,
-        }))
-        const { data: inserted, error } = await supabase.from('tasks').insert(toInsert).select()
-        if (error) {
-          console.warn('Could not insert template tasks:', error.message)
-          return
-        }
-        if (inserted) {
-          console.debug('[apply] inserted', inserted?.length)
-          setTasks(prev => [...prev, ...inserted])
-          toast.success(`${inserted.length} tasks added`, { duration: 2000 })
-        }
-        return
-      }
-      console.debug('[apply] NO template matched', {
-        status, repType, propertyType: transaction?.property_type,
-      })
-    }
-
-    // Fallback: hardcoded templates
-    console.debug('[apply] fell through to hardcoded fallback')
-    const templateKey = getTemplateKey(status, repType)
-    const alreadyHas = tasks.some(
-      t => t.transaction_id === transactionId && t.template_key === templateKey
+    const tpl = dbTemplates.find(t =>
+      t.stage === status &&
+      (t.rep_type === repType || t.rep_type === null || t.rep_type === 'Both') &&
+      (t.property_type === transaction.property_type || t.property_type === null)
     )
-    if (alreadyHas) return
+    if (!tpl) { console.debug('[apply] no template matched', { status, repType, property_type: transaction.property_type }); return }
+    console.debug('[apply] matched template', tpl.id, tpl.name)
 
-    const tplTasks = buildTemplateTasks(status, repType, transaction)
-    if (!tplTasks.length) return
+    // Filter template tasks: keep unconditioned OR whose feature flag is checked on the transaction
+    const tplTaskRows = dbTemplateTasks.filter(t => {
+      if (t.template_id !== tpl.id) return false
+      if (!t.condition) return true
+      const field = CONDITION_FIELD_MAP[t.condition]
+      return field ? transaction[field] === true : true
+    })
+    console.debug('[apply] task rows after condition filter', tplTaskRows.length)
+
+    const builtTasks = buildTemplateTasksFromDB(tplTaskRows, transaction, agentSettings?.realtor_name || '')
+    if (!builtTasks.length) { console.debug('[apply] built 0 tasks'); return }
 
     const uid = await getUserId()
-    const toInsert = tplTasks.map(t => ({ ...t, transaction_id: transactionId, user_id: uid }))
+    const toInsert = builtTasks.map(({ _template_task_id, resolves_critical_date, ...rest }) => ({
+      ...rest, transaction_id: transactionId, template_key: tpl.id, user_id: uid,
+    }))
     const { data: inserted, error } = await supabase.from('tasks').insert(toInsert).select()
-    if (error) {
-      console.warn('Could not insert template tasks (run the tasks SQL in Supabase):', error.message)
-      return
-    }
+    if (error) { console.warn('[apply] insert error:', error.message); toast.error('Could not add template tasks'); return }
+    console.debug('[apply] inserted', inserted?.length)
+
     if (inserted) {
-      setTasks(prev => [...prev, ...inserted])
+      // Resolve critical-date links (template_task id → actual task id)
+      const tplToActual = {}
+      builtTasks.forEach((bt, i) => { if (bt._template_task_id) tplToActual[bt._template_task_id] = inserted[i].id })
+      const linkUpdates = builtTasks
+        .map((bt, i) => ({ bt, actual: inserted[i] }))
+        .filter(({ bt }) => bt.resolves_critical_date && tplToActual[bt.resolves_critical_date])
+      if (linkUpdates.length) {
+        await Promise.all(linkUpdates.map(({ bt, actual }) =>
+          supabase.from('tasks').update({ resolves_critical_date: tplToActual[bt.resolves_critical_date] }).eq('id', actual.id)))
+        const finalInserted = inserted.map((task, i) => {
+          const rcd = builtTasks[i].resolves_critical_date
+          return rcd && tplToActual[rcd] ? { ...task, resolves_critical_date: tplToActual[rcd] } : task
+        })
+        setTasks(prev => [...prev, ...finalInserted])
+      } else {
+        setTasks(prev => [...prev, ...inserted])
+      }
       toast.success(`${inserted.length} tasks added`, { duration: 2000 })
     }
   }

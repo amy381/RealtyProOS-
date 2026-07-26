@@ -1055,6 +1055,7 @@ export default function App() {
           tcSettings={tcSettings}
           agentName={agentName}
           agentEmail={agentEmail}
+          agentSettings={agentSettings}
           dbTemplates={dbTemplates}
           dbTemplateTasks={dbTemplateTasks}
           onBack={() => {

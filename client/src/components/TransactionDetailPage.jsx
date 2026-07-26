@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { Pencil } from 'lucide-react'
 import { supabase, getUserId } from '../lib/supabase'
@@ -14,6 +14,8 @@ import { toast } from 'react-hot-toast'
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts'
 import { useGmailStatus, isGmailBroken } from '../lib/useGmailStatus'
 import DateInput from './DateInput'
+import { GlobalTaskRow, CriticalDateRow, TaskEditModal, AddTaskModal } from './TasksTab'
+import './TasksTab.css'  // gtd-* row/modal styles used by the imported components
 import './TransactionDetailPage.css'
 
 const SECTIONS = [
@@ -2634,11 +2636,14 @@ function TdlAddTaskModal({ transaction, assigneeOptions = [], onAdd, onClose }) 
 }
 
 // ─── Tasks & Documents — Left Column ─────────────────────────────────────────
-function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, dbTemplates, dbTemplateTasks, onApplyTemplate, taskComments = [], onAddTaskComment, onDeleteTaskComment, tcSettings = [], agentName = '', transactionAddr = '' }) {
+function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, tcSettings = [], agentName = '', agentSettings = null, transactionAddr = '', onTransactionUpdate }) {
   const [localTasks,   setLocalTasks]  = useState([])
   const [tasksLoaded,  setTasksLoaded] = useState(false)
+  const [editingTaskId, setEditingTaskId] = useState(null)
+  const [addingOpen,    setAddingOpen]    = useState(false)
 
-  // Fetch tasks from DB on mount — source of truth, not relying on parent state
+  // Fetch THIS transaction's tasks from DB on mount — source of truth for the
+  // tab (the global Tasks page reads the same rows, so they stay in sync).
   useEffect(() => {
     if (!transactionId) { setTasksLoaded(true); return }
     supabase
@@ -2661,7 +2666,24 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, 
     setLocalTasks(data || [])
   }
 
-  // Wrap handlers to keep localTasks in sync
+  // Vendors + email-template map — same pattern as the global Tasks page, so the
+  // rows get full vendor/email behavior (GlobalTaskRow expects both).
+  const [vendors, setVendors] = useState([])
+  useEffect(() => {
+    supabase.from('vendors').select('*').order('name').then(({ data }) => setVendors(data || []))
+  }, [])
+  const [taskEmailTemplates, setTaskEmailTemplates] = useState([])
+  useEffect(() => {
+    supabase.from('email_templates').select('id,name').order('name')
+      .then(({ data }) => setTaskEmailTemplates(data || []))
+  }, [])
+  const emailTemplateMap = useMemo(() => {
+    const m = {}; taskEmailTemplates.forEach(t => { m[t.id] = t }); return m
+  }, [taskEmailTemplates])
+
+  const assigneeOptions = useMemo(() => getAssigneeOptions(tcSettings, agentName), [tcSettings, agentName])
+
+  // Keep localTasks in sync with the parent handlers
   const handleAdd = async (taskData) => {
     await onAdd(taskData)
     await refetchTasks()
@@ -2677,34 +2699,81 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, 
     await onDelete(taskId)
   }
 
-  // Wrapper for onApplyTemplate that re-fetches after insert
-  const handleApplyTemplateWrapped = async (txId, tplId, tx, excludedTplIds) => {
-    await onApplyTemplate(txId, tplId, tx, excludedTplIds)
-    await refetchTasks()
+  // GlobalTaskRow calls onUpdateTx(txId, field, value) for critical-date writes.
+  // onTransactionUpdate only updates parent React state (no DB write), so persist
+  // to supabase here too, then sync parent state.
+  const handleUpdateTx = async (txId, field, value) => {
+    await supabase.from('transactions').update({ [field]: value }).eq('id', txId)
+    if (onTransactionUpdate) onTransactionUpdate(txId, { [field]: value })
   }
 
   if (!tasksLoaded) {
     return <div className="txp-tasks-block"><div className="txp-task-empty" style={{ padding: '12px 16px' }}>Loading tasks…</div></div>
   }
 
+  const critDateTasks = localTasks.filter(t => t.task_type === 'Critical Date')
+  const editingTask   = editingTaskId ? localTasks.find(t => t.id === editingTaskId) : null
+
+  let rowIdx = 0
   return (
-    <TasksSpreadsheet
-      tasks={localTasks}
-      transactionId={transactionId}
-      transaction={transaction}
-      onAdd={handleAdd}
-      onUpdate={handleUpdate}
-      onDelete={handleDelete}
-      dbTemplates={dbTemplates}
-      dbTemplateTasks={dbTemplateTasks}
-      onApplyTemplate={handleApplyTemplateWrapped}
-      taskComments={taskComments}
-      onAddTaskComment={onAddTaskComment}
-      onDeleteTaskComment={onDeleteTaskComment}
-      tcSettings={tcSettings}
-      agentName={agentName}
-      transactionAddr={transactionAddr}
-    />
+    <div className="txp-tasks-block">
+      <div className="gtd-flat-list">
+        {localTasks.length === 0 && (
+          <div className="gtd-empty">No tasks yet</div>
+        )}
+        {localTasks.map(item => item.task_type === 'Critical Date' ? (
+          <CriticalDateRow
+            key={item.id}
+            task={item}
+            onDelete={handleDelete}
+            flatAddr={transactionAddr}
+          />
+        ) : (
+          <GlobalTaskRow
+            key={item.id}
+            task={item}
+            tx={transaction}
+            onUpdate={handleUpdate}
+            onUpdateTx={handleUpdateTx}
+            onDelete={handleDelete}
+            onOpenEdit={() => setEditingTaskId(item.id)}
+            vendors={vendors}
+            tcSettings={tcSettings}
+            agentName={agentName}
+            agentSettings={agentSettings}
+            emailTemplateMap={emailTemplateMap}
+            isEven={rowIdx++ % 2 === 1}
+            txAddress={transactionAddr}
+          />
+        ))}
+        <div className="gtd-add-task-row">
+          <button className="gtd-add-task-btn" onClick={() => setAddingOpen(true)}>
+            + Add Task
+          </button>
+        </div>
+      </div>
+
+      {addingOpen && (
+        <AddTaskModal
+          tx={transaction}
+          critDateTasks={critDateTasks}
+          assigneeOptions={assigneeOptions}
+          onAdd={handleAdd}
+          onClose={() => setAddingOpen(false)}
+        />
+      )}
+
+      {editingTask && (
+        <TaskEditModal
+          task={editingTask}
+          tx={transaction}
+          critDateTasks={localTasks.filter(t => t.task_type === 'Critical Date' && t.id !== editingTask.id)}
+          assigneeOptions={assigneeOptions}
+          onUpdate={handleUpdate}
+          onClose={() => setEditingTaskId(null)}
+        />
+      )}
+    </div>
   )
 }
 
@@ -3557,6 +3626,7 @@ export default function TransactionDetailPage({
   tcSettings,
   agentName = '',
   agentEmail = '',
+  agentSettings = null,
   onBack,
   onFieldSave,
   onMultiFieldSave,
@@ -3739,6 +3809,8 @@ export default function TransactionDetailPage({
                 onDeleteTaskComment={onDeleteTaskComment}
                 tcSettings={tcSettings}
                 agentName={agentName}
+                agentSettings={agentSettings}
+                onTransactionUpdate={onTransactionUpdate}
                 transactionAddr={fullAddress}
               />
             </div>

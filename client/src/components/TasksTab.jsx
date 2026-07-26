@@ -29,7 +29,7 @@ const STAGE_ORDER = {
 }
 const STATUS_ORDER  = { open: 0, in_progress: 1, complete: 2 }
 const STATUS_LABELS = { open: 'To Do', in_progress: 'In Progress', complete: 'Complete' }
-const STATUS_NEXT   = { open: 'in_progress', in_progress: 'complete', complete: 'open' }
+export const STATUS_NEXT   = { open: 'in_progress', in_progress: 'complete', complete: 'open' }
 const STATUS_STYLE  = {
   open:        { bg: '#f0f0f0', color: '#555555' },
   in_progress: { bg: '#dbeafe', color: '#1d4ed8' },
@@ -68,7 +68,7 @@ const CAT2_TASK_MAP = [
   { match: 'Engineering Cert Ordered',  label: 'Scheduled Date' },
 ]
 
-function getTaskDateConfig(title = '') {
+export function getTaskDateConfig(title = '') {
   const cat1 = CAT1_TASK_MAP.find(m => title.includes(m.match))
   if (cat1) return { category: 1, ...cat1 }
   const cat2 = CAT2_TASK_MAP.find(m => title.includes(m.match))
@@ -77,12 +77,12 @@ function getTaskDateConfig(title = '') {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function formatLocalDate(isoStr) {
+export function formatLocalDate(isoStr) {
   if (!isoStr) return ''
   return new Date(isoStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function dueDateLabel(dateStr, isDone, completedAt) {
+export function dueDateLabel(dateStr, isDone, completedAt) {
   if (isDone) return { text: completedAt ? formatLocalDate(completedAt) : '—', cls: 'done' }
   if (!dateStr) return { text: '—', cls: '' }
   const today = new Date(); today.setHours(0,0,0,0)
@@ -157,7 +157,7 @@ const VENDOR_TASK_KEYWORDS = [
   { keyword: 'Home Inspection',   vendorType: 'Home Inspector' },
 ]
 
-function getVendorTypeForTask(title) {
+export function getVendorTypeForTask(title) {
   const t = (title || '').toLowerCase()
   for (const m of VENDOR_TASK_KEYWORDS) {
     if (t.includes(m.keyword.toLowerCase())) return m.vendorType
@@ -410,7 +410,7 @@ function VendorFormModal({ vendor, tx, task, tcSettings, agentName = '', agentSe
 }
 
 // ─── Sub-components for grouped view ─────────────────────────────────────────
-function CriticalDateRow({ task, onDelete, flatAddr }) {
+export function CriticalDateRow({ task, onDelete, flatAddr }) {
   const ddl = dueDateLabel(task.due_date, false, null)
   return (
     <div className={`gtd-cd-row${flatAddr != null ? ' gtd-cd-row--flat' : ''}`}>
@@ -638,7 +638,7 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, agentName = '
   )
 }
 
-function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [], agentName = '', agentSettings = null, emailTemplateMap = {}, isEven = false, txAddress = null }) {
+export function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [], agentName = '', agentSettings = null, emailTemplateMap = {}, isEven = false, txAddress = null }) {
   const assigneeOptions = getAssigneeOptions(tcSettings, agentName)
   const done      = task.status === 'complete'
   const statusKey = task.status || 'open'
@@ -903,7 +903,7 @@ function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, b
 
 const TASK_TYPE_OPTIONS = ['Task', 'Email', 'Notification', 'Critical Date']
 
-function TaskEditModal({ task, tx, critDateTasks = [], assigneeOptions = [], onUpdate, onClose }) {
+export function TaskEditModal({ task, tx, critDateTasks = [], assigneeOptions = [], onUpdate, onClose }) {
   const [title,      setTitle]      = useState(task.title || '')
   const [taskType,   setTaskType]   = useState(task.task_type || 'Task')
   const [dueDate,    setDueDate]    = useState(task.due_date || '')
@@ -992,7 +992,7 @@ function TaskEditModal({ task, tx, critDateTasks = [], assigneeOptions = [], onU
   )
 }
 
-function AddTaskModal({ tx, critDateTasks = [], assigneeOptions = [], onAdd, onClose }) {
+export function AddTaskModal({ tx, critDateTasks = [], assigneeOptions = [], onAdd, onClose }) {
   const [title,      setTitle]      = useState('')
   const [taskType,   setTaskType]   = useState('Task')
   const [dueDate,    setDueDate]    = useState('')

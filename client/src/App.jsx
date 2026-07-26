@@ -431,7 +431,17 @@ export default function App() {
         if (!builtTasks.length) return
 
         const uid = await getUserId()
-        const toInsert = builtTasks.map(t => ({ ...t, transaction_id: transactionId, user_id: uid }))
+        // Strip the internal _template_task_id mapping field — it's not a real
+        // tasks column and the insert rejects it. resolves_critical_date holds a
+        // template_task id at build time; null it for now since post-insert
+        // resolution (template_task id → real task id) isn't wired on this intake
+        // path yet — see the manual apply-template path (~L686) for the pattern.
+        const toInsert = builtTasks.map(({ _template_task_id, ...t }) => ({
+          ...t,
+          resolves_critical_date: null,
+          transaction_id: transactionId,
+          user_id: uid,
+        }))
         const { data: inserted, error } = await supabase.from('tasks').insert(toInsert).select()
         if (error) {
           console.warn('Could not insert template tasks:', error.message)

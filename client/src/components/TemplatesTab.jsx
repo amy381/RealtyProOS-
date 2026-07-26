@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Plus, Pencil } from 'lucide-react'
+import { Plus, Pencil, Copy } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -62,6 +62,17 @@ const TIMING_OPTIONS = [
 ]
 
 const TASK_TYPES = ['Task', 'Email', 'Notification', 'Critical Date']
+
+// Stage dropdown for the create-template modal. Values are exactly the
+// task_templates_stage_check constraint set — no free text, so no CHECK errors.
+const TEMPLATE_STAGE_OPTIONS = [
+  { value: 'pre-listing',       label: 'Pre-Listing' },
+  { value: 'active-listing',    label: 'Active Listing' },
+  { value: 'pending',           label: 'Pending' },
+  { value: 'closed',            label: 'Closed' },
+  { value: 'cancelled-expired', label: 'Cancelled/Expired' },
+  { value: 'buyer-broker',      label: 'Buyer-Broker' },
+]
 const APPLIES_TO = ['Buyer', 'Seller', 'Both']
 
 function formatTiming(timingType, timingDays) {
@@ -552,6 +563,12 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   const [renamingId,         setRenamingId]         = useState(null)
   const [renameValue,        setRenameValue]        = useState('')
 
+  // Create-template modal (replaces the old window.prompt flow)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [createForm, setCreateForm] = useState({
+    name: '', stage: 'pre-listing', rep_type: 'Seller', property_type: 'Residential',
+  })
+
   // ── Task template export
   const [exportOpen, setExportOpen] = useState(false)
   const exportRef = useRef(null)
@@ -780,21 +797,104 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     } finally { setBulkSaving(false) }
   }
 
-  const handleCreateTemplate = async () => {
-    const name = window.prompt('Template name:')
-    if (!name?.trim()) return
-    const stage = window.prompt('Stage (pending, closed, pre-listing, active-listing, buyer-broker):')
-    if (!stage?.trim()) return
-    const repTypeRaw = window.prompt('Rep type — enter Buyer, Seller, or leave blank for Both:')
-    const repType = repTypeRaw?.trim() || null
+  // Open the create-template modal with a fresh (constraint-valid) form.
+  const handleCreateTemplate = () => {
+    setCreateForm({ name: '', stage: 'pre-listing', rep_type: 'Seller', property_type: 'Residential' })
+    setCreateOpen(true)
+  }
+
+  const submitCreateTemplate = async () => {
+    const name = createForm.name.trim()
+    if (!name) return
     const uid = await getUserId()
     const { data, error } = await supabase
       .from('task_templates')
-      .insert({ name: name.trim(), stage: stage.trim(), rep_type: repType, sort_order: templates.length + 1, user_id: uid })
+      .insert({
+        name,
+        stage:         createForm.stage,
+        rep_type:      createForm.rep_type,
+        property_type: createForm.property_type,
+        sort_order:    templates.length + 1,
+        user_id:       uid,
+      })
       .select().single()
     if (error) { alert('Failed to create template: ' + error.message); return }
+    setCreateOpen(false)
     await onRefresh()
     setSelectedTemplateId(data.id)
+  }
+
+  // Duplicate a template + all its tasks, remapping resolves_critical_date links
+  // (which point at other template_tasks) to the newly-copied task ids.
+  const handleDuplicateTemplate = async (tpl) => {
+    const uid = await getUserId()
+
+    // 1. Copy the template row
+    const { data: newTpl, error: tplErr } = await supabase
+      .from('task_templates')
+      .insert({
+        name:          `${tpl.name} (Copy)`,
+        stage:         tpl.stage,
+        rep_type:      tpl.rep_type,
+        property_type: tpl.property_type,
+        sort_order:    templates.length + 1,
+        user_id:       uid,
+      })
+      .select().single()
+    if (tplErr) { alert('Failed to duplicate template: ' + tplErr.message); return }
+
+    // 2. Fetch the source template's tasks fresh (all columns), copy them into
+    //    the new template. resolves_critical_date is nulled here and remapped in
+    //    step 3 once we know the new task ids.
+    const { data: srcTasks } = await supabase
+      .from('template_tasks')
+      .select('*')
+      .eq('template_id', tpl.id)
+      .order('sort_order', { ascending: true })
+
+    if (srcTasks && srcTasks.length) {
+      const toInsert = srcTasks.map(t => ({
+        template_id:            newTpl.id,
+        title:                  t.title,
+        task_type:              t.task_type,
+        timing_type:            t.timing_type,
+        timing_days:            t.timing_days,
+        applies_to:             t.applies_to,
+        auto_assign_to:         t.auto_assign_to,
+        has_progress_tracking:  t.has_progress_tracking,
+        email_template_id:      t.email_template_id,
+        condition:              t.condition,
+        sort_order:             t.sort_order,
+        resolves_critical_date: null,
+        user_id:                uid,
+      }))
+      const { data: inserted, error: taskErr } = await supabase
+        .from('template_tasks').insert(toInsert).select()
+      if (taskErr) {
+        alert('Template copied but tasks failed: ' + taskErr.message)
+        await onRefresh(); setSelectedTemplateId(newTpl.id); return
+      }
+
+      // 3. Remap resolves_critical_date: old task id → new task id. inserted[i]
+      //    corresponds to srcTasks[i] (same order as toInsert was built).
+      if (inserted) {
+        const idMap = {}
+        srcTasks.forEach((t, i) => { idMap[t.id] = inserted[i].id })
+        const linkUpdates = srcTasks
+          .map((t, i) => ({ src: t, newId: inserted[i].id }))
+          .filter(({ src }) => src.resolves_critical_date && idMap[src.resolves_critical_date])
+        if (linkUpdates.length) {
+          await Promise.all(linkUpdates.map(({ src, newId }) =>
+            supabase.from('template_tasks')
+              .update({ resolves_critical_date: idMap[src.resolves_critical_date] })
+              .eq('id', newId)))
+        }
+      }
+    }
+
+    // 4. Refresh + select the duplicate
+    await onRefresh()
+    setSelectedTemplateId(newTpl.id)
   }
 
   const handleDeleteTemplate = async (id) => {
@@ -1413,6 +1513,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                       {' · '}{taskRows.length} task{taskRows.length !== 1 ? 's' : ''}
                     </div>
                     <button className="tt-tpl-edit-btn" onClick={() => startRename(selectedTemplate)} title="Rename template"><Pencil size={16} /></button>
+                    <button className="tt-tpl-edit-btn" onClick={() => handleDuplicateTemplate(selectedTemplate)} title="Duplicate template"><Copy size={16} /></button>
                     <button className="tt-tpl-delete-btn" onClick={() => handleDeleteTemplate(selectedTemplate.id)} title="Delete template">✕ Delete</button>
                   </div>
                 </div>
@@ -1665,6 +1766,67 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                 disabled={saving || !editingTask.title?.trim()}
               >
                 {saving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Create Template modal (replaces window.prompt) ─────────────── */}
+      {createOpen && (
+        <div
+          className="tt-modal-overlay"
+          onMouseDown={e => { if (e.target === e.currentTarget) setCreateOpen(false) }}
+        >
+          <div className="tt-modal">
+            <div className="tt-modal-header">
+              <h3>New Template</h3>
+              <button className="tt-modal-close" onClick={() => setCreateOpen(false)}>✕</button>
+            </div>
+            <div className="tt-modal-body">
+              <label className="tt-modal-label">Name</label>
+              <input
+                className="tt-modal-input"
+                value={createForm.name}
+                onChange={e => setCreateForm(p => ({ ...p, name: e.target.value }))}
+                placeholder="Template name"
+                autoFocus
+              />
+              <label className="tt-modal-label">Stage</label>
+              <select
+                className="tt-modal-select"
+                value={createForm.stage}
+                onChange={e => setCreateForm(p => ({ ...p, stage: e.target.value }))}
+              >
+                {TEMPLATE_STAGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <label className="tt-modal-label">Rep Type</label>
+              <select
+                className="tt-modal-select"
+                value={createForm.rep_type}
+                onChange={e => setCreateForm(p => ({ ...p, rep_type: e.target.value }))}
+              >
+                <option value="Buyer">Buyer</option>
+                <option value="Seller">Seller</option>
+              </select>
+              <label className="tt-modal-label">Property Type</label>
+              <select
+                className="tt-modal-select"
+                value={createForm.property_type}
+                onChange={e => setCreateForm(p => ({ ...p, property_type: e.target.value }))}
+              >
+                <option value="Residential">Residential</option>
+                <option value="Vacant Land">Vacant Land</option>
+              </select>
+            </div>
+            <div className="tt-modal-actions">
+              <button className="tt-modal-cancel" onClick={() => setCreateOpen(false)}>Cancel</button>
+              <button
+                className="tt-modal-save"
+                onClick={submitCreateTemplate}
+                disabled={!createForm.name.trim()}
+              >
+                Create
               </button>
             </div>
           </div>

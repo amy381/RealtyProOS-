@@ -394,6 +394,13 @@ export default function App() {
 
   // ── Template task insertion helper ──────────────────────────────────────────
   const insertTemplateTasks = async (transactionId, status, repType, transaction) => {
+    // TEMP DEBUG: trace every exit path to diagnose intake auto-apply. Remove
+    // once the early-return cause is found.
+    console.debug('[apply] start', {
+      transactionId, status, repType,
+      property_type: transaction?.property_type,
+      dbTemplatesLen: dbTemplates.length,
+    })
     // Prefer DB templates when available
     if (dbTemplates.length > 0) {
       const tpl = dbTemplates.find(t =>
@@ -402,10 +409,11 @@ export default function App() {
         (t.property_type === transaction.property_type || t.property_type === null)
       )
       if (tpl) {
+        console.debug('[apply] matched template', tpl?.id, tpl?.name)
         const alreadyHas = tasks.some(
           t => t.transaction_id === transactionId && t.template_key === tpl.id
         )
-        if (alreadyHas) return
+        if (alreadyHas) { console.debug('[apply] already has tasks, skipping'); return }
 
         // Conditional tasks carry a `condition` (e.g. 'septic'); include one only
         // when its mapped transaction feature flag is checked. Unconditional
@@ -419,6 +427,7 @@ export default function App() {
             return field ? transaction[field] === true : false
           })
         const builtTasks  = buildTemplateTasksFromDB(tplTaskRows, transaction, agentSettings?.realtor_name || '')
+        console.debug('[apply] built tasks count', builtTasks.length)
         if (!builtTasks.length) return
 
         const uid = await getUserId()
@@ -429,14 +438,19 @@ export default function App() {
           return
         }
         if (inserted) {
+          console.debug('[apply] inserted', inserted?.length)
           setTasks(prev => [...prev, ...inserted])
           toast.success(`${inserted.length} tasks added`, { duration: 2000 })
         }
         return
       }
+      console.debug('[apply] NO template matched', {
+        status, repType, propertyType: transaction?.property_type,
+      })
     }
 
     // Fallback: hardcoded templates
+    console.debug('[apply] fell through to hardcoded fallback')
     const templateKey = getTemplateKey(status, repType)
     const alreadyHas = tasks.some(
       t => t.transaction_id === transactionId && t.template_key === templateKey

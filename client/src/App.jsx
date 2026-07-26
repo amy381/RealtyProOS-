@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
 import { supabase, getUserId } from './lib/supabase'
 import { syncDriveFolder } from './lib/googleDrive'
-import { buildTemplateTasks, buildTemplateTasksFromDB, getTemplateKey } from './lib/taskTemplates'
+import { buildTemplateTasksFromDB } from './lib/taskTemplates'
 import { sendMentionNotifications, parseMentions } from './lib/emailNotify'
 import KanbanBoard from './components/KanbanBoard'
 import ListView from './components/ListView'
@@ -385,15 +385,14 @@ export default function App() {
 
   // ── Auto-apply matching template at intake ──────────────────────────────────────────
   const insertTemplateTasks = async (transactionId, status, repType, transaction) => {
-    if (!dbTemplates.length) { console.debug('[apply] no dbTemplates loaded'); return }
+    if (!dbTemplates.length) return
 
     const tpl = dbTemplates.find(t =>
       t.stage === status &&
       (t.rep_type === repType || t.rep_type === null || t.rep_type === 'Both') &&
       (t.property_type === transaction.property_type || t.property_type === null)
     )
-    if (!tpl) { console.debug('[apply] no template matched', { status, repType, property_type: transaction.property_type }); return }
-    console.debug('[apply] matched template', tpl.id, tpl.name)
+    if (!tpl) return
 
     // Filter template tasks: keep unconditioned OR whose feature flag is checked on the transaction
     const tplTaskRows = dbTemplateTasks.filter(t => {
@@ -402,10 +401,9 @@ export default function App() {
       const field = CONDITION_FIELD_MAP[t.condition]
       return field ? transaction[field] === true : true
     })
-    console.debug('[apply] task rows after condition filter', tplTaskRows.length)
 
     const builtTasks = buildTemplateTasksFromDB(tplTaskRows, transaction, agentSettings?.realtor_name || '')
-    if (!builtTasks.length) { console.debug('[apply] built 0 tasks'); return }
+    if (!builtTasks.length) return
 
     const uid = await getUserId()
     const toInsert = builtTasks.map(({ _template_task_id, resolves_critical_date, ...rest }) => ({
@@ -413,7 +411,6 @@ export default function App() {
     }))
     const { data: inserted, error } = await supabase.from('tasks').insert(toInsert).select()
     if (error) { console.warn('[apply] insert error:', error.message); toast.error('Could not add template tasks'); return }
-    console.debug('[apply] inserted', inserted?.length)
 
     if (inserted) {
       // Resolve critical-date links (template_task id → actual task id)

@@ -39,25 +39,13 @@ export function calcDueDate(timingType, timingDays, tx) {
   }
 }
 
-// Resolve a template's role-based auto_assign_to into a real person name.
-//   'Agent' → the agent's realtor_name (agentName)
-//   'TC'    → this transaction's assigned_tc
-//   anything else (a literal person name, incl. legacy 'Me') → passed through
-// A role that resolves to nothing yields '' (never the literal 'Agent'/'TC'),
-// and is logged so unassigned template tasks are visible.
+// Task assignees are stored as ROLES, not resolved person names. 'TC' and
+// 'Agent' pass through UNCHANGED so generated tasks read 'TC'/'Agent' — matching
+// hand-added tasks and the converted historical data. Any other legacy literal
+// (incl. a person name or 'Me') also passes through; null/empty → ''.
+// (transaction and agentName are kept for signature compatibility with the
+// caller but are no longer used for name resolution.)
 export function resolveAutoAssign(autoAssignTo, transaction, agentName) {
-  if (autoAssignTo === 'Agent') {
-    const name = (agentName || '').trim()
-    if (!name) console.warn('[template] auto_assign_to "Agent" resolved to nothing — no agent realtor_name; leaving task unassigned')
-    return name
-  }
-  if (autoAssignTo === 'TC') {
-    const name = (transaction?.assigned_tc || '').trim()
-    if (!name) console.warn('[template] auto_assign_to "TC" resolved to nothing — transaction has no assigned_tc; leaving task unassigned')
-    return name
-  }
-  // Legacy literal person name (incl. 'Me') — pass through unchanged so nothing
-  // breaks before Amy runs the data migration.
   return autoAssignTo || ''
 }
 

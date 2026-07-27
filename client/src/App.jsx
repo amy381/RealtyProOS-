@@ -71,6 +71,7 @@ export default function App() {
   const [dbTemplateTasks,  setDbTemplateTasks]  = useState([])
   const [taskComments,     setTaskComments]     = useState([])
   const [backMoveModal,    setBackMoveModal]    = useState(null)
+  const [fwdMoveModal,     setFwdMoveModal]     = useState(null)
   const [loading, setLoading]                   = useState(true)
   const [newTxOpen, setNewTxOpen]               = useState(false)
   const [newTxPrefill, setNewTxPrefill]         = useState(null)
@@ -341,14 +342,31 @@ export default function App() {
       await supabase.from('showings').delete().eq('transaction_id', transactionId)
     }
 
-    // Backward stage move: offer to remove incomplete tasks
+    // Stage move → offer to apply (forward) or remove (backward) that stage's
+    // template tasks. transaction.status here is still the OLD stage.
     if (transaction) {
       const oldIdx = STAGE_ORDER.indexOf(transaction.status)
       const newIdx = STAGE_ORDER.indexOf(newStatus)
+
+      // Backward: offer to remove ONLY the LEFT stage's template tasks (guarded
+      // on there actually being some to remove).
       if (oldIdx > 0 && newIdx >= 0 && newIdx < oldIdx) {
-        const incompleteTasks = tasks.filter(t => t.transaction_id === transactionId && t.status === 'open')
-        if (incompleteTasks.length > 0) {
-          setBackMoveModal({ transactionId, oldStage: transaction.status, newStage: newStatus })
+        const leftMatch = matchStageTemplate(transaction, transaction.status)
+        const hasLeftStageTasks = leftMatch &&
+          tasks.some(t => t.transaction_id === transactionId && t.template_key === leftMatch.tpl.id)
+        if (hasLeftStageTasks) {
+          setBackMoveModal({ transactionId, oldStage: transaction.status, newStage: newStatus, transaction })
+        }
+      }
+
+      // Forward: offer to apply the NEW stage's template — only when it matches,
+      // would add ≥1 task, and hasn't already fired for this transaction.
+      else if (oldIdx >= 0 && newIdx > oldIdx) {
+        const fwdMatch = matchStageTemplate(transaction, newStatus)
+        const alreadyApplied = fwdMatch &&
+          tasks.some(t => t.transaction_id === transactionId && t.template_key === fwdMatch.tpl.id)
+        if (fwdMatch && fwdMatch.taskRows.length > 0 && !alreadyApplied) {
+          setFwdMoveModal({ transactionId, newStage: newStatus, transaction, taskCount: fwdMatch.taskRows.length })
         }
       }
     }
@@ -383,26 +401,36 @@ export default function App() {
     financing: 'has_financing', lockbox: 'has_lockbox',
   }
 
-  // ── Auto-apply matching template at intake ──────────────────────────────────────────
-  const insertTemplateTasks = async (transactionId, status, repType, transaction) => {
-    if (!dbTemplates.length) return
-
+  // Find the template matching a transaction for a given stage, plus the tasks
+  // it would add (condition-filtered). Single source of match logic — shared by
+  // intake auto-apply, forward-move apply, and backward-move delete.
+  const matchStageTemplate = (transaction, stage) => {
+    if (!dbTemplates.length) return null
     const tpl = dbTemplates.find(t =>
-      t.stage === status &&
-      (t.rep_type === repType || t.rep_type === null || t.rep_type === 'Both') &&
+      t.stage === stage &&
+      (t.rep_type === transaction.rep_type || t.rep_type === null || t.rep_type === 'Both') &&
       (t.property_type === transaction.property_type || t.property_type === null)
     )
-    if (!tpl) return
-
-    // Filter template tasks: keep unconditioned OR whose feature flag is checked on the transaction
-    const tplTaskRows = dbTemplateTasks.filter(t => {
+    if (!tpl) return null
+    const taskRows = dbTemplateTasks.filter(t => {
       if (t.template_id !== tpl.id) return false
       if (!t.condition) return true
       const field = CONDITION_FIELD_MAP[t.condition]
       return field ? transaction[field] === true : true
     })
+    return { tpl, taskRows }
+  }
 
-    const builtTasks = buildTemplateTasksFromDB(tplTaskRows, transaction, agentSettings?.realtor_name || '')
+  // ── Apply a stage's matching template (intake + forward stage move) ──────────
+  const insertTemplateTasks = async (transactionId, status, repType, transaction) => {
+    const match = matchStageTemplate(transaction, status)
+    if (!match) return
+    const { tpl, taskRows } = match
+
+    // Idempotent: never re-add a stage's template if it already fired for this tx.
+    if (tasks.some(t => t.transaction_id === transactionId && t.template_key === tpl.id)) return
+
+    const builtTasks = buildTemplateTasksFromDB(taskRows, transaction, agentSettings?.realtor_name || '')
     if (!builtTasks.length) return
 
     const uid = await getUserId()
@@ -679,14 +707,31 @@ export default function App() {
   }, [dbTemplateTasks, agentSettings])
 
   // ── Backward move — remove incomplete tasks ──────────────────────────────────
+  // Delete only the LEFT stage's template tasks (both complete + incomplete),
+  // scoped by template_key. Hand-typed tasks (null key) and other stages'
+  // template tasks (e.g. listing/pre-listing) are kept.
   const handleBackMoveYes = useCallback(async () => {
     if (!backMoveModal) return
-    const { transactionId } = backMoveModal
-    const toDelete = tasks.filter(t => t.transaction_id === transactionId && t.status === 'open')
-    setTasks(prev => prev.filter(t => !(t.transaction_id === transactionId && t.status === 'open')))
+    const { transactionId, oldStage, transaction } = backMoveModal
+    const match = matchStageTemplate(transaction, oldStage)
+    if (!match) { setBackMoveModal(null); return }
+    const templateId = match.tpl.id
+    const scoped = t => t.transaction_id === transactionId && t.template_key === templateId
+    const toDelete = tasks.filter(scoped)
+    setTasks(prev => prev.filter(t => !scoped(t)))
     await Promise.all(toDelete.map(t => supabase.from('tasks').delete().eq('id', t.id)))
     setBackMoveModal(null)
-  }, [backMoveModal, tasks])
+  }, [backMoveModal, tasks, dbTemplates, dbTemplateTasks])
+
+  // Forward stage move confirmed: apply the new stage's template. insertTemplateTasks
+  // matches by property_type, filters conditions, resolves critical dates, and is
+  // idempotent per template_key (won't double-add).
+  const handleFwdMoveYes = async () => {
+    if (!fwdMoveModal) return
+    const { transactionId, newStage, transaction } = fwdMoveModal
+    await insertTemplateTasks(transactionId, newStage, transaction.rep_type, transaction)
+    setFwdMoveModal(null)
+  }
 
   // ── Templates refresh ───────────────────────────────────────────────────────
   const handleTemplatesRefresh = useCallback(async () => {
@@ -1097,13 +1142,31 @@ export default function App() {
             <div className="back-move-title">Stage Moving Back</div>
             <div className="back-move-body">
               This transaction is moving back to <strong>{stageName(backMoveModal.newStage)}</strong>.
-              Would you like to remove incomplete {stageName(backMoveModal.oldStage)} tasks?
+              Would you like to remove {stageName(backMoveModal.oldStage)} tasks?
               <br /><br />
-              Completed tasks will always be kept.
+              Only that stage's template tasks are removed; hand-added and other stages' tasks are kept.
             </div>
             <div className="back-move-actions">
               <button className="back-move-no"  onClick={() => setBackMoveModal(null)}>No, keep them</button>
               <button className="back-move-yes" onClick={handleBackMoveYes}>Yes, remove them</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {fwdMoveModal && (
+        <div className="back-move-overlay">
+          <div className="back-move-modal">
+            <div className="back-move-title">Stage Moved Forward</div>
+            <div className="back-move-body">
+              This transaction moved to <strong>{stageName(fwdMoveModal.newStage)}</strong>.
+              Apply the {stageName(fwdMoveModal.newStage)} template?
+              <br /><br />
+              Adds {fwdMoveModal.taskCount} task{fwdMoveModal.taskCount !== 1 ? 's' : ''}.
+            </div>
+            <div className="back-move-actions">
+              <button className="back-move-no"  onClick={() => setFwdMoveModal(null)}>No</button>
+              <button className="back-move-yes" onClick={handleFwdMoveYes}>Yes, add them</button>
             </div>
           </div>
         </div>

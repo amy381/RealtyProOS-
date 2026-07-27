@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase, getUserId } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
@@ -857,7 +858,8 @@ export function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpen
           onClick={e => e.stopPropagation()}
         >
           <option value="">— unassigned —</option>
-          {assigneeOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          <option value="TC">TC</option>
+          <option value="Agent">Agent</option>
         </select>
       ) : (
         <span
@@ -907,7 +909,7 @@ export function TaskEditModal({ task, tx, critDateTasks = [], assigneeOptions = 
   const [title,      setTitle]      = useState(task.title || '')
   const [taskType,   setTaskType]   = useState(task.task_type || 'Task')
   const [dueDate,    setDueDate]    = useState(task.due_date || '')
-  const [assigned,   setAssigned]   = useState(task.assigned_to || 'Me')
+  const [assigned,   setAssigned]   = useState(task.assigned_to || 'TC')
   const [status,     setStatus]     = useState(task.status || 'open')
   const [resolvesCd, setResolvesCd] = useState(!!task.resolves_critical_date)
   const [cdKey,      setCdKey]      = useState(task.resolves_critical_date || '')
@@ -927,7 +929,11 @@ export function TaskEditModal({ task, tx, critDateTasks = [], assigneeOptions = 
     onClose()
   }
 
-  return (
+  // Portal to <body> so the fixed overlay escapes the transaction detail page's
+  // backdrop-filter panels (which create a containing block that would clip a
+  // position:fixed child). Harmless on the global page — still centers via
+  // position:fixed; inset:0.
+  return createPortal(
     <div className="gtd-edit-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="gtd-edit-modal">
         <div className="gtd-edit-header">
@@ -956,7 +962,13 @@ export function TaskEditModal({ task, tx, critDateTasks = [], assigneeOptions = 
             <label className="gtd-edit-field">
               <span className="gtd-edit-label">Assigned To</span>
               <select className="gtd-edit-input" value={assigned} onChange={e => setAssigned(e.target.value)}>
-                {assigneeOptions.map(a => <option key={a} value={a}>{a}</option>)}
+                <option value="TC">TC</option>
+                <option value="Agent">Agent</option>
+                {/* Preserve a legacy/real-name assignee so editing an older task
+                    doesn't silently rewrite it — shown disabled, not re-selectable. */}
+                {assigned && !['TC', 'Agent'].includes(assigned) && (
+                  <option value={assigned} disabled>{assigned} (current)</option>
+                )}
               </select>
             </label>
             <label className="gtd-edit-field">
@@ -988,7 +1000,8 @@ export function TaskEditModal({ task, tx, critDateTasks = [], assigneeOptions = 
           <button className="gtd-edit-save" onClick={handleSave}>Save</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -996,7 +1009,7 @@ export function AddTaskModal({ tx, critDateTasks = [], assigneeOptions = [], onA
   const [title,      setTitle]      = useState('')
   const [taskType,   setTaskType]   = useState('Task')
   const [dueDate,    setDueDate]    = useState('')
-  const [assigned,   setAssigned]   = useState('Me')
+  const [assigned,   setAssigned]   = useState('TC')
   const [resolvesCd, setResolvesCd] = useState(false)
   const [cdKey,      setCdKey]      = useState('')
   const inputRef = useRef(null)
@@ -1017,7 +1030,9 @@ export function AddTaskModal({ tx, critDateTasks = [], assigneeOptions = [], onA
     onClose()
   }
 
-  return (
+  // Portal to <body> — see TaskEditModal: escapes the transaction page's
+  // backdrop-filter containing block so the overlay isn't clipped.
+  return createPortal(
     <div className="gtd-edit-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="gtd-edit-modal">
         <div className="gtd-edit-header">
@@ -1046,7 +1061,8 @@ export function AddTaskModal({ tx, critDateTasks = [], assigneeOptions = [], onA
             <label className="gtd-edit-field">
               <span className="gtd-edit-label">Assigned To</span>
               <select className="gtd-edit-input" value={assigned} onChange={e => setAssigned(e.target.value)}>
-                {assigneeOptions.map(a => <option key={a} value={a}>{a}</option>)}
+                <option value="TC">TC</option>
+                <option value="Agent">Agent</option>
               </select>
             </label>
           </div>
@@ -1070,7 +1086,8 @@ export function AddTaskModal({ tx, critDateTasks = [], assigneeOptions = [], onA
           <button className="gtd-edit-save" onClick={handleSave} disabled={!title.trim()}>Add Task</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -2229,7 +2246,8 @@ export default function TasksTab({
           <div className="gtd-bulk-actions">
             <select className="gtd-bulk-select" value={bulkAssignTo} onChange={e => setBulkAssignTo(e.target.value)}>
               <option value="">Assigned To…</option>
-              {assigneeOptions.map(a => <option key={a} value={a}>{a}</option>)}
+              <option value="TC">TC</option>
+              <option value="Agent">Agent</option>
             </select>
             <select className="gtd-bulk-select" value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}>
               <option value="">Status…</option>

@@ -694,16 +694,19 @@
 
 .gtd-bulk-select {
   padding: 5px 10px;
-  border: 1px solid #ddd;
+  border: 1px solid rgba(50, 200, 220, 0.3);
   border-radius: 6px;
   font-size: 13px;
   font-family: inherit;
-  color: #333;
-  background: #fff;
+  color: #c8d4e0;
+  /* Solid dark + color-scheme so the native option list / arrow render dark. */
+  background: #1b1e26;
+  color-scheme: dark;
   cursor: pointer;
 }
+.gtd-bulk-select option { background: #1b1e26; color: #c8d4e0; }
 
-.gtd-bulk-select:focus { outline: none; border-color: #111; }
+.gtd-bulk-select:focus { outline: none; border-color: rgba(50, 200, 220, 0.6); }
 
 .gtd-bulk-apply {
   background: #111;
@@ -1501,12 +1504,15 @@
   border: 1px solid rgba(50, 200, 220, 0.3);
   border-radius: 4px;
   padding: 1px 4px;
-  background: rgba(2, 5, 18, 0.6);
+  /* Solid dark + color-scheme so the native option list / arrow render dark. */
+  background: #1b1e26;
+  color-scheme: dark;
   outline: none;
   flex-shrink: 0;
   width: 110px;
   cursor: pointer;
 }
+.gtd-inline-select option { background: #1b1e26; color: #c8d4e0; }
 
 .gtd-inline-due-input {
   font-size: 12px;
@@ -1742,8 +1748,8 @@
 .gtd-edit-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.38);
-  z-index: 700;
+  background: rgba(2, 3, 10, 0.6);
+  z-index: 3000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1751,9 +1757,12 @@
 }
 
 .gtd-edit-modal {
-  background: #fff;
+  background: rgba(30, 32, 36, 0.97);
+  border: 1px solid rgba(168, 191, 204, 0.25);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 12px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.18);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.45);
   width: 100%;
   max-width: 500px;
   display: flex;
@@ -1765,27 +1774,27 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
 }
 
 .gtd-edit-title {
   font-size: 16px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #a8bfcc;
 }
 
 .gtd-edit-close {
   background: none;
   border: none;
   font-size: 16px;
-  color: #aaa;
+  color: rgba(168, 191, 204, 0.6);
   cursor: pointer;
   padding: 2px 6px;
   border-radius: 4px;
   font-family: inherit;
   transition: color 0.1s, background 0.1s;
 }
-.gtd-edit-close:hover { color: #333; background: #f0f0f0; }
+.gtd-edit-close:hover { color: #c8d4e0; background: rgba(255, 255, 255, 0.08); }
 
 .gtd-edit-body {
   padding: 16px 20px;
@@ -1809,34 +1818,40 @@
 .gtd-edit-label {
   font-size: 11px;
   font-weight: 600;
-  color: #999;
+  color: rgba(168, 191, 204, 0.6);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
 .gtd-edit-input {
-  border: 1.5px solid #e0e0e0;
+  border: 0.5px solid rgba(50, 200, 220, 0.25);
   border-radius: 6px;
   font-size: 14px;
   font-family: inherit;
   padding: 7px 10px;
-  color: #1a1a1a;
-  background: #fafafa;
+  color: #c8d4e0;
+  /* Solid dark — native <select> and <input type=date> ignore translucent
+     backgrounds and render white; color-scheme:dark makes the native dropdown
+     arrow, option list, and date picker render dark too. */
+  background: #1b1e26;
+  color-scheme: dark;
   outline: none;
-  transition: border-color 0.12s;
+  transition: border-color 0.12s, background 0.12s;
   width: 100%;
   box-sizing: border-box;
 }
-.gtd-edit-input:focus { border-color: #1a1a1a; background: #fff; }
+.gtd-edit-input::placeholder { color: rgba(168, 191, 204, 0.4); }
+.gtd-edit-input option { background: #1b1e26; color: #c8d4e0; }
+.gtd-edit-input:focus { border-color: rgba(50, 200, 220, 0.5); background: #22252e; }
 
 .gtd-edit-cd-section {
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 12px;
-  background: #f8f8f8;
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 8px;
-  border: 1px solid #ebebeb;
+  border: 0.5px solid rgba(50, 200, 220, 0.15);
 }
 
 .gtd-edit-cd-toggle {
@@ -1846,9 +1861,9 @@
   cursor: pointer;
   user-select: none;
   font-size: 14px;
-  color: #333;
+  color: #a8bfcc;
 }
-.gtd-edit-cd-toggle input { accent-color: #1a1a1a; cursor: pointer; }
+.gtd-edit-cd-toggle input { accent-color: #50C8DC; cursor: pointer; }
 
 .gtd-edit-cd-select { margin-top: 2px; }
 
@@ -1857,14 +1872,14 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px 16px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 0.5px solid rgba(50, 200, 220, 0.2);
 }
 
 .gtd-edit-cancel {
   background: none;
-  border: 1.5px solid #e0e0e0;
+  border: 0.5px solid rgba(168, 191, 204, 0.3);
   border-radius: 6px;
-  color: #666;
+  color: rgba(168, 191, 204, 0.7);
   font-size: 14px;
   font-weight: 500;
   font-family: inherit;
@@ -1872,13 +1887,13 @@
   cursor: pointer;
   transition: border-color 0.1s, color 0.1s;
 }
-.gtd-edit-cancel:hover { border-color: #aaa; color: #333; }
+.gtd-edit-cancel:hover { border-color: rgba(168, 191, 204, 0.5); color: #c8d4e0; }
 
 .gtd-edit-save {
-  background: #1a1a1a;
+  background: #50C8DC;
   border: none;
   border-radius: 6px;
-  color: #fff;
+  color: #02030a;
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
@@ -1886,7 +1901,8 @@
   cursor: pointer;
   transition: background 0.1s;
 }
-.gtd-edit-save:hover { background: #333; }
+.gtd-edit-save:hover { background: #6fd6e6; }
+.gtd-edit-save:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ── Action column (vendor dropdown + context-sensitive action button only) ── */
 .gtd-grow-action-col {

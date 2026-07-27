@@ -14,6 +14,10 @@ import * as pdfjsLib from 'pdfjs-dist'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import './LegacyPDF.css'
 
+// Images → PDF builder (download-only). Self-contained; see ImagePdfBuilder below.
+import { generateLegacyPdf } from '../lib/legacyPdf'
+import './LegacyPdfImages.css'
+
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl
 
 // ── id helpers (module-level counters, stable within a session) ───────────────
@@ -435,6 +439,9 @@ export default function LegacyPDF() {
         </div>
       </div>
 
+      {/* Images → PDF — self-contained, download-only (see ImagePdfBuilder) */}
+      <ImagePdfBuilder />
+
       {!hasDoc ? (
         // ── Empty state / drop zone ──
         <div
@@ -521,6 +528,153 @@ export default function LegacyPDF() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Images → PDF builder — fully self-contained, 100% client-side, download-only.
+// Add PNG/JPG via picker, drag-drop, or clipboard paste; choose 1- or 2-per-page;
+// Generate downloads a Letter-portrait PDF. No network, no storage. Independent
+// of everything above (including the other, separate unfinished PDF work).
+// ─────────────────────────────────────────────────────────────────────────────
+function ImagePdfBuilder() {
+  const [images, setImages]   = useState([])          // [{ id, dataUrl, w, h, format, name }]
+  const [perPage, setPerPage] = useState(1)           // 1 | 2
+  const [dragging, setDragging] = useState(false)
+  const idRef   = useRef(0)
+  const fileRef = useRef(null)
+  const zoneRef = useRef(null)
+
+  // Read a File/Blob into { dataUrl, w, h, format } (intrinsic dims for aspect fit).
+  const readImage = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = reject
+    reader.onload = () => {
+      const dataUrl = reader.result
+      const im = new Image()
+      im.onerror = reject
+      im.onload = () => resolve({
+        dataUrl,
+        w: im.naturalWidth,
+        h: im.naturalHeight,
+        format: file.type === 'image/png' ? 'PNG' : 'JPEG',
+        name: file.name || 'pasted-image',
+      })
+      im.src = dataUrl
+    }
+    reader.readAsDataURL(file)
+  })
+
+  const addFiles = async (fileList) => {
+    const files = Array.from(fileList).filter(f =>
+      f.type === 'image/png' || f.type === 'image/jpeg' || /\.(png|jpe?g)$/i.test(f.name || ''))
+    if (!files.length) { toast.error('Add PNG or JPG images'); return }
+    try {
+      const loaded = await Promise.all(files.map(readImage))
+      setImages(prev => [...prev, ...loaded.map(x => ({ id: `img_${++idRef.current}`, ...x }))])
+    } catch {
+      toast.error("Couldn't read that image")
+    }
+  }
+
+  const onFileInput = (e) => {
+    if (e.target.files?.length) addFiles(e.target.files)
+    e.target.value = ''
+  }
+
+  const onDrop = (e) => {
+    e.preventDefault()
+    setDragging(false)
+    if (e.dataTransfer?.files?.length) addFiles(e.dataTransfer.files)
+  }
+
+  const onPaste = (e) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+    const blobs = []
+    for (const it of items) {
+      if (it.type.startsWith('image/')) { const f = it.getAsFile(); if (f) blobs.push(f) }
+    }
+    if (blobs.length) { e.preventDefault(); addFiles(blobs) }
+  }
+
+  // Also catch a screenshot paste anywhere on this screen (unless the user is
+  // typing in a field). Lets Cmd+V work without first clicking the drop zone.
+  useEffect(() => {
+    const handler = (e) => {
+      const ae = document.activeElement
+      const typing = ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)
+      if (typing) return
+      const items = e.clipboardData?.items
+      if (!items) return
+      const hasImage = Array.from(items).some(it => it.type.startsWith('image/'))
+      if (hasImage) onPaste(e)
+    }
+    document.addEventListener('paste', handler)
+    return () => document.removeEventListener('paste', handler)
+  }, [])
+
+  const removeImage = (id) => setImages(prev => prev.filter(x => x.id !== id))
+
+  const generate = () => {
+    if (!images.length) { toast.error('Add at least one image'); return }
+    try {
+      generateLegacyPdf(images, { perPage })
+      toast.success('PDF downloaded')
+    } catch (err) {
+      console.error('[LegacyPDF] image PDF generate failed', err)
+      toast.error(err.message || 'Could not generate PDF')
+    }
+  }
+
+  return (
+    <div className="lpi">
+      <div className="lpi-head">
+        <FileStack size={16} className="lpdf-title-icon" />
+        <span className="lpi-title">Images → PDF</span>
+        <span className="lpi-sub">Assemble PNG/JPG and download — nothing leaves your device.</span>
+      </div>
+
+      <div
+        ref={zoneRef}
+        className={`lpi-dropzone${dragging ? ' lpi-dropzone--active' : ''}`}
+        tabIndex={0}
+        onClick={() => fileRef.current?.click()}
+        onPaste={onPaste}
+        onDrop={onDrop}
+        onDragOver={(e) => { e.preventDefault(); if (!dragging) setDragging(true) }}
+        onDragLeave={(e) => { if (e.currentTarget === e.target) setDragging(false) }}
+      >
+        <div className="lpi-dropzone-title">Drop images, click to browse, or paste a screenshot (⌘V)</div>
+        <div className="lpi-dropzone-sub">PNG or JPG</div>
+        <input ref={fileRef} type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" multiple hidden onChange={onFileInput} />
+      </div>
+
+      {images.length > 0 && (
+        <div className="lpi-thumbs">
+          {images.map((img, i) => (
+            <div key={img.id} className="lpi-thumb">
+              <img src={img.dataUrl} alt={img.name} />
+              <span className="lpi-thumb-idx">{i + 1}</span>
+              <button className="lpi-thumb-x" onClick={() => removeImage(img.id)} title="Remove"><X size={13} /></button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="lpi-controls">
+        <div className="lpi-layout">
+          <span className="lpi-layout-label">Layout</span>
+          <select className="lpi-select" value={perPage} onChange={(e) => setPerPage(Number(e.target.value))}>
+            <option value={1}>1 per page</option>
+            <option value={2}>2 per page</option>
+          </select>
+        </div>
+        <button className="lpi-generate" onClick={generate} disabled={!images.length}>
+          <Download size={15} /> Generate PDF
+        </button>
+      </div>
     </div>
   )
 }

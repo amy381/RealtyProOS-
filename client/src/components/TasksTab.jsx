@@ -27,7 +27,7 @@ const STAGE_ORDER = {
   'pre-listing': 0, 'active-listing': 1, 'buyer-broker': 2,
   'pending': 3, 'closed': 4, 'cancelled-expired': 5,
 }
-const STATUS_ORDER  = { open: 0, in_progress: 1, complete: 2 }
+export const STATUS_ORDER  = { open: 0, in_progress: 1, complete: 2 }
 const STATUS_LABELS = { open: 'To Do', in_progress: 'In Progress', complete: 'Complete' }
 export const STATUS_NEXT   = { open: 'in_progress', in_progress: 'complete', complete: 'open' }
 const STATUS_STYLE  = {

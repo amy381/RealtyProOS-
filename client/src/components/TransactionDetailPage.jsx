@@ -14,7 +14,7 @@ import { toast } from 'react-hot-toast'
 import { useKeyboardShortcuts } from '../lib/useKeyboardShortcuts'
 import { useGmailStatus, isGmailBroken } from '../lib/useGmailStatus'
 import DateInput from './DateInput'
-import { GlobalTaskRow, CriticalDateRow, TaskEditModal, AddTaskModal } from './TasksTab'
+import { GlobalTaskRow, CriticalDateRow, TaskEditModal, AddTaskModal, STATUS_ORDER } from './TasksTab'
 import './TasksTab.css'  // gtd-* row/modal styles used by the imported components
 import './TransactionDetailPage.css'
 
@@ -2642,6 +2642,19 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, 
   const [editingTaskId, setEditingTaskId] = useState(null)
   const [addingOpen,    setAddingOpen]    = useState(false)
 
+  // Flat-view sort + completed toggle (mirrors the global Tasks page).
+  const [sortField,         setSortField]         = useState('due_date')
+  const [sortDir,           setSortDir]           = useState('asc')
+  const [showCompletedFlat, setShowCompletedFlat] = useState(false)
+  const toggleSort = (field) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir('asc')
+    }
+  }
+
   // Fetch THIS transaction's tasks from DB on mount — source of truth for the
   // tab (the global Tasks page reads the same rows, so they stay in sync).
   useEffect(() => {
@@ -2714,14 +2727,73 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, 
   const critDateTasks = localTasks.filter(t => t.task_type === 'Critical Date')
   const editingTask   = editingTaskId ? localTasks.find(t => t.id === editingTaskId) : null
 
+  // Completed count for this transaction (drives the Show/Hide toggle).
+  const doneCount = localTasks.filter(t => t.status === 'complete').length
+
+  // Flat list: hide completed unless toggled (Critical Date rows always shown),
+  // then sort by the active column — same switch as the global page's flatListData
+  // minus the tx_address column (single transaction, no Transaction column).
+  const displayTasks = localTasks
+    .filter(t => t.task_type === 'Critical Date' || t.status !== 'complete' || showCompletedFlat)
+    .slice()
+    .sort((a, b) => {
+      let cmp = 0
+      switch (sortField) {
+        case 'status':      cmp = (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0); break
+        case 'title':       cmp = (a.title || '').localeCompare(b.title || ''); break
+        case 'assigned_to': cmp = (a.assigned_to || '').localeCompare(b.assigned_to || ''); break
+        default:            cmp = (a.due_date || 'zzzz').localeCompare(b.due_date || 'zzzz')
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+
   let rowIdx = 0
   return (
     <div className="txp-tasks-block">
+      {/* ── Column headers (flat, single-transaction — no Transaction column) ── */}
+      <div className="gtd-col-header-row gtd-col-header-row--flat">
+        {(() => {
+          const hdr = (field, label, cls) => {
+            const active = sortField === field
+            const dir    = active ? (sortDir === 'asc' ? '↑' : '↓') : '⇅'
+            return (
+              <button
+                key={field}
+                className={`gtd-col-hdr gtd-col-hdr--${cls} gtd-col-hdr--sortable${active ? ' gtd-col-hdr--active' : ''}`}
+                onClick={() => toggleSort(field)}
+              >
+                {label}<span className="gtd-col-hdr-arrow">{dir}</span>
+              </button>
+            )
+          }
+          return <>
+            {hdr('status',      'Status', 'status')}
+            {hdr('title',       'Task',   'task')}
+            <div className="gtd-col-hdr gtd-col-hdr--action">Action</div>
+            <div className="gtd-col-hdr gtd-col-hdr--progress">Progress</div>
+            {hdr('due_date',    'Due',    'due')}
+            <div className="gtd-col-hdr gtd-col-hdr--color-bar" />
+            <div className="gtd-col-hdr gtd-col-hdr--due-status"></div>
+            <div className="gtd-col-hdr gtd-col-hdr--assignee">Assigned</div>
+            <div className="gtd-col-hdr gtd-col-hdr--acts" />
+          </>
+        })()}
+      </div>
+
+      {doneCount > 0 && (
+        <button
+          className="gtd-show-completed-btn"
+          onClick={() => setShowCompletedFlat(v => !v)}
+        >
+          {showCompletedFlat ? 'Hide' : 'Show'} {doneCount} completed
+        </button>
+      )}
+
       <div className="gtd-flat-list">
-        {localTasks.length === 0 && (
+        {displayTasks.length === 0 && (
           <div className="gtd-empty">No tasks yet</div>
         )}
-        {localTasks.map(item => item.task_type === 'Critical Date' ? (
+        {displayTasks.map(item => item.task_type === 'Critical Date' ? (
           <CriticalDateRow
             key={item.id}
             task={item}

@@ -2742,6 +2742,7 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, 
         case 'status':      cmp = (STATUS_ORDER[a.status] ?? 0) - (STATUS_ORDER[b.status] ?? 0); break
         case 'title':       cmp = (a.title || '').localeCompare(b.title || ''); break
         case 'assigned_to': cmp = (a.assigned_to || '').localeCompare(b.assigned_to || ''); break
+        case 'tx_address':  cmp = 0; break  // single transaction — all rows share one address
         default:            cmp = (a.due_date || 'zzzz').localeCompare(b.due_date || 'zzzz')
       }
       return sortDir === 'asc' ? cmp : -cmp
@@ -2750,7 +2751,8 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, 
   let rowIdx = 0
   return (
     <div className="txp-tasks-block">
-      {/* ── Column headers (flat, single-transaction — no Transaction column) ── */}
+      {/* ── Column headers — same order/classes as the global flat view so the
+           grid lines up with GlobalTaskRow (which renders the Transaction column). ── */}
       <div className="gtd-col-header-row gtd-col-header-row--flat">
         {(() => {
           const hdr = (field, label, cls) => {
@@ -2767,11 +2769,12 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, 
             )
           }
           return <>
-            {hdr('status',      'Status', 'status')}
-            {hdr('title',       'Task',   'task')}
+            {hdr('status',      'Status',      'status')}
+            {hdr('title',       'Task',        'task')}
             <div className="gtd-col-hdr gtd-col-hdr--action">Action</div>
             <div className="gtd-col-hdr gtd-col-hdr--progress">Progress</div>
-            {hdr('due_date',    'Due',    'due')}
+            {hdr('tx_address',  'Transaction', 'addr')}
+            {hdr('due_date',    'Due',         'due')}
             <div className="gtd-col-hdr gtd-col-hdr--color-bar" />
             <div className="gtd-col-hdr gtd-col-hdr--due-status"></div>
             <div className="gtd-col-hdr gtd-col-hdr--assignee">Assigned</div>

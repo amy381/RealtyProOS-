@@ -564,6 +564,9 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   // editTemplateId null → create mode (insert); set → edit mode (update that id).
   const [createOpen, setCreateOpen] = useState(false)
   const [editTemplateId, setEditTemplateId] = useState(null)
+  // Set while the modal is in "duplicate" mode: the source template whose tasks
+  // get deep-copied into the new row once the user picks a free combo and saves.
+  const [duplicateSourceId, setDuplicateSourceId] = useState(null)
   const [createForm, setCreateForm] = useState({
     name: '', stage: 'pre-listing', rep_type: 'Seller', property_type: 'Residential',
   })
@@ -799,6 +802,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   // Open the create-template modal with a fresh (constraint-valid) form.
   const handleCreateTemplate = () => {
     setEditTemplateId(null)
+    setDuplicateSourceId(null)
     setCreateForm({ name: '', stage: 'pre-listing', rep_type: 'Seller', property_type: 'Residential' })
     setCreateOpen(true)
   }
@@ -813,7 +817,55 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
     return `Failed to ${action} template: ${error.message}`
   }
 
-  // Modal submit — branches on mode: edit updates the existing row, create inserts.
+  // Deep-copy a source template's tasks into a new template, remapping
+  // resolves_critical_date links (which point at other template_tasks) to the
+  // newly-copied task ids. Used by the duplicate flow after the new row exists.
+  const copyTemplateTasks = async (sourceTemplateId, newTemplateId, uid) => {
+    const { data: srcTasks } = await supabase
+      .from('template_tasks')
+      .select('*')
+      .eq('template_id', sourceTemplateId)
+      .order('sort_order', { ascending: true })
+    if (!srcTasks || !srcTasks.length) return
+
+    const toInsert = srcTasks.map(t => ({
+      template_id:            newTemplateId,
+      title:                  t.title,
+      task_type:              t.task_type,
+      timing_type:            t.timing_type,
+      timing_days:            t.timing_days,
+      applies_to:             t.applies_to,
+      auto_assign_to:         t.auto_assign_to,
+      has_progress_tracking:  t.has_progress_tracking,
+      email_template_id:      t.email_template_id,
+      condition:              t.condition,
+      sort_order:             t.sort_order,
+      resolves_critical_date: null,
+      user_id:                uid,
+    }))
+    const { data: inserted, error: taskErr } = await supabase
+      .from('template_tasks').insert(toInsert).select()
+    if (taskErr) { alert('Template created but tasks failed: ' + taskErr.message); return }
+
+    // Remap resolves_critical_date: old task id → new task id. inserted[i]
+    // corresponds to srcTasks[i] (same order as toInsert was built).
+    if (inserted) {
+      const idMap = {}
+      srcTasks.forEach((t, i) => { idMap[t.id] = inserted[i].id })
+      const linkUpdates = srcTasks
+        .map((t, i) => ({ src: t, newId: inserted[i].id }))
+        .filter(({ src }) => src.resolves_critical_date && idMap[src.resolves_critical_date])
+      if (linkUpdates.length) {
+        await Promise.all(linkUpdates.map(({ src, newId }) =>
+          supabase.from('template_tasks')
+            .update({ resolves_critical_date: idMap[src.resolves_critical_date] })
+            .eq('id', newId)))
+      }
+    }
+  }
+
+  // Modal submit — branches on mode: edit updates in place; create/duplicate
+  // insert a new row (duplicate then deep-copies the source template's tasks).
   const submitTemplateModal = async () => {
     const name = createForm.name.trim()
     if (!name) return
@@ -836,7 +888,9 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
       return
     }
 
-    // CREATE mode: insert a new template.
+    // CREATE and DUPLICATE both insert a new row with the modal's (possibly
+    // edited) combo. On a unique-constraint hit, show the friendly message and
+    // KEEP THE MODAL OPEN so the user can pick a free combo — nothing inserted.
     const uid = await getUserId()
     const { data, error } = await supabase
       .from('task_templates')
@@ -849,83 +903,33 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
         user_id:       uid,
       })
       .select().single()
-    if (error) { alert(templateErrorMessage(error, 'create')); return }
+    if (error) { alert(templateErrorMessage(error, duplicateSourceId ? 'duplicate' : 'create')); return }
+
+    // DUPLICATE mode: the row exists now with a free combo — copy the source's
+    // tasks (with resolves_critical_date remap) into it.
+    if (duplicateSourceId) {
+      await copyTemplateTasks(duplicateSourceId, data.id, uid)
+    }
+
     closeTemplateModal()
     await onRefresh()
     setSelectedTemplateId(data.id)
   }
 
-  // Duplicate a template + all its tasks, remapping resolves_critical_date links
-  // (which point at other template_tasks) to the newly-copied task ids.
-  const handleDuplicateTemplate = async (tpl) => {
-    const uid = await getUserId()
-
-    // 1. Copy the template row
-    const { data: newTpl, error: tplErr } = await supabase
-      .from('task_templates')
-      .insert({
-        name:          `${tpl.name} (Copy)`,
-        stage:         tpl.stage,
-        rep_type:      tpl.rep_type,
-        property_type: tpl.property_type,
-        sort_order:    templates.length + 1,
-        user_id:       uid,
-      })
-      .select().single()
-    if (tplErr) { alert('Failed to duplicate template: ' + tplErr.message); return }
-
-    // 2. Fetch the source template's tasks fresh (all columns), copy them into
-    //    the new template. resolves_critical_date is nulled here and remapped in
-    //    step 3 once we know the new task ids.
-    const { data: srcTasks } = await supabase
-      .from('template_tasks')
-      .select('*')
-      .eq('template_id', tpl.id)
-      .order('sort_order', { ascending: true })
-
-    if (srcTasks && srcTasks.length) {
-      const toInsert = srcTasks.map(t => ({
-        template_id:            newTpl.id,
-        title:                  t.title,
-        task_type:              t.task_type,
-        timing_type:            t.timing_type,
-        timing_days:            t.timing_days,
-        applies_to:             t.applies_to,
-        auto_assign_to:         t.auto_assign_to,
-        has_progress_tracking:  t.has_progress_tracking,
-        email_template_id:      t.email_template_id,
-        condition:              t.condition,
-        sort_order:             t.sort_order,
-        resolves_critical_date: null,
-        user_id:                uid,
-      }))
-      const { data: inserted, error: taskErr } = await supabase
-        .from('template_tasks').insert(toInsert).select()
-      if (taskErr) {
-        alert('Template copied but tasks failed: ' + taskErr.message)
-        await onRefresh(); setSelectedTemplateId(newTpl.id); return
-      }
-
-      // 3. Remap resolves_critical_date: old task id → new task id. inserted[i]
-      //    corresponds to srcTasks[i] (same order as toInsert was built).
-      if (inserted) {
-        const idMap = {}
-        srcTasks.forEach((t, i) => { idMap[t.id] = inserted[i].id })
-        const linkUpdates = srcTasks
-          .map((t, i) => ({ src: t, newId: inserted[i].id }))
-          .filter(({ src }) => src.resolves_critical_date && idMap[src.resolves_critical_date])
-        if (linkUpdates.length) {
-          await Promise.all(linkUpdates.map(({ src, newId }) =>
-            supabase.from('template_tasks')
-              .update({ resolves_critical_date: idMap[src.resolves_critical_date] })
-              .eq('id', newId)))
-        }
-      }
-    }
-
-    // 4. Refresh + select the duplicate
-    await onRefresh()
-    setSelectedTemplateId(newTpl.id)
+  // Open the modal in DUPLICATE mode, pre-filled from the source. The source's
+  // combo (rep_type/stage/property_type) would violate task_templates_match_unique,
+  // so NOTHING is inserted here — the user must pick a free combo and hit Save,
+  // which inserts the new row and copies the source's tasks (submitTemplateModal).
+  const handleDuplicateTemplate = (tpl) => {
+    setEditTemplateId(null)
+    setDuplicateSourceId(tpl.id)
+    setCreateForm({
+      name:          `${tpl.name} (Copy)`,
+      stage:         tpl.stage || 'pre-listing',
+      rep_type:      tpl.rep_type || 'Seller',
+      property_type: tpl.property_type || 'Residential',
+    })
+    setCreateOpen(true)
   }
 
   const handleDeleteTemplate = async (id) => {
@@ -941,6 +945,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   // always shows what will be saved.
   const handleEditTemplate = (tpl) => {
     setEditTemplateId(tpl.id)
+    setDuplicateSourceId(null)
     setCreateForm({
       name:          tpl.name || '',
       stage:         tpl.stage || 'pre-listing',
@@ -953,6 +958,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
   const closeTemplateModal = () => {
     setCreateOpen(false)
     setEditTemplateId(null)
+    setDuplicateSourceId(null)
   }
 
   const handleDragEnd = async ({ active, over }) => {
@@ -1804,7 +1810,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
         >
           <div className="tt-modal">
             <div className="tt-modal-header">
-              <h3>{editTemplateId ? 'Edit Template' : 'New Template'}</h3>
+              <h3>{editTemplateId ? 'Edit Template' : duplicateSourceId ? 'Duplicate Template' : 'New Template'}</h3>
               <button className="tt-modal-close" onClick={closeTemplateModal}>✕</button>
             </div>
             <div className="tt-modal-body">
@@ -1850,7 +1856,7 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                 onClick={submitTemplateModal}
                 disabled={!createForm.name.trim()}
               >
-                {editTemplateId ? 'Save' : 'Create'}
+                {editTemplateId ? 'Save' : duplicateSourceId ? 'Duplicate' : 'Create'}
               </button>
             </div>
           </div>

@@ -360,13 +360,21 @@ export default function App() {
       }
 
       // Forward: offer to apply the NEW stage's template — only when it matches,
-      // would add ≥1 task, and hasn't already fired for this transaction.
+      // would add ≥1 task, and hasn't already fired for this transaction. The
+      // "already fired" check queries the DB directly (same authoritative guard
+      // as insertTemplateTasks) so a stale/empty `tasks` state can't make the
+      // modal pop up for a template that's already applied.
       else if (oldIdx >= 0 && newIdx > oldIdx) {
         const fwdMatch = matchStageTemplate(transaction, newStatus)
-        const alreadyApplied = fwdMatch &&
-          tasks.some(t => t.transaction_id === transactionId && t.template_key === fwdMatch.tpl.id)
-        if (fwdMatch && fwdMatch.taskRows.length > 0 && !alreadyApplied) {
-          setFwdMoveModal({ transactionId, newStage: newStatus, transaction, taskCount: fwdMatch.taskRows.length })
+        if (fwdMatch && fwdMatch.taskRows.length > 0) {
+          const { count: existingCount } = await supabase
+            .from('tasks')
+            .select('id', { count: 'exact', head: true })
+            .eq('transaction_id', transactionId)
+            .eq('template_key', fwdMatch.tpl.id)
+          if (!existingCount) {
+            setFwdMoveModal({ transactionId, newStage: newStatus, transaction, taskCount: fwdMatch.taskRows.length })
+          }
         }
       }
     }
@@ -427,8 +435,16 @@ export default function App() {
     if (!match) return
     const { tpl, taskRows } = match
 
-    // Idempotent: never re-add a stage's template if it already fired for this tx.
-    if (tasks.some(t => t.transaction_id === transactionId && t.template_key === tpl.id)) return
+    // Idempotent: never re-add a stage's template if it already fired for this
+    // tx. Query the DB directly — the `tasks` React state can be stale right
+    // after a first apply, or empty for a board-dragged tx whose tasks aren't
+    // loaded, which would let a duplicate through.
+    const { count: existingCount } = await supabase
+      .from('tasks')
+      .select('id', { count: 'exact', head: true })
+      .eq('transaction_id', transactionId)
+      .eq('template_key', tpl.id)
+    if (existingCount && existingCount > 0) return  // this template already applied to this transaction
 
     const builtTasks = buildTemplateTasksFromDB(taskRows, transaction, agentSettings?.realtor_name || '')
     if (!builtTasks.length) return

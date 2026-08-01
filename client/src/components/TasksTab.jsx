@@ -315,6 +315,19 @@ function VendorEmailModal({ vendor, tx, agentName = '', onClose }) {
   )
 }
 
+// ─── Shared: mark a task In Progress after a vendor email actually sends ───────
+// Every real vendor SEND path calls this so status behavior can't drift per-button.
+// Not used by the Preview path — preview doesn't send, so status must not change.
+async function markTaskInProgress(taskId, onTaskUpdate) {
+  const { error } = await supabase.from('tasks').update({ status: 'in_progress' }).eq('id', taskId)
+  if (error) {
+    console.error('[markTaskInProgress] task status update failed:', error)
+    toast.error('Sent, but failed to update task status')
+  } else {
+    onTaskUpdate?.(taskId, { status: 'in_progress' })
+  }
+}
+
 // ─── Vendor Form Preview Modal ────────────────────────────────────────────────
 function VendorFormModal({ vendor, tx, task, tcSettings, agentName = '', agentSettings = null, onClose, onTaskUpdate }) {
   const [formFields, setFormFields] = useState(() => buildFormFields(vendor, tx, tcSettings, agentSettings))
@@ -346,13 +359,7 @@ function VendorFormModal({ vendor, tx, task, tcSettings, agentName = '', agentSe
       const result = await res.json()
       if (!res.ok) throw new Error(result.error || 'Send failed')
       toast.success(`Sent to ${vendor.name}`)
-      const { error: statusErr } = await supabase.from('tasks').update({ status: 'in_progress' }).eq('id', task.id)
-      if (statusErr) {
-        console.error('[VendorFormModal] task status update failed:', statusErr)
-        toast.error('Sent, but failed to update task status')
-      } else {
-        onTaskUpdate?.(task.id, { status: 'in_progress' })
-      }
+      await markTaskInProgress(task.id, onTaskUpdate)
       onClose()
     } catch (err) {
       toast.error('Send failed: ' + err.message)
@@ -500,6 +507,7 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, agentName = '
       const result = await res.json()
       if (!res.ok) throw new Error(result.error || 'Send failed')
       toast.success(`Sent to ${selectedVendor.name}`)
+      await markTaskInProgress(task.id, onUpdate)
       onClose()
     } catch (err) {
       toast.error('Send failed: ' + err.message)

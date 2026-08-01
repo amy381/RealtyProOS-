@@ -346,8 +346,13 @@ function VendorFormModal({ vendor, tx, task, tcSettings, agentName = '', agentSe
       const result = await res.json()
       if (!res.ok) throw new Error(result.error || 'Send failed')
       toast.success(`Sent to ${vendor.name}`)
-      await supabase.from('tasks').update({ status: 'in-progress' }).eq('id', task.id)
-      onTaskUpdate?.(task.id, { status: 'in-progress' })
+      const { error: statusErr } = await supabase.from('tasks').update({ status: 'in_progress' }).eq('id', task.id)
+      if (statusErr) {
+        console.error('[VendorFormModal] task status update failed:', statusErr)
+        toast.error('Sent, but failed to update task status')
+      } else {
+        onTaskUpdate?.(task.id, { status: 'in_progress' })
+      }
       onClose()
     } catch (err) {
       toast.error('Send failed: ' + err.message)

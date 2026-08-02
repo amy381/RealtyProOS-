@@ -319,7 +319,10 @@ function VendorEmailModal({ vendor, tx, agentName = '', onClose }) {
 // Every real vendor SEND path calls this so status behavior can't drift per-button.
 // Not used by the Preview path — preview doesn't send, so status must not change.
 async function markTaskInProgress(taskId, onTaskUpdate) {
-  const { error } = await supabase.from('tasks').update({ status: 'in_progress' }).eq('id', taskId)
+  // TEMP INSTRUMENTATION — strip after runtime diagnosis
+  console.log('[markTaskInProgress] called, taskId=', taskId, 'onTaskUpdate type=', typeof onTaskUpdate)
+  const { data, error } = await supabase.from('tasks').update({ status: 'in_progress' }).eq('id', taskId).select()
+  console.log('[markTaskInProgress] result data=', data, 'error=', error)
   if (error) {
     console.error('[markTaskInProgress] task status update failed:', error)
     toast.error('Sent, but failed to update task status')

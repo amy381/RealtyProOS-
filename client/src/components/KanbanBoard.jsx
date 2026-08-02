@@ -68,7 +68,14 @@ export default function KanbanBoard({ columns, transactions, onStatusChange, onD
 
           {/* Card columns */}
           {mainColumns.filter(c => c.viewMode !== 'list').map(col => {
-            const colTxs = transactions.filter(t => t.status === col.id)
+            let colTxs = transactions.filter(t => t.status === col.id)
+            if (col.id === 'closed') {
+              colTxs = [...colTxs].sort((a, b) => {
+                const da = a.close_of_escrow ? new Date(a.close_of_escrow).getTime() : -Infinity
+                const db = b.close_of_escrow ? new Date(b.close_of_escrow).getTime() : -Infinity
+                return db - da   // newest close_of_escrow first; missing dates sink to bottom
+              })
+            }
             return (
               <KanbanColumn
                 key={col.id}

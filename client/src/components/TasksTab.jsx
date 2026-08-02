@@ -9,6 +9,7 @@ import { apiFetch } from '../lib/apiClient'
 import { Mail, FileText, Pencil } from 'lucide-react'
 import VendorFormPreviewModal from './VendorFormPreviewModal'
 import EmailPreviewModal from './EmailPreviewModal'
+import { markTaskInProgress } from '../lib/taskStatus'
 import { useGmailStatus, isGmailBroken } from '../lib/useGmailStatus'
 import { resolveVars } from '../lib/resolveVars'
 import DateInput from './DateInput'
@@ -315,22 +316,6 @@ function VendorEmailModal({ vendor, tx, agentName = '', onClose }) {
   )
 }
 
-// ─── Shared: mark a task In Progress after a vendor email actually sends ───────
-// Every real vendor SEND path calls this so status behavior can't drift per-button.
-// Not used by the Preview path — preview doesn't send, so status must not change.
-async function markTaskInProgress(taskId, onTaskUpdate) {
-  // TEMP INSTRUMENTATION — strip after runtime diagnosis
-  console.log('[markTaskInProgress] called, taskId=', taskId, 'onTaskUpdate type=', typeof onTaskUpdate)
-  const { data, error } = await supabase.from('tasks').update({ status: 'in_progress' }).eq('id', taskId).select()
-  console.log('[markTaskInProgress] result data=', data, 'error=', error)
-  if (error) {
-    console.error('[markTaskInProgress] task status update failed:', error)
-    toast.error('Sent, but failed to update task status')
-  } else {
-    onTaskUpdate?.(taskId, { status: 'in_progress' })
-  }
-}
-
 // ─── Vendor Form Preview Modal ────────────────────────────────────────────────
 function VendorFormModal({ vendor, tx, task, tcSettings, agentName = '', agentSettings = null, onClose, onTaskUpdate }) {
   const [formFields, setFormFields] = useState(() => buildFormFields(vendor, tx, tcSettings, agentSettings))
@@ -362,7 +347,7 @@ function VendorFormModal({ vendor, tx, task, tcSettings, agentName = '', agentSe
       const result = await res.json()
       if (!res.ok) throw new Error(result.error || 'Send failed')
       toast.success(`Sent to ${vendor.name}`)
-      await markTaskInProgress(task.id, onTaskUpdate)
+      await markTaskInProgress(supabase, task.id, onTaskUpdate)
       onClose()
     } catch (err) {
       toast.error('Send failed: ' + err.message)
@@ -510,7 +495,7 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, agentName = '
       const result = await res.json()
       if (!res.ok) throw new Error(result.error || 'Send failed')
       toast.success(`Sent to ${selectedVendor.name}`)
-      await markTaskInProgress(task.id, onUpdate)
+      await markTaskInProgress(supabase, task.id, onUpdate)
       onClose()
     } catch (err) {
       toast.error('Send failed: ' + err.message)
@@ -912,6 +897,7 @@ export function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpen
           tx={tx}
           tcSettings={tcSettings}
           driveFolderId={tx?.drive_folder_id || null}
+          onUpdate={onUpdate}
           onClose={() => setEmailPreviewOpen(false)}
         />
       )}

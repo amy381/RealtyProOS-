@@ -5,6 +5,7 @@ import { resolveVars } from '../lib/resolveVars'
 import { toast } from 'react-hot-toast'
 import { useGmailStatus } from '../lib/useGmailStatus'
 import { apiFetch } from '../lib/apiClient'
+import { markTaskInProgress } from '../lib/taskStatus'
 import './EmailPreviewModal.css'
 
 // Coerce a CC/To entry that may be a string or unexpected object → clean email string
@@ -171,7 +172,7 @@ function maybeDecodeHtml(html) {
 }
 
 // ─── Main EmailPreviewModal ───────────────────────────────────────────────────
-export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFolderId = null, onClose }) {
+export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFolderId = null, onUpdate, onClose }) {
   const [template,     setTemplate]     = useState(null)
   const [loading,      setLoading]      = useState(true)
   const [titleContact, setTitleContact] = useState(null)
@@ -386,6 +387,7 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
         throw new Error(result.error || 'Send failed')
       }
       toast.success('Email sent')
+      await markTaskInProgress(supabase, task.id, onUpdate)
       onClose()
     } catch (err) {
       if (uploadedPaths.length > 0) {

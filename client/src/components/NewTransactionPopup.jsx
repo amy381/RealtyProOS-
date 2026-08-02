@@ -144,7 +144,9 @@ export default function NewTransactionPopup({ onCreate, onClose, prefill = null,
   const [repType,  setRepType]  = useState('Seller')
   const [status,   setStatus]   = useState('pre-listing')
   const [propType, setPropType] = useState('')
-  const [tc,       setTc]       = useState(tcOptions[0] || '')
+  const [tc,       setTc]       = useState(
+    tcOptions.includes('Danielle Davidson') ? 'Danielle Davidson' : (tcOptions[0] || '')
+  )
   const [client1,  setClient1]  = useState(null)
   const [client2,  setClient2]  = useState(null)
   const [creating, setCreating] = useState(false)

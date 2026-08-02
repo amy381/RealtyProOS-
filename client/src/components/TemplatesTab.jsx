@@ -96,6 +96,7 @@ const EMPTY_TASK = {
   email_template_id:      null,
   resolves_critical_date: null,
   has_progress_tracking:  false,
+  condition:              null,
 }
 
 // ─── Email template constants ─────────────────────────────────────────────────
@@ -1735,6 +1736,26 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                   ))}
                 </select>
               </div>
+              <label className="tt-modal-label">Condition (only generate this task if the intake feature is checked)</label>
+              <select
+                className="tt-modal-select"
+                value={editingTask.condition || ''}
+                onChange={e => setEditingTask(p => ({ ...p, condition: e.target.value || null }))}
+              >
+                <option value="">Always (no condition)</option>
+                <option value="septic">Septic</option>
+                <option value="well">Well</option>
+                <option value="solar">Solar</option>
+                <option value="hoa">HOA</option>
+                <option value="lbp">Lead-Based Paint</option>
+                <option value="new_construction">New Construction</option>
+                <option value="sign">Sign</option>
+                <option value="contingency">Contingency</option>
+                <option value="bba">BBA</option>
+                <option value="referral">Referral</option>
+                <option value="financing">Financing</option>
+                <option value="lockbox">Lockbox</option>
+              </select>
               {editingTask.task_type !== 'Critical Date' && (<>
                 <label className="tt-modal-label">Auto-Assign To</label>
                 <select

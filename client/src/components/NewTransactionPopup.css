@@ -33,13 +33,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px 16px;
+  padding: 16px 20px 12px;
   border-bottom: 0.5px solid rgba(50, 200, 220, 0.2);
   flex-shrink: 0;
 }
 
 .ntp-title {
-  font-size: 19px;
+  font-size: 17px;
   font-weight: 700;
   color: #a8bfcc;
   letter-spacing: -0.01em;
@@ -60,11 +60,11 @@
 
 /* ─── Scrollable body ─────────────────────────────────────────────────────── */
 .ntp-body {
-  padding: 20px 24px;
+  padding: 14px 20px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   flex: 1;
 }
 
@@ -79,8 +79,8 @@
 
 .ntp-type-btn {
   flex: 1;
-  padding: 9px 0;
-  font-size: 16px;
+  padding: 7px 0;
+  font-size: 14px;
   font-weight: 600;
   font-family: inherit;
   border: 0.5px solid rgba(50, 200, 220, 0.2);
@@ -102,11 +102,11 @@
 .ntp-field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 
 .ntp-field label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: rgba(168, 191, 204, 0.7);
   letter-spacing: 0.01em;
@@ -123,8 +123,8 @@
 .ntp-field select {
   border: 0.5px solid rgba(50, 200, 220, 0.25);
   border-radius: 6px;
-  padding: 9px 11px;
-  font-size: 16px;
+  padding: 7px 10px;
+  font-size: 14px;
   color: #c8d4e0;
   background: rgba(255, 255, 255, 0.08);
   outline: none;
@@ -195,6 +195,7 @@
 .ntp-feature-check input {
   cursor: pointer;
   margin: 0;
+  accent-color: #50C8DC;
 }
 
 /* ─── FUB search ──────────────────────────────────────────────────────────── */
@@ -341,7 +342,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 14px 24px 18px;
+  padding: 12px 20px 14px;
   border-top: 0.5px solid rgba(50, 200, 220, 0.15);
   flex-shrink: 0;
 }
@@ -351,10 +352,10 @@
   border: 0.5px solid rgba(168, 191, 204, 0.25);
   border-radius: 6px;
   color: #a8bfcc;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   font-family: inherit;
-  padding: 9px 18px;
+  padding: 7px 16px;
   cursor: pointer;
   transition: border-color 0.12s, color 0.12s;
 }
@@ -365,10 +366,10 @@
   border: 0.5px solid rgba(212, 120, 30, 0.5);
   border-radius: 6px;
   color: #D4781E;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   font-family: inherit;
-  padding: 9px 22px;
+  padding: 7px 16px;
   cursor: pointer;
   transition: background 0.12s, opacity 0.12s;
 }

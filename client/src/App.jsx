@@ -77,6 +77,7 @@ export default function App() {
   const [taskComments,     setTaskComments]     = useState([])
   const [backMoveModal,    setBackMoveModal]    = useState(null)
   const [fwdMoveModal,     setFwdMoveModal]     = useState(null)
+  const [cancelDeleteModal, setCancelDeleteModal] = useState(null)
   const [loading, setLoading]                   = useState(true)
   const [newTxOpen, setNewTxOpen]               = useState(false)
   const [newTxPrefill, setNewTxPrefill]         = useState(null)
@@ -347,9 +348,22 @@ export default function App() {
       await supabase.from('showings').delete().eq('transaction_id', transactionId)
     }
 
+    // Cancelled/Expired → offer to hard-delete ALL of this transaction's tasks
+    // (template AND manual). Gated behind a confirmation modal — the actual
+    // delete happens in handleCancelDeleteYes. The status change, commission /
+    // showings deletes, and Drive move all still happen regardless; only the
+    // task delete waits for confirmation. No template is applied on cancel —
+    // the stage-move block below is guarded to skip this stage.
+    if (newStatus === 'cancelled-expired') {
+      const taskCount = tasks.filter(t => t.transaction_id === transactionId).length
+      if (taskCount > 0) setCancelDeleteModal({ transactionId, taskCount })
+    }
+
     // Stage move → offer to apply (forward) or remove (backward) that stage's
     // template tasks. transaction.status here is still the OLD stage.
-    if (transaction) {
+    // Skipped entirely on a move to cancelled-expired (tasks were just deleted;
+    // never apply a template on cancel).
+    if (transaction && newStatus !== 'cancelled-expired') {
       const oldIdx = STAGE_ORDER.indexOf(transaction.status)
       const newIdx = STAGE_ORDER.indexOf(newStatus)
 
@@ -743,6 +757,20 @@ export default function App() {
     await Promise.all(toDelete.map(t => supabase.from('tasks').delete().eq('id', t.id)))
     setBackMoveModal(null)
   }, [backMoveModal, tasks, dbTemplates, dbTemplateTasks])
+
+  // Cancelled/Expired confirmed: hard-delete ALL tasks for the transaction
+  // (template + manual, no exceptions). Transaction-scoped — never a bare delete.
+  const handleCancelDeleteYes = useCallback(async () => {
+    if (!cancelDeleteModal) return
+    const { transactionId } = cancelDeleteModal
+    setTasks(prev => prev.filter(t => t.transaction_id !== transactionId))
+    const { error } = await supabase.from('tasks').delete().eq('transaction_id', transactionId)
+    if (error) console.error('[cancel] task delete failed:', error.message)
+    setCancelDeleteModal(null)
+  }, [cancelDeleteModal])
+
+  // "Keep tasks" / close — dismiss without deleting anything.
+  const handleCancelDeleteNo = useCallback(() => setCancelDeleteModal(null), [])
 
   // Forward stage move confirmed: apply the new stage's template. insertTemplateTasks
   // matches by property_type, filters conditions, resolves critical dates, and is
@@ -1210,6 +1238,27 @@ export default function App() {
             <div className="back-move-actions">
               <button className="back-move-no"  onClick={() => setFwdMoveModal(null)}>No</button>
               <button className="back-move-yes" onClick={handleFwdMoveYes}>Yes, add them</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cancelDeleteModal && (
+        <div className="back-move-overlay">
+          <div className="back-move-modal">
+            <div className="back-move-title">Delete tasks for cancelled transaction?</div>
+            <div className="back-move-body">
+              This will permanently delete all {cancelDeleteModal.taskCount} task{cancelDeleteModal.taskCount !== 1 ? 's' : ''} for this transaction. This cannot be undone.
+            </div>
+            <div className="back-move-actions">
+              <button className="back-move-no" onClick={handleCancelDeleteNo}>Keep tasks</button>
+              <button
+                className="back-move-yes"
+                style={{ background: 'rgba(220,38,38,0.15)', color: '#f87171', border: '1px solid rgba(220,38,38,0.4)' }}
+                onClick={handleCancelDeleteYes}
+              >
+                Delete tasks
+              </button>
             </div>
           </div>
         </div>

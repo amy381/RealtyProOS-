@@ -160,6 +160,103 @@ async function moveDriveFolder(accessToken, fileId, newParentId, newName) {
   )
 }
 
+// ── Gmail MIME construction + raw send ──────────────────────────────────────
+// Shared by the /api/google/gmail-send endpoint and any headless sender
+// (e.g. a cron daily-digest job). Moved verbatim from gmail-send.js so the
+// endpoint's output is byte-for-byte identical.
+
+// RFC 4648 §5 base64url — required by Gmail API for the raw message
+function toBase64Url(input) {
+  const buf = typeof input === 'string' ? Buffer.from(input) : input
+  return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+// RFC 2047 encoded-word so non-ASCII subjects survive email headers
+function encodeSubject(text) {
+  return `=?UTF-8?B?${Buffer.from(text).toString('base64')}?=`
+}
+
+// Splits a base64 string into 76-character lines per RFC 2822 §2.1.1
+function chunkBase64(b64) {
+  return b64.replace(/(.{76})/g, '$1\r\n').replace(/\r\n$/, '')
+}
+
+// Builds an RFC 2822 message (text/html, or multipart/mixed with attachments).
+// Object signature preserves To/CC/BCC/Reply-To/attachments exactly as the
+// endpoint needs. A simple HTML send (e.g. cron digest) just passes
+// { to, cc, subject, body }.
+function buildMimeMessage({ to, cc, bcc, subject, body, replyTo, attachments }) {
+  const toStr  = [].concat(to  || []).join(', ')
+  const ccStr  = (Array.isArray(cc) ? cc : []).map(entry => {
+    if (typeof entry === 'object' && entry !== null) return entry.email || entry.value || ''
+    return String(entry).trim()
+  }).filter(Boolean).join(', ')
+  const bccStr = [].concat(bcc || []).join(', ')
+
+  const headers = [
+    `To: ${toStr}`,
+    ccStr   ? `Cc: ${ccStr}`        : null,
+    bccStr  ? `Bcc: ${bccStr}`      : null,
+    replyTo ? `Reply-To: ${replyTo}` : null,
+    `Subject: ${encodeSubject(subject)}`,
+    'MIME-Version: 1.0',
+  ].filter(Boolean)
+
+  const bodyB64 = chunkBase64(Buffer.from(body).toString('base64'))
+
+  // ── Simple text/html — no attachments ────────────────────────────────────
+  if (!attachments || attachments.length === 0) {
+    return [
+      ...headers,
+      'Content-Type: text/html; charset=UTF-8',
+      'Content-Transfer-Encoding: base64',
+      '',
+      bodyB64,
+    ].join('\r\n')
+  }
+
+  // ── multipart/mixed — HTML body + one or more attachments ─────────────────
+  const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).slice(2)}`
+
+  const lines = [
+    ...headers,
+    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    '',
+    `--${boundary}`,
+    'Content-Type: text/html; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    bodyB64,
+  ]
+
+  for (const att of attachments) {
+    lines.push(
+      `--${boundary}`,
+      `Content-Type: ${att.contentType}; name="${att.filename}"`,
+      `Content-Disposition: attachment; filename="${att.filename}"`,
+      'Content-Transfer-Encoding: base64',
+      '',
+      chunkBase64(att.data),
+    )
+  }
+
+  lines.push(`--${boundary}--`)
+  return lines.join('\r\n')
+}
+
+// Raw Gmail REST send — POSTs a base64url-encoded MIME message. Returns the
+// raw fetch Response (caller inspects .status / .ok), same as before.
+function gmailSendRaw(accessToken, encodedMessage) {
+  return fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method:  'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type':  'application/json',
+    },
+    body: JSON.stringify({ raw: encodedMessage }),
+  })
+}
+
 module.exports = {
   getSupabase,
   getValidAccessToken,
@@ -169,4 +266,7 @@ module.exports = {
   createDriveFolder,
   moveDriveFolder,
   driveRequest,
+  buildMimeMessage,
+  gmailSendRaw,
+  toBase64Url,
 }

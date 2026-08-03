@@ -16,5 +16,11 @@
     { "src": "/api/(.*)",                    "dest": "/api/$1" },
     { "handle": "filesystem" },
     { "src": "/(.*)",                        "dest": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/digest/send",
+      "schedule": "0 14 * * 1-5"
+    }
   ]
 }

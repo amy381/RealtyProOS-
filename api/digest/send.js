@@ -26,15 +26,14 @@ const {
 // The digest is one role-based body for all recipients, scoped to this user's data.
 const LEGACY_OS_OWNER_USER_ID = 'a02b464f-dd3e-49de-b893-2825fe8efb3f'
 
-// ── Signature wrap ─────────────────────────────────────────────────────────────
-// emailWrapper.js lives under client/src and is an ESM module, so it can't be
-// required from this CommonJS serverless function. Inlined here with the same
-// signature image URL used by the client wrapper (assets/email-signature-v2.png).
+// ── Body wrap (digest-only) ─────────────────────────────────────────────────────
+// The digest sends WITHOUT the email signature image — the Legacy OS logo now
+// lives in the header masthead (see buildDigestHtml) instead. This is a
+// DIGEST-ONLY change: the shared client wrapper (client/src/lib/emailWrapper.js)
+// and api/google/gmail-send.js are untouched, so vendor/task emails keep their
+// signature.
 function wrapEmailBody(body) {
-  return `${body}<br><br>
-<div style="margin-top: 16px;">
-  <img src="https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/email-signature-v2.png" alt="Amy Casanova - Keller Williams Realty - Powered by LegacyOS" style="max-width: 200px; width: 100%; display: block;" />
-</div>`
+  return body
 }
 
 // ── Date helpers (Arizona = UTC-7, no DST) ──────────────────────────────────────
@@ -57,64 +56,55 @@ function daysOverdue(dateStr, today) {
   return Math.floor((now.getTime() - due.getTime()) / 86400000)
 }
 
-// ── HTML builder (ported from the Edge Function) ────────────────────────────────
-function groupByTransaction(tasks) {
-  const map = new Map()
-  for (const t of tasks) {
-    const txId = t.transaction_id
-    if (!map.has(txId)) {
-      map.set(txId, { addr: t.transactions?.property_address || 'Unknown property', tasks: [] })
-    }
-    map.get(txId).tasks.push(t)
-  }
-  return map
+// ── HTML builder — card-based sections, generous spacing, clear hierarchy ───────
+// Email-safe: inline styles + table-based task rows (renders in Gmail/Outlook;
+// border-radius degrades to square corners in Outlook desktop, which is fine).
+
+// Right-aligned status pills
+function pillOverdue(days) {
+  return `<span style="display:inline-block;background:#fde8e8;color:#991b1b;font-size:11px;font-weight:700;line-height:1;padding:5px 10px;border-radius:12px;white-space:nowrap;">${days} day${days !== 1 ? 's' : ''} overdue</span>`
+}
+function pillDueToday() {
+  return `<span style="display:inline-block;background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;line-height:1;padding:5px 10px;border-radius:12px;white-space:nowrap;">Due today</span>`
+}
+function pillKeyDate(dateStr) {
+  return `<span style="display:inline-block;background:#e2f6fa;color:#0e7c8c;font-size:11px;font-weight:700;line-height:1;padding:5px 10px;border-radius:12px;white-space:nowrap;">${fmtDate(dateStr)}</span>`
 }
 
-function renderSection(title, color, tasks, today) {
-  if (!tasks.length) return ''
-  const grouped = groupByTransaction(tasks)
-  const txBlocks = [...grouped.values()].map(({ addr, tasks: txTasks }) => {
-    const rows = txTasks.map(t => {
-      const overdue = t.due_date < today ? daysOverdue(t.due_date, today) : 0
-      const badge   = overdue > 0
-        ? `<span style="background:#fde8e8;color:#991b1b;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:600;margin-left:8px;">${overdue}d overdue</span>`
-        : `<span style="background:#fef3c7;color:#92400e;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:600;margin-left:8px;">Due today</span>`
-      return `
-        <tr>
-          <td style="padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:14px;color:#1a1a1a;">
-            ${t.title}${badge}
-          </td>
-        </tr>`
-    }).join('')
-    return `
-      <div style="margin-bottom:14px;">
-        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#888;margin-bottom:6px;">${addr}</div>
-        <table style="width:100%;border-collapse:collapse;">${rows}</table>
+// One task row: bold title + gray address on the left, status pill on the right.
+// Hairline divider between rows (omitted on the last row of a card).
+function taskRow(title, address, pill, isLast) {
+  const divider = isLast ? '' : 'border-bottom:1px solid #eef1f5;'
+  return `
+          <tr>
+            <td style="padding:12px 0;${divider}vertical-align:top;">
+              <div style="font-size:14px;font-weight:600;color:#1a2330;line-height:1.35;">${title}</div>
+              ${address ? `<div style="font-size:12px;color:#8a93a3;margin-top:3px;">${address}</div>` : ''}
+            </td>
+            <td style="padding:12px 0 12px 12px;${divider}text-align:right;vertical-align:middle;white-space:nowrap;">
+              ${pill}
+            </td>
+          </tr>`
+}
+
+// A titled card section: accented header + count badge, white card with a
+// colored left accent bar. `barColor` is the accent bar; `color` is the
+// (readable) header/badge text color. Returns '' when there are no items.
+function renderCardSection(title, color, tint, barColor, items) {
+  if (!items.length) return ''
+  const rows = items.map((it, i) => taskRow(it.title, it.address, it.pill, i === items.length - 1)).join('')
+  return `
+      <div style="margin-bottom:20px;">
+        <div style="margin-bottom:10px;">
+          <span style="font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${color};">${title}</span>
+          <span style="display:inline-block;margin-left:8px;background:${tint};color:${color};font-size:12px;font-weight:700;line-height:1;padding:3px 9px;border-radius:10px;vertical-align:middle;">${items.length}</span>
+        </div>
+        <div style="background:#ffffff;border:1px solid #e6e9ef;border-left:3px solid ${barColor};border-radius:10px;padding:2px 16px;">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;">
+            ${rows}
+          </table>
+        </div>
       </div>`
-  }).join('')
-
-  return `
-    <div style="margin-bottom:24px;">
-      <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:${color};padding-bottom:8px;border-bottom:2px solid ${color};margin-bottom:12px;">${title}</div>
-      ${txBlocks}
-    </div>`
-}
-
-function renderMilestones(milestones) {
-  if (!milestones.length) return ''
-  const rows = milestones.map(t => `
-    <tr>
-      <td style="padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:14px;color:#1a1a1a;">
-        📅 ${t.title}
-        <span style="font-size:12px;color:#888;margin-left:8px;">${t.transactions?.property_address || ''}</span>
-      </td>
-    </tr>`).join('')
-
-  return `
-    <div style="margin-bottom:24px;">
-      <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#6d28d9;padding-bottom:8px;border-bottom:2px solid #6d28d9;margin-bottom:12px;">Key Dates — Today</div>
-      <table style="width:100%;border-collapse:collapse;">${rows}</table>
-    </div>`
 }
 
 function buildDigestHtml(overdue, dueToday, milestones, today) {
@@ -122,64 +112,84 @@ function buildDigestHtml(overdue, dueToday, milestones, today) {
   // is neutral and the body is identical for every recipient.
   const displayName = 'there'
   const dateLabel   = fmtDate(today)
-  const totalCount  = overdue.length + dueToday.length + milestones.length
+  const mstones     = milestones || []
+  const totalCount  = overdue.length + dueToday.length + mstones.length
 
-  const overdueSection    = renderSection('Overdue', '#dc2626', overdue, today)
-  const dueTodaySection   = renderSection('Due Today', '#d97706', dueToday, today)
-  const milestonesSection = renderMilestones(milestones)
+  const toItem = (t, pill) => ({
+    title:   t.title,
+    address: t.transactions?.property_address || '',
+    pill,
+  })
 
-  const emptyMsg = totalCount === 0
-    ? `<p style="color:#666;font-size:15px;text-align:center;padding:24px 0;">✅ Nothing due or overdue — great work!</p>`
+  const overdueSection  = renderCardSection('Overdue', '#dc2626', '#fde8e8', '#dc2626',
+                            overdue.map(t => toItem(t, pillOverdue(daysOverdue(t.due_date, today)))))
+  const dueTodaySection = renderCardSection('Due Today', '#b45309', '#fef3c7', '#d97706',
+                            dueToday.map(t => toItem(t, pillDueToday())))
+  // Key Dates uses the app teal accent (#50C8DC) as the left bar; a darker teal
+  // (#0e7c8c) for readable header/badge text on white.
+  const keyDatesSection = renderCardSection('Key Dates', '#0e7c8c', '#e2f6fa', '#50C8DC',
+                            mstones.map(t => toItem(t, pillKeyDate(t.due_date))))
+
+  // Empty sections are hidden. If everything is empty, show one calm message.
+  const emptyState = totalCount === 0
+    ? `<div style="background:#ffffff;border:1px solid #e6e9ef;border-radius:10px;padding:28px 16px;text-align:center;">
+             <div style="font-size:15px;color:#4b5563;">✅ Nothing due or overdue — you're all caught up.</div>
+           </div>`
     : ''
 
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
-<body style="margin:0;padding:0;background:#f5f5f5;font-family:'Inter',sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:32px 16px;">
+<body style="margin:0;padding:0;background:#f5f7fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f5f7fa;padding:28px 14px;">
     <tr><td align="center">
-      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;">
 
-        <!-- Header -->
+        <!-- Masthead: big logo on a dark bar (matches app nav #02030a) -->
         <tr>
-          <td style="background:#111111;padding:24px 32px;">
-            <div style="font-size:18px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">LegacyOS</div>
-            <div style="font-size:13px;color:#999999;margin-top:2px;">Daily Digest — ${dateLabel}</div>
+          <td style="background:#02030a;border-radius:14px 14px 0 0;padding:16px 24px;text-align:center;">
+            <img src="https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo-nav-v3.png" alt="Legacy OS" style="max-width: 380px; width: 100%; height: auto; display: block; margin: 0 auto;" />
           </td>
         </tr>
 
-        <!-- Body -->
+        <!-- Subtitle + greeting (light body) -->
         <tr>
-          <td style="padding:28px 32px;">
-            <p style="font-size:16px;color:#1a1a1a;margin:0 0 24px;font-weight:500;">Hi ${displayName},</p>
-            <p style="font-size:14px;color:#666;margin:0 0 24px;line-height:1.5;">
-              Here's the task summary for today.
-              ${overdue.length > 0 ? `There ${overdue.length === 1 ? 'is' : 'are'} <strong style="color:#dc2626;">${overdue.length} overdue task${overdue.length !== 1 ? 's' : ''}</strong>.` : ''}
-            </p>
+          <td style="background:#f5f7fa;padding:22px 4px 8px;">
+            <div style="font-size:13px;color:#9aa3af;text-align:center;margin-bottom:18px;">Daily Digest · ${dateLabel}</div>
+            <div style="font-size:16px;font-weight:600;color:#1a2330;margin-bottom:6px;">Hi ${displayName},</div>
+            <div style="font-size:14px;color:#6b7280;line-height:1.5;">
+              Here's the task summary for today.${overdue.length > 0 ? ` <strong style="color:#dc2626;">${overdue.length} task${overdue.length !== 1 ? 's' : ''} overdue.</strong>` : ''}
+            </div>
+          </td>
+        </tr>
 
+        <!-- Sections -->
+        <tr>
+          <td style="padding:12px 4px 4px;">
             ${overdueSection}
             ${dueTodaySection}
-            ${milestonesSection}
-            ${emptyMsg}
+            ${keyDatesSection}
+            ${emptyState}
+          </td>
+        </tr>
 
-            <div style="margin-top:28px;padding-top:20px;border-top:1px solid #e0e0e0;text-align:center;">
-              <a href="https://app.desert-legacy.com"
-                 style="display:inline-block;background:#111111;color:#ffffff;font-size:14px;font-weight:600;padding:10px 24px;border-radius:8px;text-decoration:none;">
-                Open LegacyOS →
-              </a>
-            </div>
+        <!-- CTA -->
+        <tr>
+          <td style="padding:8px 4px 4px;text-align:center;">
+            <a href="https://app.desert-legacy.com"
+               style="display:inline-block;background:#111418;color:#ffffff;font-size:14px;font-weight:600;padding:11px 26px;border-radius:8px;text-decoration:none;">
+              Open LegacyOS →
+            </a>
           </td>
         </tr>
 
         <!-- Footer -->
         <tr>
-          <td style="background:#f9f9f9;padding:16px 32px;border-top:1px solid #eeeeee;">
-            <p style="font-size:12px;color:#aaaaaa;margin:0;text-align:center;">
-              LegacyOS · Daily digest sent every morning (Arizona time)
-            </p>
+          <td style="padding:18px 4px 4px;text-align:center;">
+            <div style="font-size:12px;color:#9aa3af;">LegacyOS · Daily digest sent every morning (Arizona time)</div>
           </td>
         </tr>
 

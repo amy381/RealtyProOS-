@@ -21,6 +21,11 @@ const {
   toBase64Url,
 } = require('../google/_lib')
 
+// Owner scope for the single-tenant digest. Mirrors LEGACY_OS_OWNER_USER_ID in
+// api/google/gmail-send.js (not exported there, so duplicated verbatim here).
+// The digest is one role-based body for all recipients, scoped to this user's data.
+const LEGACY_OS_OWNER_USER_ID = 'a02b464f-dd3e-49de-b893-2825fe8efb3f'
+
 // ── Signature wrap ─────────────────────────────────────────────────────────────
 // emailWrapper.js lives under client/src and is an ESM module, so it can't be
 // required from this CommonJS serverless function. Inlined here with the same
@@ -263,6 +268,7 @@ module.exports = async function handler(req, res) {
     const { data: actionTasks, error: tErr } = await supabase
       .from('tasks')
       .select('id, title, due_date, assigned_to, task_type, transaction_id, transactions(property_address)')
+      .eq('user_id', LEGACY_OS_OWNER_USER_ID)
       .neq('status', 'complete')
       .neq('task_type', 'Due Date')
       .not('due_date', 'is', null)
@@ -272,6 +278,7 @@ module.exports = async function handler(req, res) {
     const { data: milestones, error: mErr } = await supabase
       .from('tasks')
       .select('id, title, due_date, transaction_id, transactions(property_address)')
+      .eq('user_id', LEGACY_OS_OWNER_USER_ID)
       .eq('task_type', 'Due Date')
       .eq('due_date', today)
     if (mErr) throw new Error('milestones: ' + mErr.message)

@@ -28,7 +28,7 @@ const ALLOWED_EMAILS = (import.meta.env.VITE_ALLOWED_EMAILS || '')
   .split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
 
 const STAGE_ORDER = ['pre-listing', 'buyer-broker', 'active-listing', 'pending', 'closed', 'cancelled-expired']
-const DEFAULT_BOARD_FILTERS = { year: '2026', tcs: [], repType: 'All' }
+const DEFAULT_BOARD_FILTERS = { year: '2026', tcs: [], repType: 'All', cancelledOnly: false }
 
 function stageName(s) {
   return { 'pre-listing': 'Pre-Listing', 'buyer-broker': 'Buyer-Broker', 'active-listing': 'Active Listing',
@@ -57,6 +57,11 @@ const COLUMNS = [
   { id: 'pending',           label: 'Pending',              color: '#333333', bgColor: 'transparent', priceLabel: 'Purchase Price', viewMode: 'wide'   },
   { id: 'closed',            label: 'Closed',               color: '#444444', bgColor: 'transparent', priceLabel: 'Purchase Price', viewMode: 'narrow' },
 ]
+
+// Shown ONLY when the board's "Cancelled / Expired" toggle is on (replaces the
+// normal columns). Deliberately not part of COLUMNS, so it never appears in the
+// normal board view.
+const CANCELLED_COLUMN = { id: 'cancelled-expired', label: 'Cancelled / Expired', color: '#888888', bgColor: 'transparent', priceLabel: 'Purchase Price', viewMode: 'medium' }
 
 export default function App() {
   const [session, setSession]                   = useState(undefined) // undefined = loading
@@ -879,6 +884,13 @@ export default function App() {
 
   // Apply board filters to transactions
   const boardFilteredTx = transactions.filter(t => {
+    // Cancelled / Expired toggle. ON → show ONLY cancelled-expired (TC/rep still
+    // apply below). OFF → never show cancelled-expired in the normal board.
+    if (boardFilters.cancelledOnly) {
+      if (t.status !== 'cancelled-expired') return false
+    } else {
+      if (t.status === 'cancelled-expired') return false
+    }
     // Year — only filter closed transactions by close_of_escrow; all other statuses show regardless
     if (boardFilters.year !== 'All' && t.status === 'closed') {
       if (!t.close_of_escrow || !t.close_of_escrow.startsWith(boardFilters.year)) return false
@@ -947,6 +959,12 @@ export default function App() {
                 <button className={`bvt-btn${boardView === 'list'  ? ' active' : ''}`} onClick={() => switchBoardView('list')}>List</button>
               </div>
               <div className="board-toolbar-right">
+              <button
+                className={`board-filter-btn${boardFilters.cancelledOnly ? ' has-filters' : ''}`}
+                onClick={() => setBoardFilters(f => ({ ...f, cancelledOnly: !f.cancelledOnly }))}
+              >
+                Cancelled / Expired
+              </button>
               <div className="board-filter-wrap" ref={boardFilterRef}>
                 <button
                   className={`board-filter-btn${boardFilterCount > 0 ? ' has-filters' : ''}`}
@@ -1012,7 +1030,7 @@ export default function App() {
 
           {activeTab === 'board' && boardView === 'board' && (
             <KanbanBoard
-              columns={COLUMNS}
+              columns={boardFilters.cancelledOnly ? [CANCELLED_COLUMN] : COLUMNS}
               transactions={boardFilteredTx}
               onStatusChange={handleStatusChange}
               onDelete={handleDelete}

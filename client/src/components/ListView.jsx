@@ -537,6 +537,19 @@ export default function ListView({ transactions, commissions, columns, onCardCli
 
   const filterCount = countActiveFilters(filters)
 
+  // "Cancelled / Expired only" toggle — ON when the applied stage set is exactly
+  // {cancelled-expired}. Toggling sets BOTH applied + draft (takes effect without
+  // Apply) and persists via the same localStorage/serialize path as applyFilters.
+  const cancelledOnly = filters.stageChecks.size === 1 && filters.stageChecks.has('cancelled-expired')
+  const toggleCancelledOnly = () => {
+    const nextChecks = cancelledOnly ? new Set(DEFAULT_STAGE_CHECKS) : new Set(['cancelled-expired'])
+    const nf = { ...filters, stageChecks: nextChecks }
+    setFilters(nf)
+    setDraft(d => ({ ...d, stageChecks: nextChecks }))
+    setActiveViewId(null)
+    localStorage.setItem('listViewFilters', JSON.stringify(serializeFilters(nf)))
+  }
+
   const gciFor = tx => calcGCI(tx, commissions?.[tx.id])
   const closed     = transactions.filter(t => t.status === 'closed')
   const pending    = transactions.filter(t => t.status === 'pending')
@@ -696,6 +709,12 @@ export default function ListView({ transactions, commissions, columns, onCardCli
         {filterCount > 0 && (
           <button className="lv-clear-btn" onClick={clearAll}>Clear All</button>
         )}
+        <button
+          className={`lv-filters-btn${cancelledOnly ? ' has-filters' : ''}`}
+          onClick={toggleCancelledOnly}
+        >
+          Cancelled / Expired
+        </button>
         <button
           className={`lv-filters-btn${filterCount > 0 ? ' has-filters' : ''}`}
           onClick={openPanel}

@@ -15,7 +15,9 @@ import './KanbanBoard.css'
 export default function KanbanBoard({ columns, transactions, onStatusChange, onDelete, onCardClick, commissions }) {
   const [activeId, setActiveId] = useState(null)
 
-  const mainColumns = columns.filter(c => c.id !== 'cancelled-expired')
+  // App decides which columns to pass (normal 5, or just the cancelled column
+  // when the board's Cancelled/Expired toggle is on), so render them as given.
+  const mainColumns = columns
 
   const listTxCount = mainColumns
     .filter(c => c.viewMode === 'list')

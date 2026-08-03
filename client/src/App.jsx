@@ -909,6 +909,7 @@ export default function App() {
   const boardFilterCount = (boardFilters.year !== '2026' ? 1 : 0)
     + (boardFilters.tcs.length > 0 ? 1 : 0)
     + (boardFilters.repType !== 'All' ? 1 : 0)
+    + (boardFilters.cancelledOnly ? 1 : 0)
 
   const agentName  = agentSettings?.realtor_name  || ''
   const agentEmail = agentSettings?.realtor_email || ''
@@ -959,12 +960,6 @@ export default function App() {
                 <button className={`bvt-btn${boardView === 'list'  ? ' active' : ''}`} onClick={() => switchBoardView('list')}>List</button>
               </div>
               <div className="board-toolbar-right">
-              <button
-                className={`board-filter-btn${boardFilters.cancelledOnly ? ' has-filters' : ''}`}
-                onClick={() => setBoardFilters(f => ({ ...f, cancelledOnly: !f.cancelledOnly }))}
-              >
-                Cancelled / Expired
-              </button>
               <div className="board-filter-wrap" ref={boardFilterRef}>
                 <button
                   className={`board-filter-btn${boardFilterCount > 0 ? ' has-filters' : ''}`}
@@ -1011,6 +1006,20 @@ export default function App() {
                             onClick={() => setBoardFilters(f => ({ ...f, repType: rt }))}
                           >{rt}</button>
                         ))}
+                      </div>
+                    </div>
+                    {/* Status — Active (normal stages) vs Cancelled / Expired (only cancelled) */}
+                    <div className="bfp-row">
+                      <span className="bfp-label">Status</span>
+                      <div className="bfp-opts">
+                        <button
+                          className={`bfp-opt${!boardFilters.cancelledOnly ? ' active' : ''}`}
+                          onClick={() => setBoardFilters(f => ({ ...f, cancelledOnly: false }))}
+                        >Active</button>
+                        <button
+                          className={`bfp-opt${boardFilters.cancelledOnly ? ' active' : ''}`}
+                          onClick={() => setBoardFilters(f => ({ ...f, cancelledOnly: true }))}
+                        >Cancelled / Expired</button>
                       </div>
                     </div>
                     {boardFilterCount > 0 && (

@@ -117,6 +117,7 @@ const RECIPIENT_VARIABLE_OPTIONS = [
   { value: 'lender',        label: 'Lender'        },
   { value: 'title_contact', label: 'Title Contact' },
   { value: 'co_op_agent',   label: 'Co-op Agent'   },
+  { value: 'agent',         label: 'Agent'         },
   { value: 'tc',            label: 'TC'            },
 ]
 

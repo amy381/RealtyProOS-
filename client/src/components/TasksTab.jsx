@@ -900,6 +900,7 @@ export function GlobalTaskRow({ task, tx, commissions = {}, collaborators = {}, 
           commissions={commissions}
           collaborators={collaborators}
           tcSettings={tcSettings}
+          agentEmail={agentSettings?.realtor_email || ''}
           driveFolderId={tx?.drive_folder_id || null}
           onUpdate={onUpdate}
           onClose={() => setEmailPreviewOpen(false)}

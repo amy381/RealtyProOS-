@@ -19,7 +19,7 @@ function coerceEmailStr(entry) {
 
 // ─── Resolve a recipients/cc_recipients JSONB array → email strings ────────────
 // titleContact is the collaborator record (or null) fetched from collaborators table
-function resolveRecipients(entries = [], tx, titleContact) {
+function resolveRecipients(entries = [], tx, titleContact, agentEmail = '') {
   if (!Array.isArray(entries)) return { emails: [], warnings: [] }
   const resolved = []
   const warnings = []
@@ -59,6 +59,11 @@ function resolveRecipients(entries = [], tx, titleContact) {
           const email = tx?.co_op_agent_email
           if (email) resolved.push(String(email).trim())
           else warnings.push('Co-op Agent email not set')
+          break
+        }
+        case 'agent': {
+          if (agentEmail) resolved.push(String(agentEmail).trim())
+          else warnings.push('Agent email not set')
           break
         }
         case 'tc': {
@@ -172,7 +177,7 @@ function maybeDecodeHtml(html) {
 }
 
 // ─── Main EmailPreviewModal ───────────────────────────────────────────────────
-export default function EmailPreviewModal({ task, tx, commissions = {}, collaborators = {}, tcSettings = [], driveFolderId = null, onUpdate, onClose }) {
+export default function EmailPreviewModal({ task, tx, commissions = {}, collaborators = {}, tcSettings = [], agentEmail = '', driveFolderId = null, onUpdate, onClose }) {
   const [template,     setTemplate]     = useState(null)
   const [loading,      setLoading]      = useState(true)
   const [titleContact, setTitleContact] = useState(null)
@@ -218,8 +223,8 @@ export default function EmailPreviewModal({ task, tx, commissions = {}, collabor
   }, [tx?.title_collaborator_id])
 
   // Resolve recipients/CC — safe when template is null (returns empty arrays)
-  const recipientsResult = resolveRecipients(template?.recipients || [], tx, titleContact)
-  const ccResult         = resolveRecipients(template?.cc_recipients || [], tx, titleContact)
+  const recipientsResult = resolveRecipients(template?.recipients || [], tx, titleContact, agentEmail)
+  const ccResult         = resolveRecipients(template?.cc_recipients || [], tx, titleContact, agentEmail)
   const allWarnings = [...recipientsResult.warnings, ...ccResult.warnings]
 
   const toEmails = recipientsResult.emails

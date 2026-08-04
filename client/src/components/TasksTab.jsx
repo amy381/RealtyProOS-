@@ -433,7 +433,7 @@ export function CriticalDateRow({ task, onDelete, flatAddr }) {
 
 // ─── Vendor Select Modal — vendor dropdown + inline email preview ─────────────
 
-function VendorSelectModal({ matchedVendors, task, tx, tcSettings, agentName = '', agentSettings = null, onUpdate, onClose }) {
+function VendorSelectModal({ matchedVendors, task, tx, commissions = {}, tcSettings, agentName = '', agentSettings = null, onUpdate, onClose }) {
   const [selectedVendorId, setSelectedVendorId] = useState(task.selected_vendor_id || '')
   const [vendorFormOpen,   setVendorFormOpen]   = useState(false)
   const [vendorPdfOpen,    setVendorPdfOpen]    = useState(false)
@@ -461,8 +461,8 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, agentName = '
     supabase.from('email_templates').select('subject,body').eq('id', selectedVendor.email_template_id).single()
       .then(({ data }) => {
         if (data) {
-          setTplSubject(resolveVars(data.subject || '', tx, tcSettings))
-          setTplBody(resolveVars(data.body || '', tx, tcSettings))
+          setTplSubject(resolveVars(data.subject || '', tx, tcSettings, commissions))
+          setTplBody(resolveVars(data.body || '', tx, tcSettings, commissions))
         } else {
           setTplMissing(true)
         }
@@ -640,7 +640,7 @@ function VendorSelectModal({ matchedVendors, task, tx, tcSettings, agentName = '
   )
 }
 
-export function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpenEdit, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [], agentName = '', agentSettings = null, emailTemplateMap = {}, isEven = false, txAddress = null }) {
+export function GlobalTaskRow({ task, tx, commissions = {}, onUpdate, onUpdateTx, onDelete, onOpenEdit, bulkMode, selected, onToggleSelect, vendors = [], tcSettings = [], agentName = '', agentSettings = null, emailTemplateMap = {}, isEven = false, txAddress = null }) {
   const assigneeOptions = getAssigneeOptions(tcSettings, agentName)
   const done      = task.status === 'complete'
   const statusKey = task.status || 'open'
@@ -886,6 +886,7 @@ export function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpen
           matchedVendors={matchedVendors}
           task={task}
           tx={tx}
+          commissions={commissions}
           tcSettings={tcSettings}
           onUpdate={onUpdate}
           onClose={() => setVendorSelectOpen(false)}
@@ -895,6 +896,7 @@ export function GlobalTaskRow({ task, tx, onUpdate, onUpdateTx, onDelete, onOpen
         <EmailPreviewModal
           task={task}
           tx={tx}
+          commissions={commissions}
           tcSettings={tcSettings}
           driveFolderId={tx?.drive_folder_id || null}
           onUpdate={onUpdate}
@@ -1102,7 +1104,7 @@ function fmtTs(ts) {
 }
 
 // ─── Compose Modal ────────────────────────────────────────────────────────────
-function ComposeModal({ row, transactions, tcSettings, agentName = '', onSave, onClose }) {
+function ComposeModal({ row, transactions, commissions = {}, tcSettings, agentName = '', onSave, onClose }) {
   const [emailTemplates, setEmailTemplates] = useState([])
   const [form, setForm] = useState({
     transaction_id: row?.transaction_id || '',
@@ -1144,9 +1146,9 @@ function ComposeModal({ row, transactions, tcSettings, agentName = '', onSave, o
       ...f,
       template_id:   tmpl.id,
       template_name: tmpl.name,
-      subject:       resolveVars(tmpl.subject, selectedTx, tcSettings),
-      cc:            resolveVars(tmpl.cc,      selectedTx, tcSettings),
-      body:          resolveVars(tmpl.body,    selectedTx, tcSettings),
+      subject:       resolveVars(tmpl.subject, selectedTx, tcSettings, commissions),
+      cc:            resolveVars(tmpl.cc,      selectedTx, tcSettings, commissions),
+      body:          resolveVars(tmpl.body,    selectedTx, tcSettings, commissions),
     }))
   }
 
@@ -1158,9 +1160,9 @@ function ComposeModal({ row, transactions, tcSettings, agentName = '', onSave, o
       ...f,
       transaction_id: txId,
       ...(tmpl ? {
-        subject: resolveVars(tmpl.subject, tx, tcSettings),
-        cc:      resolveVars(tmpl.cc,      tx, tcSettings),
-        body:    resolveVars(tmpl.body,    tx, tcSettings),
+        subject: resolveVars(tmpl.subject, tx, tcSettings, commissions),
+        cc:      resolveVars(tmpl.cc,      tx, tcSettings, commissions),
+        body:    resolveVars(tmpl.body,    tx, tcSettings, commissions),
       } : {}),
     }))
   }
@@ -1541,6 +1543,7 @@ function SendQueueView({ transactions, tcSettings, agentName = '', onQueueCountC
         <ComposeModal
           row={composing === 'new' ? null : composing}
           transactions={transactions}
+          commissions={commissions}
           tcSettings={tcSettings}
           agentName={agentName}
           onSave={handleSaveCompose}
@@ -1744,7 +1747,7 @@ function FiltersPanel({ draft, setDraft, onApply, onClear, onClose, savedViews, 
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function TasksTab({
-  tasks, transactions, onTaskUpdate, onDeleteTask, onAddTask, onUpdateTransaction,
+  tasks, transactions, commissions = {}, onTaskUpdate, onDeleteTask, onAddTask, onUpdateTransaction,
   tcSettings = [], agentName = '', agentSettings = null, onCardClick,
   activeSubTabProp, onSubTabChange,
 }) {
@@ -2382,6 +2385,7 @@ export default function TasksTab({
                       key={item.id}
                       task={item}
                       tx={tx}
+                      commissions={commissions}
                       onUpdate={onTaskUpdate}
                       onUpdateTx={onUpdateTransaction}
                       onDelete={onDeleteTask}
@@ -2441,6 +2445,7 @@ export default function TasksTab({
                     key={item.id}
                     task={item}
                     tx={item._tx}
+                    commissions={commissions}
                     onUpdate={onTaskUpdate}
                     onUpdateTx={onUpdateTransaction}
                     onDelete={onDeleteTask}

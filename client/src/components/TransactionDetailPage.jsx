@@ -2636,7 +2636,7 @@ function TdlAddTaskModal({ transaction, assigneeOptions = [], onAdd, onClose }) 
 }
 
 // ─── Tasks & Documents — Left Column ─────────────────────────────────────────
-function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, tcSettings = [], agentName = '', agentSettings = null, transactionAddr = '', onTransactionUpdate }) {
+function TasksDocsLeft({ transactionId, transaction, commissions = {}, onAdd, onUpdate, onDelete, tcSettings = [], agentName = '', agentSettings = null, transactionAddr = '', onTransactionUpdate }) {
   const [localTasks,   setLocalTasks]  = useState([])
   const [tasksLoaded,  setTasksLoaded] = useState(false)
   const [editingTaskId, setEditingTaskId] = useState(null)
@@ -2808,6 +2808,7 @@ function TasksDocsLeft({ transactionId, transaction, onAdd, onUpdate, onDelete, 
             key={item.id}
             task={item}
             tx={transaction}
+            commissions={commissions}
             onUpdate={handleUpdate}
             onUpdateTx={handleUpdateTx}
             onDelete={handleDelete}
@@ -3873,6 +3874,7 @@ export default function TransactionDetailPage({
               <TasksDocsLeft
                 transactionId={transaction.id}
                 transaction={transaction}
+                commissions={commissions}
                 onAdd={onAddTask}
                 onUpdate={onUpdateTask}
                 onDelete={onDeleteTask}

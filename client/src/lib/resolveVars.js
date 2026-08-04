@@ -1,8 +1,12 @@
-export function resolveVars(text, tx, tcSettings = []) {
+export function resolveVars(text, tx, tcSettings = [], commissions = {}) {
   if (text == null) return ''
   const str = typeof text === 'string' ? text : String(text)
   if (!str) return ''
   if (!tx)  return str.replace(/\{\{(\w+)\}\}/g, '')  // no transaction → all blanks
+
+  // Merge the transaction's commission record so commission fields resolve.
+  const c      = (tx && commissions[tx.id]) || {}
+  const merged = { ...c, ...tx }   // tx wins on id/user_id/timestamps
 
   const tc  = tcSettings.find(t => t.name === tx.assigned_tc)
   const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''
@@ -21,12 +25,14 @@ export function resolveVars(text, tx, tcSettings = []) {
     ? `${client_full_name} and ${client2_full_name}`
     : client_full_name
 
-  // commission_rate: derive from new split fields if present on tx (populated via joined query)
-  const commission_rate = tx.seller_concession_flat != null && tx.seller_concession_flat !== ''
-    ? `$${Number(tx.seller_concession_flat).toLocaleString()}`
-    : tx.seller_concession_percent != null && tx.seller_concession_percent !== ''
-      ? `${tx.seller_concession_percent}%`
-      : ''
+  // commission_rate: rep_type-aware, sourced from the merged commission record
+  const sellerComp   = merged.seller_concession_percent  // the "Seller Compensation" field
+  const buyerContrib = merged.buyer_contribution_percent
+  const sc = (sellerComp   == null || sellerComp   === '') ? 0 : sellerComp
+  const bc = (buyerContrib  == null || buyerContrib === '') ? 0 : buyerContrib
+  const commission_rate = merged.rep_type === 'Buyer'
+    ? `Seller Compensation: ${sc}%, Buyer Contribution: ${bc}%`
+    : (sellerComp != null && sellerComp !== '') ? `${sellerComp}%` : ''
 
   // Block variables — lines joined with <br> for HTML email bodies
   const titleParts  = [tx.title_company, tx.escrow_officer, tx.title_company_phone, tx.title_company_email].filter(Boolean)

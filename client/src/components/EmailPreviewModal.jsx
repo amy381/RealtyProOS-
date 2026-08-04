@@ -172,7 +172,7 @@ function maybeDecodeHtml(html) {
 }
 
 // ─── Main EmailPreviewModal ───────────────────────────────────────────────────
-export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFolderId = null, onUpdate, onClose }) {
+export default function EmailPreviewModal({ task, tx, commissions = {}, tcSettings = [], driveFolderId = null, onUpdate, onClose }) {
   const [template,     setTemplate]     = useState(null)
   const [loading,      setLoading]      = useState(true)
   const [titleContact, setTitleContact] = useState(null)
@@ -226,11 +226,11 @@ export default function EmailPreviewModal({ task, tx, tcSettings = [], driveFold
   const ccEmails = ccResult.emails.length > 0
     ? ccResult.emails
     : typeof template?.cc === 'string' && template.cc
-      ? resolveVars(template.cc, tx, tcSettings).split(',').map(s => s.trim()).filter(Boolean)
+      ? resolveVars(template.cc, tx, tcSettings, commissions).split(',').map(s => s.trim()).filter(Boolean)
       : []
 
-  const resolvedSubject = resolveVars(template?.subject || '', tx, tcSettings)
-  const resolvedBody    = resolveVars(template?.body    || '', tx, tcSettings)
+  const resolvedSubject = resolveVars(template?.subject || '', tx, tcSettings, commissions)
+  const resolvedBody    = resolveVars(template?.body    || '', tx, tcSettings, commissions)
 
   // Seed editable fields once when template data arrives; re-seed if template changes
   useEffect(() => {

@@ -1102,6 +1102,7 @@ export default function App() {
             <TasksTab
               tasks={tasks}
               transactions={transactions}
+              commissions={commissions}
               onTaskUpdate={handleUpdateTask}
               onDeleteTask={handleDeleteTask}
               onAddTask={handleAddTask}

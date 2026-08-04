@@ -24,6 +24,9 @@ export function resolveVars(text, tx, tcSettings = [], commissions = {}) {
   const client_full_names = client2_full_name
     ? `${client_full_name} and ${client2_full_name}`
     : client_full_name
+  // rep_type-aware name vars — reuse client_full_names verbatim, gated on rep_type
+  const seller_names = merged.rep_type === 'Seller' ? client_full_names : ''
+  const buyer_names  = merged.rep_type === 'Buyer'  ? client_full_names : ''
 
   // commission_rate: rep_type-aware, sourced from the merged commission record
   const sellerComp   = merged.seller_concession_percent  // the "Seller Compensation" field
@@ -45,6 +48,8 @@ export function resolveVars(text, tx, tcSettings = [], commissions = {}) {
     client_greeting,
     client_full_name,
     client_full_names,
+    seller_names,
+    buyer_names,
     client2_full_name,
     // Individual client fields
     client_first_name:     f1,

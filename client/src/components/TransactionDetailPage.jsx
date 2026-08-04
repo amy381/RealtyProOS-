@@ -2773,8 +2773,28 @@ function TasksDocsLeft({ transactionId, transaction, commissions = {}, collabora
   // Flat list: hide completed unless toggled (Critical Date rows always shown),
   // then sort by the active column — same switch as the global page's flatListData
   // minus the tx_address column (single transaction, no Transaction column).
+  // IDs of Critical Date tasks resolved by a completed regular task (mirrors
+  // TasksTab.jsx groupedData). A completed resolver clears its critical date.
+  const resolvedCritIds = new Set(
+    localTasks
+      .filter(t => t.status === 'complete' && t.resolves_critical_date)
+      .map(t => t.resolves_critical_date)
+  )
+  const todayStr = new Date().toISOString().slice(0, 10)
+
   const displayTasks = localTasks
-    .filter(t => t.task_type === 'Critical Date' || t.status !== 'complete' || showCompletedFlat)
+    .filter(t => {
+      if (t.task_type === 'Critical Date') {
+        // Hide critical dates that are completed, resolved by a completed
+        // task, or already past — exactly as the global Tasks page does.
+        if (t.status === 'complete') return false
+        if (resolvedCritIds.has(t.id)) return false
+        if (t.due_date && t.due_date < todayStr) return false
+        return true
+      }
+      // Regular tasks: hide completed unless the toggle is on.
+      return t.status !== 'complete' || showCompletedFlat
+    })
     .slice()
     .sort((a, b) => {
       let cmp = 0

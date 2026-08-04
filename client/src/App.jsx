@@ -68,6 +68,7 @@ export default function App() {
   const [accessDenied, setAccessDenied]         = useState(false)
   const [transactions, setTransactions]         = useState([])
   const [commissions, setCommissions]           = useState({})
+  const [collaborators, setCollaborators]       = useState({})
   const [tasks, setTasks]                       = useState([])
   const [tcSettings, setTcSettings]             = useState([])
   const [agentSettings, setAgentSettings]       = useState(null)
@@ -189,9 +190,11 @@ export default function App() {
       const [
         { data: txData, error: txErr },
         { data: cmData, error: cmErr },
+        { data: collabData, error: collabErr },
       ] = await Promise.all([
         supabase.from('transactions').select('*').order('created_at', { ascending: false }),
         supabase.from('commissions').select('*'),
+        supabase.from('collaborators').select('*'),
       ])
 
       if (txErr || cmErr) {
@@ -207,6 +210,16 @@ export default function App() {
       for (const cm of (cmData || [])) cmMap[cm.transaction_id] = cm
       setCommissions(cmMap)
       commissionsRef.current = cmMap
+
+      // collaborators is non-fatal — used only for {{title_block}} addresses; degrade to {} on failure
+      if (collabErr) {
+        console.warn('Collaborators failed to load — title-block addresses will be omitted', collabErr)
+        setCollaborators({})
+      } else {
+        const collabMap = {}
+        for (const c of (collabData || [])) collabMap[c.id] = c
+        setCollaborators(collabMap)
+      }
 
       // Optional tables — gracefully degrade if not created yet
       const [
@@ -1103,6 +1116,7 @@ export default function App() {
               tasks={tasks}
               transactions={transactions}
               commissions={commissions}
+              collaborators={collaborators}
               onTaskUpdate={handleUpdateTask}
               onDeleteTask={handleDeleteTask}
               onAddTask={handleAddTask}
@@ -1168,6 +1182,7 @@ export default function App() {
           initialSection={selectedSection}
           columns={COLUMNS}
           commissions={commissions}
+          collaborators={collaborators}
           tasks={panelTasks}
           tcSettings={tcSettings}
           agentName={agentName}

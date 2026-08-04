@@ -1,4 +1,4 @@
-export function resolveVars(text, tx, tcSettings = [], commissions = {}) {
+export function resolveVars(text, tx, tcSettings = [], commissions = {}, collaborators = {}) {
   if (text == null) return ''
   const str = typeof text === 'string' ? text : String(text)
   if (!str) return ''
@@ -38,7 +38,14 @@ export function resolveVars(text, tx, tcSettings = [], commissions = {}) {
     : (sellerComp != null && sellerComp !== '') ? `${sellerComp}%` : ''
 
   // Block variables — lines joined with <br> for HTML email bodies
-  const titleParts  = [tx.title_company, tx.escrow_officer, tx.title_company_phone, tx.title_company_email].filter(Boolean)
+  const titleCollab = (tx.title_collaborator_id && collaborators[tx.title_collaborator_id]) || {}
+  const titleParts  = [
+    tx.title_company,
+    merged.title_contact_name,   // FIX: was tx.escrow_officer (not a real column)
+    titleCollab.address,         // NEW — from collaborators[title_collaborator_id]
+    tx.title_company_phone,
+    tx.title_company_email,
+  ].filter(Boolean)
   const lenderParts = [tx.lender_name,   tx.lender_phone,   tx.lender_email].filter(Boolean)
   const title_block  = titleParts.join('<br>')
   const lender_block = lenderParts.join('<br>')

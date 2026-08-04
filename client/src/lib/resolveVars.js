@@ -46,7 +46,13 @@ export function resolveVars(text, tx, tcSettings = [], commissions = {}, collabo
     tx.title_company_phone,
     tx.title_company_email,
   ].filter(Boolean)
-  const lenderParts = [tx.lender_name,   tx.lender_phone,   tx.lender_email].filter(Boolean)
+  const lenderCollab = (tx.lender_collaborator_id && collaborators[tx.lender_collaborator_id]) || {}
+  const lenderParts  = [
+    lenderCollab.company,
+    [lenderCollab.first_name, lenderCollab.last_name].filter(Boolean).join(' '),
+    lenderCollab.phone,
+    lenderCollab.email,
+  ].filter(Boolean)
   const title_block  = titleParts.join('<br>')
   const lender_block = lenderParts.join('<br>')
 

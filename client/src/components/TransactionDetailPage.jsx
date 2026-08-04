@@ -1867,6 +1867,13 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
       .then(({ data }) => setTitleCollab(data || null))
   }, [transaction.title_collaborator_id])
 
+  const [lenderCollab, setLenderCollab] = useState(null)
+  useEffect(() => {
+    if (!transaction.lender_collaborator_id) { setLenderCollab(null); return }
+    supabase.from('collaborators').select('*').eq('id', transaction.lender_collaborator_id).single()
+      .then(({ data }) => setLenderCollab(data || null))
+  }, [transaction.lender_collaborator_id])
+
   const priceLabel = column?.priceLabel ||
     (transaction.rep_type === 'Buyer' ? 'Purchase Price' : 'List Price')
 
@@ -2117,20 +2124,53 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
               />
 
               {transaction.financing_type !== 'Cash' && transaction.financing_type !== 'Owner Financing' && (<>
+              {lenderCollab ? (
+                <div className="txp-field">
+                  <span className="txp-field-label">Lender</span>
+                  <div className="txp-title-linked">
+                    <span className="txp-title-linked-name">
+                      {[lenderCollab.first_name, lenderCollab.last_name].filter(Boolean).join(' ')}
+                      {lenderCollab.company ? ` — ${lenderCollab.company}` : ''}
+                    </span>
+                    <button
+                      className="txp-title-clear-btn"
+                      title="Clear selection"
+                      onClick={() => {
+                        onMultiFieldSave({
+                          lender_collaborator_id: null,
+                          lender_name:  null,
+                          lender_company: null,
+                          lender_email: null,
+                          lender_phone: null,
+                        })
+                        setLenderCollab(null)
+                      }}
+                    >✕</button>
+                  </div>
+                </div>
+              ) : (
                 <CollaboratorSearch
                   label="Lender"
-                  value={transaction.lender_name || ''}
+                  value=""
                   category="lenders"
-                  onSave={save('lender_name')}
+                  onSave={() => {}}
                   onSelect={c => {
-                    if (c.email) save('lender_email')(c.email)
-                    if (c.phone) save('lender_phone')(c.phone)
+                    onMultiFieldSave({
+                      lender_collaborator_id: c.id,
+                      lender_name:  [c.first_name, c.last_name].filter(Boolean).join(' ') || null,
+                      lender_company: c.company || null,
+                      lender_email: c.email || null,
+                      lender_phone: c.phone || null,
+                    })
+                    setLenderCollab(c)
                   }}
-                  placeholder="Lender name"
+                  placeholder="Search lenders…"
                   tabIndex={40}
                 />
-                <TxField label="Lender Email" value={transaction.lender_email || ''} type="text" onSave={save('lender_email')} placeholder="lender@company.com" tabIndex={41} />
-                <TxField label="Lender Phone" value={transaction.lender_phone || ''} type="text" onSave={v => save('lender_phone')(v ? formatPhone(v) : null)} placeholder="(555) 000-0000" tabIndex={42} />
+              )}
+              <TxField label="Company" value={lenderCollab?.company || transaction.lender_company || ''} type="text" readOnly={!!lenderCollab} onSave={save('lender_company')} placeholder="Lender company" tabIndex={41} />
+              <TxField label="Lender Email" value={lenderCollab?.email || transaction.lender_email || ''} type="text" readOnly={!!lenderCollab} onSave={save('lender_email')} placeholder="lender@company.com" tabIndex={42} />
+              <TxField label="Lender Phone" value={lenderCollab?.phone || transaction.lender_phone || ''} type="text" readOnly={!!lenderCollab} onSave={v => save('lender_phone')(v ? formatPhone(v) : null)} placeholder="(555) 000-0000" tabIndex={43} />
               </>)}
 
               <div className="txp-field txp-additional-parcel-row">

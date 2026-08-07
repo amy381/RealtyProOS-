@@ -5,8 +5,10 @@
 //   Header must be `Authorization: Bearer <CRON_SECRET>`.
 //
 // Recipients come from user_settings (daily_digest_enabled = true). The digest
-// content is role-based (tasks assigned to the 'TC' role), so the body is
-// IDENTICAL for every recipient — built once, sent to each.
+// is split PER RECIPIENT by role: Amy (Agent) sees assigned_to='Agent' tasks,
+// Danielle (TC) sees assigned_to='TC' tasks; Critical-Date key dates (null
+// assignee) go to both. Action tasks are fetched once, then filtered per role
+// in the send loop. Greeting is personalized. See DIGEST_ROLE / DIGEST_NAME.
 //
 // Query/body logic ported from supabase/functions/send-daily-digest/index.ts.
 // Sends via the shared Gmail helpers in ../google/_lib (getValidAccessToken +
@@ -25,6 +27,20 @@ const {
 // api/google/gmail-send.js (not exported there, so duplicated verbatim here).
 // The digest is one role-based body for all recipients, scoped to this user's data.
 const LEGACY_OS_OWNER_USER_ID = 'a02b464f-dd3e-49de-b893-2825fe8efb3f'
+
+// Per-recipient split by ROLE (not by person/assigned_tc). The task role axis is
+// `tasks.assigned_to`, whose literal values are 'Agent' and 'TC' (null for
+// Critical Dates). Amy is the Agent; Danielle is the TC. Recipients not in this
+// map get no digest yet (skipped in the send loop) — do not fall back to a
+// default role.
+const DIGEST_ROLE = {
+  'amy@desert-legacy.com':      'Agent',
+  'danielle.davidson@kw.com':   'TC',
+}
+const DIGEST_NAME = {
+  'amy@desert-legacy.com':      'Amy',
+  'danielle.davidson@kw.com':   'Danielle',
+}
 
 // ── Body wrap (digest-only) ─────────────────────────────────────────────────────
 // The digest sends WITHOUT the email signature image — the Legacy OS logo now
@@ -56,142 +72,128 @@ function daysOverdue(dateStr, today) {
   return Math.floor((now.getTime() - due.getTime()) / 86400000)
 }
 
-// ── HTML builder — card-based sections, generous spacing, clear hierarchy ───────
-// Email-safe: inline styles + table-based task rows (renders in Gmail/Outlook;
-// border-radius degrades to square corners in Outlook desktop, which is fine).
+// ── HTML builder — Legacy OS brand design (Option 3 v2) ─────────────────────────
+// Email-safe: table-based layout, all styles inline, 600px max width, no <style>
+// blocks / flexbox / grid. Twin-accent brand system: teal #32C8DC + orange
+// #D2781E over deep navy #02030a. Colors are exact Legacy OS values — do not
+// substitute. Font is Inter everywhere.
+const DIGEST_FONT = "Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
 
-// Right-aligned status pills
-function pillOverdue(days) {
-  return `<span style="display:inline-block;background:#fde8e8;color:#991b1b;font-size:11px;font-weight:700;line-height:1;padding:5px 10px;border-radius:12px;white-space:nowrap;">${days} day${days !== 1 ? 's' : ''} overdue</span>`
+// Right-aligned status chips (one per section accent).
+function chipOverdue(label) {
+  return `<span style="display:inline-block;background:#fde8e8;color:#991b1b;font-size:11px;font-weight:700;padding:5px 10px;border-radius:12px;white-space:nowrap;">${label}</span>`
 }
-function pillDueToday() {
-  return `<span style="display:inline-block;background:#fef3c7;color:#92400e;font-size:11px;font-weight:700;line-height:1;padding:5px 10px;border-radius:12px;white-space:nowrap;">Due today</span>`
+function chipDueToday() {
+  return `<span style="display:inline-block;background:#fbe9d4;color:#92400e;font-size:11px;font-weight:700;padding:5px 10px;border-radius:12px;white-space:nowrap;">Due today</span>`
 }
-function pillKeyDate(dateStr) {
-  return `<span style="display:inline-block;background:#e2f6fa;color:#0e7c8c;font-size:11px;font-weight:700;line-height:1;padding:5px 10px;border-radius:12px;white-space:nowrap;">${fmtDate(dateStr)}</span>`
+function chipKeyDate() {
+  return `<span style="display:inline-block;background:#dcf3f7;color:#0e7c8c;font-size:11px;font-weight:700;padding:5px 10px;border-radius:12px;white-space:nowrap;">Today</span>`
 }
 
-// One task row: bold title + gray address on the left, status pill on the right.
+function overdueLabel(dateStr, today) {
+  const n = daysOverdue(dateStr, today)
+  return `${n} day${n !== 1 ? 's' : ''} overdue`
+}
+
+// One task row: bold title + gray address on the left, status chip on the right.
 // Hairline divider between rows (omitted on the last row of a card).
-function taskRow(title, address, pill, isLast) {
-  const divider = isLast ? '' : 'border-bottom:1px solid #eef1f5;'
+function digestRow(title, address, chip, isLast) {
+  const divider = isLast ? '' : 'border-bottom:1px solid #f2f4f7;'
   return `
-          <tr>
-            <td style="padding:12px 0;${divider}vertical-align:top;">
-              <div style="font-size:14px;font-weight:600;color:#1a2330;line-height:1.35;">${title}</div>
-              ${address ? `<div style="font-size:12px;color:#8a93a3;margin-top:3px;">${address}</div>` : ''}
-            </td>
-            <td style="padding:12px 0 12px 12px;${divider}text-align:right;vertical-align:middle;white-space:nowrap;">
-              ${pill}
-            </td>
-          </tr>`
+                <tr>
+                  <td style="padding:13px 0;${divider}"><div style="font-size:14px;font-weight:600;color:#1a2330;">${title}</div>${address ? `<div style="font-size:12px;color:#8a93a3;margin-top:3px;">${address}</div>` : ''}</td>
+                  <td style="padding:13px 0;${divider}text-align:right;">${chip}</td>
+                </tr>`
 }
 
-// A titled card section: accented header + count badge, white card with a
-// colored left accent bar. `barColor` is the accent bar; `color` is the
-// (readable) header/badge text color. Returns '' when there are no items.
-function renderCardSection(title, color, tint, barColor, items) {
-  if (!items.length) return ''
-  const rows = items.map((it, i) => taskRow(it.title, it.address, it.pill, i === items.length - 1)).join('')
+// A titled card section: accented uppercase header + count badge, white card
+// with a colored left accent bar. Rendered only when there are items.
+function digestSection(label, labelColor, badgeBg, badgeColor, barColor, rowsHtml, count) {
   return `
-      <div style="margin-bottom:20px;">
-        <div style="margin-bottom:10px;">
-          <span style="font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${color};">${title}</span>
-          <span style="display:inline-block;margin-left:8px;background:${tint};color:${color};font-size:12px;font-weight:700;line-height:1;padding:3px 9px;border-radius:10px;vertical-align:middle;">${items.length}</span>
-        </div>
-        <div style="background:#ffffff;border:1px solid #e6e9ef;border-left:3px solid ${barColor};border-radius:10px;padding:2px 16px;">
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;">
-            ${rows}
-          </table>
-        </div>
-      </div>`
+          <div style="margin-bottom:18px;">
+            <div style="margin-bottom:10px;">
+              <span style="font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${labelColor};">${label}</span>
+              <span style="display:inline-block;margin-left:8px;background:${badgeBg};color:${badgeColor};font-size:12px;font-weight:700;padding:3px 9px;border-radius:10px;vertical-align:middle;">${count}</span>
+            </div>
+            <div style="background:#ffffff;border:1px solid #eceef2;border-left:4px solid ${barColor};border-radius:12px;padding:4px 18px;box-shadow:0 1px 2px rgba(16,24,40,0.04);">
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation">${rowsHtml}
+              </table>
+            </div>
+          </div>`
 }
 
-function buildDigestHtml(overdue, dueToday, milestones, today) {
-  // Role-based digest (assignee is the 'TC' role, not a person), so the greeting
-  // is neutral and the body is identical for every recipient.
-  const displayName = 'there'
-  const dateLabel   = fmtDate(today)
-  const mstones     = milestones || []
-  const totalCount  = overdue.length + dueToday.length + mstones.length
+function buildDigestHtml(overdue, dueToday, milestones, today, firstName) {
+  const dateString    = fmtDate(today)
+  const mstones       = milestones || []
+  const overdueCount  = overdue.length
+  const dueTodayCount = dueToday.length
+  const keyDateCount  = mstones.length
+  const name          = firstName || 'there'
+  const addr          = t => t.transactions?.property_address || ''
 
-  const toItem = (t, pill) => ({
-    title:   t.title,
-    address: t.transactions?.property_address || '',
-    pill,
-  })
+  const overdueRows = overdue.map((t, i) =>
+    digestRow(t.title, addr(t), chipOverdue(overdueLabel(t.due_date, today)), i === overdue.length - 1)).join('')
+  const dueRows = dueToday.map((t, i) =>
+    digestRow(t.title, addr(t), chipDueToday(), i === dueToday.length - 1)).join('')
+  const keyRows = mstones.map((t, i) =>
+    digestRow(t.title, addr(t), chipKeyDate(), i === mstones.length - 1)).join('')
 
-  const overdueSection  = renderCardSection('Overdue', '#dc2626', '#fde8e8', '#dc2626',
-                            overdue.map(t => toItem(t, pillOverdue(daysOverdue(t.due_date, today)))))
-  const dueTodaySection = renderCardSection('Due Today', '#b45309', '#fef3c7', '#d97706',
-                            dueToday.map(t => toItem(t, pillDueToday())))
-  // Key Dates uses the app teal accent (#50C8DC) as the left bar; a darker teal
-  // (#0e7c8c) for readable header/badge text on white.
-  const keyDatesSection = renderCardSection('Key Dates', '#0e7c8c', '#e2f6fa', '#50C8DC',
-                            mstones.map(t => toItem(t, pillKeyDate(t.due_date))))
+  const overdueSection  = overdueCount  ? digestSection('Overdue', '#dc2626', '#fde8e8', '#dc2626', '#dc2626', overdueRows, overdueCount) : ''
+  const dueTodaySection = dueTodayCount ? digestSection('Due Today', '#b45309', '#fbe9d4', '#b45309', '#D2781E', dueRows, dueTodayCount) : ''
+  const keyDatesSection = keyDateCount  ? digestSection('Key Dates Today', '#0e7c8c', '#dcf3f7', '#0e7c8c', '#32C8DC', keyRows, keyDateCount) : ''
 
-  // Empty sections are hidden. If everything is empty, show one calm message.
-  const emptyState = totalCount === 0
-    ? `<div style="background:#ffffff;border:1px solid #e6e9ef;border-radius:10px;padding:28px 16px;text-align:center;">
-             <div style="font-size:15px;color:#4b5563;">✅ Nothing due or overdue — you're all caught up.</div>
-           </div>`
-    : ''
+  const allEmpty = (overdueCount + dueTodayCount + keyDateCount) === 0
+  const emptyCard = `
+          <div style="background:#ffffff;border:1px solid #eceef2;border-left:4px solid #32C8DC;border-radius:12px;padding:26px 20px;box-shadow:0 1px 2px rgba(16,24,40,0.04);">
+            <div style="font-size:16px;font-weight:700;color:#1a2330;">You're all caught up 🎉</div>
+            <div style="font-size:13px;color:#5c6570;margin-top:6px;">No overdue tasks, nothing due today, no key dates.</div>
+          </div>`
+
+  const summary = allEmpty
+    ? `You're all caught up for today.`
+    : `Here's your day. <strong style="color:#dc2626;">${overdueCount} ${overdueCount === 1 ? 'task' : 'tasks'} overdue</strong>, ${dueTodayCount} due today, ${keyDateCount} key ${keyDateCount === 1 ? 'date' : 'dates'}.`
+
+  const bodyInner = allEmpty
+    ? emptyCard
+    : `${overdueSection}${dueTodaySection}${keyDatesSection}`
 
   return `<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-</head>
-<body style="margin:0;padding:0;background:#f5f7fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f5f7fa;padding:28px 14px;">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
+<body style="margin:0;padding:0;background:#eef1f5;font-family:${DIGEST_FONT};">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#eef1f5;padding:28px 14px;">
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;">
 
-        <!-- Masthead: big logo on a dark bar (matches app nav #02030a) -->
-        <tr>
-          <td style="background:#02030a;border-radius:14px 14px 0 0;padding:16px 24px;text-align:center;">
-            <img src="https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo-nav-v3.png" alt="Legacy OS" style="max-width: 380px; width: 100%; height: auto; display: block; margin: 0 auto;" />
-          </td>
-        </tr>
+        <!-- Masthead + twin-accent underline (teal -> orange) -->
+        <tr><td style="background:#02030a;border-radius:14px 14px 0 0;padding:22px 24px 18px;text-align:center;">
+          <img src="https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo-nav-v3.png" alt="Legacy OS" width="320" style="max-width:320px;width:100%;height:auto;display:block;margin:0 auto;" />
+        </td></tr>
+        <tr><td style="font-size:0;line-height:0;">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation"><tr>
+            <td width="65%" style="background:#32C8DC;height:4px;line-height:4px;font-size:0;">&nbsp;</td>
+            <td width="35%" style="background:#D2781E;height:4px;line-height:4px;font-size:0;">&nbsp;</td>
+          </tr></table>
+        </td></tr>
 
-        <!-- Subtitle + greeting (light body) -->
-        <tr>
-          <td style="background:#f5f7fa;padding:22px 4px 8px;">
-            <div style="font-size:13px;color:#9aa3af;text-align:center;margin-bottom:18px;">Daily Digest · ${dateLabel}</div>
-            <div style="font-size:16px;font-weight:600;color:#1a2330;margin-bottom:6px;">Hi ${displayName},</div>
-            <div style="font-size:14px;color:#6b7280;line-height:1.5;">
-              Here's the task summary for today.${overdue.length > 0 ? ` <strong style="color:#dc2626;">${overdue.length} task${overdue.length !== 1 ? 's' : ''} overdue.</strong>` : ''}
-            </div>
-          </td>
-        </tr>
+        <!-- Greeting -->
+        <tr><td style="background:#ffffff;padding:26px 28px 8px;">
+          <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0e7c8c;">Daily Digest · ${dateString}</div>
+          <div style="font-size:22px;font-weight:700;color:#0f1826;margin-top:8px;">Good morning, ${name} 👋</div>
+          <div style="font-size:14px;color:#5c6570;line-height:1.55;margin-top:8px;">${summary}</div>
+        </td></tr>
 
-        <!-- Sections -->
-        <tr>
-          <td style="padding:12px 4px 4px;">
-            ${overdueSection}
-            ${dueTodaySection}
-            ${keyDatesSection}
-            ${emptyState}
-          </td>
-        </tr>
+        <!-- Body -->
+        <tr><td style="background:#ffffff;padding:18px 28px 4px;">
+${bodyInner}
+        </td></tr>
 
         <!-- CTA -->
-        <tr>
-          <td style="padding:8px 4px 4px;text-align:center;">
-            <a href="https://app.desert-legacy.com"
-               style="display:inline-block;background:#111418;color:#ffffff;font-size:14px;font-weight:600;padding:11px 26px;border-radius:8px;text-decoration:none;">
-              Open LegacyOS →
-            </a>
-          </td>
-        </tr>
+        <tr><td style="background:#ffffff;border-radius:0 0 14px 14px;padding:18px 28px 28px;text-align:center;">
+          <a href="https://app.desert-legacy.com" style="display:inline-block;background:#02030a;color:#ffffff;font-size:14px;font-weight:600;padding:13px 30px;border-radius:9px;text-decoration:none;border-top:2px solid #32C8DC;">Open LegacyOS →</a>
+        </td></tr>
 
-        <!-- Footer -->
-        <tr>
-          <td style="padding:18px 4px 4px;text-align:center;">
-            <div style="font-size:12px;color:#9aa3af;">LegacyOS · Daily digest sent every morning (Arizona time)</div>
-          </td>
-        </tr>
+        <tr><td style="padding:18px 8px;text-align:center;"><div style="font-size:12px;color:#9aa3af;">Legacy OS · Sent every morning, Arizona time</div></td></tr>
 
       </table>
     </td></tr>
@@ -274,39 +276,69 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ sent: 0, reason: 'no enabled recipients' })
     }
 
-    // ── Digest content (role-based: tasks assigned to 'TC') ───────────────────
+    // ── Action tasks (Task + Email) — fetched ONCE for all roles, then filtered
+    // per recipient inside the send loop. Critical Dates are excluded here (they
+    // are the null-assignee key-date milestones, handled separately below).
+    // "Incomplete" = status <> 'complete' (must NOT drop 'in_progress' tasks).
     const { data: actionTasks, error: tErr } = await supabase
       .from('tasks')
       .select('id, title, due_date, assigned_to, task_type, transaction_id, transactions(property_address)')
       .eq('user_id', LEGACY_OS_OWNER_USER_ID)
       .neq('status', 'complete')
-      .neq('task_type', 'Due Date')
+      .neq('task_type', 'Critical Date')
       .not('due_date', 'is', null)
       .lte('due_date', today)
     if (tErr) throw new Error('tasks: ' + tErr.message)
 
+    // ── Key Dates: Critical Date milestones due TODAY (role-neutral, null
+    // assignee — shown to BOTH recipients). task_type is 'Critical Date' (there
+    // is no 'Due Date' type). status <> 'complete' is the resolved/past guard.
     const { data: milestones, error: mErr } = await supabase
       .from('tasks')
       .select('id, title, due_date, transaction_id, transactions(property_address)')
       .eq('user_id', LEGACY_OS_OWNER_USER_ID)
-      .eq('task_type', 'Due Date')
+      .eq('task_type', 'Critical Date')
+      .neq('status', 'complete')
       .eq('due_date', today)
     if (mErr) throw new Error('milestones: ' + mErr.message)
 
-    const overdue  = (actionTasks || []).filter(t => t.assigned_to === 'TC' && t.due_date <  today)
-    const dueToday = (actionTasks || []).filter(t => t.assigned_to === 'TC' && t.due_date === today)
+    const allActions = actionTasks || []
+    const keyDates   = milestones || []
+    const dateLabel  = fmtDate(today)
 
-    // One body + subject for everyone (role-based digest)
-    const subject = `Your Daily Digest — ${fmtDate(today)}`
-    const body    = wrapEmailBody(buildDigestHtml(overdue, dueToday, milestones || [], today))
+    // Build one digest per recipient, filtering action tasks by that recipient's
+    // role. Recipients with no role mapping are skipped (no digest yet).
+    const built  = []
+    const skipped = []
+    for (const email of recipients) {
+      const role = DIGEST_ROLE[email]
+      if (!role) { skipped.push(email); continue }
+      const firstName = DIGEST_NAME[email] || 'there'
+      const overdue   = allActions.filter(t => t.assigned_to === role && t.due_date <  today)
+      const dueToday  = allActions.filter(t => t.assigned_to === role && t.due_date === today)
+      const subject   = `Your Daily Digest — ${dateLabel}`
+      const body      = wrapEmailBody(buildDigestHtml(overdue, dueToday, keyDates, today, firstName))
+      built.push({
+        email, role, firstName, subject, body,
+        counts: { overdue: overdue.length, dueToday: dueToday.length, keyDates: keyDates.length },
+      })
+    }
 
-    // ── Dry run: everything except the actual send ────────────────────────────
+    // ── Dry run: everything except the actual send. Returns per-recipient
+    // counts + full rendered HTML so both digests can be reviewed. ─────────────
     if (dryRun) {
       return res.status(200).json({
-        dryRun:      true,
-        wouldSendTo: recipients,
-        subject,
-        bodyPreview: body.slice(0, 500),
+        dryRun:  true,
+        today,
+        skipped,
+        digests: built.map(d => ({
+          email:   d.email,
+          role:    d.role,
+          name:    d.firstName,
+          subject: d.subject,
+          counts:  d.counts,
+          html:    d.body,
+        })),
       })
     }
 
@@ -317,24 +349,24 @@ module.exports = async function handler(req, res) {
     const recipientsSent = []
     const errors = []
 
-    for (const email of recipients) {
+    for (const d of built) {
       try {
-        const raw     = buildMimeMessage({ to: email, subject, body })
+        const raw     = buildMimeMessage({ to: d.email, subject: d.subject, body: d.body })
         const encoded = toBase64Url(raw)
         const gmailRes = await gmailSendRaw(accessToken, encoded)
         if (!gmailRes.ok) {
           const errBody = await gmailRes.json().catch(() => ({}))
-          errors.push({ email, error: errBody.error?.message || `Gmail API error ${gmailRes.status}` })
+          errors.push({ email: d.email, error: errBody.error?.message || `Gmail API error ${gmailRes.status}` })
           continue
         }
         sent++
-        recipientsSent.push(email)
+        recipientsSent.push(d.email)
       } catch (err) {
-        errors.push({ email, error: err.message })
+        errors.push({ email: d.email, error: err.message })
       }
     }
 
-    return res.status(200).json({ sent, recipients: recipientsSent, errors })
+    return res.status(200).json({ sent, recipients: recipientsSent, skipped, errors })
   } catch (err) {
     console.error('[digest]', err)
     return res.status(500).json({ error: err.message })

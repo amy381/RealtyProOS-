@@ -67,74 +67,52 @@ const FIELD_LABELS = {
   additional_parcels: 'Additional Parcel(s)',
 }
 
-const DIFF_FIELDS = {
-  property_address:          'Street Address',
-  city:                      'City',
-  state:                     'State',
-  zip:                       'ZIP',
-  price:                     'Price',
-  rep_type:                  'Transaction Type',
-  status:                    'Stage',
-  property_type:             'Property Type',
-  apn:                       'APN',
-  mls_number:                'MLS Number',
-  vacant_or_occupied:        'Vacant or Occupied',
-  occupancy:                 'Occupancy',
-  bedrooms:                  'Bedrooms',
-  square_ft:                 'Square Ft',
-  year_built:                'Year Built',
-  new_construction:          'New Construction',
-  client_first_name:         'Client 1 First Name',
-  client_last_name:          'Client 1 Last Name',
-  client2_first_name:        'Client 2 First Name',
-  client2_last_name:         'Client 2 Last Name',
-  opposite_party_agent:      'Opposite Party Agent',
-  listing_contract:          'Listing Contract',
-  listing_expiration_date:   'Listing Expiration',
-  target_live_date:          'Target Live',
-  contract_acceptance_date:  'Contract Acceptance',
-  ipe_date:                  'Inspection Period End',
-  binsr_submitted_date:      'BINSR Submitted',
-  close_of_escrow:           'Close of Escrow',
-  bba_contract:              'BBA Contract',
-  bba_expiration:            'BBA Expiration',
-  has_contingency:           'Contingency',
-  contingency_fulfilled_date:'Contingency Fulfilled',
-  lender_name:               'Lender',
-  title_company:             'Title Company',
-  bathrooms:                 'Bathrooms',
-  escrow_number:             'Escrow Number',
-  title_company_email:       'Title Co. Email',
-  title_company_phone:       'Title Co. Phone',
-  co_op_agent:               'Co-op Agent',
-  home_inspector:            'Home Inspector',
-  home_inspection_date:      'Home Inspection Date',
-  appraisal_date:            'Appraisal Date',
-  has_septic:                'Septic',
-  has_solar:                 'Solar',
-  has_well:                  'Well',
-  has_hoa:                   'HOA',
-  has_lbp:                   'LBP',
-  lockbox:                   'Lockbox',
-  referring_agent:           'Referring Agent',
-  referring_agent_email:     'Referring Agent Email',
-  referring_agent_phone:     'Referring Agent Phone',
-  referral_pct:              'Referral %',
-  financing_type:            'Financing Type',
-  additional_terms:          'Additional Terms',
-  additional_parcels:        'Additional Parcel(s)',
+// Stage (status column) → display label, used by the Notify modal's subject
+// default and persistent "Stage" line. Unknown/null status falls back to a
+// title-cased version of the raw value.
+const STAGE_LABELS = {
+  'pre-listing':       'Pre-Listing',
+  'active-listing':    'Active Listing',
+  'pending':           'Pending',
+  'closed':            'Closed',
+  'cancelled-expired': 'Cancelled/Expired',
+}
+function stageLabel(status) {
+  if (!status) return ''
+  if (STAGE_LABELS[status]) return STAGE_LABELS[status]
+  return status.split(/[-_\s]+/).filter(Boolean).map(w => w[0].toUpperCase() + w.slice(1)).join(' ')
 }
 
-// Fields that are boolean flags — show only the label in the Notify modal, no value
-const DIFF_BOOLEAN_FIELDS = new Set([
-  'new_construction',
-  'has_contingency',
-  'has_septic',
-  'has_solar',
-  'has_well',
-  'has_hoa',
-  'has_lbp',
-])
+// Optional checkbox rows for the Notify modal, in display order. Each row is
+// visible only when its underlying data is present (or, for the two bare
+// flags with no backing column, always). `build` returns null to hide the
+// row, or { label, value } to show it — value === '' renders as a bare label
+// (no colon), non-empty value renders as "Label: value".
+const NOTIFY_OPTIONAL_FIELDS = [
+  { key: 'contract_acceptance_date', build: t => t.contract_acceptance_date ? { label: 'Contract Acceptance', value: t.contract_acceptance_date } : null },
+  { key: 'ipe_date',                 build: t => t.ipe_date ? { label: 'Inspection Period End', value: t.ipe_date } : null },
+  { key: 'inspection_scheduled',     build: t => {
+      if (!t.home_inspection_date) return null
+      const time = (t.home_inspection_time || '').trim()
+      return { label: 'Inspection Scheduled', value: time ? `${t.home_inspection_date} at ${time}` : t.home_inspection_date }
+    } },
+  { key: 'close_of_escrow',          build: t => t.close_of_escrow ? { label: 'Close of Escrow', value: t.close_of_escrow } : null },
+  { key: 'spds',                     build: () => ({ label: 'SPDS are in the file', value: '' }) },
+  { key: 'ihr',                      build: () => ({ label: 'IHR are in the file', value: '' }) },
+  { key: 'co_op_agent',              build: t => t.co_op_agent ? { label: 'Co-op Agent', value: t.co_op_agent } : null },
+  { key: 'has_septic',               build: t => t.has_septic ? { label: 'Septic', value: '' } : null },
+  { key: 'has_solar',                build: t => t.has_solar ? { label: 'Solar', value: '' } : null },
+  { key: 'has_well',                 build: t => t.has_well ? { label: 'Well', value: '' } : null },
+  { key: 'has_hoa',                  build: t => t.has_hoa ? { label: 'HOA', value: '' } : null },
+  { key: 'has_lbp',                  build: t => t.has_lbp ? { label: 'LBP', value: '' } : null },
+  { key: 'financing_type',           build: t => t.financing_type ? { label: 'Financing Type', value: t.financing_type } : null },
+  { key: 'referral_pct',             build: t => {
+      const v = (t.referral_pct ?? '').toString().trim()
+      return v ? { label: 'Referral', value: `${v}%` } : null
+    } },
+  { key: 'new_construction',         build: t => t.new_construction ? { label: 'New Construction', value: '' } : null },
+  { key: 'has_contingency',          build: t => t.has_contingency ? { label: 'Contingency', value: '' } : null },
+]
 
 const FINANCING_TYPE_OPTIONS = [
   { value: '',               label: '—'             },
@@ -1411,47 +1389,42 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, agentName =
     return true
   })
 
+  // Optional checkbox rows — visible only when their backing data is present
+  // (the two bare flags always show). Recomputed each render; cheap and kept
+  // in sync with the transaction prop without an effect.
+  const optionalRows = NOTIFY_OPTIONAL_FIELDS
+    .map(f => { const row = f.build(transaction); return row ? { key: f.key, ...row } : null })
+    .filter(Boolean)
+
+  // Persistent block — always included, never checkable. Individual lines are
+  // omitted when their value is empty.
+  const persistentRows = [
+    { label: 'Transaction Type', value: transaction.rep_type || '' },
+    { label: 'Stage',            value: stageLabel(transaction.status) },
+    { label: 'Property Type',    value: transaction.property_type || '' },
+    { label: 'Client',           value: `${transaction.client_first_name || ''} ${transaction.client_last_name || ''}`.trim() },
+  ].filter(r => r.value)
+
   const [checked, setChecked] = useState(() =>
     Object.fromEntries(recipientPeople.map(p => [p.key, false]))
   )
-  const [subject,     setSubject]     = useState(`${transaction.property_address || 'Property'} — Update`)
-  const [note,        setNote]        = useState('')
-  const [changes,     setChanges]     = useState([])
-  const [loadingDiff, setLoadingDiff] = useState(true)
-  const [sending,     setSending]     = useState(false)
-  const [sendError,   setSendError]   = useState(null)
+  const [checkedFields, setCheckedFields] = useState(() =>
+    Object.fromEntries(optionalRows.map(r => [r.key, false]))
+  )
+  const defaultSubject = transaction.property_address
+    ? `${transaction.property_address} - ${stageLabel(transaction.status)}`
+    : stageLabel(transaction.status)
+  const [subject,   setSubject]   = useState(defaultSubject)
+  const [note,      setNote]      = useState('')
+  const [sending,   setSending]   = useState(false)
+  const [sendError, setSendError] = useState(null)
   const gmailStatus = useGmailStatus()
 
-  useEffect(() => {
-    let active = true
-    ;(async () => {
-      const { data } = await supabase
-        .from('notify_snapshots')
-        .select('snapshot')
-        .eq('transaction_id', transaction.id)
-        .order('sent_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-      if (!active) return
-      const baseline = data?.snapshot || {}
-      const diffs = Object.entries(DIFF_FIELDS)
-        .filter(([field]) => String(baseline[field] ?? '') !== String(transaction[field] ?? ''))
-        .map(([field, label]) => ({
-          key:       field,
-          label,
-          oldVal:    String(baseline[field] ?? ''),
-          newVal:    String(transaction[field] ?? ''),
-          checked:   false,
-          isBoolean: DIFF_BOOLEAN_FIELDS.has(field),
-        }))
-      setChanges(diffs)
-      setLoadingDiff(false)
-    })()
-    return () => { active = false }
-  }, [transaction.id])
+  const toggleField = (key) =>
+    setCheckedFields(prev => ({ ...prev, [key]: !prev[key] }))
 
-  const toggleChange = (key) =>
-    setChanges(prev => prev.map(c => c.key === key ? { ...c, checked: !c.checked } : c))
+  const checkedOptionalRows = optionalRows.filter(r => checkedFields[r.key])
+  const emailRows = [...persistentRows, ...checkedOptionalRows]
 
   const handleSend = async () => {
     const recipients = recipientPeople.filter(p => checked[p.key] && p.email)
@@ -1460,19 +1433,12 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, agentName =
     setSending(true)
     setSendError(null)
 
-    const checkedChanges = changes.filter(c => c.checked)
-
     // Subline: "City, ST ZIP · Buyer · Pending" — each part omitted if empty.
     const subline = [cityStateZip(transaction), transaction.rep_type, column?.label]
       .filter(Boolean).join('  ·  ')
     // Optional personal note (no author line) above the "What changed" table.
     const noteRows = note.trim() ? quoteBlock({ bodyHtml: renderNoteHtml(note.trim()) }) : ''
-    const changeRows = changesTable(
-      checkedChanges.map(c => ({
-        label: c.label,
-        value: c.isBoolean ? (c.newVal === 'true' ? 'Yes' : 'No') : c.newVal,
-      }))
-    )
+    const changeRows = changesTable(emailRows)
     const htmlBody = renderBrandedEmail({
       eyebrow:     'Transaction updated',
       address:     transaction.property_address || '(No address)',
@@ -1500,13 +1466,6 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, agentName =
         return
       }
 
-      const notifyUid = await getUserId()
-      await supabase.from('notify_snapshots').insert({
-        transaction_id: transaction.id,
-        sent_at:        new Date().toISOString(),
-        snapshot:       { ...transaction },
-        user_id:        notifyUid,
-      })
       toast.success(`Notified ${recipients.map(r => r.name).join(' & ')}`)
       onClose()
     } catch (err) {
@@ -1519,19 +1478,12 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, agentName =
   const anyChecked = Object.values(checked).some(Boolean)
 
   // Live preview — mirrors exactly what handleSend will put in the email
-  const checkedChanges = changes.filter(c => c.checked)
   const previewLines = []
-  if (checkedChanges.length) {
-    previewLines.push('CHANGES')
-    previewLines.push('─'.repeat(44))
-    checkedChanges.forEach(c => {
-      if (c.isBoolean) { previewLines.push(c.label) }
-      else if (c.oldVal) { previewLines.push(`${c.label}: "${c.oldVal}" → "${c.newVal}"`) }
-      else { previewLines.push(`${c.label}: "${c.newVal}"`) }
-    })
-    previewLines.push('')
-  }
+  previewLines.push('TRANSACTION UPDATE')
+  previewLines.push('─'.repeat(44))
+  emailRows.forEach(r => previewLines.push(r.value ? `${r.label}: ${r.value}` : r.label))
   if (note.trim()) {
+    previewLines.push('')
     previewLines.push('NOTE')
     previewLines.push('─'.repeat(44))
     previewLines.push(note.trim())
@@ -1595,50 +1547,41 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, agentName =
           <section className="notify-section">
             <div className="notify-section-label-row">
               <span className="notify-section-label">CHANGES</span>
-              {!loadingDiff && changes.length > 0 && (
+              {optionalRows.length > 0 && (
                 <div className="notify-check-all-btns">
-                  <button className="notify-check-all-btn" onClick={() => setChanges(p => p.map(c => ({ ...c, checked: true })))}>Check All</button>
-                  <button className="notify-check-all-btn" onClick={() => setChanges(p => p.map(c => ({ ...c, checked: false })))}>Uncheck All</button>
+                  <button className="notify-check-all-btn" onClick={() => setCheckedFields(Object.fromEntries(optionalRows.map(r => [r.key, true])))}>Check All</button>
+                  <button className="notify-check-all-btn" onClick={() => setCheckedFields(Object.fromEntries(optionalRows.map(r => [r.key, false])))}>Uncheck All</button>
                 </div>
               )}
             </div>
-            {loadingDiff ? (
-              <div className="notify-dim">Detecting changes…</div>
-            ) : changes.length === 0 ? (
-              <div className="notify-dim">No changes detected since last notification.</div>
-            ) : (
-              <div className="notify-changes-list">
-                {changes.map(c => (
-                  <label key={c.key} className="notify-change-item">
-                    <input
-                      type="checkbox"
-                      checked={c.checked}
-                      onChange={() => toggleChange(c.key)}
-                    />
-                    {c.isBoolean ? (
-                      <span className="notify-change-field">{c.label}</span>
-                    ) : (
-                      <>
-                        <span className="notify-change-field">{c.label}:</span>
-                        <span className="notify-change-val">
-                          {c.oldVal ? <><s className="notify-change-old">{c.oldVal}</s>{' → '}</> : ''}
-                          <strong>{c.newVal || '(empty)'}</strong>
-                        </span>
-                      </>
-                    )}
-                  </label>
-                ))}
-              </div>
-            )}
+            <div className="notify-changes-list">
+              {optionalRows.map(r => (
+                <label key={r.key} className="notify-change-item">
+                  <input
+                    type="checkbox"
+                    checked={!!checkedFields[r.key]}
+                    onChange={() => toggleField(r.key)}
+                  />
+                  {r.value ? (
+                    <>
+                      <span className="notify-change-field">{r.label}:</span>
+                      <span className="notify-change-val"><strong>{r.value}</strong></span>
+                    </>
+                  ) : (
+                    <span className="notify-change-field">{r.label}</span>
+                  )}
+                </label>
+              ))}
+            </div>
           </section>
 
           {/* EMAIL PREVIEW */}
           <section className="notify-section">
             <div className="notify-section-label">EMAIL PREVIEW</div>
-            {previewText
-              ? <pre className="notify-summary">{previewText}</pre>
-              : <div className="notify-dim">Nothing selected — check items above to include them in the email.</div>
-            }
+            <pre className="notify-summary">{previewText}</pre>
+            {checkedOptionalRows.length === 0 && (
+              <div className="notify-dim">Check items above to add more.</div>
+            )}
           </section>
         </div>
 

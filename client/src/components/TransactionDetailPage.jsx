@@ -100,18 +100,25 @@ const NOTIFY_OPTIONAL_FIELDS = [
   { key: 'spds',                     build: () => ({ label: 'SPDS are in the file', value: '' }) },
   { key: 'ihr',                      build: () => ({ label: 'IHR are in the file', value: '' }) },
   { key: 'co_op_agent',              build: t => t.co_op_agent ? { label: 'Co-op Agent', value: t.co_op_agent } : null },
+]
+
+// Extra persistent-block rows — always included (no checkbox) when the
+// underlying data is present, appended after the base 4 persistent fields
+// (Transaction Type, Stage, Property Type, Client). Same { label, value }
+// shape as NOTIFY_OPTIONAL_FIELDS: value === '' renders as a bare label.
+const NOTIFY_PERSISTENT_EXTRA_FIELDS = [
   { key: 'has_septic',               build: t => t.has_septic ? { label: 'Septic', value: '' } : null },
   { key: 'has_solar',                build: t => t.has_solar ? { label: 'Solar', value: '' } : null },
   { key: 'has_well',                 build: t => t.has_well ? { label: 'Well', value: '' } : null },
   { key: 'has_hoa',                  build: t => t.has_hoa ? { label: 'HOA', value: '' } : null },
   { key: 'has_lbp',                  build: t => t.has_lbp ? { label: 'LBP', value: '' } : null },
-  { key: 'financing_type',           build: t => t.financing_type ? { label: 'Financing Type', value: t.financing_type } : null },
+  { key: 'new_construction',         build: t => t.new_construction ? { label: 'New Construction', value: '' } : null },
+  { key: 'has_contingency',          build: t => t.has_contingency ? { label: 'Contingency', value: '' } : null },
   { key: 'referral_pct',             build: t => {
       const v = (t.referral_pct ?? '').toString().trim()
       return v ? { label: 'Referral', value: `${v}%` } : null
     } },
-  { key: 'new_construction',         build: t => t.new_construction ? { label: 'New Construction', value: '' } : null },
-  { key: 'has_contingency',          build: t => t.has_contingency ? { label: 'Contingency', value: '' } : null },
+  { key: 'financing_type',           build: t => t.financing_type ? { label: 'Financing Type', value: t.financing_type } : null },
 ]
 
 const FINANCING_TYPE_OPTIONS = [
@@ -1404,6 +1411,7 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, agentName =
     { label: 'Property Type',    value: transaction.property_type || '' },
     { label: 'Client',           value: `${transaction.client_first_name || ''} ${transaction.client_last_name || ''}`.trim() },
   ].filter(r => r.value)
+    .concat(NOTIFY_PERSISTENT_EXTRA_FIELDS.map(f => f.build(transaction)).filter(Boolean))
 
   const [checked, setChecked] = useState(() =>
     Object.fromEntries(recipientPeople.map(p => [p.key, false]))

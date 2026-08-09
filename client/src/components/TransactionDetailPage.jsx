@@ -1543,10 +1543,10 @@ function NotifyModal({ transaction, tcSettings, column, fullAddress, agentName =
             />
           </section>
 
-          {/* CHANGES */}
+          {/* DETAILS */}
           <section className="notify-section">
             <div className="notify-section-label-row">
-              <span className="notify-section-label">CHANGES</span>
+              <span className="notify-section-label">DETAILS</span>
               {optionalRows.length > 0 && (
                 <div className="notify-check-all-btns">
                   <button className="notify-check-all-btn" onClick={() => setCheckedFields(Object.fromEntries(optionalRows.map(r => [r.key, true])))}>Check All</button>

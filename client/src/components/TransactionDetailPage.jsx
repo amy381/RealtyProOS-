@@ -1783,7 +1783,7 @@ function CollaboratorSearch({ label, value, category, onSave, onSelect, placehol
 }
 
 // ─── Details Section ───────────────────────────────────────────────────────────
-function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, onStatusChange, onNoteAdded, transactionAddr, tcSettings, agentName = '' }) {
+function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, onStatusChange, onNoteAdded, transactionAddr, tcSettings, agentName = '', commissions }) {
   const save   = (field) => (value) => onFieldSave(field, value)
 
   // Saves all 4 property-feature fields in one atomic Supabase update to avoid race conditions.
@@ -1831,6 +1831,15 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
   const isBuyer           = transaction.rep_type === 'Buyer'
   const isPendingOrBeyond = BUYER_PENDING_STAGES.includes(transaction.status)
   const isVacantLand      = transaction.property_type === 'Vacant Land'
+
+  // Read-only Commission Rate line — pulled from commissions (never
+  // commissions.commission_rate, a known dead/legacy text column). A real
+  // 0 must render as "0%", only actual null/missing renders as an em-dash.
+  const commissionRow = commissions?.[transaction.id] || {}
+  const pctText = v => v != null ? `${v}%` : '—'
+  const commissionRateDisplay = transaction.rep_type === 'Buyer'
+    ? `${pctText(commissionRow.seller_concession_percent)}  Buyer Contribution: ${pctText(commissionRow.buyer_contribution_percent)}`
+    : pctText(commissionRow.seller_concession_percent)
 
   const isPending = transaction.status === 'pending'
 
@@ -2003,6 +2012,8 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
                 placeholder="$0"
                 tabIndex={31}
               />
+
+              <TxField label="Commission Rate" value={commissionRateDisplay} readOnly tabIndex={-1} />
 
               {titleCollab ? (
                 <div className="txp-field">
@@ -3879,6 +3890,7 @@ export default function TransactionDetailPage({
               transactionAddr={fullAddress}
               tcSettings={tcSettings}
               agentName={agentName}
+              commissions={commissions}
             />
           )}
 

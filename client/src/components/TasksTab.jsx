@@ -167,58 +167,6 @@ export function getVendorTypeForTask(title) {
   return null
 }
 
-const VENDOR_FIELD_LABELS = {
-  realtor_name:       'Realtor Name',
-  company:            'Company',
-  realtor_phone:      'Realtor Phone',
-  realtor_email:      'Realtor Email',
-  property_address:   'Property Address',
-  apn:                'APN / Parcel Number',
-  bedrooms:           'Number of Bedrooms',
-  bathrooms:          'Number of Bathrooms',
-  vacant_or_occupied: 'Vacant or Occupied',
-  year_built:         'Year Built',
-  title_company:      'Title Company',
-  title_contact_name: 'Title Contact Name',
-  title_email:        'Title Email',
-  title_phone:        'Title Phone',
-  escrow_number:      'Escrow Number',
-  seller_name:        'Seller Name',
-  buyer_name:         'Buyer Name',
-  close_of_escrow:    'Close of Escrow Date',
-}
-
-function buildFormFields(vendor, tx, tcSettings, agentSettings = null) {
-  const agentName = agentSettings?.realtor_name || ''
-  const me = tcSettings?.find(t => t.name === agentName)
-  const clientName = [tx?.client_first_name, tx?.client_last_name].filter(Boolean).join(' ')
-  const valueMap = {
-    realtor_name:       agentName,
-    company:            agentSettings?.company || '',
-    realtor_phone:      agentSettings?.realtor_phone || me?.phone || '',
-    realtor_email:      agentSettings?.realtor_email || me?.email || '',
-    property_address:   tx?.property_address || '',
-    apn:                tx?.apn || '',
-    bedrooms:           tx?.bedrooms || '',
-    bathrooms:          tx?.bathrooms || '',
-    vacant_or_occupied: tx?.vacant_or_occupied || '',
-    year_built:         tx?.year_built || '',
-    title_company:      tx?.title_company || '',
-    title_contact_name: '',
-    title_email:        tx?.title_company_email || '',
-    title_phone:        tx?.title_company_phone || '',
-    escrow_number:      tx?.escrow_number || '',
-    seller_name:        clientName,
-    buyer_name:         clientName,
-    close_of_escrow:    tx?.close_of_escrow || '',
-  }
-  return (vendor.field_mappings || []).map(key => ({
-    key,
-    label: VENDOR_FIELD_LABELS[key] || key,
-    value: valueMap[key] ?? '',
-  }))
-}
-
 // ─── Vendor Email Preview Modal (Email Only vendors) ─────────────────────────
 function VendorEmailModal({ vendor, tx, agentName = '', onClose }) {
   const [subject, setSubject] = useState('')
@@ -316,104 +264,6 @@ function VendorEmailModal({ vendor, tx, agentName = '', onClose }) {
   )
 }
 
-// ─── Vendor Form Preview Modal ────────────────────────────────────────────────
-function VendorFormModal({ vendor, tx, task, tcSettings, agentName = '', agentSettings = null, onClose, onTaskUpdate }) {
-  const [formFields, setFormFields] = useState(() => buildFormFields(vendor, tx, tcSettings, agentSettings))
-  const [sending,    setSending]    = useState(false)
-
-  const setFieldValue = (idx, val) =>
-    setFormFields(prev => prev.map((f, i) => i === idx ? { ...f, value: val } : f))
-
-  const buildBody = () =>
-    formFields.map(f => `${f.label}: ${f.value || '(blank)'}`).join('\n')
-
-  const handleSend = async () => {
-    if (!vendor.email) { toast.error('No email address on file for this vendor'); return }
-    setSending(true)
-    const subject  = `${vendor.name} — ${tx?.property_address || 'Property'}`
-    const plain    = buildBody()
-    const htmlBody = `<pre style="font-family:monospace;font-size:13px;white-space:pre-wrap;line-height:1.5;">${plain.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`
-    try {
-      const res    = await apiFetch('/api/google/gmail-send', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to:            vendor.email,
-          subject,
-          body:          wrapEmailBody(htmlBody),
-          transactionId: tx?.id || undefined,
-        }),
-      })
-      const result = await res.json()
-      if (!res.ok) throw new Error(result.error || 'Send failed')
-      toast.success(`Sent to ${vendor.name}`)
-      await markTaskInProgress(supabase, task.id, onTaskUpdate)
-      onClose()
-    } catch (err) {
-      toast.error('Send failed: ' + err.message)
-    } finally { setSending(false) }
-  }
-
-  const handleQueue = async () => {
-    const subject = `${vendor.name} — ${tx?.property_address || 'Property'}`
-    const now = new Date().toISOString()
-    const uid = await getUserId()
-    const { error } = await supabase.from('email_queue').insert({
-      transaction_id: tx?.id || null,
-      to_email:       vendor.email,
-      to_name:        vendor.name,
-      subject,
-      body:           buildBody(),
-      status:         'pending',
-      prepared_by:    agentName || 'Me',
-      prepared_at:    now,
-      created_at:     now,
-      user_id:        uid,
-    })
-    if (error) { console.error('email_queue insert error:', error); toast.error('Failed to add to queue'); return }
-    toast.success('Added to Send Queue')
-    onClose()
-  }
-
-  // Portal to <body> — escapes ancestor backdrop-filter containing blocks
-  // (e.g. TransactionDetailPage.css .txp-tasks-block) that would otherwise
-  // trap this position:fixed overlay. Same pattern as VendorFormPreviewModal.
-  return createPortal(
-    <div className="vf-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="vf-modal">
-        <div className="vf-header">
-          <div className="vf-header-info">
-            <span className="vf-vendor-name">{vendor.name}</span>
-            {vendor.email && <span className="vf-vendor-email">{vendor.email}</span>}
-          </div>
-          <button className="vf-close" onClick={onClose}>✕</button>
-        </div>
-        <div className="vf-action-bar">
-          <button className="vf-send-btn" onClick={handleSend} disabled={sending}>
-            {sending ? 'Sending…' : '✓ Approve & Send'}
-          </button>
-          <button className="vf-queue-btn" onClick={handleQueue}>Send to Queue</button>
-        </div>
-        <div className="vf-body">
-          {formFields.length === 0 ? (
-            <div className="vf-empty">No form fields configured for this vendor.</div>
-          ) : formFields.map((f, i) => (
-            <div className="vf-field" key={f.key}>
-              <label className="vf-label">{f.label}</label>
-              <input
-                className="vf-input"
-                value={f.value}
-                onChange={e => setFieldValue(i, e.target.value)}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>,
-    document.body
-  )
-}
-
 // ─── Sub-components for grouped view ─────────────────────────────────────────
 export function CriticalDateRow({ task, onDelete, flatAddr }) {
   const ddl = dueDateLabel(task.due_date, false, null)
@@ -439,7 +289,6 @@ export function CriticalDateRow({ task, onDelete, flatAddr }) {
 
 function VendorSelectModal({ matchedVendors, task, tx, commissions = {}, collaborators = {}, tcSettings, agentName = '', agentSettings = null, onUpdate, onClose }) {
   const [selectedVendorId, setSelectedVendorId] = useState(task.selected_vendor_id || '')
-  const [vendorFormOpen,   setVendorFormOpen]   = useState(false)
   const [vendorPdfOpen,    setVendorPdfOpen]    = useState(false)
 
   // Email preview state
@@ -570,14 +419,14 @@ function VendorSelectModal({ matchedVendors, task, tx, commissions = {}, collabo
             </div>
           )}
 
-          {/* PDF Form vendor */}
+          {/* PDF Form vendor — one path: preview, send, and queue all live in
+              VendorFormPreviewModal (the real PDF-fill flow). The legacy
+              "Fill & Send Form" button that opened VendorFormModal (a
+              plain-text field dump with no PDF ever attached) is retired. */}
           {selectedVendor && selectedVendor.contact_method === 'PDF Form + Email' && (
             <div className="gtd-vendor-modal-actions">
               <button className="gtd-vendor-action-btn" onClick={() => setVendorPdfOpen(true)}>
                 Preview Form ↗
-              </button>
-              <button className="gtd-vendor-action-btn" onClick={() => setVendorFormOpen(true)}>
-                Fill & Send Form ↗
               </button>
             </div>
           )}
@@ -622,18 +471,6 @@ function VendorSelectModal({ matchedVendors, task, tx, commissions = {}, collabo
           </div>
         )}
 
-        {vendorFormOpen && selectedVendor && (
-          <VendorFormModal
-            vendor={selectedVendor}
-            tx={tx}
-            task={task}
-            tcSettings={tcSettings}
-            agentName={agentName}
-            agentSettings={agentSettings}
-            onClose={() => setVendorFormOpen(false)}
-            onTaskUpdate={onUpdate}
-          />
-        )}
         {vendorPdfOpen && selectedVendor && (
           <VendorFormPreviewModal
             taskId={task.id}

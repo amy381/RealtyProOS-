@@ -375,7 +375,10 @@ function VendorFormModal({ vendor, tx, task, tcSettings, agentName = '', agentSe
     onClose()
   }
 
-  return (
+  // Portal to <body> — escapes ancestor backdrop-filter containing blocks
+  // (e.g. TransactionDetailPage.css .txp-tasks-block) that would otherwise
+  // trap this position:fixed overlay. Same pattern as VendorFormPreviewModal.
+  return createPortal(
     <div className="vf-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="vf-modal">
         <div className="vf-header">
@@ -406,7 +409,8 @@ function VendorFormModal({ vendor, tx, task, tcSettings, agentName = '', agentSe
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -525,7 +529,10 @@ function VendorSelectModal({ matchedVendors, task, tx, commissions = {}, collabo
     onClose()
   }
 
-  return (
+  // Portal to <body> — escapes ancestor backdrop-filter containing blocks
+  // (e.g. TransactionDetailPage.css .txp-tasks-block) that would otherwise
+  // trap this position:fixed overlay. Same pattern as VendorFormPreviewModal.
+  return createPortal(
     <div className="gtd-modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="gtd-vendor-modal">
         <div className="gtd-vendor-modal-header">
@@ -636,7 +643,8 @@ function VendorSelectModal({ matchedVendors, task, tx, commissions = {}, collabo
           />
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

@@ -945,6 +945,17 @@
   padding: 5px 7px;
 }
 
+/* Buyer Contribution segment of the Commission Rate row — explicitly
+   matches .txp-field-readonly's font so it reads as real content, not a
+   dimmer empty-state placeholder, even when its value is the em-dash. */
+.txp-commission-buyer-contrib {
+  margin-left: 20px;
+  font-size: 16px;
+  font-weight: 500;
+  font-style: normal;
+  color: #c8d4e0;
+}
+
 .txp-placeholder { color: rgba(100, 120, 135, 0.9); font-style: italic; font-size: 16px; font-weight: 400; }
 
 .txp-input {

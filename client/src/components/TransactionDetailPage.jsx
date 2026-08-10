@@ -1835,10 +1835,17 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
   // Read-only Commission Rate line — pulled from commissions (never
   // commissions.commission_rate, a known dead/legacy text column). A real
   // 0 must render as "0%", only actual null/missing renders as an em-dash.
+  // The Buyer Contribution segment is its own span (not just extra spaces,
+  // which collapse in HTML) so it gets real spacing and the exact same
+  // font as the rest of the row — including when its value is the em-dash,
+  // which otherwise picks up a lighter fallback-font look on its own.
   const commissionRow = commissions?.[transaction.id] || {}
   const pctText = v => v != null ? `${v}%` : '—'
   const commissionRateDisplay = transaction.rep_type === 'Buyer'
-    ? `${pctText(commissionRow.seller_concession_percent)}  Buyer Contribution: ${pctText(commissionRow.buyer_contribution_percent)}`
+    ? <>
+        {pctText(commissionRow.seller_concession_percent)}
+        <span className="txp-commission-buyer-contrib">Buyer Contribution: {pctText(commissionRow.buyer_contribution_percent)}</span>
+      </>
     : pctText(commissionRow.seller_concession_percent)
 
   const isPending = transaction.status === 'pending'

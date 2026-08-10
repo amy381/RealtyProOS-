@@ -3,6 +3,15 @@ import { supabase } from '../lib/supabase'
 import { apiFetch } from '../lib/apiClient'
 import './SettingsModal.css'
 
+// Single-tenant owner scope — mirrors LEGACY_OS_OWNER_USER_ID in
+// api/digest/send.js (not shared: api/ and client/ are separate bundles).
+// This app shows one agent's brand/identity regardless of which TC is
+// logged in, so agent_settings reads are scoped to the owner, not
+// auth.uid() — a TC session can also see the owner's row via RLS
+// (is_owner_or_team_member), and without this filter a `.single()` read
+// could non-deterministically return the wrong row.
+const LEGACY_OS_OWNER_USER_ID = 'a02b464f-dd3e-49de-b893-2825fe8efb3f'
+
 export default function SettingsModal({ tcSettings, userSettings, onSave, onClose }) {
   const [draft, setDraft]           = useState(tcSettings.map(t => ({ ...t })))
   const [digestDraft, setDigestDraft] = useState(
@@ -25,7 +34,7 @@ export default function SettingsModal({ tcSettings, userSettings, onSave, onClos
     supabase
       .from('agent_settings')
       .select('*')
-      .limit(1)
+      .eq('user_id', LEGACY_OS_OWNER_USER_ID)
       .single()
       .then(({ data }) => {
         if (data) {

@@ -3,6 +3,12 @@ import { supabase } from '../lib/supabase'
 import { deriveInitials } from '../lib/people'
 import './MissionControl.css'
 
+// Single-tenant owner scope — mirrors LEGACY_OS_OWNER_USER_ID in
+// api/digest/send.js (not shared: api/ and client/ are separate bundles).
+// Goals are the one agent's, regardless of which TC is logged in, so this
+// is scoped to the owner, not auth.uid().
+const LEGACY_OS_OWNER_USER_ID = 'a02b464f-dd3e-49de-b893-2825fe8efb3f'
+
 // ─── Commission calculation (mirrors CommissionsTab / GoalsDashboard) ─────────
 function calcGCI(t, c) {
   if (!c) return 0
@@ -109,7 +115,7 @@ export default function MissionControl({ transactions, commissions }) {
     supabase
       .from('agent_settings')
       .select('goal_gci, goal_units, goal_volume, goal_avg_price')
-      .limit(1)
+      .eq('user_id', LEGACY_OS_OWNER_USER_ID)
       .single()
       .then(({ data }) => {
         if (data) setGoals(data)

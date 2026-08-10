@@ -3,11 +3,27 @@
 // using pdf-lib, and returns the result as base64 along with metadata.
 //
 // Body: { taskId, vendorId }
-// Response: { pdfBase64, filename, vendorEmail, vendorName, propertyAddress, missingFields[] }
+// Response: { pdfBase64, filename, vendorEmail, vendorName, vendorType, propertyAddress, missingFields[] }
 
 const { PDFDocument } = require('pdf-lib')
 const { getSupabase }  = require('../google/_lib')
 const { requireAuth }  = require('../_lib/requireAuth')
+
+// vendor_type → friendly form label, mirrored client-side in
+// client/src/components/VendorFormPreviewModal.jsx (that copy drives the
+// modal header + email subject/body; this one drives the PDF filename —
+// kept in sync by hand since client and api/ are separate bundles).
+const VENDOR_FORM_LABELS = {
+  'Home Inspector': 'Home Inspection Request',
+  'Septic':         'Septic Inspection Request',
+  'Permits':        'Permits Request',
+  'Tiedowns':       'Tiedown Request',
+  'Home Warranty':  'Home Warranty Request',
+}
+function vendorFormLabel(vendorType) {
+  if (!vendorType) return 'Vendor Form Request'
+  return VENDOR_FORM_LABELS[vendorType] || `${vendorType} Request`
+}
 
 // Format a date string (YYYY-MM-DD) as MM/DD/YYYY. Returns '' for falsy input.
 function fmtDate(val) {
@@ -70,7 +86,7 @@ module.exports = async function handler(req, res) {
     // ── Fetch vendor ──────────────────────────────────────────────────────────
     const { data: vendor, error: vendorErr } = await supabase
       .from('vendors')
-      .select('id, name, email, pdf_form_url, field_mappings')
+      .select('id, name, email, vendor_type, pdf_form_url, field_mappings')
       .eq('id', vendorId)
       .single()
     if (vendorErr || !vendor) {
@@ -104,10 +120,15 @@ module.exports = async function handler(req, res) {
     }
 
     // ── Fetch agent settings ──────────────────────────────────────────────────
+    // Scoped to the TRANSACTION'S OWNER (tx.user_id), not the requesting
+    // session (`user` from requireAuth above) — a TC can fill this form on
+    // the agent's behalf and has no agent_settings row of their own, and the
+    // form must always show the transaction owner's identity regardless of
+    // who's sending it.
     const { data: agent } = await supabase
       .from('agent_settings')
       .select('realtor_name, company, realtor_phone, realtor_email')
-      .limit(1)
+      .eq('user_id', tx.user_id)
       .single()
 
     // ── Resolve title company from linked collaborator ────────────────────────
@@ -154,13 +175,15 @@ module.exports = async function handler(req, res) {
     // Flatten is intentionally NOT called — keep fields editable after download
     const filledBytes  = await pdfDoc.save()
     const pdfBase64    = Buffer.from(filledBytes).toString('base64')
-    const filename     = `InspectionRequest_${(tx.property_address || 'Property').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
+    const formLabel     = vendorFormLabel(vendor.vendor_type)
+    const filename      = `${formLabel.replace(/\s+/g, '')}_${(tx.property_address || 'Property').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
 
     return res.status(200).json({
       pdfBase64,
       filename,
       vendorEmail:     vendor.email         || '',
       vendorName:      vendor.name          || '',
+      vendorType:      vendor.vendor_type   || '',
       propertyAddress: tx.property_address  || '',
       missingFields,
     })

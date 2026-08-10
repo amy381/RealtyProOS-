@@ -4,6 +4,12 @@ import { supabase } from '../lib/supabase'
 import { deriveInitials } from '../lib/people'
 import './AppHeader.css'
 
+// Single-tenant owner scope — mirrors LEGACY_OS_OWNER_USER_ID in
+// api/digest/send.js (not shared: api/ and client/ are separate bundles).
+// This header shows one agent's brand/identity regardless of which TC is
+// logged in, so agent_settings is scoped to the owner, not auth.uid().
+const LEGACY_OS_OWNER_USER_ID = 'a02b464f-dd3e-49de-b893-2825fe8efb3f'
+
 function useDebounce(value, delay) {
   const [debounced, setDebounced] = useState(value)
   useEffect(() => {
@@ -29,7 +35,7 @@ export default function AppHeader({ transactions = [], onNavigateTransaction, on
       const { data } = await supabase
         .from('agent_settings')
         .select('realtor_name')
-        .limit(1)
+        .eq('user_id', LEGACY_OS_OWNER_USER_ID)
         .maybeSingle()
       if (!cancelled) setAgent({ name: data?.realtor_name || '', email })
     })()

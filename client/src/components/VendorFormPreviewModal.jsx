@@ -4,11 +4,28 @@
 // and lets Amy send directly or add to the Send Queue.
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase, getUserId } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import { apiFetch } from '../lib/apiClient'
 import './VendorFormPreviewModal.css'
+
+// vendor_type → friendly form label, mirrored server-side in
+// api/vendor/fill-pdf.js (that response drives the PDF filename; this drives
+// the modal header + email subject/body — kept in sync by hand since client
+// and api/ are separate bundles).
+const VENDOR_FORM_LABELS = {
+  'Home Inspector': 'Home Inspection Request',
+  'Septic':         'Septic Inspection Request',
+  'Permits':        'Permits Request',
+  'Tiedowns':       'Tiedown Request',
+  'Home Warranty':  'Home Warranty Request',
+}
+function vendorFormLabel(vendorType) {
+  if (!vendorType) return 'Vendor Form Request'
+  return VENDOR_FORM_LABELS[vendorType] || `${vendorType} Request`
+}
 
 export default function VendorFormPreviewModal({ taskId, vendorId, tx, onClose }) {
   const [loading,   setLoading]   = useState(true)
@@ -55,12 +72,14 @@ export default function VendorFormPreviewModal({ taskId, vendorId, tx, onClose }
     }
   }, [taskId, vendorId])
 
+  const formLabel = vendorFormLabel(pdfData?.vendorType)
+
   const buildEmailBody = () => {
     const addr = pdfData?.propertyAddress || ''
     const name = pdfData?.vendorName      || 'Vendor'
     return wrapEmailBody(
       `<p>Hi ${name},</p>` +
-      `<p>Please find the attached inspection request form for <strong>${addr}</strong>.</p>` +
+      `<p>Please find the attached ${formLabel.toLowerCase()} form for <strong>${addr}</strong>.</p>` +
       `<p>Please review the attached form and let us know your availability.</p>` +
       `<p>Thank you!</p>`
     )
@@ -70,7 +89,7 @@ export default function VendorFormPreviewModal({ taskId, vendorId, tx, onClose }
     if (!pdfData?.vendorEmail) { toast.error('No email address on file for this vendor'); return }
     setSending(true)
     try {
-      const subject = `Inspection Request - ${pdfData.propertyAddress || 'Property'}`
+      const subject = `${formLabel} - ${pdfData.propertyAddress || 'Property'}`
       const res = await apiFetch('/api/google/gmail-send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,7 +119,7 @@ export default function VendorFormPreviewModal({ taskId, vendorId, tx, onClose }
   const handleQueue = async () => {
     if (!pdfData) return
     setQueuing(true)
-    const subject = `Inspection Request - ${pdfData.propertyAddress || 'Property'}`
+    const subject = `${formLabel} - ${pdfData.propertyAddress || 'Property'}`
     const uid = await getUserId()
     const { error: insertErr } = await supabase.from('email_queue').insert({
       transaction_id: tx?.id        || null,
@@ -120,14 +139,18 @@ export default function VendorFormPreviewModal({ taskId, vendorId, tx, onClose }
     onClose()
   }
 
-  return (
+  // Portal to <body> — escapes the vendor-select modal's backdrop-filter
+  // containing block (TasksTab.css .gtd-vendor-modal), which otherwise traps
+  // this position:fixed overlay and washes it out. Same pattern as
+  // TaskEditModal/AddTaskModal in TasksTab.jsx.
+  return createPortal(
     <div className="vfp-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="vfp-modal">
 
         {/* Header */}
         <div className="vfp-header">
           <div className="vfp-header-info">
-            <span className="vfp-title">Inspection Request Form</span>
+            <span className="vfp-title">{formLabel}</span>
             {pdfData?.propertyAddress && (
               <span className="vfp-subtitle">{pdfData.propertyAddress}</span>
             )}
@@ -181,12 +204,13 @@ export default function VendorFormPreviewModal({ taskId, vendorId, tx, onClose }
             <iframe
               className="vfp-iframe"
               src={blobUrl}
-              title="Filled inspection request form"
+              title={`Filled ${formLabel.toLowerCase()} form`}
             />
           )}
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

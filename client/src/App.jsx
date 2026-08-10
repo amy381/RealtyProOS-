@@ -27,6 +27,12 @@ import './styles/darkTheme.css'
 const ALLOWED_EMAILS = (import.meta.env.VITE_ALLOWED_EMAILS || '')
   .split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
 
+// Single-tenant owner scope — mirrors LEGACY_OS_OWNER_USER_ID in
+// api/digest/send.js (not shared: api/ and client/ are separate bundles).
+// The app shows one agent's brand/identity regardless of which TC is
+// logged in, so agent_settings is scoped to the owner, not auth.uid().
+const LEGACY_OS_OWNER_USER_ID = 'a02b464f-dd3e-49de-b893-2825fe8efb3f'
+
 const STAGE_ORDER = ['pre-listing', 'buyer-broker', 'active-listing', 'pending', 'closed', 'cancelled-expired']
 const DEFAULT_BOARD_FILTERS = { year: '2026', tcs: [], repType: 'All', cancelledOnly: false }
 
@@ -258,7 +264,7 @@ export default function App() {
       const { data: agentData } = await supabase
         .from('agent_settings')
         .select('*')
-        .limit(1)
+        .eq('user_id', LEGACY_OS_OWNER_USER_ID)
         .maybeSingle()
       setAgentSettings(agentData || null)
 

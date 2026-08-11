@@ -1844,7 +1844,9 @@ function DetailsSection({ transaction, columns, onFieldSave, onMultiFieldSave, o
   const commissionRateDisplay = transaction.rep_type === 'Buyer'
     ? <>
         {pctText(commissionRow.seller_concession_percent)}
-        <span className="txp-commission-buyer-contrib">Buyer Contribution: {pctText(commissionRow.buyer_contribution_percent)}</span>
+        <span className="txp-commission-buyer-contrib">
+          <span className="txp-commission-buyer-label">Buyer Contribution</span>: {pctText(commissionRow.buyer_contribution_percent)}
+        </span>
       </>
     : pctText(commissionRow.seller_concession_percent)
 

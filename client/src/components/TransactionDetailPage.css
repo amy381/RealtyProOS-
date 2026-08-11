@@ -945,15 +945,22 @@
   padding: 5px 7px;
 }
 
-/* Buyer Contribution segment of the Commission Rate row — explicitly
-   matches .txp-field-readonly's font so it reads as real content, not a
-   dimmer empty-state placeholder, even when its value is the em-dash. */
+/* Buyer Contribution segment of the Commission Rate row. ": {value}" that
+   follows inherits .txp-field-readonly from its parent, matching "3%". */
 .txp-commission-buyer-contrib {
-  margin-left: 20px;
-  font-size: 16px;
-  font-weight: 500;
-  font-style: normal;
-  color: #c8d4e0;
+  margin-left: 60px;
+}
+
+/* Same look as .txp-field-label (small-caps left-column label style) but
+   without its width/flex-shrink, which only make sense as a flex child of
+   .txp-field — applied inline here, those caused "2%" to wrap onto its own
+   line. Font properties only. */
+.txp-commission-buyer-label {
+  font-size: 14px;
+  font-variant: small-caps;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(168, 191, 204, 0.85);
 }
 
 .txp-placeholder { color: rgba(100, 120, 135, 0.9); font-style: italic; font-size: 16px; font-weight: 400; }

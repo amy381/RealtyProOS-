@@ -948,7 +948,7 @@
 /* Buyer Contribution segment of the Commission Rate row. ": {value}" that
    follows inherits .txp-field-readonly from its parent, matching "3%". */
 .txp-commission-buyer-contrib {
-  margin-left: 60px;
+  margin-left: 120px;
 }
 
 /* Same look as .txp-field-label (small-caps left-column label style) but

@@ -9,6 +9,7 @@ import { supabase, getUserId } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { toast } from 'react-hot-toast'
 import { apiFetch } from '../lib/apiClient'
+import { markTaskInProgress } from '../lib/taskStatus'
 import './VendorFormPreviewModal.css'
 
 // vendor_type → friendly form label, mirrored server-side in
@@ -27,7 +28,7 @@ function vendorFormLabel(vendorType) {
   return VENDOR_FORM_LABELS[vendorType] || `${vendorType} Request`
 }
 
-export default function VendorFormPreviewModal({ taskId, vendorId, tx, onClose }) {
+export default function VendorFormPreviewModal({ taskId, vendorId, tx, onClose, onUpdate }) {
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState(null)
   const [pdfData,   setPdfData]   = useState(null)   // { pdfBase64, filename, vendorEmail, vendorName, propertyAddress, missingFields }
@@ -108,6 +109,7 @@ export default function VendorFormPreviewModal({ taskId, vendorId, tx, onClose }
       const result = await res.json()
       if (!res.ok) throw new Error(result.error || 'Send failed')
       toast.success(`Sent to ${pdfData.vendorName}`)
+      await markTaskInProgress(supabase, taskId, onUpdate)
       onClose()
     } catch (err) {
       toast.error('Send failed: ' + err.message)

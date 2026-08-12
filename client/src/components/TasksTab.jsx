@@ -476,7 +476,8 @@ function VendorSelectModal({ matchedVendors, task, tx, commissions = {}, collabo
             taskId={task.id}
             vendorId={selectedVendor.id}
             tx={tx}
-            onClose={() => setVendorPdfOpen(false)}
+            onUpdate={onUpdate}
+            onClose={() => { setVendorPdfOpen(false); onClose() }}
           />
         )}
       </div>

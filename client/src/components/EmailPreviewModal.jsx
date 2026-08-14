@@ -19,7 +19,7 @@ function coerceEmailStr(entry) {
 
 // ─── Resolve a recipients/cc_recipients JSONB array → email strings ────────────
 // titleContact is the collaborator record (or null) fetched from collaborators table
-function resolveRecipients(entries = [], tx, titleContact, agentEmail = '') {
+function resolveRecipients(entries = [], tx, titleContact, agentEmail = '', tcSettings = []) {
   if (!Array.isArray(entries)) return { emails: [], warnings: [] }
   const resolved = []
   const warnings = []
@@ -67,10 +67,10 @@ function resolveRecipients(entries = [], tx, titleContact, agentEmail = '') {
           break
         }
         case 'tc': {
-          const email = tx?.rep_type === 'Buyer'
-            ? 'victoria.lareau@kw.com'
-            : 'justinamorris@kw.com'
-          resolved.push(email)
+          const tc = tcSettings.find(t => t.name === tx?.assigned_tc)
+          const email = tc?.email
+          if (email) resolved.push(String(email).trim())
+          else warnings.push('TC email not set')
           break
         }
         default:
@@ -223,8 +223,8 @@ export default function EmailPreviewModal({ task, tx, commissions = {}, collabor
   }, [tx?.title_collaborator_id])
 
   // Resolve recipients/CC — safe when template is null (returns empty arrays)
-  const recipientsResult = resolveRecipients(template?.recipients || [], tx, titleContact, agentEmail)
-  const ccResult         = resolveRecipients(template?.cc_recipients || [], tx, titleContact, agentEmail)
+  const recipientsResult = resolveRecipients(template?.recipients || [], tx, titleContact, agentEmail, tcSettings)
+  const ccResult         = resolveRecipients(template?.cc_recipients || [], tx, titleContact, agentEmail, tcSettings)
   const allWarnings = [...recipientsResult.warnings, ...ccResult.warnings]
 
   const toEmails = recipientsResult.emails

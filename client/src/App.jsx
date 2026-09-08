@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Toaster, toast } from 'react-hot-toast'
 import { supabase, getUserId } from './lib/supabase'
 import { syncDriveFolder } from './lib/googleDrive'
-import { buildTemplateTasksFromDB } from './lib/taskTemplates'
+import { buildTemplateTasksFromDB, recomputeTaskDueDate, TIMING_DATE_FIELDS } from './lib/taskTemplates'
 import { sendMentionNotifications, parseMentions } from './lib/emailNotify'
 import KanbanBoard from './components/KanbanBoard'
 import ListView from './components/ListView'
@@ -183,11 +183,35 @@ export default function App() {
     return () => document.removeEventListener('mousedown', handler)
   }, [boardFilterOpen])
 
-  // Apply a partial update to a transaction in local state (used by Drive callbacks)
+  // Recompute due dates for a transaction's template-driven tasks after one of
+  // its date fields changes (calcDueDate ran once at template-apply time and
+  // never again — this is what makes it run again). Skips tasks the user
+  // hand-edited (due_date_manual) and stage-triggered/specific_date tasks
+  // (recomputeTaskDueDate returns their existing due_date unchanged for those).
+  const recomputeTemplateTaskDueDates = useCallback(async (transactionId, updatedTransaction) => {
+    const changes = tasks
+      .filter(t => t.transaction_id === transactionId && !t.due_date_manual && t.timing_type)
+      .map(t => ({ id: t.id, due_date: t.due_date, newDue: recomputeTaskDueDate(t, updatedTransaction) }))
+      .filter(c => c.newDue !== c.due_date)
+    if (!changes.length) return
+    await Promise.all(changes.map(c => supabase.from('tasks').update({ due_date: c.newDue }).eq('id', c.id)))
+    setTasks(prev => prev.map(t => {
+      const c = changes.find(c => c.id === t.id)
+      return c ? { ...t, due_date: c.newDue } : t
+    }))
+  }, [tasks])
+
+  // Apply a partial update to a transaction in local state (used by Drive callbacks
+  // and by TransactionDetailPage's own critical-date DB write, which persists
+  // itself and then calls this just to sync app-level state).
   const handleTransactionUpdate = useCallback((transactionId, updates) => {
     setTransactions(prev => prev.map(t => t.id === transactionId ? { ...t, ...updates } : t))
     setSelectedTransaction(prev => prev?.id === transactionId ? { ...prev, ...updates } : prev)
-  }, [])
+    if (TIMING_DATE_FIELDS.some(f => f in updates)) {
+      const current = transactions.find(t => t.id === transactionId)
+      if (current) recomputeTemplateTaskDueDates(transactionId, { ...current, ...updates })
+    }
+  }, [transactions, recomputeTemplateTaskDueDates])
 
   // ── Load all data ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -447,13 +471,17 @@ export default function App() {
     financing: 'has_financing', lockbox: 'has_lockbox',
   }
 
+  // Stages that share another stage's template (no distinct template of their own).
+  const LISTING_STAGE_ALIAS = { 'active-listing': 'pre-listing' }
+
   // Find the template matching a transaction for a given stage, plus the tasks
   // it would add (condition-filtered). Single source of match logic — shared by
   // intake auto-apply, forward-move apply, and backward-move delete.
   const matchStageTemplate = (transaction, stage) => {
     if (!dbTemplates.length) return null
+    const lookupStage = LISTING_STAGE_ALIAS[stage] || stage
     const tpl = dbTemplates.find(t =>
-      t.stage === stage &&
+      t.stage === lookupStage &&
       (t.rep_type === transaction.rep_type || t.rep_type === null || t.rep_type === 'Both') &&
       (t.property_type === transaction.property_type || t.property_type === null)
     )
@@ -521,7 +549,11 @@ export default function App() {
     setTransactions(prev => prev.map(t => t.id === txId ? { ...t, [field]: value } : t))
     if (selectedTransaction?.id === txId) setSelectedTransaction(prev => ({ ...prev, [field]: value }))
     const { error } = await supabase.from('transactions').update({ [field]: value }).eq('id', txId)
-    if (error) toast.error(`Failed to save: ${error.message}`)
+    if (error) { toast.error(`Failed to save: ${error.message}`); return }
+    if (TIMING_DATE_FIELDS.includes(field)) {
+      const current = transactions.find(t => t.id === txId)
+      recomputeTemplateTaskDueDates(txId, { ...(current || {}), [field]: value })
+    }
   }
 
   // ── Inline field save ───────────────────────────────────────────────────────
@@ -547,6 +579,10 @@ export default function App() {
       return
     }
     toast.success('Saved', { duration: 900 })
+
+    if (TIMING_DATE_FIELDS.includes(field)) {
+      recomputeTemplateTaskDueDates(txId, updated)
+    }
 
     // When address or client name is first entered, create the Drive folder
     const DRIVE_FIELDS = ['property_address', 'client_last_name']
@@ -585,8 +621,11 @@ export default function App() {
       toast.error(`Failed to save: ${error.message}`)
     } else {
       toast.success('Saved', { duration: 900 })
+      if (TIMING_DATE_FIELDS.some(f => f in updates)) {
+        recomputeTemplateTaskDueDates(txId, { ...selectedTransaction, ...updates })
+      }
     }
-  }, [selectedTransaction])
+  }, [selectedTransaction, recomputeTemplateTaskDueDates])
 
   // ── Lock body scroll when a transaction is open ────────────────────────────
   useEffect(() => {
@@ -648,6 +687,16 @@ export default function App() {
   }, [tcSettings, transactions])
 
   const handleUpdateTask = useCallback(async (taskId, updates) => {
+    // A hand-edit of due_date protects the task from future auto-recompute;
+    // clearing it back out un-protects it (becomes template-driven again).
+    // Only flips the flag when due_date is actually changing — a full-form
+    // save (e.g. TaskEditModal) always includes due_date even when untouched.
+    if ('due_date' in updates && !('due_date_manual' in updates)) {
+      const current = tasks.find(t => t.id === taskId)
+      if (!current || updates.due_date !== current.due_date) {
+        updates = { ...updates, due_date_manual: !!updates.due_date }
+      }
+    }
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t))
 
     const { error } = await supabase.from('tasks').update(updates).eq('id', taskId)

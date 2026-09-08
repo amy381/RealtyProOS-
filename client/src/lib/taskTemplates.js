@@ -39,6 +39,30 @@ export function calcDueDate(timingType, timingDays, tx) {
   }
 }
 
+// Transaction date fields that feed calcDueDate — a save to any of these
+// should trigger a due-date recompute for affected template-driven tasks.
+export const TIMING_DATE_FIELDS = [
+  'contract_acceptance_date', 'close_of_escrow', 'listing_contract',
+  'bba_contract', 'ipe_date', 'binsr_submitted_date', 'home_inspection_date',
+]
+
+// Timing types that don't compute from a transaction date (stage-triggered,
+// or a fixed date set by hand) — calcDueDate returns null for these by
+// design, so recompute must skip them rather than null out an existing value.
+const NON_COMPUTABLE_TIMING_TYPES = new Set([
+  'at_stage_change', 'stage_pre_listing', 'stage_active_listing', 'stage_buyer_broker',
+  'stage_pending', 'stage_closed', 'stage_cancelled_expired', 'specific_date',
+])
+
+// Recompute a single template-driven task's due_date from its own stored
+// timing rule against (possibly just-updated) transaction fields. Returns
+// the task's current due_date unchanged for stage-triggered/specific_date
+// types, or when it has no timing rule to compute from.
+export function recomputeTaskDueDate(task, transaction) {
+  if (!task.timing_type || NON_COMPUTABLE_TIMING_TYPES.has(task.timing_type)) return task.due_date
+  return calcDueDate(task.timing_type, task.timing_days, transaction)
+}
+
 // Task assignees are stored as ROLES, not resolved person names. 'TC' and
 // 'Agent' pass through UNCHANGED so generated tasks read 'TC'/'Agent' — matching
 // hand-added tasks and the converted historical data. Any other legacy literal
@@ -69,6 +93,12 @@ export function buildTemplateTasksFromDB(templateTaskRows, transaction, agentNam
       resolves_critical_date: t.resolves_critical_date || null,
       has_progress_tracking:  t.has_progress_tracking  || false,
       email_template_id:      t.email_template_id      || null,
+      // Own copy of the timing rule so a later transaction-date change can
+      // recompute this task's due_date without title-matching back to the
+      // template (which may since have changed or been deleted).
+      timing_type:            t.timing_type || null,
+      timing_days:            t.timing_days ?? null,
+      due_date_manual:        false,
       // Internal mapping field — stripped before DB insert.
       _template_task_id:      t.id,
     }))

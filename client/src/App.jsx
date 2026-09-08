@@ -447,13 +447,17 @@ export default function App() {
     financing: 'has_financing', lockbox: 'has_lockbox',
   }
 
+  // Stages that share another stage's template (no distinct template of their own).
+  const LISTING_STAGE_ALIAS = { 'active-listing': 'pre-listing' }
+
   // Find the template matching a transaction for a given stage, plus the tasks
   // it would add (condition-filtered). Single source of match logic — shared by
   // intake auto-apply, forward-move apply, and backward-move delete.
   const matchStageTemplate = (transaction, stage) => {
     if (!dbTemplates.length) return null
+    const lookupStage = LISTING_STAGE_ALIAS[stage] || stage
     const tpl = dbTemplates.find(t =>
-      t.stage === stage &&
+      t.stage === lookupStage &&
       (t.rep_type === transaction.rep_type || t.rep_type === null || t.rep_type === 'Both') &&
       (t.property_type === transaction.property_type || t.property_type === null)
     )

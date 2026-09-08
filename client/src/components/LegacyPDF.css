@@ -302,3 +302,90 @@
   font-family: inherit;
   font-size: 12px;
 }
+
+/* ── Markup toolbar (overlay editor) ── */
+.lpdf-markup-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.lpdf-markup-grid .lpdf-tool-btn {
+  padding: 8px 0;
+}
+.lpdf-markup-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(168, 191, 204, 0.7);
+}
+.lpdf-markup-row input[type="range"] {
+  flex: 1;
+  accent-color: #50C8DC;
+  cursor: pointer;
+}
+.lpdf-markup-row input[type="color"] {
+  width: 36px;
+  height: 24px;
+  padding: 0;
+  border: 0.5px solid rgba(50, 200, 220, 0.2);
+  border-radius: 5px;
+  background: rgba(2, 5, 18, 0.6);
+  cursor: pointer;
+}
+.lpdf-markup-row input[type="number"] {
+  width: 56px;
+  background: rgba(2, 5, 18, 0.6);
+  border: 0.5px solid rgba(50, 200, 220, 0.2);
+  border-radius: 5px;
+  color: #b8cdd8;
+  padding: 3px 6px;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+/* ── Annotation overlay (mounted inside .lpdf-page, over the canvas) ── */
+.pdf-ann-layer {
+  z-index: 2;
+}
+.pdf-ann-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: none;
+}
+.pdf-ann-text--selected {
+  outline: 1.5px dashed rgba(50, 200, 220, 0.7);
+  outline-offset: 2px;
+}
+.pdf-ann-text-input {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1.5px dashed #32C8DC;
+  border-radius: 3px;
+  padding: 2px 4px;
+  resize: none;
+  font-family: inherit;
+  min-height: 1.4em;
+  caret-color: #1a2330;
+}
+.pdf-ann-text-input::placeholder {
+  color: rgba(26, 35, 48, 0.4);
+}
+.pdf-ann-delete {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(50, 200, 220, 0.5);
+  background: #02030a;
+  color: #d2781e;
+  cursor: pointer;
+  z-index: 3;
+  padding: 0;
+}
+.pdf-ann-delete:hover {
+  background: rgba(210, 120, 30, 0.15);
+}

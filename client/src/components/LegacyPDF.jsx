@@ -4,12 +4,14 @@ import {
   Upload, Download, RotateCw, RotateCcw, Trash2, Scissors,
   Crop, FilePlus2, Copy, Minimize2, FileStack, X,
   ArrowUp, ArrowDown,
+  Square, Type, Minus, ArrowUpRight, Circle, Highlighter, Pen,
+  MousePointer, Undo2, Redo2, Eraser,
 } from 'lucide-react'
 // @cantoo/pdf-lib is a drop-in, same-API fork of pdf-lib that can decrypt
 // permission-locked PDFs (owner-password only, empty user password) — common
 // with AAR/zipForm real-estate forms. Plain pdf-lib only skips the load-time
 // check and leaves such pages blank on rebuild. Load with { password: '' }.
-import { PDFDocument, degrees } from '@cantoo/pdf-lib'
+import { PDFDocument, degrees, StandardFonts } from '@cantoo/pdf-lib'
 import * as pdfjsLib from 'pdfjs-dist'
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import './LegacyPDF.css'
@@ -17,6 +19,10 @@ import './LegacyPDF.css'
 // Images → PDF builder (download-only). Self-contained; see ImagePdfBuilder below.
 import { generateLegacyPdf } from '../lib/legacyPdf'
 import './LegacyPdfImages.css'
+
+// Overlay markup editor (Phase 1 — draw/annotate; NOT redaction, see Cover tool).
+import PdfAnnotationLayer from './PdfAnnotationLayer'
+import { nextAnnotationId, bakeAnnotationsIntoPage, DEFAULT_COLOR, translateAnnotation, reprojectAnnotations } from '../lib/pdfAnnotations'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl
 
@@ -31,28 +37,54 @@ const ZOOM_MAX = 400  // %
 
 // Build a single working PDF (Uint8Array) from the source files + ordered page list.
 // This is the single derived artifact used for both rendering (pdf.js) and download.
-async function buildWorkingPdf(sources, pages, { compress = false } = {}) {
+//
+// `annotations` + `pdfDoc` are optional and only passed by the download paths
+// (never by the live-render effect, so the on-screen canvas stays clean and
+// editable). When given, `pdfDoc` must be the pdf.js document already built
+// from the CURRENT `pageIndexMap`-covered page set (i.e. the un-annotated
+// render of the full document) — its per-page viewport is how stored overlay
+// coordinates get mapped into PDF space, since that viewport already encodes
+// the page's rotation and crop. `pageIndexMap` maps a page id to its 1-based
+// page number in `pdfDoc` (not in the possibly-smaller `pages` being built
+// here, e.g. for Extract).
+async function buildWorkingPdf(sources, pages, { compress = false, annotations = null, pdfDoc = null, pageIndexMap = null } = {}) {
   const out = await PDFDocument.create()
   const loaded = {} // srcId -> PDFDocument (cached per build)
+  let font = null
 
   for (const p of pages) {
+    let page
     if (p.blank) {
-      out.addPage([p.width || 612, p.height || 792])
-      continue
+      page = out.addPage([p.width || 612, p.height || 792])
+    } else {
+      if (!loaded[p.srcId]) {
+        loaded[p.srcId] = await PDFDocument.load(sources[p.srcId].bytes, { password: '' })
+      }
+      const [copied] = await out.copyPages(loaded[p.srcId], [p.srcIndex])
+      if (p.rotation) {
+        const current = copied.getRotation().angle || 0
+        copied.setRotation(degrees(((current + p.rotation) % 360 + 360) % 360))
+      }
+      if (p.crop) {
+        const { x, y, width, height } = p.crop
+        copied.setCropBox(x, y, width, height)
+      }
+      out.addPage(copied)
+      page = copied
     }
-    if (!loaded[p.srcId]) {
-      loaded[p.srcId] = await PDFDocument.load(sources[p.srcId].bytes, { password: '' })
+
+    const pageAnns = annotations?.[p.id]
+    if (pageAnns?.length && pdfDoc && pageIndexMap) {
+      const pageNum = pageIndexMap.get(p.id)
+      if (pageNum) {
+        if (!font && pageAnns.some(a => a.type === 'text')) {
+          font = await out.embedFont(StandardFonts.Helvetica)
+        }
+        const pjsPage = await pdfDoc.getPage(pageNum)
+        const viewport = pjsPage.getViewport({ scale: 1 })
+        bakeAnnotationsIntoPage(page, pageAnns, viewport, font)
+      }
     }
-    const [copied] = await out.copyPages(loaded[p.srcId], [p.srcIndex])
-    if (p.rotation) {
-      const current = copied.getRotation().angle || 0
-      copied.setRotation(degrees(((current + p.rotation) % 360 + 360) % 360))
-    }
-    if (p.crop) {
-      const { x, y, width, height } = p.crop
-      copied.setCropBox(x, y, width, height)
-    }
-    out.addPage(copied)
   }
 
   return out.save({ useObjectStreams: compress })
@@ -80,6 +112,20 @@ export default function LegacyPDF() {
   const [cropMargins, setCropMargins] = useState({ top: 0, right: 0, bottom: 0, left: 0 })
 
   const [isDragging, setIsDragging] = useState(false)
+
+  // ── Markup / overlay annotations (Phase 1 — draw only, not redaction) ────────
+  const [annotations, setAnnotations] = useState({})  // pageId -> Annotation[]
+  const [activeTool, setActiveTool] = useState(null)  // null | 'select' | 'cover' | 'text' | ...
+  const [markupColor, setMarkupColor] = useState(DEFAULT_COLOR)
+  const [coverColor, setCoverColor] = useState('#ffffff')  // Cover always defaults to opaque white, independent of the shared picker
+  const [textColor, setTextColor] = useState('#000000')  // Text always defaults to black, independent of the shared picker
+  const [strokeWidth, setStrokeWidth] = useState(2)
+  const [highlightAlpha, setHighlightAlpha] = useState(0.35)
+  const [textFontSize, setTextFontSize] = useState(16)
+  const [selectedAnn, setSelectedAnn] = useState(null)   // { pageId, id } | null
+  const [pageBaseSize, setPageBaseSize] = useState({})   // pageId -> { w, h } at scale 1
+  const historyRef = useRef([])   // past annotations snapshots (undo)
+  const futureRef = useRef([])    // undone snapshots (redo)
 
   const scrollRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -209,12 +255,101 @@ export default function LegacyPDF() {
           canvas.style.height = `${Math.floor(viewport.height)}px`
           ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
           await page.render({ canvasContext: ctx, viewport }).promise
+          if (token === renderTokenRef.current) {
+            setPageBaseSize(prev => {
+              const w = viewport.width / scale, h = viewport.height / scale
+              const cur = prev[pageId]
+              if (cur && cur.w === w && cur.h === h) return prev
+              return { ...prev, [pageId]: { w, h } }
+            })
+          }
         } catch (err) {
           if (err?.name !== 'RenderingCancelledException') console.error(err)
         }
       }
     })()
   }, [pdfDoc, pages, scale])
+
+  // ── Annotation history (undo/redo) — snapshot-based, one entry per commit ───
+  const commitAnnotations = useCallback((updater) => {
+    setAnnotations(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater
+      historyRef.current.push(prev)
+      futureRef.current = []
+      return next
+    })
+  }, [])
+
+  const addAnnotation = useCallback((pageId, ann) => {
+    commitAnnotations(prev => ({ ...prev, [pageId]: [...(prev[pageId] || []), ann] }))
+    setSelectedAnn(null)
+  }, [commitAnnotations])
+
+  const patchAnnotation = useCallback((pageId, id, patch) => {
+    commitAnnotations(prev => ({
+      ...prev,
+      [pageId]: (prev[pageId] || []).map(a => (a.id === id ? { ...a, ...patch } : a)),
+    }))
+  }, [commitAnnotations])
+
+  const deleteAnnotation = useCallback((pageId, id) => {
+    commitAnnotations(prev => ({ ...prev, [pageId]: (prev[pageId] || []).filter(a => a.id !== id) }))
+    setSelectedAnn(sel => (sel?.pageId === pageId && sel?.id === id ? null : sel))
+  }, [commitAnnotations])
+
+  const clearPageMarkup = useCallback(() => {
+    if (!currentId) return
+    if (!annotations[currentId]?.length) return
+    commitAnnotations(prev => ({ ...prev, [currentId]: [] }))
+    setSelectedAnn(sel => (sel?.pageId === currentId ? null : sel))
+  }, [currentId, annotations, commitAnnotations])
+
+  const undoAnnotations = useCallback(() => {
+    if (!historyRef.current.length) return
+    setAnnotations(prev => {
+      const last = historyRef.current.pop()
+      futureRef.current.push(prev)
+      return last
+    })
+    setSelectedAnn(null)
+  }, [])
+
+  const redoAnnotations = useCallback(() => {
+    if (!futureRef.current.length) return
+    setAnnotations(prev => {
+      const next = futureRef.current.pop()
+      historyRef.current.push(prev)
+      return next
+    })
+    setSelectedAnn(null)
+  }, [])
+
+  // Undo/redo (Cmd/Ctrl+Z, Shift+Cmd/Ctrl+Z) + Delete/Backspace for the
+  // selected annotation. Skipped while typing (matches the paste handler
+  // pattern above) so it never fights with a text-box edit or another field.
+  useEffect(() => {
+    const handler = (e) => {
+      const ae = document.activeElement
+      const typing = ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        if (typing) return
+        e.preventDefault()
+        if (e.shiftKey) redoAnnotations()
+        else undoAnnotations()
+        return
+      }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedAnn && !typing) {
+        e.preventDefault()
+        deleteAnnotation(selectedAnn.pageId, selectedAnn.id)
+      }
+      if (e.key === 'Escape' && !typing) {
+        setActiveTool(null)
+        setSelectedAnn(null)
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [selectedAnn, undoAnnotations, redoAnnotations, deleteAnnotation])
 
   // ── Track current page on scroll (for the "Page X / N" indicator) ────────────
   useEffect(() => {
@@ -265,9 +400,35 @@ export default function LegacyPDF() {
     setSelected([id])  // keep the moved page selected
   }
 
-  const rotateSelected = (dir) => {
+  // Rotating a page changes what "screen space" means for it, so any existing
+  // annotations must be re-anchored to the same content — otherwise a cover
+  // box silently slides off whatever it was hiding. pdf.js lets us compute the
+  // post-rotation viewport directly from the current page (no PDF rebuild
+  // needed) via the `rotation` override on getViewport.
+  const rotateSelected = async (dir) => {
     const ids = targetIds()
     if (!ids.length) return
+    if (pdfDoc) {
+      const updates = {}
+      for (const id of ids) {
+        const pageAnns = annotations[id]
+        if (!pageAnns?.length) continue
+        const idx = pages.findIndex(p => p.id === id)
+        if (idx < 0) continue
+        try {
+          const pjsPage = await pdfDoc.getPage(idx + 1)
+          const oldViewport = pjsPage.getViewport({ scale: 1 })
+          const newRotation = ((pjsPage.rotate + dir * 90) % 360 + 360) % 360
+          const newViewport = pjsPage.getViewport({ scale: 1, rotation: newRotation })
+          updates[id] = reprojectAnnotations(pageAnns, oldViewport, newViewport)
+        } catch (err) {
+          console.error('[LegacyPDF] annotation reproject (rotate) failed', err)
+        }
+      }
+      if (Object.keys(updates).length) {
+        setAnnotations(prev => ({ ...prev, ...updates }))
+      }
+    }
     setPages(prev => prev.map(p =>
       ids.includes(p.id) ? { ...p, rotation: (p.rotation + dir * 90) } : p))
   }
@@ -309,8 +470,14 @@ export default function LegacyPDF() {
     if (!ids.length) { toast.error('Select a page to crop'); return }
     const { top, right, bottom, left } = cropMargins
     if ([top, right, bottom, left].every(v => !v)) { toast.error('Set crop margins (%) first'); return }
-    // Compute crop box per page from its rendered size.
+    // Compute crop box per page from its rendered size. Cropping shifts the
+    // page's visible top-left corner, so any existing annotations need to
+    // slide by the same amount to stay anchored to their content — the crop
+    // margins are plain top-left-origin CSS percentages of the CURRENT
+    // (pre-crop) rendered size, the exact space annotations are stored in,
+    // so this is a pure translate (no rotation/scale change from crop alone).
     const updates = {}
+    const annUpdates = {}
     for (const id of ids) {
       const idx = pages.findIndex(p => p.id === id)
       if (idx < 0 || !pdfDoc) continue
@@ -319,12 +486,20 @@ export default function LegacyPDF() {
       const w = vp.width, h = vp.height
       const x = w * (left / 100)
       const y = h * (bottom / 100)
+      const topPx = h * (top / 100)
       const cw = w * (1 - (left + right) / 100)
       const ch = h * (1 - (top + bottom) / 100)
       if (cw <= 0 || ch <= 0) { toast.error('Crop margins too large'); return }
       updates[id] = { x, y, width: cw, height: ch }
+      const pageAnns = annotations[id]
+      if (pageAnns?.length) {
+        annUpdates[id] = pageAnns.map(a => translateAnnotation(a, -x, -topPx))
+      }
     }
     setPages(prev => prev.map(p => updates[p.id] ? { ...p, crop: updates[p.id] } : p))
+    if (Object.keys(annUpdates).length) {
+      setAnnotations(prev => ({ ...prev, ...annUpdates }))
+    }
     setCropOpen(false)
     toast.success('Crop applied')
   }
@@ -341,13 +516,18 @@ export default function LegacyPDF() {
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
+  // Maps a page id to its 1-based page number in the current `pdfDoc` — the
+  // pdf.js render of the full, un-annotated `pages` list — so bake steps can
+  // look up the right viewport even when building a smaller subset (Extract).
+  const pageIndexMap = () => new Map(pages.map((p, i) => [p.id, i + 1]))
+
   const extractSelected = async () => {
     const ids = selected.length ? selected : (currentId ? [currentId] : [])
     if (!ids.length) { toast.error('Select pages to extract'); return }
     // Preserve document order of the selected pages.
     const subset = pages.filter(p => ids.includes(p.id))
     try {
-      const bytes = await buildWorkingPdf(sources, subset)
+      const bytes = await buildWorkingPdf(sources, subset, { annotations, pdfDoc, pageIndexMap: pageIndexMap() })
       downloadBytes(bytes, `extract-${subset.length}-pages.pdf`)
       toast.success(`Extracted ${subset.length} page${subset.length > 1 ? 's' : ''}`)
     } catch (err) {
@@ -360,7 +540,7 @@ export default function LegacyPDF() {
     if (!pages.length) return
     const before = workingBytesRef.current?.byteLength || 0
     try {
-      const bytes = await buildWorkingPdf(sources, pages, { compress: true })
+      const bytes = await buildWorkingPdf(sources, pages, { compress: true, annotations, pdfDoc, pageIndexMap: pageIndexMap() })
       const after = bytes.byteLength
       downloadBytes(bytes, 'compressed.pdf')
       const pct = before ? Math.max(0, Math.round((1 - after / before) * 100)) : 0
@@ -373,8 +553,14 @@ export default function LegacyPDF() {
 
   const downloadCurrent = async () => {
     if (!workingBytesRef.current) { toast.error('Nothing to download'); return }
-    downloadBytes(workingBytesRef.current, 'legacy-pdf-export.pdf')
-    toast.success('Downloaded')
+    try {
+      const bytes = await buildWorkingPdf(sources, pages, { annotations, pdfDoc, pageIndexMap: pageIndexMap() })
+      downloadBytes(bytes, 'legacy-pdf-export.pdf')
+      toast.success('Downloaded')
+    } catch (err) {
+      console.error(err)
+      toast.error('Download failed')
+    }
   }
 
   const clearAll = () => {
@@ -385,6 +571,16 @@ export default function LegacyPDF() {
     fittedRef.current = false
     canvasRefs.current = {}
     pageRefs.current = {}
+    setAnnotations({})
+    setSelectedAnn(null)
+    setPageBaseSize({})
+    historyRef.current = []
+    futureRef.current = []
+  }
+
+  const toggleTool = (t) => {
+    setActiveTool(cur => (cur === t ? null : t))
+    setSelectedAnn(null)
   }
 
   const currentIndex = pages.findIndex(p => p.id === currentId)
@@ -472,10 +668,31 @@ export default function LegacyPDF() {
                 className={`lpdf-page${selected.includes(p.id) ? ' lpdf-page--selected' : ''}`}
                 data-page-id={p.id}
                 ref={el => { if (el) pageRefs.current[p.id] = el }}
-                onClick={(e) => selectPage(p.id, e)}
+                onClick={(e) => { if (!activeTool) selectPage(p.id, e) }}
               >
                 <canvas ref={el => { if (el) canvasRefs.current[p.id] = el }} />
                 <div className="lpdf-page-badge">{i + 1}</div>
+                {pageBaseSize[p.id] && (
+                  <PdfAnnotationLayer
+                    pageId={p.id}
+                    scale={scale}
+                    baseWidth={pageBaseSize[p.id].w}
+                    baseHeight={pageBaseSize[p.id].h}
+                    annotations={annotations[p.id] || []}
+                    tool={activeTool}
+                    color={markupColor}
+                    coverColor={coverColor}
+                    textColor={textColor}
+                    strokeWidth={strokeWidth}
+                    highlightAlpha={highlightAlpha}
+                    fontSize={textFontSize}
+                    selectedId={selectedAnn?.pageId === p.id ? selectedAnn.id : null}
+                    onSelect={(id) => setSelectedAnn(id ? { pageId: p.id, id } : null)}
+                    onAdd={(ann) => addAnnotation(p.id, ann)}
+                    onPatch={(id, patch) => patchAnnotation(p.id, id, patch)}
+                    onDelete={(id) => deleteAnnotation(p.id, id)}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -517,6 +734,94 @@ export default function LegacyPDF() {
                   <button className="lpdf-tool-btn full active" onClick={applyCrop}>Apply crop</button>
                 </div>
               )}
+            </div>
+
+            <div className="lpdf-tool-group">
+              <div className="lpdf-tool-label">Markup</div>
+              <div className="lpdf-tool-hint">
+                {activeTool
+                  ? 'Draw on the page — Esc or click the tool again to stop'
+                  : 'Pick a tool to draw on the current page'}
+              </div>
+              <div className="lpdf-markup-grid">
+                <button className={`lpdf-tool-btn${activeTool === 'select' ? ' active' : ''}`} onClick={() => toggleTool('select')} title="Select / move markup">
+                  <MousePointer size={16} />
+                </button>
+                <button className={`lpdf-tool-btn${activeTool === 'cover' ? ' active' : ''}`} onClick={() => toggleTool('cover')} title="Cover — covers content visually. Does not remove underlying text.">
+                  <Eraser size={16} />
+                </button>
+                <button className={`lpdf-tool-btn${activeTool === 'highlight' ? ' active' : ''}`} onClick={() => toggleTool('highlight')} title="Highlighter">
+                  <Highlighter size={16} />
+                </button>
+                <button className={`lpdf-tool-btn${activeTool === 'rectangle' ? ' active' : ''}`} onClick={() => toggleTool('rectangle')} title="Rectangle">
+                  <Square size={16} />
+                </button>
+                <button className={`lpdf-tool-btn${activeTool === 'ellipse' ? ' active' : ''}`} onClick={() => toggleTool('ellipse')} title="Ellipse / circle">
+                  <Circle size={16} />
+                </button>
+                <button className={`lpdf-tool-btn${activeTool === 'line' ? ' active' : ''}`} onClick={() => toggleTool('line')} title="Line">
+                  <Minus size={16} />
+                </button>
+                <button className={`lpdf-tool-btn${activeTool === 'arrow' ? ' active' : ''}`} onClick={() => toggleTool('arrow')} title="Arrow">
+                  <ArrowUpRight size={16} />
+                </button>
+                <button className={`lpdf-tool-btn${activeTool === 'pen' ? ' active' : ''}`} onClick={() => toggleTool('pen')} title="Freehand pen">
+                  <Pen size={16} />
+                </button>
+                <button className={`lpdf-tool-btn${activeTool === 'text' ? ' active' : ''}`} onClick={() => toggleTool('text')} title="Text box">
+                  <Type size={16} />
+                </button>
+              </div>
+
+              <label className="lpdf-markup-row">
+                <span>Color</span>
+                {activeTool === 'cover' ? (
+                  <input type="color" value={coverColor} onChange={(e) => setCoverColor(e.target.value)} title="Cover color (defaults to white)" />
+                ) : activeTool === 'text' ? (
+                  <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} title="Text color (defaults to black)" />
+                ) : (
+                  <input type="color" value={markupColor} onChange={(e) => setMarkupColor(e.target.value)} />
+                )}
+              </label>
+
+              {activeTool === 'highlight' && (
+                <label className="lpdf-markup-row">
+                  <span>Opacity</span>
+                  <input
+                    type="range" min={10} max={80}
+                    value={Math.round(highlightAlpha * 100)}
+                    onChange={(e) => setHighlightAlpha(Number(e.target.value) / 100)}
+                  />
+                </label>
+              )}
+
+              {['rectangle', 'line', 'arrow', 'ellipse', 'pen'].includes(activeTool) && (
+                <label className="lpdf-markup-row">
+                  <span>Width</span>
+                  <input
+                    type="range" min={1} max={12}
+                    value={strokeWidth}
+                    onChange={(e) => setStrokeWidth(Number(e.target.value))}
+                  />
+                </label>
+              )}
+
+              {activeTool === 'text' && (
+                <label className="lpdf-markup-row">
+                  <span>Font size</span>
+                  <input
+                    type="number" min={8} max={72}
+                    value={textFontSize}
+                    onChange={(e) => setTextFontSize(Math.max(8, Math.min(72, Number(e.target.value) || 16)))}
+                  />
+                </label>
+              )}
+
+              <div className="lpdf-tool-row">
+                <button className="lpdf-tool-btn wide" onClick={undoAnnotations} title="Undo"><Undo2 size={16} /> Undo</button>
+                <button className="lpdf-tool-btn wide" onClick={redoAnnotations} title="Redo"><Redo2 size={16} /> Redo</button>
+              </div>
+              <button className="lpdf-tool-btn full" onClick={clearPageMarkup}><X size={16} /> Clear markup on this page</button>
             </div>
 
             <div className="lpdf-tool-group">

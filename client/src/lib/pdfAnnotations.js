@@ -147,6 +147,7 @@ function drawTextLike(page, viewport, a, font) {
 export function translateAnnotation(a, dx, dy) {
   switch (a.type) {
     case 'cover':
+    case 'redact':
     case 'highlight':
     case 'rectangle':
     case 'text':
@@ -183,6 +184,7 @@ function reprojectAnnotation(a, oldViewport, newViewport) {
   const pt = (x, y) => reprojectPoint(oldViewport, newViewport, x, y)
   switch (a.type) {
     case 'cover':
+    case 'redact':
     case 'highlight':
     case 'rectangle': {
       const [x1, y1] = pt(a.x, a.y)
@@ -220,6 +222,7 @@ export function bakeAnnotationsIntoPage(pdfLibPage, annotations, viewport, font)
   for (const a of annotations || []) {
     switch (a.type) {
       case 'cover':
+      case 'redact':
         drawRectLike(pdfLibPage, viewport, a, { filled: true })
         break
       case 'highlight':
@@ -244,5 +247,95 @@ export function bakeAnnotationsIntoPage(pdfLibPage, annotations, viewport, font)
       default:
         break
     }
+  }
+}
+
+// Draws every annotation for one page directly onto a raster <canvas> 2D
+// context, used by the redaction bake path (buildWorkingPdf in LegacyPDF.jsx)
+// to flatten markup into the same bitmap the redaction boxes overwrite pixels
+// on. Stored annotation geometry is in scale-1 CSS px with a top-left,
+// y-down origin — the same convention pdf.js uses for canvas rendering — so
+// mapping into raster px is a plain multiply by `scale` (the render scale
+// the canvas was rasterized at), no viewport/PDF-space conversion needed.
+export function drawAnnotationsOnCanvas(ctx, annotations, scale) {
+  for (const a of annotations || []) {
+    ctx.save()
+    switch (a.type) {
+      case 'cover':
+      case 'redact':
+        ctx.fillStyle = a.color || (a.type === 'redact' ? '#000000' : '#ffffff')
+        ctx.globalAlpha = 1
+        ctx.fillRect(a.x * scale, a.y * scale, a.w * scale, a.h * scale)
+        break
+      case 'highlight':
+        ctx.fillStyle = a.color
+        ctx.globalAlpha = a.opacity ?? 0.35
+        ctx.fillRect(a.x * scale, a.y * scale, a.w * scale, a.h * scale)
+        break
+      case 'rectangle':
+        ctx.strokeStyle = a.color
+        ctx.lineWidth = Math.max(0.5, (a.strokeWidth || 2) * scale)
+        ctx.strokeRect(a.x * scale, a.y * scale, a.w * scale, a.h * scale)
+        break
+      case 'line':
+      case 'arrow': {
+        const x1 = a.x1 * scale, y1 = a.y1 * scale, x2 = a.x2 * scale, y2 = a.y2 * scale
+        const thickness = Math.max(0.5, (a.strokeWidth || 2) * scale)
+        ctx.strokeStyle = a.color
+        ctx.lineWidth = thickness
+        ctx.lineCap = 'round'
+        ctx.beginPath()
+        ctx.moveTo(x1, y1)
+        ctx.lineTo(x2, y2)
+        ctx.stroke()
+        if (a.type === 'arrow') {
+          const headLen = Math.max(6 * scale, thickness * 4)
+          const angle = Math.atan2(y2 - y1, x2 - x1)
+          const spread = Math.PI / 7
+          for (const dir of [-1, 1]) {
+            const a2 = angle + Math.PI - dir * spread
+            ctx.beginPath()
+            ctx.moveTo(x2, y2)
+            ctx.lineTo(x2 + headLen * Math.cos(a2), y2 + headLen * Math.sin(a2))
+            ctx.stroke()
+          }
+        }
+        break
+      }
+      case 'ellipse':
+        ctx.beginPath()
+        ctx.ellipse(a.cx * scale, a.cy * scale, Math.max(a.rx * scale, 0.01), Math.max(a.ry * scale, 0.01), 0, 0, Math.PI * 2)
+        if (a.filled) {
+          ctx.fillStyle = a.color
+          ctx.fill()
+        } else {
+          ctx.strokeStyle = a.color
+          ctx.lineWidth = Math.max(0.5, (a.strokeWidth || 2) * scale)
+          ctx.stroke()
+        }
+        break
+      case 'pen': {
+        const pts = a.points || []
+        if (pts.length < 2) break
+        ctx.strokeStyle = a.color
+        ctx.lineWidth = Math.max(0.5, (a.strokeWidth || 2) * scale)
+        ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
+        ctx.beginPath()
+        ctx.moveTo(pts[0].x * scale, pts[0].y * scale)
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x * scale, pts[i].y * scale)
+        ctx.stroke()
+        break
+      }
+      case 'text':
+        ctx.fillStyle = a.color || '#000000'
+        ctx.textBaseline = 'top'
+        ctx.font = `${(a.fontSize || 14) * scale}px Helvetica, Arial, sans-serif`
+        ctx.fillText(a.text || '', a.x * scale, a.y * scale)
+        break
+      default:
+        break
+    }
+    ctx.restore()
   }
 }

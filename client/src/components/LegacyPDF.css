@@ -271,6 +271,59 @@
 .lpdf-tool-btn.full { width: 100%; }
 .lpdf-tool-btn.wide { flex: 1; }
 
+.lpdf-tool-btn--redact {
+  border-color: rgba(220, 50, 50, 0.35);
+  color: #e08a8a;
+}
+.lpdf-tool-btn--redact:hover {
+  border-color: rgba(220, 50, 50, 0.6);
+  color: #f0a0a0;
+}
+.lpdf-tool-btn--redact.active {
+  background: rgba(220, 50, 50, 0.18);
+  border-color: rgba(220, 50, 50, 0.55);
+  color: #f0a0a0;
+}
+
+.lpdf-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 5, 18, 0.65);
+}
+.lpdf-modal {
+  width: min(440px, calc(100vw - 32px));
+  background: #0a0e1c;
+  border: 1px solid rgba(220, 50, 50, 0.35);
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.lpdf-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #f0a0a0;
+  margin-bottom: 10px;
+}
+.lpdf-modal-title-icon { flex: none; }
+.lpdf-modal-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(184, 205, 216, 0.85);
+}
+.lpdf-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
 .lpdf-crop-panel {
   display: flex;
   flex-direction: column;

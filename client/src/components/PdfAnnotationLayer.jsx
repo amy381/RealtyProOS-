@@ -9,7 +9,7 @@ const MIN_SIZE = 2 // scale-1 px — below this a draft is discarded as an accid
 // SVG rejects. normalizeDraft (below) does the same at commit time, but also
 // discards too-small shapes, which would make the preview flicker away.
 function previewSafe(d) {
-  if (d.type !== 'cover' && d.type !== 'highlight' && d.type !== 'rectangle') return d
+  if (d.type !== 'cover' && d.type !== 'redact' && d.type !== 'highlight' && d.type !== 'rectangle') return d
   let { x, y, w, h } = d
   if (w < 0) { x += w; w = -w }
   if (h < 0) { y += h; h = -h }
@@ -17,7 +17,7 @@ function previewSafe(d) {
 }
 
 function normalizeDraft(d) {
-  if (d.type === 'cover' || d.type === 'highlight' || d.type === 'rectangle') {
+  if (d.type === 'cover' || d.type === 'redact' || d.type === 'highlight' || d.type === 'rectangle') {
     let { x, y, w, h } = d
     if (w < 0) { x += w; w = -w }
     if (h < 0) { y += h; h = -h }
@@ -42,13 +42,14 @@ function Shape({ a, extraProps }) {
   const strokeW = a.strokeWidth || 2
   switch (a.type) {
     case 'cover':
+    case 'redact':
     case 'highlight':
     case 'rectangle':
       return (
         <rect
           x={a.x} y={a.y} width={a.w} height={a.h}
           fill={a.type === 'rectangle' ? 'none' : a.color}
-          fillOpacity={a.type === 'highlight' ? (a.opacity ?? 0.35) : (a.type === 'cover' ? 1 : undefined)}
+          fillOpacity={a.type === 'highlight' ? (a.opacity ?? 0.35) : (a.type === 'cover' || a.type === 'redact' ? 1 : undefined)}
           stroke={a.type === 'rectangle' ? a.color : 'none'}
           strokeWidth={a.type === 'rectangle' ? strokeW : 0}
           {...extraProps}
@@ -104,7 +105,7 @@ function Shape({ a, extraProps }) {
 
 function boundsOf(a) {
   switch (a.type) {
-    case 'cover': case 'highlight': case 'rectangle':
+    case 'cover': case 'redact': case 'highlight': case 'rectangle':
       return { x: a.x, y: a.y, w: a.w, h: a.h }
     case 'line': case 'arrow':
       return { x: Math.min(a.x1, a.x2), y: Math.min(a.y1, a.y2), w: Math.abs(a.x2 - a.x1), h: Math.abs(a.y2 - a.y1) }
@@ -123,7 +124,7 @@ function boundsOf(a) {
 
 export default function PdfAnnotationLayer({
   pageId, scale, baseWidth, baseHeight, annotations,
-  tool, color, coverColor, textColor, strokeWidth, highlightAlpha, fontSize,
+  tool, color, coverColor, redactColor, textColor, strokeWidth, highlightAlpha, fontSize,
   selectedId, onSelect, onAdd, onPatch, onDelete,
 }) {
   const wrapRef = useRef(null)
@@ -172,8 +173,13 @@ export default function PdfAnnotationLayer({
       return
     }
     try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* no-op */ }
-    const base = { id: nextAnnotationId(), type: tool, color: tool === 'cover' ? (coverColor || '#ffffff') : color, strokeWidth }
-    if (tool === 'cover') setDrafting({ ...base, x, y, w: 0, h: 0, filled: true })
+    const base = {
+      id: nextAnnotationId(),
+      type: tool,
+      color: tool === 'cover' ? (coverColor || '#ffffff') : tool === 'redact' ? (redactColor || '#000000') : color,
+      strokeWidth,
+    }
+    if (tool === 'cover' || tool === 'redact') setDrafting({ ...base, x, y, w: 0, h: 0, filled: true })
     else if (tool === 'highlight') setDrafting({ ...base, x, y, w: 0, h: 0, filled: true, opacity: highlightAlpha })
     else if (tool === 'rectangle') setDrafting({ ...base, x, y, w: 0, h: 0, filled: false })
     else if (tool === 'line' || tool === 'arrow') setDrafting({ ...base, x1: x, y1: y, x2: x, y2: y })
@@ -190,7 +196,7 @@ export default function PdfAnnotationLayer({
     if (!drafting) return
     const { x, y } = toStored(e)
     setDrafting(d => {
-      if (d.type === 'cover' || d.type === 'highlight' || d.type === 'rectangle') return { ...d, w: x - d.x, h: y - d.y }
+      if (d.type === 'cover' || d.type === 'redact' || d.type === 'highlight' || d.type === 'rectangle') return { ...d, w: x - d.x, h: y - d.y }
       if (d.type === 'line' || d.type === 'arrow') return { ...d, x2: x, y2: y }
       if (d.type === 'ellipse') return { ...d, rx: Math.abs(x - d.cx), ry: Math.abs(y - d.cy) }
       if (d.type === 'pen') return { ...d, points: [...d.points, { x, y }] }

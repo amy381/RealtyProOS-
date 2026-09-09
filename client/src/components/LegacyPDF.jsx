@@ -5,7 +5,7 @@ import {
   Crop, FilePlus2, Copy, Minimize2, FileStack, X,
   ArrowUp, ArrowDown,
   Square, Type, Minus, ArrowUpRight, Circle, Highlighter, Pen,
-  MousePointer, Undo2, Redo2, Eraser,
+  MousePointer, Undo2, Redo2, Eraser, Ban,
 } from 'lucide-react'
 // @cantoo/pdf-lib is a drop-in, same-API fork of pdf-lib that can decrypt
 // permission-locked PDFs (owner-password only, empty user password) — common
@@ -22,7 +22,7 @@ import './LegacyPdfImages.css'
 
 // Overlay markup editor (Phase 1 — draw/annotate; NOT redaction, see Cover tool).
 import PdfAnnotationLayer from './PdfAnnotationLayer'
-import { nextAnnotationId, bakeAnnotationsIntoPage, DEFAULT_COLOR, translateAnnotation, reprojectAnnotations } from '../lib/pdfAnnotations'
+import { nextAnnotationId, bakeAnnotationsIntoPage, drawAnnotationsOnCanvas, DEFAULT_COLOR, translateAnnotation, reprojectAnnotations } from '../lib/pdfAnnotations'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl
 
@@ -34,6 +34,21 @@ const nextPageId = () => `pg_${++_pageSeq}`
 
 const ZOOM_MIN = 25   // %
 const ZOOM_MAX = 400  // %
+
+// Render scale for the redaction rasterizer, chosen for ~200 DPI output
+// (the base PDF coordinate space is 72 DPI, so 200/72 ≈ 2.78). High enough
+// that flattened text stays legible; see the Redact tool in buildWorkingPdf.
+const REDACT_RENDER_SCALE = 200 / 72
+
+// data:image/jpeg;base64,... -> Uint8Array, for handing a rasterized canvas
+// to pdf-lib's embedJpg.
+function dataUrlToBytes(dataUrl) {
+  const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1)
+  const bin = atob(base64)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  return bytes
+}
 
 // Build a single working PDF (Uint8Array) from the source files + ordered page list.
 // This is the single derived artifact used for both rendering (pdf.js) and download.
@@ -51,8 +66,54 @@ async function buildWorkingPdf(sources, pages, { compress = false, annotations =
   const out = await PDFDocument.create()
   const loaded = {} // srcId -> PDFDocument (cached per build)
   let font = null
+  let anyRedacted = false
 
   for (const p of pages) {
+    const pageAnns = annotations?.[p.id]
+    const hasRedact = !!pageAnns?.some(a => a.type === 'redact')
+    const pageNum = pageIndexMap?.get(p.id)
+
+    // A page with a redact box can't go through the vector copy path below —
+    // the underlying text/image would still be present in the output PDF,
+    // just visually covered (exactly the Cover tool's non-removal problem
+    // this feature exists to fix). Instead render the page to a raster
+    // canvas, paint every annotation directly onto those pixels (so
+    // redaction boxes overwrite the data BEFORE encoding), then embed the
+    // flattened bitmap as the page — the vector/text page is never copied in,
+    // so nothing underneath the paint survives into the output.
+    if (hasRedact && pdfDoc && pageNum) {
+      anyRedacted = true
+      const pjsPage = await pdfDoc.getPage(pageNum)
+      const baseViewport = pjsPage.getViewport({ scale: 1 })
+      const renderViewport = pjsPage.getViewport({ scale: REDACT_RENDER_SCALE })
+
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.ceil(renderViewport.width)
+      canvas.height = Math.ceil(renderViewport.height)
+      const ctx = canvas.getContext('2d')
+      await pjsPage.render({ canvasContext: ctx, viewport: renderViewport }).promise
+      // Paint ALL of this page's markup onto the same raster — not just the
+      // redact boxes — so cover/shape/text annotations still show up on the
+      // flattened output (Part 2 "Coexistence").
+      drawAnnotationsOnCanvas(ctx, pageAnns, REDACT_RENDER_SCALE)
+
+      const jpgBytes = dataUrlToBytes(canvas.toDataURL('image/jpeg', 0.92))
+      const jpgImage = await out.embedJpg(jpgBytes)
+      const page = out.addPage([baseViewport.width, baseViewport.height])
+      page.drawImage(jpgImage, { x: 0, y: 0, width: baseViewport.width, height: baseViewport.height })
+
+      // Redaction coords are stored relative to the pre-crop rendered size
+      // (same as the vector path's crop below), so the crop box is applied
+      // identically here, after painting onto the full raster.
+      if (p.crop) {
+        const { x, y, width, height } = p.crop
+        page.setCropBox(x, y, width, height)
+      }
+      continue
+    }
+
+    // No redaction on this page — unchanged vector path: copy the page as-is
+    // (preserving its text layer) and bake any non-destructive markup on top.
     let page
     if (p.blank) {
       page = out.addPage([p.width || 612, p.height || 792])
@@ -73,18 +134,26 @@ async function buildWorkingPdf(sources, pages, { compress = false, annotations =
       page = copied
     }
 
-    const pageAnns = annotations?.[p.id]
-    if (pageAnns?.length && pdfDoc && pageIndexMap) {
-      const pageNum = pageIndexMap.get(p.id)
-      if (pageNum) {
-        if (!font && pageAnns.some(a => a.type === 'text')) {
-          font = await out.embedFont(StandardFonts.Helvetica)
-        }
-        const pjsPage = await pdfDoc.getPage(pageNum)
-        const viewport = pjsPage.getViewport({ scale: 1 })
-        bakeAnnotationsIntoPage(page, pageAnns, viewport, font)
+    if (pageAnns?.length && pdfDoc && pageIndexMap && pageNum) {
+      if (!font && pageAnns.some(a => a.type === 'text')) {
+        font = await out.embedFont(StandardFonts.Helvetica)
       }
+      const pjsPage = await pdfDoc.getPage(pageNum)
+      const viewport = pjsPage.getViewport({ scale: 1 })
+      bakeAnnotationsIntoPage(page, pageAnns, viewport, font)
     }
+  }
+
+  // A redacted output shouldn't leak the source document's identity through
+  // its metadata (Title/Author/etc. often carries the original filename or
+  // author from the source PDF's producer).
+  if (anyRedacted) {
+    out.setTitle('')
+    out.setAuthor('')
+    out.setSubject('')
+    out.setKeywords([])
+    out.setProducer('')
+    out.setCreator('')
   }
 
   return out.save({ useObjectStreams: compress })
@@ -118,6 +187,7 @@ export default function LegacyPDF() {
   const [activeTool, setActiveTool] = useState(null)  // null | 'select' | 'cover' | 'text' | ...
   const [markupColor, setMarkupColor] = useState(DEFAULT_COLOR)
   const [coverColor, setCoverColor] = useState('#ffffff')  // Cover always defaults to opaque white, independent of the shared picker
+  const [redactColor, setRedactColor] = useState('#000000')  // Redact always defaults to black (redaction convention)
   const [textColor, setTextColor] = useState('#000000')  // Text always defaults to black, independent of the shared picker
   const [strokeWidth, setStrokeWidth] = useState(2)
   const [highlightAlpha, setHighlightAlpha] = useState(0.35)
@@ -126,6 +196,10 @@ export default function LegacyPDF() {
   const [pageBaseSize, setPageBaseSize] = useState({})   // pageId -> { w, h } at scale 1
   const historyRef = useRef([])   // past annotations snapshots (undo)
   const futureRef = useRef([])    // undone snapshots (redo)
+
+  // Confirmation gate before any download that would flatten redacted pages
+  // — holds the pending download action while the modal is open.
+  const [redactConfirmAction, setRedactConfirmAction] = useState(null)
 
   const scrollRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -521,7 +595,17 @@ export default function LegacyPDF() {
   // look up the right viewport even when building a smaller subset (Extract).
   const pageIndexMap = () => new Map(pages.map((p, i) => [p.id, i + 1]))
 
-  const extractSelected = async () => {
+  // Any page carrying a redact box is about to be permanently flattened to
+  // an image on download — gate every download path behind one confirmation
+  // so the user never ships a redacted file by accident, and understands the
+  // downloaded copy (not the originally-loaded file) is the safe one to share.
+  const hasAnyRedaction = () => Object.values(annotations).some(list => list?.some(a => a.type === 'redact'))
+  const runWithRedactConfirm = (action) => {
+    if (hasAnyRedaction()) setRedactConfirmAction(() => action)
+    else action()
+  }
+
+  const extractSelectedImpl = async () => {
     const ids = selected.length ? selected : (currentId ? [currentId] : [])
     if (!ids.length) { toast.error('Select pages to extract'); return }
     // Preserve document order of the selected pages.
@@ -535,8 +619,9 @@ export default function LegacyPDF() {
       toast.error('Extract failed')
     }
   }
+  const extractSelected = () => runWithRedactConfirm(extractSelectedImpl)
 
-  const compress = async () => {
+  const compressImpl = async () => {
     if (!pages.length) return
     const before = workingBytesRef.current?.byteLength || 0
     try {
@@ -550,8 +635,9 @@ export default function LegacyPDF() {
       toast.error('Compress failed')
     }
   }
+  const compress = () => runWithRedactConfirm(compressImpl)
 
-  const downloadCurrent = async () => {
+  const downloadCurrentImpl = async () => {
     if (!workingBytesRef.current) { toast.error('Nothing to download'); return }
     try {
       const bytes = await buildWorkingPdf(sources, pages, { annotations, pdfDoc, pageIndexMap: pageIndexMap() })
@@ -562,6 +648,7 @@ export default function LegacyPDF() {
       toast.error('Download failed')
     }
   }
+  const downloadCurrent = () => runWithRedactConfirm(downloadCurrentImpl)
 
   const clearAll = () => {
     setSources({})
@@ -682,6 +769,7 @@ export default function LegacyPDF() {
                     tool={activeTool}
                     color={markupColor}
                     coverColor={coverColor}
+                    redactColor={redactColor}
                     textColor={textColor}
                     strokeWidth={strokeWidth}
                     highlightAlpha={highlightAlpha}
@@ -750,6 +838,13 @@ export default function LegacyPDF() {
                 <button className={`lpdf-tool-btn${activeTool === 'cover' ? ' active' : ''}`} onClick={() => toggleTool('cover')} title="Cover — covers content visually. Does not remove underlying text.">
                   <Eraser size={16} />
                 </button>
+                <button
+                  className={`lpdf-tool-btn lpdf-tool-btn--redact${activeTool === 'redact' ? ' active' : ''}`}
+                  onClick={() => toggleTool('redact')}
+                  title="Redact — permanently removes the text/data underneath. The page becomes a flattened image."
+                >
+                  <Ban size={16} />
+                </button>
                 <button className={`lpdf-tool-btn${activeTool === 'highlight' ? ' active' : ''}`} onClick={() => toggleTool('highlight')} title="Highlighter">
                   <Highlighter size={16} />
                 </button>
@@ -777,6 +872,8 @@ export default function LegacyPDF() {
                 <span>Color</span>
                 {activeTool === 'cover' ? (
                   <input type="color" value={coverColor} onChange={(e) => setCoverColor(e.target.value)} title="Cover color (defaults to white)" />
+                ) : activeTool === 'redact' ? (
+                  <input type="color" value={redactColor} onChange={(e) => setRedactColor(e.target.value)} title="Redact color (defaults to black)" />
                 ) : activeTool === 'text' ? (
                   <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} title="Text color (defaults to black)" />
                 ) : (
@@ -829,6 +926,33 @@ export default function LegacyPDF() {
               <button className="lpdf-tool-btn full" onClick={extractSelected}><Scissors size={16} /> Extract selected →</button>
               <button className="lpdf-tool-btn full" onClick={compress}><Minimize2 size={16} /> Compress & download</button>
               <button className="lpdf-tool-btn full active" onClick={downloadCurrent}><Download size={16} /> Download PDF</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {redactConfirmAction && (
+        <div className="lpdf-modal-backdrop" onClick={() => setRedactConfirmAction(null)}>
+          <div className="lpdf-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="lpdf-modal-title">
+              <Ban size={16} className="lpdf-modal-title-icon" /> Redacted pages will be flattened
+            </div>
+            <div className="lpdf-modal-body">
+              This document has one or more <strong>Redact</strong> boxes. Downloading will permanently
+              flatten those pages to images — the text/data underneath is removed and not recoverable,
+              but the page also loses its text layer (no longer selectable or searchable).
+              <br /><br />
+              The file you're about to download is the safe one to share. The originally-loaded file
+              still contains the original data — don't share that one.
+            </div>
+            <div className="lpdf-modal-actions">
+              <button className="lpdf-tool-btn" onClick={() => setRedactConfirmAction(null)}>Cancel</button>
+              <button
+                className="lpdf-tool-btn active"
+                onClick={() => { const action = redactConfirmAction; setRedactConfirmAction(null); action() }}
+              >
+                Flatten & download
+              </button>
             </div>
           </div>
         </div>

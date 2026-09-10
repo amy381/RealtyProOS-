@@ -286,23 +286,33 @@ export default function LegacyPDF() {
     return () => { cancelled = true }
   }, [sources, pages])
 
-  // ── Auto-fit the whole page on first load (viewport-computed, runs once) ──────
+  // ── Auto-fit the whole page on first load ────────────────────────────────────
+  // Compute the fit as soon as page 1's dimensions are known (from pdf.js), so
+  // `scale` is correct BEFORE the first render — no wrong-scale flash, no waiting
+  // on a ResizeObserver. The container size is read synchronously with a fallback,
+  // and re-checked on window resize while unfitted.
+  const [fitReady, setFitReady] = useState(false)
   useEffect(() => {
-    if (!pdfDoc || fittedRef.current) return
+    if (!pdfDoc) { setFitReady(false); return }
+    if (fittedRef.current) { setFitReady(true); return }
     let cancelled = false
     ;(async () => {
       try {
         const page = await pdfDoc.getPage(1)
         const base = page.getViewport({ scale: 1 })
-        const el = scrollRef.current
-        const cw = (el?.clientWidth || 800) - 48   // minus canvas-area padding
-        const ch = (el?.clientHeight || 800) - 48
-        const fit = Math.min(cw / base.width, ch / base.height)
         if (cancelled) return
-        setScale(Math.max(0.1, fit))
+        const el = scrollRef.current
+        // Fall back to the window size if the container hasn't been measured yet;
+        // either way we get a sane, non-negative fit on the very first pass.
+        const cw = (el && el.clientWidth  > 0 ? el.clientWidth  : window.innerWidth  * 0.7) - 48
+        const ch = (el && el.clientHeight > 0 ? el.clientHeight : window.innerHeight * 0.8) - 48
+        const fit = Math.max(0.1, Math.min(cw / base.width, ch / base.height))
+        setScale(fit)
         fittedRef.current = true
+        setFitReady(true)
       } catch (err) {
         console.error('[LegacyPDF] auto-fit failed', err)
+        setFitReady(true)   // don't block rendering on a fit failure
       }
     })()
     return () => { cancelled = true }
@@ -310,9 +320,12 @@ export default function LegacyPDF() {
 
   // ── Render main pages (depends on zoom) ──────────────────────────────────────
   useEffect(() => {
-    if (!pdfDoc) return
+    if (!pdfDoc || !fitReady) return   // wait until the fit scale is settled
     const token = ++renderTokenRef.current
-    ;(async () => {
+    let raf1 = 0, raf2 = 0
+    // One frame so freshly-mounted canvas refs are attached before we draw.
+    raf1 = requestAnimationFrame(() => { raf2 = requestAnimationFrame(runRender) })
+    async function runRender() {
       for (let i = 0; i < pages.length; i++) {
         if (token !== renderTokenRef.current) return
         const pageId = pages[i].id
@@ -341,8 +354,9 @@ export default function LegacyPDF() {
           if (err?.name !== 'RenderingCancelledException') console.error(err)
         }
       }
-    })()
-  }, [pdfDoc, pages, scale])
+    }
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2) }
+  }, [pdfDoc, pages, scale, fitReady])
 
   // ── Annotation history (undo/redo) — snapshot-based, one entry per commit ───
   const commitAnnotations = useCallback((updater) => {

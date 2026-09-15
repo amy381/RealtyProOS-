@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import { wrapEmailBody } from '../lib/emailWrapper'
 import { resolveVars } from '../lib/resolveVars'
@@ -265,17 +266,18 @@ export default function EmailPreviewModal({ task, tx, commissions = {}, collabor
   const gmailReady = !gmailStatus.loading && gmailStatus.connected && gmailStatus.hasGmailScope
 
   if (loading) {
-    return (
+    return createPortal(
       <div className="epm-overlay">
         <div className="epm-modal">
           <div className="epm-loading">Loading template…</div>
         </div>
-      </div>
+      </div>,
+      document.body
     )
   }
 
   if (!template) {
-    return (
+    return createPortal(
       <div className="epm-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
         <div className="epm-modal">
           <div className="epm-header">
@@ -286,7 +288,8 @@ export default function EmailPreviewModal({ task, tx, commissions = {}, collabor
             <div className="epm-error">No email template linked to this task.</div>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     )
   }
 
@@ -417,7 +420,10 @@ export default function EmailPreviewModal({ task, tx, commissions = {}, collabor
     fontFamily:   'inherit',
   }
 
-  return (
+  // Portal to <body> — this modal is opened from within a task row, and a
+  // completed row carries an opacity class (.gtd-grow-done) that would
+  // otherwise cascade onto the modal since it'd be a DOM descendant of the row.
+  return createPortal(
     <>
       <div className="epm-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
         <div className="epm-modal">
@@ -560,6 +566,7 @@ export default function EmailPreviewModal({ task, tx, commissions = {}, collabor
           onClose={() => setDriveOpen(false)}
         />
       )}
-    </>
+    </>,
+    document.body
   )
 }

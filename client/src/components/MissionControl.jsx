@@ -76,25 +76,51 @@ function SectionLabel({ children }) {
   return <div className="mc-section-label">{children}</div>
 }
 
-function ProgressBar({ pct }) {
+function ProgressBar({ pct, pacePct }) {
   return (
     <div className="mc-bar-track">
       <div className="mc-bar-fill" style={{ width: `${Math.min(pct, 100)}%` }} />
+      {pacePct != null && (
+        <div
+          className="mc-bar-pace-marker"
+          style={{ left: `${Math.min(Math.max(pacePct, 0), 100)}%` }}
+          title={`Pace: ${Math.round(pacePct)}% of the year has passed`}
+        />
+      )}
     </div>
   )
 }
 
-function GoalCard({ label, actualStr, goalStr, pct, isAbove }) {
+// Tolerance band (in percentage points) around pace that still counts as
+// "On Track" rather than tipping into Above/Behind.
+const PACE_TOLERANCE = 5
+
+function GoalCard({ label, actualStr, goalStr, pct, isAbove, pacePct }) {
+  // pacePct is only passed for goals that should be judged against the
+  // calendar (GCI, Units, Volume) — Avg Purchase Price isn't a running
+  // total, so it has no meaningful "pace".
+  let status // 'above' | 'on-track' | 'behind'
+  if (pacePct != null) {
+    const gap = pct - pacePct
+    status = gap > PACE_TOLERANCE ? 'above' : gap < -PACE_TOLERANCE ? 'behind' : 'on-track'
+  } else {
+    status = isAbove ? 'above' : 'behind'
+  }
+  const statusLabel = { above: '↑ Above', 'on-track': '● On Track', behind: '↓ Behind' }[status]
+
   return (
     <div className="mc-goal-card">
       <div className="mc-goal-label">{label}</div>
       <div className="mc-goal-actual">{actualStr}</div>
       <div className="mc-goal-target">Goal: {goalStr}</div>
-      <ProgressBar pct={pct} />
+      <ProgressBar pct={pct} pacePct={pacePct} />
       <div className="mc-goal-footer">
-        <span className="mc-goal-pct">{Math.round(pct)}%</span>
-        <span className={`mc-goal-indicator${isAbove ? ' mc-goal-indicator--above' : ' mc-goal-indicator--behind'}`}>
-          {isAbove ? '↑ Above' : '↓ Behind'}
+        <span className="mc-goal-pct">
+          {Math.round(pct)}%
+          {pacePct != null && <span className="mc-goal-pace-ref"> / {Math.round(pacePct)}%</span>}
+        </span>
+        <span className={`mc-goal-indicator mc-goal-indicator--${status}`}>
+          {statusLabel}
         </span>
       </div>
     </div>
@@ -212,7 +238,10 @@ export default function MissionControl({ transactions, commissions }) {
     <div className="mc-wrap">
 
       {/* ── Section 1: Goal Progress Cards ─────────────────────────────── */}
-      <SectionLabel>Annual Goals</SectionLabel>
+      <div className="mc-section-head">
+        <SectionLabel>Annual Goals</SectionLabel>
+        <span className="mc-year-elapsed">{Math.round(elapsedPct)}% of {currentYear} elapsed</span>
+      </div>
       <div className="mc-goal-cards">
         <GoalCard
           label="GCI"
@@ -220,6 +249,7 @@ export default function MissionControl({ transactions, commissions }) {
           goalStr={fmtShort(G.gci)}
           pct={G.gci > 0 ? (gci / G.gci) * 100 : 0}
           isAbove={(gci / G.gci) * 100 >= elapsedPct - 5}
+          pacePct={elapsedPct}
         />
         <GoalCard
           label="Units Sold"
@@ -227,6 +257,7 @@ export default function MissionControl({ transactions, commissions }) {
           goalStr={String(G.units)}
           pct={G.units > 0 ? (units / G.units) * 100 : 0}
           isAbove={(units / G.units) * 100 >= elapsedPct - 5}
+          pacePct={elapsedPct}
         />
         <GoalCard
           label="Total Volume"
@@ -234,6 +265,7 @@ export default function MissionControl({ transactions, commissions }) {
           goalStr={fmtShort(G.volume)}
           pct={G.volume > 0 ? (volume / G.volume) * 100 : 0}
           isAbove={(volume / G.volume) * 100 >= elapsedPct - 5}
+          pacePct={elapsedPct}
         />
         <GoalCard
           label="Avg Purchase Price"

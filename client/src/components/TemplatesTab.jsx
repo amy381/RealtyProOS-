@@ -1458,6 +1458,13 @@ export default function TemplatesTab({ templates, allTemplateTasks, onRefresh, t
                           title="Insert hyperlink"
                           onMouseDown={e => { e.preventDefault(); insertLink() }}
                         >🔗</button>
+                        <span className="et-toolbar-sep" />
+                        <button
+                          type="button"
+                          className="et-toolbar-btn et-tb-clear"
+                          title="Erase formatting"
+                          onMouseDown={e => { e.preventDefault(); execCmd('removeFormat') }}
+                        >Tx</button>
                       </div>
 
                       {/* contentEditable body — fully uncontrolled.

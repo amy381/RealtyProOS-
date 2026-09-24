@@ -909,6 +909,7 @@
 .et-tb-bold   { font-weight: 700; }
 .et-tb-italic { font-style: italic; }
 .et-tb-under  { text-decoration: underline; }
+.et-tb-clear  { text-decoration: line-through; }
 
 .et-toolbar-sep {
   width: 1px;

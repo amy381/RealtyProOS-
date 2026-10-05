@@ -1,0 +1,209 @@
+/* Mobile view (/m) — every selector is an m- class. Loaded only via MobileApp. */
+
+.m-app {
+  min-height: 100vh;
+  max-width: 100%;
+  overflow-x: hidden;
+  background: #02030a;
+  color: #a8bfcc;
+  font-size: 16px;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+}
+
+.m-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(80, 200, 220, 0.18);
+  background: rgba(2, 5, 18, 0.9);
+}
+
+.m-header-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #b8cdd8;
+  letter-spacing: 0.02em;
+}
+
+.m-main {
+  flex: 1;
+  width: 100%;
+  padding: 16px;
+  min-width: 0;
+}
+
+.m-footer {
+  padding: 16px;
+  text-align: center;
+}
+
+.m-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 12px;
+  color: #50C8DC;
+  font-size: 16px;
+  text-decoration: none;
+}
+
+/* Buttons */
+.m-btn {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  border: 1px solid rgba(80, 200, 220, 0.35);
+  background: transparent;
+  color: #50C8DC;
+}
+
+.m-btn--primary {
+  background: rgba(80, 200, 220, 0.14);
+  width: 100%;
+}
+
+.m-btn--ghost {
+  padding: 0 14px;
+}
+
+.m-btn:disabled {
+  opacity: 0.6;
+}
+
+/* Login */
+.m-login {
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.m-login-card {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(80, 200, 220, 0.2);
+  background: rgba(2, 5, 18, 0.6);
+}
+
+.m-login-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #b8cdd8;
+  text-align: center;
+}
+
+/* Sections and cards */
+.m-section + .m-section {
+  margin-top: 24px;
+}
+
+.m-section-title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b8cdd8;
+}
+
+.m-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.m-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(80, 200, 220, 0.2);
+  background: rgba(2, 5, 18, 0.6);
+}
+
+.m-card--soon {
+  border-color: rgba(212, 120, 30, 0.6);
+  border-left: 4px solid #D4781E;
+}
+
+.m-card-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.m-card-title {
+  color: #b8cdd8;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.m-card-sub {
+  margin-top: 2px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.m-card-when {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.m-card-date {
+  font-size: 14px;
+  color: #b8cdd8;
+  white-space: nowrap;
+}
+
+.m-card-in {
+  margin-top: 2px;
+  font-size: 14px;
+  color: #50C8DC;
+  white-space: nowrap;
+}
+
+.m-card-in--soon {
+  color: #D4781E;
+  font-weight: 700;
+}
+
+/* States */
+.m-status,
+.m-empty {
+  padding: 16px;
+  text-align: center;
+  color: #a8bfcc;
+}
+
+.m-empty {
+  border: 1px dashed rgba(80, 200, 220, 0.2);
+  border-radius: 12px;
+}
+
+.m-error {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(212, 120, 30, 0.6);
+  background: rgba(212, 120, 30, 0.08);
+  color: #D4781E;
+}

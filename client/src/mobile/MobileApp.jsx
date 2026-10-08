@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import MobileDeals from './MobileDeals.jsx'
-import MobileUpcoming from './MobileUpcoming.jsx'
 import './mobile.css'
 
 // Same logo URL AppHeader.jsx uses.
@@ -80,8 +79,6 @@ export default function MobileApp() {
       </header>
       <main className="m-main">
         <MobileDeals />
-        <h2 className="m-block-title">Next 14 Days</h2>
-        <MobileUpcoming />
       </main>
       <footer className="m-footer">
         <a className="m-link" href="/">Open desktop version</a>

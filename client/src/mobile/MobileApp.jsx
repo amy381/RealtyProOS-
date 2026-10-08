@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import MobileDeals from './MobileDeals.jsx'
 import MobileUpcoming from './MobileUpcoming.jsx'
 import './mobile.css'
+
+// Same logo URL AppHeader.jsx uses.
+const LOGO_URL = 'https://gyyipikdedwefyrfgoox.supabase.co/storage/v1/object/public/assets/legacyos-logo-nav-v3.png'
 
 // Same parse as App.jsx (copied, not imported — App.jsx must stay untouched).
 const ALLOWED_EMAILS = (import.meta.env.VITE_ALLOWED_EMAILS || '')
@@ -71,10 +75,12 @@ export default function MobileApp() {
   return (
     <div className="m-app">
       <header className="m-header">
-        <span className="m-header-title">LegacyOS</span>
+        <img className="m-header-logo" src={LOGO_URL} alt="LegacyOS" />
         <button className="m-btn m-btn--ghost" onClick={() => supabase.auth.signOut()}>Sign out</button>
       </header>
       <main className="m-main">
+        <MobileDeals />
+        <h2 className="m-block-title">Next 14 Days</h2>
         <MobileUpcoming />
       </main>
       <footer className="m-footer">

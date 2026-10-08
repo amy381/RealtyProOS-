@@ -23,11 +23,9 @@
   background: rgba(2, 5, 18, 0.9);
 }
 
-.m-header-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #b8cdd8;
-  letter-spacing: 0.02em;
+.m-header-logo {
+  height: 30px;
+  width: auto;
 }
 
 .m-main {
@@ -207,3 +205,107 @@
   background: rgba(212, 120, 30, 0.08);
   color: #D4781E;
 }
+
+/* Status filter */
+.m-select {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 12px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(80, 200, 220, 0.35);
+  background: rgba(2, 5, 18, 0.6);
+  color: #b8cdd8;
+  font-size: 16px;
+}
+
+/* Next 14 Days heading */
+.m-block-title {
+  margin: 32px 0 12px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(80, 200, 220, 0.18);
+  font-size: 18px;
+  font-weight: 700;
+  color: #b8cdd8;
+}
+
+/* Deal cards (mirror the desktop Kanban card) */
+.m-deal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(80, 200, 220, 0.2);
+  background: rgba(2, 5, 18, 0.6);
+}
+
+.m-deal-address-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.m-deal-address {
+  min-width: 0;
+  color: #b8cdd8;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.m-deal-rep {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid currentColor;
+}
+
+.m-deal-rep--buyer  { color: rgba(50, 200, 220, 0.85); }
+.m-deal-rep--seller { color: rgba(210, 130, 42, 0.85); }
+
+.m-deal-client {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.m-deal-price {
+  font-size: 14px;
+  color: #c8dae6;
+}
+
+.m-deal-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.m-deal-label {
+  color: #a8bfcc;
+}
+
+.m-deal-value {
+  color: #c8d4e0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.m-deal-value--flag {
+  font-weight: 600;
+}
+
+.m-deal-badge {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  border: 1px solid transparent;
+}
+
+.m-deal-badge--urgent  { color: rgba(50, 200, 220, 0.85); border-color: rgba(50, 200, 220, 0.25); }
+.m-deal-badge--overdue { color: rgba(210, 130, 42, 0.9);  border-color: rgba(210, 120, 30, 0.35); }
